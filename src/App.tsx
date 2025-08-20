@@ -1,0 +1,190 @@
+import React, { useEffect } from "react";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { HelmetProvider } from "react-helmet-async";
+import { TelegramTonConnectProvider } from "@/providers/TelegramTonConnectProvider";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { useTelegramAuth } from "./hooks/useTelegramAuth";
+import { useReferralHandler } from "./hooks/useReferralHandler";
+import GlobalBackground from "./components/GlobalBackground";
+import Index from "./pages/Index";
+
+import ServerStore from "./pages/ServerStore";
+import UpgradeCenter from "./pages/UpgradeCenter";
+import Tasks from "./pages/Tasks";
+import Game from "./pages/Game";
+import Games from "./pages/Games";
+import Apps from "./pages/Apps";
+import Skins from "./pages/Skins";
+import Leaderboard from "./pages/Leaderboard";
+import BottomNavigation from "./components/BottomNavigation";
+import Runner from "./pages/Runner";
+import RunnerGamePage from "./pages/RunnerGame";
+import AiGenerator from "./pages/AiGenerator";
+// removed Apps page import
+import Profile from "./pages/Profile";
+import Wallet from "./pages/Wallet";
+import Mining from "./pages/Mining";
+import Invite from "./pages/Invite";
+import PremiumPackages from "./pages/PremiumPackages";
+import EliteAddOns from "./pages/EliteAddOns";
+import UpgradeMatrix from "./pages/UpgradeMatrix";
+import LegendaryServers from "./pages/LegendaryServers";
+import AiSubscription from "./pages/AiSubscription";
+import MiningServers from "./pages/MiningServers";
+import Events from "./pages/Events";
+import AiImageStore from "./pages/AiImageStore";
+import Game2048Store from "./pages/Game2048Store";
+import Giveaways from "./pages/Giveaways";
+import CreateTask from "./pages/CreateTask";
+import Admin from "./pages/Admin";
+import ChatAI from "./pages/ChatAI";
+import UserProfileButton from "./components/UserProfileButton";
+import SplashScreen from "./components/SplashScreen";
+
+
+function ScrollToBottom() {
+  const location = useLocation();
+  useEffect(() => {
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
+  }, [location.pathname, location.search]);
+  return null;
+}
+
+const queryClient = new QueryClient();
+
+function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
+  const { webApp } = useTelegramAuth();
+  const [showSplash, setShowSplash] = React.useState(true);
+  
+  // Handle referral processing
+  useReferralHandler();
+
+  // Ensure body applies theme class on load
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('viral-theme') || 'minimalistic';
+    document.documentElement.classList.remove('theme-minimalistic', 'theme-dark-vibes', 'theme-nature', 'theme-tech-innovation', 'theme-creative-portfolio');
+    document.documentElement.classList.add(`theme-${savedTheme}`);
+  }, []);
+
+  // Apply Telegram WebApp theme and configurations
+  useEffect(() => {
+    if (webApp) {
+      // Apply theme parameters if available
+      if (webApp.themeParams) {
+        const root = document.documentElement;
+        const theme = webApp.themeParams;
+        
+        if (theme.bg_color) {
+          root.style.setProperty('--tg-bg-color', theme.bg_color);
+        }
+        if (theme.text_color) {
+          root.style.setProperty('--tg-text-color', theme.text_color);
+        }
+        if (theme.hint_color) {
+          root.style.setProperty('--tg-hint-color', theme.hint_color);
+        }
+        if (theme.button_color) {
+          root.style.setProperty('--tg-button-color', theme.button_color);
+        }
+      }
+
+      // Set viewport height for better mobile experience
+      if (webApp.viewportHeight) {
+        document.documentElement.style.setProperty(
+          '--tg-viewport-height', 
+          `${webApp.viewportHeight}px`
+        );
+      }
+
+      // Handle viewport changes
+      const handleViewportChanged = () => {
+        if (webApp.viewportHeight) {
+          document.documentElement.style.setProperty(
+            '--tg-viewport-height', 
+            `${webApp.viewportHeight}px`
+          );
+        }
+      };
+
+      if (webApp.onEvent) {
+        webApp.onEvent('viewportChanged', handleViewportChanged);
+      }
+
+      return () => {
+        if (webApp.offEvent) {
+          webApp.offEvent('viewportChanged', handleViewportChanged);
+        }
+      };
+    }
+  }, [webApp]);
+
+  if (showSplash) {
+    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
+
+  return <>{children}</>;
+}
+
+const App = () => (
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <TelegramTonConnectProvider>
+          <ThemeProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+                <TelegramWebAppWrapper>
+            <div className="tg-webapp-container min-h-screen bg-background relative">
+              <GlobalBackground />
+              <div className="pt-6 relative z-10">
+                <ScrollToBottom />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/mining" element={<Mining />} />
+              <Route path="/apps" element={<Apps />} />
+              <Route path="/games" element={<Games />} />
+              <Route path="/runner" element={<Runner />} />
+              <Route path="/runner-game" element={<RunnerGamePage />} />
+              <Route path="/ai-generator" element={<AiGenerator />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/game" element={<Game />} />
+              <Route path="/skins" element={<Skins />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
+              <Route path="/tasks" element={<Tasks />} />
+              <Route path="/invite" element={<Invite />} />
+              <Route path="/wallet" element={<Wallet />} />
+              <Route path="/server-store" element={<ServerStore />} />
+              <Route path="/upgrade-center" element={<UpgradeCenter />} />
+              <Route path="/premium-packages" element={<PremiumPackages />} />
+              <Route path="/elite-addons" element={<EliteAddOns />} />
+              <Route path="/upgrade-matrix" element={<UpgradeMatrix />} />
+              <Route path="/legendary-servers" element={<LegendaryServers />} />
+              <Route path="/ai-subscription" element={<AiSubscription />} />
+              <Route path="/mining-servers" element={<MiningServers />} />
+              <Route path="/events" element={<Events />} />
+              <Route path="/ai-image-store" element={<AiImageStore />} />
+              <Route path="/game-2048-store" element={<Game2048Store />} />
+              <Route path="/giveaways" element={<Giveaways />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/create-task" element={<CreateTask />} />
+              <Route path="/chat-ai" element={<ChatAI />} />
+              
+                </Routes>
+                <BottomNavigation />
+              </div>
+            </div>
+              </TelegramWebAppWrapper>
+            </TooltipProvider>
+          </ThemeProvider>
+        </TelegramTonConnectProvider>
+      </Router>
+    </QueryClientProvider>
+  </HelmetProvider>
+);
+
+export default App;

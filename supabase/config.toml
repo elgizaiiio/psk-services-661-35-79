@@ -1,0 +1,47 @@
+project_id = "gzzwjopalvopvgofepvj"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+port = 54322
+site_url = "http://localhost:3000"
+additional_redirect_urls = []
+jwt_expiry = 3600
+enable_signup = true
+
+[auth.external.google]
+enabled = false
+client_id = ""
+secret = ""
+url = ""
+redirect_uri = ""
+
+[auth.external.github]
+enabled = false
+client_id = ""
+secret = ""
+url = ""
+redirect_uri = ""
+
+[edge_functions]
+enabled = true
+port = 54323
+
+[functions.process-referral]
+verify_jwt = false
+
+[functions.process-pending-referrals]
+verify_jwt = false
+
+[db]
+port = 54322
+
+[storage]
+enabled = true
+port = 54324
