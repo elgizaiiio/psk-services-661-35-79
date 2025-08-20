@@ -9,27 +9,24 @@ interface TelegramTonConnectProviderProps {
 export const TelegramTonConnectProvider: React.FC<TelegramTonConnectProviderProps> = ({ children }) => {
   const { webApp } = useTelegramAuth();
 
-  // Get manifest URL immediately with proper fallback
+  // Get dynamic manifest URL using Supabase Edge function
   const getManifestUrl = () => {
     if (typeof window === 'undefined') {
-      return 'https://psk-viral-mining.lovable.app/tonconnect-manifest.json';
+      return 'https://gzzwjopalvopvgofepvj.supabase.co/functions/v1/tonconnect-manifest';
     }
     
-    // Check if we're in Telegram WebApp
+    // Always use dynamic manifest from Supabase Edge function
+    const dynamicManifestUrl = 'https://gzzwjopalvopvgofepvj.supabase.co/functions/v1/tonconnect-manifest';
+    
     if (webApp) {
-      console.log('🔗 Running in Telegram WebApp, using production manifest');
-      return 'https://psk-viral-mining.lovable.app/tonconnect-manifest.json';
+      console.log('🔗 Running in Telegram WebApp, using dynamic manifest');
+    } else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      console.log('🛠️ Running in development, using dynamic manifest');
+    } else {
+      console.log('🌐 Running in production, using dynamic manifest');
     }
     
-    // Check if we're in development
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-      console.log('🛠️ Running in development, using local manifest');
-      return `${window.location.origin}/tonconnect-manifest.json`;
-    }
-    
-    // Production environment
-    console.log('🌐 Running in production, using production manifest');
-    return `${window.location.origin}/tonconnect-manifest.json`;
+    return dynamicManifestUrl;
   };
 
   const manifestUrl = getManifestUrl();
@@ -45,8 +42,8 @@ export const TelegramTonConnectProvider: React.FC<TelegramTonConnectProviderProp
     <TonConnectUIProvider
       manifestUrl={manifestUrl}
       actionsConfiguration={{
-        twaReturnUrl: webApp ? 'https://t.me/ViralMiningBot' : undefined,
-        skipRedirectToWallet: webApp ? 'always' : 'never',
+        twaReturnUrl: webApp ? 'https://t.me/Vlralbot?startapp' : undefined,
+        skipRedirectToWallet: 'never',
       }}
     >
       {children}

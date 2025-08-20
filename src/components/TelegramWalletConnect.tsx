@@ -124,19 +124,9 @@ export const TelegramWalletConnect: React.FC<TelegramWalletConnectProps> = ({
   const openWalletDirectly = () => {
     hapticFeedback.impact('medium');
     
-    // Try to open Tonkeeper directly
-    const tonkeeperUrl = 'https://app.tonkeeper.com/';
-    
-    if (webApp) {
-      // In Telegram, try to open external link
-      webApp.openTelegramLink?.(tonkeeperUrl) || window.open(tonkeeperUrl, '_blank');
-    } else {
-      window.open(tonkeeperUrl, '_blank');
-    }
-    
     toast({
-      title: "Opening Wallet",
-      description: "Tonkeeper wallet will open in a new window",
+      title: "Manual Connection",
+      description: "1. Open your TON wallet app\n2. Go to Settings → Connected Apps\n3. Add connection manually\n4. Enter: " + window.location.origin,
     });
   };
 
@@ -206,7 +196,7 @@ export const TelegramWalletConnect: React.FC<TelegramWalletConnectProps> = ({
               size="sm"
             >
               <ExternalLink className="w-4 h-4 mr-2" />
-              Open Wallet Manually
+              Manual Connection Guide
             </Button>
           )}
         </div>
