@@ -5,26 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
-import ViralIcon from "@/components/ui/viral-icon";
+import BoltIcon from "@/components/ui/bolt-icon";
 import { 
-  Send, 
-  ArrowDownLeft, 
-  Clock, 
-  TrendingUp, 
   Eye,
-  EyeOff,
-  RefreshCw,
-  Copy
+  EyeOff
 } from "lucide-react";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { TonConnectButton, useTonWallet, useTonConnectUI } from "@tonconnect/ui-react";
-
 
 const RECEIVER_ADDRESS = "UQBJSGcoWTcjdkWFSxA4A6sLmnD5uFKoKHFEHc3LqGJvFWya";
 
 const WalletInner: React.FC = () => {
-  const { user: tgUser, isLoading: authLoading, hapticFeedback } = useTelegramAuth();
+  const { user: tgUser, isLoading: authLoading } = useTelegramAuth();
   const { user, loading: miningLoading } = useViralMining(tgUser);
 
   const [tonPrice, setTonPrice] = useState<number | null>(null);
@@ -59,16 +50,14 @@ const WalletInner: React.FC = () => {
   }, []);
 
   const isLoading = authLoading || miningLoading;
-  const tonBalance = 0;
-  const tetherBalance = 0;
   const totalUsd = 0;
 
   if (!wallet?.account?.address) {
     return (
-      <main className="safe-area pb-24 flex items-center justify-center">
+      <main className="safe-area pb-24 flex items-center justify-center bg-background">
         <div className="max-w-md mx-auto px-4 py-6">
-          <Card className="p-8 text-center">
-            <h2 className="text-xl font-bold mb-4">Connect TON Wallet</h2>
+          <Card className="p-8 text-center bg-card border-border">
+            <h2 className="text-xl font-bold mb-4 text-foreground">Connect TON Wallet</h2>
             <p className="text-muted-foreground mb-6">You need to connect a TON wallet to view the content</p>
             <TonConnectButton />
           </Card>
@@ -78,11 +67,11 @@ const WalletInner: React.FC = () => {
   }
 
   return (
-    <main className="safe-area pb-24">
+    <main className="safe-area pb-24 bg-background">
       <div className="max-w-md mx-auto px-4 py-6 space-y-6">
         <div className="flex items-center justify-between">
           <div className="text-sm">
-            <div className="font-semibold">TON Wallet</div>
+            <div className="font-semibold text-foreground">TON Wallet</div>
             <div className="text-muted-foreground">
               {wallet.account.address.slice(0,6)}...{wallet.account.address.slice(-4)}
             </div>
@@ -91,7 +80,7 @@ const WalletInner: React.FC = () => {
         </div>
 
         {/* Total Balance */}
-        <Card className="p-6 text-center bg-gradient-to-br from-primary/10 to-secondary/10 border-primary/30">
+        <Card className="p-6 text-center bg-card border-border">
           <div className="mb-4">
             <p className="text-sm text-muted-foreground mb-2">Total Balance</p>
             <div className="text-4xl font-extrabold text-primary mb-2">
@@ -103,22 +92,21 @@ const WalletInner: React.FC = () => {
           </div>
         </Card>
 
-
         {/* Crypto Assets */}
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">Digital Assets</h3>
+              <h3 className="text-lg font-semibold text-foreground">Digital Assets</h3>
               <Button variant="ghost" size="sm" onClick={() => setShowBalance(!showBalance)}>
                 {showBalance ? (
                   <>
                     <EyeOff className="w-4 h-4 ml-2" />
-                    Hide Balance
+                    Hide
                   </>
                 ) : (
                   <>
                     <Eye className="w-4 h-4 ml-2" />
-                    Show Balance
+                    Show
                   </>
                 )}
               </Button>
@@ -127,23 +115,23 @@ const WalletInner: React.FC = () => {
           <CardContent className="p-0">
             <div className="space-y-1">
               
-              {/* VIRAL Token */}
+              {/* BOLT Token */}
               <div className="p-4 hover:bg-muted/30 transition-colors rounded-lg mx-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary p-1">
-                      <ViralIcon size="lg" color="#ffffff" />
+                    <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center">
+                      <BoltIcon size="md" className="text-primary-foreground" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold">VIRAL</p>
+                        <p className="font-semibold text-foreground">BOLT</p>
                         <Badge variant="secondary" className="text-xs">$0.00</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
                         {isLoading ? (
                           <div className="w-16 h-4 bg-muted animate-pulse rounded" />
                         ) : showBalance ? (
-                          `${viralBalance.toFixed(4)} VIRAL`
+                          `${viralBalance.toFixed(4)} BOLT`
                         ) : (
                           '••••••'
                         )}
@@ -151,7 +139,7 @@ const WalletInner: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">$0.00</p>
+                    <p className="font-semibold text-foreground">$0.00</p>
                     <span className="text-xs text-muted-foreground">No change</span>
                   </div>
                 </div>
@@ -170,7 +158,7 @@ const WalletInner: React.FC = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold">TON</p>
+                        <p className="font-semibold text-foreground">TON</p>
                         <Badge variant="secondary" className="text-xs">
                           {tonLoading ? (
                             <div className="w-12 h-3 bg-muted animate-pulse rounded" />
@@ -187,7 +175,7 @@ const WalletInner: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">$0.00</p>
+                    <p className="font-semibold text-foreground">$0.00</p>
                     <span className="text-xs text-muted-foreground">No change</span>
                   </div>
                 </div>
@@ -206,7 +194,7 @@ const WalletInner: React.FC = () => {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold">USDT</p>
+                        <p className="font-semibold text-foreground">USDT</p>
                         <Badge variant="secondary" className="text-xs">$1.00</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">
@@ -215,7 +203,7 @@ const WalletInner: React.FC = () => {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-semibold">$0.00</p>
+                    <p className="font-semibold text-foreground">$0.00</p>
                     <span className="text-xs text-muted-foreground">No change</span>
                   </div>
                 </div>
@@ -233,8 +221,8 @@ const Wallet: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Wallet | VIRAL Wallet</title>
-        <meta name="description" content="Manage your cryptocurrency wallet - VIRAL, TON, USDT with live prices" />
+        <title>Wallet | BOLT Wallet</title>
+        <meta name="description" content="Manage your cryptocurrency wallet - BOLT, TON, USDT with live prices" />
         <link rel="canonical" href="/wallet" />
       </Helmet>
       <WalletInner />

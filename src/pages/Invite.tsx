@@ -3,15 +3,12 @@ import { Helmet } from "react-helmet-async";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Copy, Check, Users, Share2 } from "lucide-react";
+import { Copy, Check, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import EyeLoader from "@/components/animations/EyeLoader";
-
 
 const Invite: React.FC = () => {
   const { user: tgUser } = useTelegramAuth();
@@ -26,8 +23,6 @@ const Invite: React.FC = () => {
     successful_referrals: 0,
     referral_bonus_earned: 0
   });
-  const [secretClickCount, setSecretClickCount] = useState(0);
-  const [lastClickTime, setLastClickTime] = useState(0);
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const referralCode = useMemo(() => {
@@ -57,9 +52,9 @@ const Invite: React.FC = () => {
   };
 
   const handleShareViaTelegram = () => {
-    const message = `🎯 Join me in mining VIRAL and earn real cryptocurrency!
+    const message = `🎯 Join me in mining BOLT and earn real cryptocurrency!
 
-💎 Start mining VIRAL tokens now: ${referralLink}
+💎 Start mining BOLT tokens now: ${referralLink}
 
 🚀 What you'll get:
 • Free mining setup
@@ -144,10 +139,9 @@ const Invite: React.FC = () => {
     url: currentUrl,
   };
 
-  // Calculate average earnings per friend (7% of server rental simulation)
   const getEarnings = (index: number) => {
     const baseEarning = 0.07;
-    const variation = Math.random() * 0.03; // Add some variation
+    const variation = Math.random() * 0.03;
     return (baseEarning + variation).toFixed(2);
   };
 
@@ -163,36 +157,33 @@ const Invite: React.FC = () => {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
-      <div className="safe-area pb-24 min-h-screen">
+      <div className="safe-area pb-24 min-h-screen bg-background">
         <div className="max-w-md mx-auto px-4 py-6">
-          
-          {/* Eye Animation */}
-          <EyeLoader />
           
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-white mb-2">Friends</h1>
-            <p className="text-gray-400 text-lg">
-              Get a VIRAL for every server rental by your friends!
+            <h1 className="text-4xl font-bold text-primary mb-2">Friends</h1>
+            <p className="text-muted-foreground text-lg">
+              Get BOLT for every server rental by your friends!
             </p>
           </div>
 
           {/* Friends Level Card */}
-          <Card className="bg-gray-800/50 border-gray-700 rounded-2xl p-6 mb-6">
+          <Card className="bg-card border-border rounded-2xl p-6 mb-6">
             <div className="mb-4">
-              <h2 className="text-xl font-semibold text-white mb-2">Friends</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-2">Friends</h2>
             </div>
             
-            <div className="border-t border-gray-700 pt-4">
+            <div className="border-t border-border pt-4">
               {friendsLoading ? (
                 <div className="text-center py-6">
-                  <div className="animate-spin w-5 h-5 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-                  <p className="text-sm text-gray-400">Loading...</p>
+                  <div className="simple-loader mx-auto mb-2"></div>
+                  <p className="text-sm text-muted-foreground">Loading...</p>
                 </div>
               ) : friends.length === 0 ? (
                 <div className="text-center py-6">
-                  <Users className="w-10 h-10 text-gray-500 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">No friends invited yet</p>
+                  <Users className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">No friends invited yet</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -201,32 +192,19 @@ const Invite: React.FC = () => {
                     const initials = name.substring(0, 2).toUpperCase();
                     const earnings = getEarnings(index);
                     
-                    // Generate consistent colors based on index
-                    const colors = [
-                      'bg-blue-500',
-                      'bg-green-500', 
-                      'bg-cyan-500',
-                      'bg-blue-400',
-                      'bg-red-500',
-                      'bg-purple-500',
-                      'bg-orange-500',
-                      'bg-pink-500'
-                    ];
-                    const colorClass = colors[index % colors.length];
-                    
                     return (
                       <div key={friend.id} className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <Avatar className={`h-10 w-10 ${colorClass}`}>
+                          <Avatar className="h-10 w-10 bg-primary/20">
                             <AvatarImage src={friend.referred?.photo_url} alt={name} />
-                            <AvatarFallback className={`${colorClass} text-white font-semibold`}>
+                            <AvatarFallback className="bg-primary/20 text-primary font-semibold">
                               {initials}
                             </AvatarFallback>
                           </Avatar>
-                          <span className="text-white font-medium">{name}</span>
+                          <span className="text-foreground font-medium">{name}</span>
                         </div>
-                        <div className="text-gray-400 text-sm">
-                          + {earnings} VIRAL
+                        <div className="text-primary text-sm font-medium">
+                          + {earnings} BOLT
                         </div>
                       </div>
                     );
@@ -242,7 +220,7 @@ const Invite: React.FC = () => {
               <div className="flex items-center gap-3">
                 <Button 
                   onClick={handleShareViaTelegram}
-                  className="flex-1 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 rounded-2xl text-lg"
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-4 rounded-2xl text-lg"
                   size="lg"
                 >
                   Share Link
@@ -251,10 +229,10 @@ const Invite: React.FC = () => {
                   onClick={copyLink}
                   variant="outline"
                   size="lg"
-                  className="px-4 py-4 rounded-2xl border-gray-600 bg-gray-800/50 hover:bg-gray-700/50 text-white"
+                  className="px-4 py-4 rounded-2xl border-border bg-card hover:bg-muted"
                   title="Copy Link"
                 >
-                  {copied ? <Check className="h-5 w-5 text-green-500" /> : <Copy className="h-5 w-5" />}
+                  {copied ? <Check className="h-5 w-5 text-primary" /> : <Copy className="h-5 w-5" />}
                 </Button>
               </div>
             </div>

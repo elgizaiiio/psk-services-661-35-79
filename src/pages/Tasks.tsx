@@ -1,17 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTasks } from '@/hooks/useTasks';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Coins, Users, ExternalLink, ArrowLeft, ListChecks, UserCheck, Flame } from 'lucide-react';
+import { Users, ListChecks, UserCheck, Flame } from 'lucide-react';
 import { TaskCard } from '@/components/TaskCard';
 import { SecretCodeDialog } from '@/components/SecretCodeDialog';
-import CandleAnimation from '@/components/animations/CandleAnimation';
 import { toast } from 'sonner';
-
 
 const Tasks = () => {
   const { user: telegramUser, hapticFeedback } = useTelegramAuth();
@@ -39,7 +35,6 @@ const Tasks = () => {
       hapticFeedback.impact('medium');
       window.open(taskUrl, '_blank');
       
-      // Wait a bit then complete the task
       setTimeout(async () => {
         await completeTask(taskId);
         toast.success('Task completed successfully! 🎉');
@@ -70,15 +65,11 @@ const Tasks = () => {
   const partnerTasks = getAvailableTasks('partners');
   const viralTasks = getAvailableTasks('viral');
 
-  const totalCompleted = completedTasks.length;
-  const totalPoints = completedTasks.reduce((sum, t) => sum + (t.points_earned || 0), 0);
-  const pendingCount = Math.max(0, tasks.length - totalCompleted);
-
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="simple-loader mx-auto mb-4"></div>
           <p className="text-muted-foreground">Loading tasks...</p>
         </div>
       </div>
@@ -86,127 +77,124 @@ const Tasks = () => {
   }
 
   return (
-    <div className="safe-area pb-20">
+    <div className="safe-area pb-20 bg-background">
       <div className="max-w-md mx-auto p-4">
         <Helmet>
           <title>Tasks | Complete and Earn</title>
-          <meta name="description" content="Complete daily tasks and partner tasks to earn VIRAL points" />
+          <meta name="description" content="Complete daily tasks and partner tasks to earn BOLT points" />
           <link rel="canonical" href={`${window.location.origin}/tasks`} />
         </Helmet>
 
-        {/* Candle Animation */}
-        <CandleAnimation />
-
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-bold text-primary">Tasks</h1>
+          <p className="text-muted-foreground text-sm">Complete tasks to earn BOLT</p>
+        </div>
 
         {/* Tasks Tabs */}
         <Tabs defaultValue="partners" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted/30 rounded-lg p-1 h-12">
+          <TabsList className="grid w-full grid-cols-3 mb-6 bg-muted rounded-lg p-1 h-12">
             <TabsTrigger 
               value="main" 
-              className="flex items-center gap-2 text-sm bg-transparent border-none data-[state=active]:bg-primary data-[state=active]:text-white rounded-md transition-all duration-200 hover:text-primary/80"
+              className="flex items-center gap-2 text-sm bg-transparent border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-all duration-200"
             >
               <Users className="w-4 h-4" />
-              Main Tasks
+              Main
             </TabsTrigger>
             <TabsTrigger 
               value="partners" 
-              className="flex items-center gap-2 text-sm bg-transparent border-none data-[state=active]:bg-primary data-[state=active]:text-white rounded-md transition-all duration-200 hover:text-primary/80"
+              className="flex items-center gap-2 text-sm bg-transparent border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-all duration-200"
             >
               <UserCheck className="w-4 h-4" />
-              Partner Tasks
+              Partners
             </TabsTrigger>
             <TabsTrigger 
               value="viral" 
-              className="flex items-center gap-2 text-sm bg-transparent border-none data-[state=active]:bg-primary data-[state=active]:text-white rounded-md transition-all duration-200 hover:text-primary/80"
+              className="flex items-center gap-2 text-sm bg-transparent border-none data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md transition-all duration-200"
             >
               <ListChecks className="w-4 h-4" />
-              Daily Tasks
+              Daily
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="main" className="space-y-3 animate-fade-in">
+          <TabsContent value="main" className="space-y-3">
             {mainTasks.length > 0 ? (
               <div className="space-y-3">
-                {mainTasks.map((task, index) => (
-                  <div key={task.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                    <TaskCard
-                      task={task}
-                      onComplete={() => handleTaskComplete(task.id, task.task_url || '')}
-                    />
-                  </div>
+                {mainTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onComplete={() => handleTaskComplete(task.id, task.task_url || '')}
+                  />
                 ))}
               </div>
             ) : (
-              <Card className="p-8 text-center border-dashed border-muted-foreground/30">
+              <Card className="p-8 text-center border-dashed border-border">
                 <ListChecks className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-                <h3 className="font-medium text-white mb-1">No main tasks available</h3>
-                <p className="text-xs text-white/70">Check back later for new tasks</p>
+                <h3 className="font-medium text-foreground mb-1">No main tasks available</h3>
+                <p className="text-xs text-muted-foreground">Check back later for new tasks</p>
               </Card>
             )}
           </TabsContent>
 
-          <TabsContent value="partners" className="space-y-3 animate-fade-in">
+          <TabsContent value="partners" className="space-y-3">
             {partnerTasks.length > 0 ? (
               <div className="space-y-3">
-                {partnerTasks.map((task, index) => (
-                  <div key={task.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
-                    <TaskCard
-                      task={task}
-                      onComplete={() => handleTaskComplete(task.id, task.task_url || '')}
-                    />
-                  </div>
+                {partnerTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onComplete={() => handleTaskComplete(task.id, task.task_url || '')}
+                  />
                 ))}
               </div>
             ) : (
-              <Card className="p-8 text-center border-dashed border-muted-foreground/30">
+              <Card className="p-8 text-center border-dashed border-border">
                 <UserCheck className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-                <h3 className="font-medium text-white mb-1">No partner tasks available</h3>
-                <p className="text-xs text-white/70">Check back later for new partner tasks</p>
+                <h3 className="font-medium text-foreground mb-1">No partner tasks available</h3>
+                <p className="text-xs text-muted-foreground">Check back later for new partner tasks</p>
               </Card>
             )}
           </TabsContent>
 
-          <TabsContent value="viral" className="space-y-3 animate-fade-in">
-            {/* Secret Task - Always show */}
-            <div className="animate-fade-in">
-              <TaskCard
-                task={{
-                  id: 'secret-daily-task',
-                  title: 'Daily Secret Task',
-                  points: 500,
-                  category: 'viral',
-                  task_url: null
-                }}
-                onComplete={handleSecretTaskClick}
-                isCompleted={hasDailyCodeCompleted()}
-              />
-            </div>
+          <TabsContent value="viral" className="space-y-3">
+            {/* Secret Task */}
+            <TaskCard
+              task={{
+                id: 'secret-daily-task',
+                title: 'Daily Secret Task',
+                points: 500,
+                category: 'viral',
+                task_url: null
+              }}
+              onComplete={handleSecretTaskClick}
+              isCompleted={hasDailyCodeCompleted()}
+            />
             
             {viralTasks.length > 0 && (
               <div className="space-y-3">
-                {viralTasks.map((task, index) => (
-                  <div key={task.id} className="animate-fade-in" style={{ animationDelay: `${(index + 1) * 0.1}s` }}>
-                    <TaskCard
-                      task={task}
-                      onComplete={() => {
-                        if (task.title.toLowerCase().includes("secret") || task.title.toLowerCase().includes("daily")) {
-                          handleSecretTaskClick();
-                        } else {
-                          handleTaskComplete(task.id, task.task_url || "");
-                        }
-                      }}
-                      isCompleted={(task.title.toLowerCase().includes("secret") || task.title.toLowerCase().includes("daily")) && hasDailyCodeCompleted()}
-                    />
-                  </div>
+                {viralTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onComplete={() => {
+                      if (task.title.toLowerCase().includes("secret") || task.title.toLowerCase().includes("daily")) {
+                        handleSecretTaskClick();
+                      } else {
+                        handleTaskComplete(task.id, task.task_url || "");
+                      }
+                    }}
+                    isCompleted={(task.title.toLowerCase().includes("secret") || task.title.toLowerCase().includes("daily")) && hasDailyCodeCompleted()}
+                  />
                 ))}
               </div>
             )}
             
             {viralTasks.length === 0 && (
-              <Card className="p-8 text-center border-dashed border-muted-foreground/30">
+              <Card className="p-8 text-center border-dashed border-border">
                 <Flame className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-                <h3 className="font-medium text-white mb-1">No additional tasks available</h3>
-                <p className="text-xs text-white/70">Check back later for new tasks</p>
+                <h3 className="font-medium text-foreground mb-1">No additional tasks available</h3>
+                <p className="text-xs text-muted-foreground">Check back later for new tasks</p>
               </Card>
             )}
           </TabsContent>
