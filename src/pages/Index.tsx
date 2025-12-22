@@ -5,7 +5,7 @@ import { Zap, TrendingUp, Server } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Card } from "@/components/ui/card";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
-import { useViralMining } from '@/hooks/useViralMining';
+import { useBoltMining } from '@/hooks/useBoltMining';
 import { useMiningUpgrades } from '@/hooks/useMiningUpgrades';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import BoltIcon from "@/components/ui/bolt-icon";
@@ -21,7 +21,7 @@ const Index = () => {
     startMining,
     miningProgress,
     clearError
-  } = useViralMining(telegramUser);
+  } = useBoltMining(telegramUser);
   const { createMiningUpgradePayment, isUpgrading } = useMiningUpgrades();
   const { 
     isConnected, 
@@ -50,7 +50,7 @@ const Index = () => {
     hapticFeedback.impact('medium');
     await createMiningUpgradePayment({
       upgradeType: 'power',
-      currentValue: user.mining_power_multiplier || 2,
+      currentValue: user.mining_power || 2,
       tonAmount: 0.5,
       userId: user.id
     });
@@ -201,7 +201,7 @@ const Index = () => {
           >
             <TrendingUp className="w-8 h-8 mb-2 text-primary" />
             <h3 className="font-bold text-sm">Power</h3>
-            <p className="text-xs text-muted-foreground">×{user?.mining_power_multiplier || 2}</p>
+            <p className="text-xs text-muted-foreground">×{user?.mining_power || 2}</p>
             <p className="text-xs text-primary font-bold mt-1">0.5 TON</p>
           </Button>
 

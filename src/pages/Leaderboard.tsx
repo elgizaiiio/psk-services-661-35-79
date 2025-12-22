@@ -5,19 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Crown, Trophy, Medal } from "lucide-react";
-import { useLeaderboard } from "@/hooks/useLeaderboard";
+import { useBoltLeaderboard } from "@/hooks/useBoltLeaderboard";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
-import { useViralMining } from "@/hooks/useViralMining";
+import { useBoltMining } from "@/hooks/useBoltMining";
 
 const Leaderboard: React.FC = () => {
   const { user: tgUser } = useTelegramAuth();
-  const { user: vmUser } = useViralMining(tgUser);
-  const {
-    leaderboard,
-    loading,
-    error,
-    clearError
-  } = useLeaderboard();
+  const { user: boltUser } = useBoltMining(tgUser);
+  const { leaderboard, loading, error, clearError } = useBoltLeaderboard();
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const jsonLd = {
@@ -89,7 +84,7 @@ const Leaderboard: React.FC = () => {
                 {leaderboard.map(entry => {
                   const name = entry.first_name || entry.telegram_username || 'Unknown';
                   const initials = entry.first_name?.[0] || entry.telegram_username?.[0] || 'U';
-                  const isCurrentUser = vmUser && entry.id === vmUser.id;
+                  const isCurrentUser = boltUser && entry.id === boltUser.id;
                   
                   return (
                     <div 
