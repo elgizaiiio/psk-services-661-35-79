@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
-import { useTasks } from '@/hooks/useTasks';
+import { useBoltTasks } from '@/hooks/useBoltTasks';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, ListChecks, UserCheck, Flame } from 'lucide-react';
@@ -10,24 +10,22 @@ import { SecretCodeDialog } from '@/components/SecretCodeDialog';
 import { toast } from 'sonner';
 
 const Tasks = () => {
-  const { user: telegramUser, hapticFeedback } = useTelegramAuth();
+  const { hapticFeedback } = useTelegramAuth();
   const { 
     tasks, 
+    allTasks,
     completedTasks, 
     loading, 
     completeTask, 
     dailyCodes,
     checkDailyCode,
     hasDailyCodeCompleted 
-  } = useTasks();
+  } = useBoltTasks();
   
   const [showSecretDialog, setShowSecretDialog] = useState(false);
 
   const getAvailableTasks = (category: string) => {
-    return tasks.filter(task => 
-      task.category === category && 
-      !completedTasks.some(completed => completed.task_id === task.id)
-    );
+    return tasks.filter(task => task.category === category);
   };
 
   const handleTaskComplete = async (taskId: string, taskUrl: string) => {
@@ -36,8 +34,12 @@ const Tasks = () => {
       window.open(taskUrl, '_blank');
       
       setTimeout(async () => {
-        await completeTask(taskId);
-        toast.success('Task completed successfully! 🎉');
+        try {
+          await completeTask(taskId);
+          toast.success('Task completed successfully! 🎉');
+        } catch (err) {
+          toast.error('Error completing task');
+        }
       }, 3000);
     }
   };
@@ -165,7 +167,7 @@ const Tasks = () => {
                 title: 'Daily Secret Task',
                 points: 500,
                 category: 'viral',
-                task_url: null
+                task_url: undefined
               }}
               onComplete={handleSecretTaskClick}
               isCompleted={hasDailyCodeCompleted()}

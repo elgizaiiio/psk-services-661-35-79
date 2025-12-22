@@ -1,37 +1,25 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
-import { useViralMining } from "@/hooks/useViralMining";
+import { useBoltMining } from "@/hooks/useBoltMining";
+import { useBoltReferrals } from "@/hooks/useBoltReferrals";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Copy, Check, Users } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 
 const Invite: React.FC = () => {
   const { user: tgUser } = useTelegramAuth();
-  const { user: vmUser, loading: miningLoading } = useViralMining(tgUser);
+  const { user: boltUser, loading: miningLoading } = useBoltMining(tgUser);
+  const { referrals, stats, loading: friendsLoading } = useBoltReferrals(boltUser?.id);
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [copied, setCopied] = useState(false);
-  const [friends, setFriends] = useState<any[]>([]);
-  const [friendsLoading, setFriendsLoading] = useState(false);
-  const [referralStats, setReferralStats] = useState({
-    total_referrals: 0,
-    successful_referrals: 0,
-    referral_bonus_earned: 0
-  });
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const referralCode = useMemo(() => {
-    if (tgUser?.username) {
-      return tgUser.username;
-    }
-    if (tgUser?.id) {
-      return tgUser.id.toString();
-    }
+    if (tgUser?.username) return tgUser.username;
+    if (tgUser?.id) return tgUser.id.toString();
     return "guest";
   }, [tgUser]);
   
@@ -79,58 +67,6 @@ const Invite: React.FC = () => {
     toast({ title: "Shared!", description: "Opening Telegram to share your invitation" });
   };
 
-  useEffect(() => {
-    const fetchReferrals = async () => {
-      if (!vmUser) return;
-      setFriendsLoading(true);
-      try {
-        console.log('📊 Fetching referrals for user:', vmUser.id);
-        
-        const { data: refs, error } = await supabase
-          .from('referrals')
-          .select('id, created_at, referred_id, status, commission_rate')
-          .eq('referrer_id', vmUser.id)
-          .order('created_at', { ascending: false });
-        
-        console.log('📊 Referrals query result:', { refs, error });
-        if (error) throw error;
-
-        const { data: userStats } = await supabase
-          .from('viral_users')
-          .select('total_referrals, successful_referrals, referral_bonus_earned')
-          .eq('id', vmUser.id)
-          .single();
-
-        if (userStats) {
-          setReferralStats({
-            total_referrals: userStats.total_referrals || 0,
-            successful_referrals: userStats.successful_referrals || 0,
-            referral_bonus_earned: userStats.referral_bonus_earned || 0
-          });
-        }
-
-        const ids = (refs || []).map((r: any) => r.referred_id);
-        let usersMap: Record<string, any> = {};
-        if (ids.length) {
-          const { data: referredUsers } = await supabase
-            .from('viral_users')
-            .select('id, telegram_username, first_name, last_name, photo_url, token_balance')
-            .in('id', ids);
-          referredUsers?.forEach((u: any) => { usersMap[u.id] = u; });
-        }
-
-        const enriched = (refs || []).map((r: any) => ({ ...r, referred: usersMap[r.referred_id] }));
-        setFriends(enriched);
-
-      } catch (err) {
-        console.error('❌ Error fetching referrals:', err);
-      } finally {
-        setFriendsLoading(false);
-      }
-    };
-    fetchReferrals();
-  }, [vmUser, tgUser]);
-
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebPage",
@@ -168,6 +104,20 @@ const Invite: React.FC = () => {
             </p>
           </div>
 
+          {/* Stats Card */}
+          <Card className="bg-card border-border rounded-2xl p-6 mb-6">
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div>
+                <p className="text-2xl font-bold text-primary">{stats.total_referrals}</p>
+                <p className="text-sm text-muted-foreground">Total Friends</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-primary">{stats.total_bonus.toFixed(0)}</p>
+                <p className="text-sm text-muted-foreground">BOLT Earned</p>
+              </div>
+            </div>
+          </Card>
+
           {/* Friends Level Card */}
           <Card className="bg-card border-border rounded-2xl p-6 mb-6">
             <div className="mb-4">
@@ -175,19 +125,19 @@ const Invite: React.FC = () => {
             </div>
             
             <div className="border-t border-border pt-4">
-              {friendsLoading ? (
+              {friendsLoading || miningLoading ? (
                 <div className="text-center py-6">
                   <div className="simple-loader mx-auto mb-2"></div>
                   <p className="text-sm text-muted-foreground">Loading...</p>
                 </div>
-              ) : friends.length === 0 ? (
+              ) : referrals.length === 0 ? (
                 <div className="text-center py-6">
                   <Users className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
                   <p className="text-sm text-muted-foreground">No friends invited yet</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {friends.map((friend, index) => {
+                  {referrals.map((friend, index) => {
                     const name = friend.referred?.first_name || friend.referred?.telegram_username || `User${index + 1}`;
                     const initials = name.substring(0, 2).toUpperCase();
                     const earnings = getEarnings(index);
@@ -204,7 +154,7 @@ const Invite: React.FC = () => {
                           <span className="text-foreground font-medium">{name}</span>
                         </div>
                         <div className="text-primary text-sm font-medium">
-                          + {earnings} BOLT
+                          + {friend.bonus_earned || earnings} BOLT
                         </div>
                       </div>
                     );
