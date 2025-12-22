@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Download, Sparkles, Image as ImageIcon, RefreshCw, Wand2, Palette } from "lucide-react";
 import { downloadImage } from "@/lib/downloadImage";
-import BalanceBallLoader from "@/components/animations/BalanceBallLoader";
 
 const AiImageGeneratorWidget: React.FC = () => {
   const [prompt, setPrompt] = useState("");
@@ -98,10 +97,10 @@ const AiImageGeneratorWidget: React.FC = () => {
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center gap-3 mb-4">
           <Wand2 className="h-8 w-8 text-primary" />
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+          <h1 className="text-4xl font-bold text-primary">
             AI Image Generator
           </h1>
-          <Palette className="h-8 w-8 text-purple-600" />
+          <Palette className="h-8 w-8 text-primary" />
         </div>
         <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
           Create amazing images from text descriptions using latest AI technology
@@ -110,7 +109,7 @@ const AiImageGeneratorWidget: React.FC = () => {
 
       <div className="grid lg:grid-cols-2 gap-8">
         {/* Input Section */}
-        <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-primary" />
@@ -129,7 +128,7 @@ const AiImageGeneratorWidget: React.FC = () => {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={handleKeyPress}
-                className="min-h-[120px] bg-background/50 border-primary/30 focus:border-primary resize-none"
+                className="min-h-[120px] bg-background border-border focus:border-primary resize-none"
                 disabled={loading}
               />
               <p className="text-sm text-muted-foreground">
@@ -141,7 +140,7 @@ const AiImageGeneratorWidget: React.FC = () => {
             <div className="space-y-2">
               <Label className="text-base font-semibold">Image Size</Label>
               <Select value={size} onValueChange={setSize} disabled={loading}>
-                <SelectTrigger className="bg-background/50 border-primary/30">
+                <SelectTrigger className="bg-background border-border">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -160,7 +159,7 @@ const AiImageGeneratorWidget: React.FC = () => {
                   <Badge
                     key={index}
                     variant="outline"
-                    className="cursor-pointer hover:bg-primary/10 transition-colors px-3 py-1"
+                    className="cursor-pointer hover:bg-primary/10 transition-colors px-3 py-1 border-border"
                     onClick={() => setPrompt(suggestion)}
                   >
                     {suggestion}
@@ -173,12 +172,12 @@ const AiImageGeneratorWidget: React.FC = () => {
             <Button
               onClick={generateImage}
               disabled={!canGenerate}
-              className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white font-semibold py-3 text-lg"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 text-lg"
               size="lg"
             >
               {loading ? (
                 <div className="flex items-center gap-3">
-                  <BalanceBallLoader />
+                  <div className="simple-loader w-5 h-5"></div>
                   Generating...
                 </div>
               ) : (
@@ -192,7 +191,7 @@ const AiImageGeneratorWidget: React.FC = () => {
         </Card>
 
         {/* Result Section */}
-        <Card className="bg-card/50 backdrop-blur-sm border-primary/20">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <ImageIcon className="h-5 w-5 text-primary" />
@@ -202,7 +201,7 @@ const AiImageGeneratorWidget: React.FC = () => {
           <CardContent>
             {loading ? (
               <div className="flex flex-col items-center justify-center h-[400px] space-y-6">
-                <BalanceBallLoader />
+                <div className="simple-loader"></div>
                 <div className="text-center space-y-2">
                   <p className="text-lg font-semibold">Generating your amazing image...</p>
                   <p className="text-muted-foreground">This may take a few moments</p>
@@ -210,7 +209,7 @@ const AiImageGeneratorWidget: React.FC = () => {
               </div>
             ) : generatedImage ? (
               <div className="space-y-4">
-                <div className="relative group overflow-hidden rounded-lg border-2 border-primary/20 hover:border-primary/40 transition-colors">
+                <div className="relative group overflow-hidden rounded-lg border-2 border-border hover:border-primary transition-colors">
                   <img
                     src={generatedImage}
                     alt={lastPrompt}
@@ -222,7 +221,6 @@ const AiImageGeneratorWidget: React.FC = () => {
                         onClick={handleDownload}
                         variant="secondary"
                         size="sm"
-                        className="bg-white/20 hover:bg-white/30 text-white border-white/30"
                       >
                         <Download className="h-4 w-4 mr-2" />
                         Download
@@ -231,7 +229,6 @@ const AiImageGeneratorWidget: React.FC = () => {
                         onClick={regenerateImage}
                         variant="secondary"
                         size="sm"
-                        className="bg-white/20 hover:bg-white/30 text-white border-white/30"
                       >
                         <RefreshCw className="h-4 w-4 mr-2" />
                         Regenerate
@@ -240,7 +237,7 @@ const AiImageGeneratorWidget: React.FC = () => {
                   </div>
                 </div>
                 
-                <div className="bg-background/50 rounded-lg p-4 border border-primary/20">
+                <div className="bg-muted rounded-lg p-4 border border-border">
                   <p className="text-sm text-muted-foreground mb-1">Used description:</p>
                   <p className="text-sm font-medium">{lastPrompt}</p>
                 </div>
@@ -263,7 +260,7 @@ const AiImageGeneratorWidget: React.FC = () => {
       </div>
 
       {/* Tips Section */}
-      <Card className="bg-gradient-to-r from-primary/5 to-purple-600/5 border-primary/20">
+      <Card className="bg-card border-border">
         <CardContent className="pt-6">
           <h3 className="text-lg font-semibold mb-4 text-center">💡 Tips for Best Results</h3>
           <div className="grid md:grid-cols-2 gap-4 text-sm">

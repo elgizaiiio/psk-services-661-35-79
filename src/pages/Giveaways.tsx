@@ -2,16 +2,12 @@ import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import ViralIcon from '@/components/ui/viral-icon';
+import BoltIcon from '@/components/ui/bolt-icon';
 import { 
   Hand, 
   Users, 
-  Infinity,
-  Trophy,
-  Gift,
   Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -83,9 +79,9 @@ const Giveaways: React.FC = () => {
   };
 
   const GiveawayCard = ({ giveaway }: { giveaway: Giveaway }) => (
-    <Card className="p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl shadow-lg">
+    <Card className="p-6 bg-card border-border rounded-2xl">
       <div className="flex items-start justify-between mb-6">
-        <div className="w-20 h-20 rounded-2xl overflow-hidden bg-gradient-to-br from-amber-500/30 to-orange-600/40 flex items-center justify-center border-2 border-amber-400/50 shadow-xl">
+        <div className="w-20 h-20 rounded-2xl overflow-hidden bg-primary/10 flex items-center justify-center border border-border">
           <img 
             src={giveaway.itemImage} 
             alt={giveaway.itemName}
@@ -93,11 +89,10 @@ const Giveaways: React.FC = () => {
           />
         </div>
         <div className="flex-1 mr-4">
-          <h3 className="text-2xl font-bold text-white mb-2">{giveaway.title}</h3>
-          <p className="text-white/80 text-base mb-3">{giveaway.itemName}</p>
+          <h3 className="text-2xl font-bold text-foreground mb-2">{giveaway.title}</h3>
+          <p className="text-muted-foreground text-base mb-3">{giveaway.itemName}</p>
           
-          {/* Event Details */}
-          <div className="space-y-2 text-sm text-white/70">
+          <div className="space-y-2 text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               <span>Participants: {formatParticipants(27, giveaway.maxParticipants, giveaway.isUnlimited)}</span>
@@ -114,7 +109,7 @@ const Giveaways: React.FC = () => {
 
       <div className="flex items-center justify-center">
         <Button 
-          className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold px-8 py-3 rounded-full flex items-center gap-3 text-lg shadow-lg hover:shadow-xl transition-all w-full"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-8 py-3 rounded-full flex items-center gap-3 text-lg w-full"
           onClick={() => handleGiveMe(giveaway.id, giveaway.handsCount)}
         >
           <span className="text-xl">{giveaway.handEmoji}</span>
@@ -132,45 +127,45 @@ const Giveaways: React.FC = () => {
         <link rel="canonical" href="/giveaways" />
       </Helmet>
 
-      <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-purple-700 pb-24">
+      <main className="min-h-screen bg-background pb-24">
         <div className="max-w-md mx-auto px-4 py-6">
           
           {/* Header with User and Hands */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <Avatar className="w-14 h-14 ring-2 ring-white/20">
+              <Avatar className="w-14 h-14 ring-2 ring-border">
                 <AvatarImage src="/lovable-uploads/f9492cb1-017f-4d7f-9a82-3195d63ff297.png" />
-                <AvatarFallback className="bg-white/10 text-white">
-                  <ViralIcon size="md" color="#00bfff" />
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  <BoltIcon size="md" />
                 </AvatarFallback>
               </Avatar>
-              <h1 className="text-xl font-bold text-white">elgiza</h1>
+              <h1 className="text-xl font-bold text-foreground">elgiza</h1>
             </div>
             
-            <div className="bg-yellow-400/20 border border-yellow-400/40 rounded-full px-4 py-2 flex items-center gap-2 backdrop-blur-sm">
-              <Hand className="w-5 h-5 text-yellow-400" />
-              <span className="text-yellow-400 font-bold text-lg">0</span>
+            <div className="bg-primary/10 border border-border rounded-full px-4 py-2 flex items-center gap-2">
+              <Hand className="w-5 h-5 text-primary" />
+              <span className="text-primary font-bold text-lg">0</span>
             </div>
           </div>
 
           {/* Title */}
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-white mb-2">Giveaways</h2>
-            <p className="text-white/70 text-sm">Participate in giveaways and win amazing prizes</p>
+            <h2 className="text-3xl font-bold text-foreground mb-2">Giveaways</h2>
+            <p className="text-muted-foreground text-sm">Participate in giveaways and win amazing prizes</p>
           </div>
 
           {/* Tabs */}
           <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 bg-white/10 backdrop-blur-sm border border-white/20">
+            <TabsList className="grid w-full grid-cols-2 bg-muted border border-border">
               <TabsTrigger 
                 value="active" 
-                className="text-white data-[state=active]:bg-white/20 data-[state=active]:text-white"
+                className="text-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 Active
               </TabsTrigger>
               <TabsTrigger 
                 value="finished"
-                className="text-white/70 data-[state=active]:bg-white/20 data-[state=active]:text-white"
+                className="text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
               >
                 Finished
               </TabsTrigger>

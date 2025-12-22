@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import UserAvatar from '@/components/UserAvatar';
-import ViralIcon from '@/components/ui/viral-icon';
+import BoltIcon from '@/components/ui/bolt-icon';
 import { TelegramUser, ViralUser } from '@/types/telegram';
 
 interface MiningHeaderProps {
@@ -13,7 +13,7 @@ const MiningHeader: React.FC<MiningHeaderProps> = ({ telegramUser, user }) => {
   return (
     <div className="space-y-4">
       {/* User Profile Card */}
-      <Card className="p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-secondary/10 border-primary/20">
+      <Card className="p-6 bg-card border-border">
         <div className="flex items-center justify-between">
           <UserAvatar 
             user={telegramUser} 
@@ -27,8 +27,8 @@ const MiningHeader: React.FC<MiningHeaderProps> = ({ telegramUser, user }) => {
               <span className="text-lg font-bold text-primary">
                 {Math.floor((user?.mining_power_multiplier || 2) / 2)}
               </span>
-              <div className="w-6 h-6 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center">
-                <span className="text-xs font-bold text-white">
+              <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-xs font-bold text-primary-foreground">
                   {Math.floor((user?.mining_power_multiplier || 2) / 2)}
                 </span>
               </div>
@@ -38,22 +38,22 @@ const MiningHeader: React.FC<MiningHeaderProps> = ({ telegramUser, user }) => {
       </Card>
 
       {/* Balance Display */}
-      <Card className="p-6 bg-gradient-to-r from-card via-card/90 to-card border border-primary/20">
+      <Card className="p-6 bg-card border-border">
         <div className="text-center">
           <div className="flex items-center justify-center mb-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-primary via-secondary to-accent flex items-center justify-center mr-3">
-              <ViralIcon size="lg" color="#ffffff" />
+            <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center mr-3">
+              <BoltIcon size="lg" className="text-primary-foreground" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">VIRAL Balance</h2>
+              <h2 className="text-xl font-bold text-foreground">BOLT Balance</h2>
               <p className="text-sm text-muted-foreground">Mined Digital Currency</p>
             </div>
           </div>
-          <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg p-4 border border-primary/10">
+          <div className="bg-muted rounded-lg p-4 border border-border">
             <p className="text-3xl font-bold text-primary mb-1">
               {user?.token_balance?.toFixed(4) || '0.0000'}
             </p>
-            <p className="text-sm text-muted-foreground">VIRAL</p>
+            <p className="text-sm text-muted-foreground">BOLT</p>
           </div>
         </div>
       </Card>
