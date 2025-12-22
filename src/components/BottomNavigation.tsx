@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Grid2X2, ListChecks, Users, Trophy } from 'lucide-react';
+import { Zap, Sparkles, Target, Crown, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
@@ -11,11 +11,11 @@ const BottomNavigation = () => {
   const { hapticFeedback } = useTelegramAuth();
 
   const navItems = [
-    { icon: Home, label: 'Home', path: '/' },
-    { icon: Grid2X2, label: 'AI', path: '/apps' },
-    { icon: ListChecks, label: 'Tasks', path: '/tasks' },
-    { icon: Trophy, label: 'Board', path: '/leaderboard' },
-    { icon: Users, label: 'Friends', path: '/invite' },
+    { icon: Zap, label: 'Home', path: '/' },
+    { icon: Sparkles, label: 'AI', path: '/apps' },
+    { icon: Target, label: 'Tasks', path: '/tasks' },
+    { icon: Crown, label: 'Board', path: '/leaderboard' },
+    { icon: UserPlus, label: 'Friends', path: '/invite' },
   ];
 
   const handleNavigation = (item: typeof navItems[0]) => {
