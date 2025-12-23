@@ -121,6 +121,87 @@ export type Database = {
         }
         Relationships: []
       }
+      bolt_flash_offers: {
+        Row: {
+          created_at: string
+          current_claims: number
+          description: string | null
+          discount_percent: number
+          discounted_price: number
+          ends_at: string
+          id: string
+          is_active: boolean
+          max_claims: number | null
+          original_price: number
+          product_type: string
+          starts_at: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          current_claims?: number
+          description?: string | null
+          discount_percent: number
+          discounted_price: number
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          max_claims?: number | null
+          original_price: number
+          product_type?: string
+          starts_at?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          current_claims?: number
+          description?: string | null
+          discount_percent?: number
+          discounted_price?: number
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          max_claims?: number | null
+          original_price?: number
+          product_type?: string
+          starts_at?: string
+          title?: string
+        }
+        Relationships: []
+      }
+      bolt_lucky_boxes: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          possible_rewards: Json
+          price_ton: number
+          rarity: string
+          win_chance: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          possible_rewards?: Json
+          price_ton?: number
+          rarity?: string
+          win_chance?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          possible_rewards?: Json
+          price_ton?: number
+          rarity?: string
+          win_chance?: number
+        }
+        Relationships: []
+      }
       bolt_mining_sessions: {
         Row: {
           completed_at: string | null
@@ -210,6 +291,36 @@ export type Database = {
           },
         ]
       }
+      bolt_social_notifications: {
+        Row: {
+          action_type: string
+          amount: number | null
+          created_at: string
+          id: string
+          product_name: string | null
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          action_type: string
+          amount?: number | null
+          created_at?: string
+          id?: string
+          product_name?: string | null
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          action_type?: string
+          amount?: number | null
+          created_at?: string
+          id?: string
+          product_name?: string | null
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
       bolt_tasks: {
         Row: {
           category: string
@@ -243,6 +354,96 @@ export type Database = {
           points?: number
           task_url?: string | null
           title?: string
+        }
+        Relationships: []
+      }
+      bolt_upgrade_purchases: {
+        Row: {
+          amount_paid: number
+          created_at: string
+          id: string
+          upgrade_type: string
+          user_id: string
+        }
+        Insert: {
+          amount_paid: number
+          created_at?: string
+          id?: string
+          upgrade_type: string
+          user_id: string
+        }
+        Update: {
+          amount_paid?: number
+          created_at?: string
+          id?: string
+          upgrade_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      bolt_user_levels: {
+        Row: {
+          created_at: string
+          id: string
+          level: number
+          rank_title: string
+          unlocked_features: Json | null
+          updated_at: string
+          user_id: string
+          xp: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level?: number
+          rank_title?: string
+          unlocked_features?: Json | null
+          updated_at?: string
+          user_id: string
+          xp?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: number
+          rank_title?: string
+          unlocked_features?: Json | null
+          updated_at?: string
+          user_id?: string
+          xp?: number
+        }
+        Relationships: []
+      }
+      bolt_user_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_claim_at: string | null
+          max_streak: number
+          streak_restored_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_claim_at?: string | null
+          max_streak?: number
+          streak_restored_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_claim_at?: string | null
+          max_streak?: number
+          streak_restored_at?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -304,6 +505,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      bolt_vip_tiers: {
+        Row: {
+          benefits: Json | null
+          created_at: string
+          expires_at: string | null
+          id: string
+          tier: string
+          total_spent: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          benefits?: Json | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          tier?: string
+          total_spent?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          benefits?: Json | null
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          tier?: string
+          total_spent?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
