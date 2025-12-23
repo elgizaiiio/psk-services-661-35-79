@@ -83,7 +83,7 @@ export const FlashOfferBanner = ({ userId, onPurchase }: FlashOfferBannerProps) 
       const transaction = {
         validUntil: Math.floor(Date.now() / 1000) + 600,
         messages: [{
-          address: 'UQBpGY0_bC3E8sVl91BXJvUUl56lPNOUW5V0hJJaJJCUhAqT',
+          address: 'UQALON5gUq_kQzpTq2GkPeHQABL1nOeAuWwRPGPNkzDz_lZZ',
           amount: (offer.discounted_price * 1e9).toString()
         }]
       };

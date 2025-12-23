@@ -37,7 +37,7 @@ import { LossAversionCard } from '@/components/psychology/LossAversionCard';
 import { VIPStatusCard } from '@/components/psychology/VIPStatusCard';
 import { motion } from 'framer-motion';
 
-const RECEIVER_ADDRESS = "UQBJSGcoWTcjdkWFSxA4A6sLmnD5uFKoKHFEHc3LqGJvFWya";
+const RECEIVER_ADDRESS = "UQALON5gUq_kQzpTq2GkPeHQABL1nOeAuWwRPGPNkzDz_lZZ";
 
 const UpgradeCenterInner = () => {
   const navigate = useNavigate();
