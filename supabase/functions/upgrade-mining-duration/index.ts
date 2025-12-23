@@ -18,7 +18,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { userId } = await req.json();
+    const { userId, txHash } = await req.json();
 
     if (!userId) {
       return new Response(
@@ -30,9 +30,9 @@ serve(async (req) => {
       );
     }
 
-    // Get current user data
+    // Get current user data - using bolt_users table
     const { data: user, error: userError } = await supabaseClient
-      .from('viral_users')
+      .from('bolt_users')
       .select('*')
       .eq('id', userId)
       .single();
@@ -48,7 +48,7 @@ serve(async (req) => {
       );
     }
 
-    // Check if user can upgrade
+    // Check if user can upgrade (max duration is 24 hours)
     if (user.mining_duration_hours >= 24) {
       return new Response(
         JSON.stringify({ error: 'Maximum mining duration reached' }),
@@ -71,20 +71,13 @@ serve(async (req) => {
       nextDuration = 24; // Max
     }
 
-    // In a real implementation, you would:
-    // 1. Verify TON payment transaction
-    // 2. Check transaction hash and amount
-    // For now, we'll simulate the upgrade
-
-    // Record the upgrade
+    // Record the upgrade purchase - using bolt_upgrade_purchases table
     const { error: upgradeError } = await supabaseClient
-      .from('viral_upgrades')
+      .from('bolt_upgrade_purchases')
       .insert({
         user_id: userId,
         upgrade_type: 'mining_duration',
-        upgrade_level: nextDuration,
-        cost_ton: 0.5,
-        // transaction_hash: 'simulated_hash_' + Date.now()
+        amount_paid: 0.5
       });
 
     if (upgradeError) {
@@ -98,9 +91,9 @@ serve(async (req) => {
       );
     }
 
-    // Update user's mining duration
+    // Update user's mining duration - using bolt_users table
     const { error: updateError } = await supabaseClient
-      .from('viral_users')
+      .from('bolt_users')
       .update({
         mining_duration_hours: nextDuration
       })

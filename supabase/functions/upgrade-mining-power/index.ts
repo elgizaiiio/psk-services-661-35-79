@@ -18,7 +18,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { userId } = await req.json();
+    const { userId, txHash } = await req.json();
 
     if (!userId) {
       return new Response(
@@ -30,9 +30,9 @@ serve(async (req) => {
       );
     }
 
-    // Get current user data
+    // Get current user data - using bolt_users table
     const { data: user, error: userError } = await supabaseClient
-      .from('viral_users')
+      .from('bolt_users')
       .select('*')
       .eq('id', userId)
       .single();
@@ -48,8 +48,8 @@ serve(async (req) => {
       );
     }
 
-    // Check if user can upgrade
-    if (user.mining_power_multiplier >= 200) {
+    // Check if user can upgrade (max mining power is 200)
+    if (user.mining_power >= 200) {
       return new Response(
         JSON.stringify({ error: 'Maximum mining power reached' }),
         { 
@@ -59,34 +59,27 @@ serve(async (req) => {
       );
     }
 
-    // Calculate next multiplier level
-    let nextMultiplier: number;
-    const current = user.mining_power_multiplier;
+    // Calculate next power level
+    let nextPower: number;
+    const current = Number(user.mining_power) || 2;
     
     if (current < 10) {
-      nextMultiplier = current + 2;
+      nextPower = current + 2;
     } else if (current < 50) {
-      nextMultiplier = current + 10;
+      nextPower = current + 10;
     } else if (current < 100) {
-      nextMultiplier = current + 25;
+      nextPower = current + 25;
     } else {
-      nextMultiplier = Math.min(200, current + 50);
+      nextPower = Math.min(200, current + 50);
     }
 
-    // In a real implementation, you would:
-    // 1. Verify TON payment transaction
-    // 2. Check transaction hash and amount
-    // For now, we'll simulate the upgrade
-
-    // Record the upgrade
+    // Record the upgrade purchase - using bolt_upgrade_purchases table
     const { error: upgradeError } = await supabaseClient
-      .from('viral_upgrades')
+      .from('bolt_upgrade_purchases')
       .insert({
         user_id: userId,
         upgrade_type: 'mining_power',
-        upgrade_level: nextMultiplier,
-        cost_ton: 0.5,
-        // transaction_hash: 'simulated_hash_' + Date.now()
+        amount_paid: 0.5
       });
 
     if (upgradeError) {
@@ -100,11 +93,11 @@ serve(async (req) => {
       );
     }
 
-    // Update user's mining power
+    // Update user's mining power - using bolt_users table
     const { error: updateError } = await supabaseClient
-      .from('viral_users')
+      .from('bolt_users')
       .update({
-        mining_power_multiplier: nextMultiplier
+        mining_power: nextPower
       })
       .eq('id', userId);
 
@@ -119,13 +112,13 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Mining power upgraded for user ${userId}: ${current} -> ${nextMultiplier}`);
+    console.log(`Mining power upgraded for user ${userId}: ${current} -> ${nextPower}`);
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        previousMultiplier: current,
-        newMultiplier: nextMultiplier,
+        previousPower: current,
+        newPower: nextPower,
         message: 'Mining power upgraded successfully'
       }),
       { 

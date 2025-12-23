@@ -35,9 +35,9 @@ serve(async (req) => {
 
     console.log('Syncing Telegram user:', telegramUser.id)
 
-    // Check if user already exists
+    // Check if user already exists - using bolt_users table
     const { data: existingUser, error: getUserError } = await supabase
-      .from('viral_users')
+      .from('bolt_users')
       .select('*')
       .eq('telegram_id', telegramUser.id)
       .single()
@@ -52,7 +52,7 @@ serve(async (req) => {
     if (existingUser) {
       // Update existing user with latest Telegram data
       const { data: updatedUser, error: updateError } = await supabase
-        .from('viral_users')
+        .from('bolt_users')
         .update({
           telegram_username: telegramUser.username,
           first_name: telegramUser.first_name,
@@ -74,7 +74,7 @@ serve(async (req) => {
     } else {
       // Create new user
       const { data: newUser, error: createError } = await supabase
-        .from('viral_users')
+        .from('bolt_users')
         .insert({
           telegram_id: telegramUser.id,
           telegram_username: telegramUser.username,
@@ -82,7 +82,7 @@ serve(async (req) => {
           last_name: telegramUser.last_name,
           photo_url: telegramUser.photo_url,
           token_balance: 0,
-          mining_power_multiplier: 1,
+          mining_power: 2,
           mining_duration_hours: 4
         })
         .select()
