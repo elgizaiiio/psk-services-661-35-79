@@ -1,11 +1,10 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Zap, TrendingUp, Clock, Wallet, ArrowUp } from "lucide-react";
+import { Zap, Wallet, ArrowUp } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
-import { useMiningUpgrades } from '@/hooks/useMiningUpgrades';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 
 const Index = () => {
@@ -20,7 +19,6 @@ const Index = () => {
     miningProgress,
     clearError
   } = useBoltMining(telegramUser);
-  const { createMiningUpgradePayment, isUpgrading } = useMiningUpgrades();
   const { 
     isConnected, 
     isConnecting, 
@@ -35,28 +33,6 @@ const Index = () => {
   const handleConnectWallet = async () => {
     hapticFeedback.impact('medium');
     await connectWallet();
-  };
-
-  const handlePowerUpgrade = async () => {
-    if (!user || !telegramUser) return;
-    hapticFeedback.impact('medium');
-    await createMiningUpgradePayment({
-      upgradeType: 'power',
-      currentValue: user.mining_power || 2,
-      tonAmount: 0.5,
-      userId: user.id
-    });
-  };
-
-  const handleDurationUpgrade = async () => {
-    if (!user || !telegramUser) return;
-    hapticFeedback.impact('medium');
-    await createMiningUpgradePayment({
-      upgradeType: 'duration',
-      currentValue: user.mining_duration_hours || 4,
-      tonAmount: 0.5,
-      userId: user.id
-    });
   };
 
   // Loading state
@@ -130,7 +106,7 @@ const Index = () => {
 
         {/* Mining */}
         {isMining && miningProgress ? (
-          <div className="mb-12">
+          <div className="mb-8">
             {/* Progress bar */}
             <div className="h-1 bg-muted rounded-full mb-4 overflow-hidden">
               <div 
@@ -152,7 +128,7 @@ const Index = () => {
             </div>
           </div>
         ) : (
-          <div className="space-y-3 mb-12">
+          <div className="space-y-3">
             <Button 
               onClick={handleStartMining}
               className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full text-base font-medium"
@@ -171,29 +147,6 @@ const Index = () => {
             </Button>
           </div>
         )}
-
-        {/* Upgrades */}
-        <div className="grid grid-cols-2 gap-3">
-          <button
-            onClick={handlePowerUpgrade}
-            disabled={!!activeMiningSession || isUpgrading === 'power'}
-            className="p-4 rounded-2xl border border-border hover:border-primary/40 transition-colors text-left disabled:opacity-40"
-          >
-            <TrendingUp className="w-5 h-5 text-primary mb-3" />
-            <p className="text-xs text-muted-foreground mb-1">Power</p>
-            <p className="text-lg font-semibold text-foreground">×{user?.mining_power || 2}</p>
-          </button>
-
-          <button
-            onClick={handleDurationUpgrade}
-            disabled={!!activeMiningSession || isUpgrading === 'duration'}
-            className="p-4 rounded-2xl border border-border hover:border-primary/40 transition-colors text-left disabled:opacity-40"
-          >
-            <Clock className="w-5 h-5 text-primary mb-3" />
-            <p className="text-xs text-muted-foreground mb-1">Duration</p>
-            <p className="text-lg font-semibold text-foreground">{user?.mining_duration_hours || 4}h</p>
-          </button>
-        </div>
 
       </div>
     </main>
