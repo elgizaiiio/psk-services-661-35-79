@@ -1,13 +1,15 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Zap, TrendingUp, Clock, Wallet } from "lucide-react";
+import { Zap, TrendingUp, Clock, Wallet, ArrowUp } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { useMiningUpgrades } from '@/hooks/useMiningUpgrades';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 
 const Index = () => {
+  const navigate = useNavigate();
   const { user: telegramUser, isLoading: authLoading, hapticFeedback } = useTelegramAuth();
   const { 
     user,
@@ -105,13 +107,13 @@ const Index = () => {
             <button
               onClick={handleConnectWallet}
               disabled={isConnecting}
-              className="flex items-center gap-2 px-4 py-2 rounded-full border border-border text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
             >
               <Wallet className="w-4 h-4" />
-              Connect
+              {isConnecting ? "..." : "Connect Wallet"}
             </button>
           ) : (
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30">
               <div className="w-1.5 h-1.5 rounded-full bg-primary" />
               <span className="text-xs text-primary">Connected</span>
             </div>
@@ -150,13 +152,24 @@ const Index = () => {
             </div>
           </div>
         ) : (
-          <Button 
-            onClick={handleStartMining}
-            className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full text-base font-medium mb-12"
-          >
-            <Zap className="w-5 h-5 mr-2" />
-            Start Mining
-          </Button>
+          <div className="space-y-3 mb-12">
+            <Button 
+              onClick={handleStartMining}
+              className="w-full h-14 bg-primary text-primary-foreground hover:bg-primary/90 rounded-full text-base font-medium"
+            >
+              <Zap className="w-5 h-5 mr-2" />
+              Start Mining
+            </Button>
+            
+            <Button 
+              onClick={() => navigate('/upgrade-center')}
+              variant="outline"
+              className="w-full h-12 rounded-full border-border text-foreground hover:bg-muted"
+            >
+              <ArrowUp className="w-4 h-4 mr-2" />
+              Upgrades
+            </Button>
+          </div>
         )}
 
         {/* Upgrades */}
