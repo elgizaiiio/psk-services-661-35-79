@@ -109,9 +109,26 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
   }, [user]);
 
   const startMining = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      console.error('Cannot start mining: user not initialized');
+      setError('يرجى فتح التطبيق من داخل Telegram');
+      return;
+    }
 
     try {
+      // Check if there's already an active session
+      const { data: existingSession } = await supabase
+        .from('bolt_mining_sessions' as any)
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (existingSession) {
+        setActiveMiningSession(existingSession as unknown as BoltMiningSession);
+        return;
+      }
+
       const now = new Date();
       const endTime = new Date(now.getTime() + user.mining_duration_hours * 60 * 60 * 1000);
 
