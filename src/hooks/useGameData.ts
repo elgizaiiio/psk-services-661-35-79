@@ -42,26 +42,23 @@ export const useGameData = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Initialize or get player
   const initializePlayer = useCallback(async () => {
     if (!telegramUser) return;
 
     try {
-      // Check if player exists
       let { data: existingPlayer, error: fetchError } = await supabase
-        .from('game_players')
+        .from('game_players' as any)
         .select('*')
         .eq('telegram_id', telegramUser.id)
         .maybeSingle();
 
-      if (fetchError && fetchError.code !== 'PGRST116') {
+      if (fetchError && (fetchError as any).code !== 'PGRST116') {
         throw fetchError;
       }
 
       if (!existingPlayer) {
-        // Create new player
         const { data: newPlayer, error: createError } = await supabase
-          .from('game_players')
+          .from('game_players' as any)
           .insert({
             telegram_id: telegramUser.id,
             username: telegramUser.username || telegramUser.first_name,
@@ -78,55 +75,52 @@ export const useGameData = () => {
         existingPlayer = newPlayer;
       }
 
-      setPlayer(existingPlayer);
+      setPlayer(existingPlayer as unknown as GamePlayer);
     } catch (err: any) {
       console.error('Error initializing player:', err);
       setError(err.message);
     }
   }, [telegramUser]);
 
-  // Load player scores
   const loadScores = useCallback(async () => {
     if (!player) return;
 
     try {
       const { data, error } = await supabase
-        .from('game_scores')
+        .from('game_scores' as any)
         .select('*')
         .eq('player_id', player.id)
         .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
-      setScores(data || []);
+      setScores((data || []) as unknown as GameScore[]);
     } catch (err: any) {
       console.error('Error loading scores:', err);
     }
   }, [player]);
 
-  // Load available skins
   const loadSkins = useCallback(async () => {
     try {
       const { data, error } = await supabase
-        .from('game_skins')
+        .from('game_skins' as any)
         .select('*')
         .eq('is_active', true)
         .order('price_ton', { ascending: true });
 
       if (error) throw error;
-      setSkins(data || []);
+      setSkins((data || []) as unknown as GameSkin[]);
     } catch (err: any) {
       console.error('Error loading skins:', err);
     }
   }, []);
 
-  // Submit score
   const submitScore = useCallback(async (score: number) => {
     if (!player) throw new Error('Player not found');
 
     try {
       const { error } = await supabase
-        .from('game_scores')
+        .from('game_scores' as any)
         .insert({
           player_id: player.id,
           score: score
@@ -134,9 +128,8 @@ export const useGameData = () => {
 
       if (error) throw error;
 
-      // Update player coins (1 point = 1 coin)
       const { error: updateError } = await supabase
-        .from('game_players')
+        .from('game_players' as any)
         .update({
           coins: player.coins + score,
           updated_at: new Date().toISOString()
@@ -145,7 +138,6 @@ export const useGameData = () => {
 
       if (updateError) throw updateError;
 
-      // Refresh player data
       await initializePlayer();
       await loadScores();
     } catch (err: any) {
@@ -154,7 +146,6 @@ export const useGameData = () => {
     }
   }, [player, initializePlayer, loadScores]);
 
-  // Use energy
   const useEnergy = useCallback(async (amount: number = 1) => {
     if (!player || player.energy < amount) {
       throw new Error('Not enough energy');
@@ -162,7 +153,7 @@ export const useGameData = () => {
 
     try {
       const { error } = await supabase
-        .from('game_players')
+        .from('game_players' as any)
         .update({
           energy: Math.max(0, player.energy - amount),
           last_energy_at: new Date().toISOString(),
@@ -172,7 +163,6 @@ export const useGameData = () => {
 
       if (error) throw error;
 
-      // Refresh player data
       await initializePlayer();
     } catch (err: any) {
       console.error('Error using energy:', err);
@@ -180,7 +170,6 @@ export const useGameData = () => {
     }
   }, [player, initializePlayer]);
 
-  // Calculate energy regeneration
   const calculateCurrentEnergy = useCallback(() => {
     if (!player) return 0;
 
@@ -192,13 +181,12 @@ export const useGameData = () => {
     return Math.min(player.max_energy, player.energy + energyToAdd);
   }, [player]);
 
-  // Change skin
   const changeSkin = useCallback(async (skinKey: string) => {
     if (!player) throw new Error('Player not found');
 
     try {
       const { error } = await supabase
-        .from('game_players')
+        .from('game_players' as any)
         .update({
           current_skin: skinKey,
           updated_at: new Date().toISOString()
@@ -207,7 +195,6 @@ export const useGameData = () => {
 
       if (error) throw error;
 
-      // Refresh player data
       await initializePlayer();
     } catch (err: any) {
       console.error('Error changing skin:', err);

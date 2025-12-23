@@ -8,23 +8,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-type ViralUser = {
-  id: string;
-  telegram_id: number;
-  telegram_username?: string;
-  first_name?: string;
-  last_name?: string;
-  photo_url?: string;
-  token_balance: number;
-  mining_power_multiplier: number;
-  mining_duration_hours: number;
-  created_at: string;
-  updated_at: string;
-};
+import { BoltUser } from "@/types/bolt";
 
 interface AdminUserManagementProps {
-  users: ViralUser[];
+  users: BoltUser[];
   onUsersUpdate: () => void;
   onMetricsUpdate: () => void;
 }
@@ -34,10 +21,13 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
   onUsersUpdate, 
   onMetricsUpdate 
 }) => {
-  const [selectedUser, setSelectedUser] = useState<ViralUser | null>(null);
+  const [selectedUser, setSelectedUser] = useState<BoltUser | null>(null);
 
   const updateUserBalance = async (userId: string, newBalance: number) => {
-    const { error } = await supabase.from("viral_users").update({ token_balance: newBalance }).eq("id", userId);
+    const { error } = await supabase
+      .from("bolt_users" as any)
+      .update({ token_balance: newBalance })
+      .eq("id", userId);
     if (error) return toast.error("Failed to update balance");
     toast.success("Balance updated successfully");
     onUsersUpdate();
@@ -45,10 +35,13 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
   };
 
   const updateUserMiningSettings = async (userId: string, power: number, duration: number) => {
-    const { error } = await supabase.from("viral_users").update({ 
-      mining_power_multiplier: power,
-      mining_duration_hours: duration 
-    }).eq("id", userId);
+    const { error } = await supabase
+      .from("bolt_users" as any)
+      .update({ 
+        mining_power: power,
+        mining_duration_hours: duration 
+      })
+      .eq("id", userId);
     if (error) return toast.error("Failed to update mining settings");
     toast.success("Mining settings updated successfully");
     onUsersUpdate();
@@ -57,7 +50,10 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
   const deleteUser = async (userId: string) => {
     if (!confirm("Are you sure you want to delete this user? This will also delete all their data.")) return;
     
-    const { error } = await supabase.from("viral_users").delete().eq("id", userId);
+    const { error } = await supabase
+      .from("bolt_users" as any)
+      .delete()
+      .eq("id", userId);
     if (error) return toast.error("Failed to delete user");
     toast.success("User deleted successfully");
     onUsersUpdate();
@@ -94,7 +90,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                       <div className="font-semibold">{user.first_name} {user.last_name}</div>
                       <div className="text-sm text-muted-foreground">@{user.telegram_username} • ID: {user.telegram_id}</div>
                       <div className="text-xs text-muted-foreground">
-                        Balance: {user.token_balance.toFixed(4)} VIRAL • Power: ×{user.mining_power_multiplier} • Duration: {user.mining_duration_hours}h
+                        Balance: {Number(user.token_balance).toFixed(4)} BOLT • Power: ×{user.mining_power} • Duration: {user.mining_duration_hours}h
                       </div>
                     </div>
                     <div className="text-right text-xs text-muted-foreground">
@@ -131,7 +127,7 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                     <Input
                       type="number"
                       step="0.0001"
-                      defaultValue={selectedUser.token_balance}
+                      defaultValue={Number(selectedUser.token_balance)}
                       id={`balance-${selectedUser.id}`}
                       className="text-sm"
                     />
@@ -143,10 +139,10 @@ const AdminUserManagement: React.FC<AdminUserManagementProps> = ({
                 </div>
                 
                 <div>
-                  <Label className="text-xs">Mining Power Multiplier</Label>
+                  <Label className="text-xs">Mining Power</Label>
                   <Input
                     type="number"
-                    defaultValue={selectedUser.mining_power_multiplier}
+                    defaultValue={selectedUser.mining_power}
                     id={`power-${selectedUser.id}`}
                     className="text-sm"
                   />

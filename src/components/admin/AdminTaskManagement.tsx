@@ -4,16 +4,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { supabase, fixRLSPolicies } from "@/integrations/supabase/client";
+import { supabase } from "@/integrations/supabase/client";
 
 type Task = { 
   id: string; 
   title: string; 
-  image_url?: string | null; 
+  description?: string | null; 
   points: number; 
   is_active: boolean; 
   category: string; 
-  task_url?: string | null; 
+  task_url?: string | null;
+  icon?: string | null;
 };
 
 interface AdminTaskManagementProps {
@@ -22,31 +23,14 @@ interface AdminTaskManagementProps {
 }
 
 const AdminTaskManagement: React.FC<AdminTaskManagementProps> = ({ tasks, onTasksUpdate }) => {
-  const handleFixRLS = async () => {
-    try {
-      toast.info("إصلاح سياسات الأمان...");
-      await fixRLSPolicies();
-      toast.success("Security policies fixed successfully! You can now add tasks.");
-      onTasksUpdate(); // Refresh tasks after fixing RLS
-    } catch (error) {
-      console.error('RLS fix error:', error);
-      toast.error("Failed to fix security policies. Please try again.");
-    }
-  };
-
-  // Auto-fix RLS on component mount
-  React.useEffect(() => {
-    handleFixRLS();
-  }, []);
-
   const addTask = async (payload: Partial<Task>) => {
-    const { error } = await supabase.from("tasks").insert({
+    const { error } = await supabase.from("bolt_tasks" as any).insert({
       title: payload.title,
       task_url: payload.task_url || null,
-      image_url: payload.image_url || null,
+      description: payload.description || null,
       points: payload.points || 0,
       is_active: true,
-      category: payload.category || "main"
+      category: payload.category || "general"
     });
     if (error) return toast.error("Failed to add task");
     toast.success("Task added successfully");
@@ -54,14 +38,14 @@ const AdminTaskManagement: React.FC<AdminTaskManagementProps> = ({ tasks, onTask
   };
 
   const updateTask = async (id: string, patch: Partial<Task>) => {
-    const { error } = await supabase.from("tasks").update(patch).eq("id", id);
+    const { error } = await supabase.from("bolt_tasks" as any).update(patch).eq("id", id);
     if (error) return toast.error("Failed to update task");
     toast.success("Task updated successfully");
     onTasksUpdate();
   };
 
   const deleteTask = async (id: string) => {
-    const { error } = await supabase.from("tasks").delete().eq("id", id);
+    const { error } = await supabase.from("bolt_tasks" as any).delete().eq("id", id);
     if (error) return toast.error("Failed to delete task");
     toast.success("Task deleted successfully");
     onTasksUpdate();
@@ -72,17 +56,7 @@ const AdminTaskManagement: React.FC<AdminTaskManagementProps> = ({ tasks, onTask
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="font-semibold">Task Management</div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={handleFixRLS}
-              className="text-xs"
-            >
-              إصلاح سياسات الأمان
-            </Button>
-            <Badge variant="secondary">{tasks.length} tasks</Badge>
-          </div>
+          <Badge variant="secondary">{tasks.length} tasks</Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -95,12 +69,12 @@ const AdminTaskManagement: React.FC<AdminTaskManagementProps> = ({ tasks, onTask
           <Button size="sm" onClick={() => {
             const title = (document.getElementById('task-title') as HTMLInputElement)?.value;
             const task_url = (document.getElementById('task-url') as HTMLInputElement)?.value;
-            const image_url = (document.getElementById('task-img') as HTMLInputElement)?.value;
+            const description = (document.getElementById('task-img') as HTMLInputElement)?.value;
             const points = Number((document.getElementById('task-points') as HTMLInputElement)?.value || 0);
-            const category = (document.getElementById('task-category') as HTMLInputElement)?.value || 'main';
+            const category = (document.getElementById('task-category') as HTMLInputElement)?.value || 'general';
             if (!title) return toast.error("Please enter task title");
             if (!task_url) return toast.error("Please enter task URL");
-            addTask({ title, task_url, image_url, points, category });
+            addTask({ title, task_url, description, points, category });
             // Clear inputs
             (document.getElementById('task-title') as HTMLInputElement).value = '';
             (document.getElementById('task-url') as HTMLInputElement).value = '';

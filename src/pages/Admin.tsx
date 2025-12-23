@@ -13,43 +13,7 @@ import AdminTaskManagement from "@/components/admin/AdminTaskManagement";
 import AdminDailyCodes from "@/components/admin/AdminDailyCodes";
 import AdminMiningData from "@/components/admin/AdminMiningData";
 import AdminUpgrades from "@/components/admin/AdminUpgrades";
-
-type Task = { 
-  id: string; 
-  title: string; 
-  image_url?: string | null; 
-  points: number; 
-  is_active: boolean; 
-  category: string; 
-  task_url?: string | null; 
-};
-
-type ViralUser = {
-  id: string;
-  telegram_id: number;
-  telegram_username?: string;
-  first_name?: string;
-  last_name?: string;
-  photo_url?: string;
-  token_balance: number;
-  mining_power_multiplier: number;
-  mining_duration_hours: number;
-  created_at: string;
-  updated_at: string;
-};
-
-type MiningSession = {
-  id: string;
-  user_id: string;
-  start_time: string;
-  end_time: string;
-  tokens_per_hour: number;
-  mining_power_multiplier: number;
-  total_tokens_mined: number;
-  is_active: boolean;
-  completed_at?: string;
-  created_at: string;
-};
+import { BoltUser, BoltTask, BoltMiningSession, BoltDailyCode } from "@/types/bolt";
 
 type Upgrade = {
   id: string;
@@ -63,13 +27,12 @@ type Upgrade = {
 
 const Admin: React.FC = () => {
   const navigate = useNavigate();
-  // All hooks must be called at the top level, before any returns
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [codes, setCodes] = useState<{ id?: string; code1: string; code2: string; code3: string; code4: string } | null>(null);
+  const [tasks, setTasks] = useState<BoltTask[]>([]);
+  const [codes, setCodes] = useState<Partial<BoltDailyCode> | null>(null);
   const [metrics, setMetrics] = useState<{ users: number; active24h: number; codeAnswers24h: number; completedTasks24h: number; totalTokens: number; totalUpgrades: number } | null>(null);
-  const [users, setUsers] = useState<ViralUser[]>([]);
-  const [miningSessions, setMiningSessions] = useState<MiningSession[]>([]);
+  const [users, setUsers] = useState<BoltUser[]>([]);
+  const [miningSessions, setMiningSessions] = useState<BoltMiningSession[]>([]);
   const [upgrades, setUpgrades] = useState<Upgrade[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -78,76 +41,67 @@ const Admin: React.FC = () => {
   }, []);
 
   const loadTasks = async () => {
-    const { data: tasks } = await supabase.from("tasks").select("*").order("created_at", { ascending: false });
-    setTasks(tasks || []);
+    const { data } = await supabase.from("bolt_tasks" as any).select("*").order("created_at", { ascending: false });
+    setTasks((data || []) as unknown as BoltTask[]);
   };
 
   const loadCodes = async () => {
     const today = new Date().toISOString().split("T")[0];
-    const { data } = await supabase.from("daily_codes").select("*").eq("date", today).maybeSingle();
+    const { data } = await supabase.from("bolt_daily_codes" as any).select("*").eq("date", today).maybeSingle();
     if (data) {
-      setCodes({ id: data.id, code1: data.code1, code2: data.code2, code3: data.code3, code4: data.code4 });
+      const codeData = data as unknown as BoltDailyCode;
+      setCodes({ id: codeData.id, code1: codeData.code1, code2: codeData.code2, code3: codeData.code3, code4: codeData.code4, points_reward: codeData.points_reward });
     } else {
-      setCodes({ code1: "", code2: "", code3: "", code4: "" });
+      setCodes({ code1: "", code2: "", code3: "", code4: "", points_reward: 100 });
     }
   };
 
   const loadUsers = async () => {
-    const { data } = await supabase.from("viral_users").select("*").order("created_at", { ascending: false });
-    setUsers(data || []);
+    const { data } = await supabase.from("bolt_users" as any).select("*").order("created_at", { ascending: false });
+    setUsers((data || []) as unknown as BoltUser[]);
   };
 
   const loadMiningSessions = async () => {
-    const { data } = await supabase.from("viral_mining_sessions").select("*").order("created_at", { ascending: false }).limit(50);
-    setMiningSessions(data || []);
+    const { data } = await supabase.from("bolt_mining_sessions" as any).select("*").order("created_at", { ascending: false }).limit(50);
+    setMiningSessions((data || []) as unknown as BoltMiningSession[]);
   };
 
   const loadUpgrades = async () => {
-    const { data } = await supabase.from("viral_upgrades").select("*").order("created_at", { ascending: false }).limit(50);
-    setUpgrades(data || []);
+    setUpgrades([]);
   };
 
   const loadMetrics = async () => {
     const sinceIso = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
     const [
-      { count: users }, 
+      { count: usersCount }, 
       { data: activeUsers }, 
       { count: codeAnswers24h }, 
       { count: completedTasks24h },
       { data: totalTokensData },
-      { count: totalUpgrades }
     ] = await Promise.all([
-      supabase.from("viral_users").select("*", { count: "exact", head: true }),
-      supabase.from("viral_users").select("id,updated_at").gt("updated_at", sinceIso),
-      supabase.from("user_daily_code_attempts").select("*", { count: "exact", head: true }).gt("completed_at", sinceIso),
-      supabase.from("user_completed_tasks").select("*", { count: "exact", head: true }).gt("completed_at", sinceIso),
-      supabase.from("viral_users").select("token_balance"),
-      supabase.from("viral_upgrades").select("*", { count: "exact", head: true }),
+      supabase.from("bolt_users" as any).select("*", { count: "exact", head: true }),
+      supabase.from("bolt_users" as any).select("id,updated_at").gt("updated_at", sinceIso),
+      supabase.from("bolt_daily_code_attempts" as any).select("*", { count: "exact", head: true }).gt("completed_at", sinceIso),
+      supabase.from("bolt_completed_tasks" as any).select("*", { count: "exact", head: true }).gt("completed_at", sinceIso),
+      supabase.from("bolt_users" as any).select("token_balance"),
     ]);
     
-    const totalTokens = totalTokensData?.reduce((sum, user) => sum + (user.token_balance || 0), 0) || 0;
+    const totalTokens = ((totalTokensData || []) as unknown as { token_balance: number }[]).reduce((sum, user) => sum + (Number(user.token_balance) || 0), 0);
     
     setMetrics({
-      users: users || 0,
+      users: usersCount || 0,
       active24h: activeUsers?.length || 0,
       codeAnswers24h: codeAnswers24h || 0,
       completedTasks24h: completedTasks24h || 0,
       totalTokens: totalTokens,
-      totalUpgrades: totalUpgrades || 0,
+      totalUpgrades: 0,
     });
   };
 
   const loadAllData = async () => {
     setLoading(true);
     try {
-      await Promise.all([
-        loadTasks(),
-        loadCodes(),
-        loadMetrics(),
-        loadUsers(),
-        loadMiningSessions(),
-        loadUpgrades()
-      ]);
+      await Promise.all([loadTasks(), loadCodes(), loadMetrics(), loadUsers(), loadMiningSessions(), loadUpgrades()]);
     } finally {
       setLoading(false);
     }
@@ -159,7 +113,6 @@ const Admin: React.FC = () => {
     }
   }, [isAuthenticated]);
 
-  // Conditional rendering after all hooks
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -186,12 +139,11 @@ const Admin: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-background/50">
       <Helmet>
-        <title>Admin Panel | VIRAL</title>
-        <meta name="description" content="VIRAL admin panel for managing users, tasks, and system settings" />
+        <title>Admin Panel | BOLT</title>
+        <meta name="description" content="BOLT admin panel for managing users, tasks, and system settings" />
       </Helmet>
       
       <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -199,136 +151,43 @@ const Admin: React.FC = () => {
             </div>
             <div>
               <h1 className="text-2xl font-bold">Admin Panel</h1>
-              <p className="text-sm text-muted-foreground">Manage your VIRAL platform</p>
+              <p className="text-sm text-muted-foreground">Manage your BOLT platform</p>
             </div>
           </div>
-          <Button onClick={loadAllData} variant="outline" size="sm">
-            Refresh Data
-          </Button>
+          <Button onClick={loadAllData} variant="outline" size="sm">Refresh Data</Button>
         </div>
 
-        {/* Metrics Overview */}
         <AdminMetrics metrics={metrics} />
 
-        {/* Main Content Tabs */}
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-6 mb-6">
-            <TabsTrigger value="users" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              <span className="hidden sm:inline">Users</span>
-            </TabsTrigger>
-            <TabsTrigger value="mining" className="flex items-center gap-2">
-              <Activity className="w-4 h-4" />
-              <span className="hidden sm:inline">Mining</span>
-            </TabsTrigger>
-            <TabsTrigger value="upgrades" className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="hidden sm:inline">Upgrades</span>
-            </TabsTrigger>
-            <TabsTrigger value="tasks" className="flex items-center gap-2">
-              <Target className="w-4 h-4" />
-              <span className="hidden sm:inline">Tasks</span>
-            </TabsTrigger>
-            <TabsTrigger value="daily" className="flex items-center gap-2">
-              <Clock className="w-4 h-4" />
-              <span className="hidden sm:inline">Codes</span>
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">Settings</span>
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5 mb-6">
+            <TabsTrigger value="users"><Users className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="mining"><Activity className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="tasks"><Target className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="daily"><Clock className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="settings"><Settings className="w-4 h-4" /></TabsTrigger>
           </TabsList>
 
-          <TabsContent value="users" className="space-y-6">
-            <AdminUserManagement 
-              users={users} 
-              onUsersUpdate={loadUsers}
-              onMetricsUpdate={loadMetrics}
-            />
+          <TabsContent value="users">
+            <AdminUserManagement users={users} onUsersUpdate={loadUsers} onMetricsUpdate={loadMetrics} />
           </TabsContent>
 
-          <TabsContent value="mining" className="space-y-6">
-            <AdminMiningData miningSessions={miningSessions} />
+          <TabsContent value="mining">
+            <AdminMiningData miningSessions={miningSessions as any} />
           </TabsContent>
 
-          <TabsContent value="upgrades" className="space-y-6">
-            <AdminUpgrades upgrades={upgrades} />
+          <TabsContent value="tasks">
+            <AdminTaskManagement tasks={tasks as any} onTasksUpdate={loadTasks} />
           </TabsContent>
 
-          <TabsContent value="tasks" className="space-y-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold">Task Management</h2>
-              <Button 
-                onClick={() => navigate("/create-task")}
-                className="flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Create New Task
-              </Button>
-            </div>
-            <AdminTaskManagement 
-              tasks={tasks} 
-              onTasksUpdate={loadTasks}
-            />
+          <TabsContent value="daily">
+            <AdminDailyCodes codes={codes} setCodes={setCodes} onCodesUpdate={loadCodes} />
           </TabsContent>
 
-          <TabsContent value="daily" className="space-y-6">
-            <AdminDailyCodes 
-              codes={codes}
-              setCodes={setCodes}
-              onCodesUpdate={loadCodes}
-            />
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-card p-6 rounded-lg border">
-                <h3 className="font-semibold mb-4">System Status</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Database</span>
-                    <Badge variant="default">Connected</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">API Status</span>
-                    <Badge variant="default">Operational</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Last Backup</span>
-                    <span className="text-xs text-muted-foreground">2 hours ago</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-card p-6 rounded-lg border">
-                <h3 className="font-semibold mb-4">Quick Actions</h3>
-                <div className="space-y-2">
-                  <Button variant="outline" className="w-full justify-start" onClick={loadAllData}>
-                    Refresh All Data
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => toast.success("Cache cleared!")}>
-                    Clear Cache
-                  </Button>
-                  <Button variant="outline" className="w-full justify-start" onClick={() => toast.info("Export started!")}>
-                    Export Data
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    className="w-full justify-start" 
-                    onClick={async () => {
-                      try {
-                        const { data, error } = await supabase.functions.invoke("setup-rls");
-                        if (error) throw error;
-                        toast.success("Database security updated! Tasks should work now.");
-                      } catch (error: any) {
-                        toast.error(error.message || "Failed to update database security");
-                      }
-                    }}
-                  >
-                    Fix Database Security
-                  </Button>
-                </div>
-              </div>
+          <TabsContent value="settings">
+            <div className="bg-card p-6 rounded-lg border">
+              <h3 className="font-semibold mb-4">System Status</h3>
+              <Badge variant="default">Connected</Badge>
             </div>
           </TabsContent>
         </Tabs>

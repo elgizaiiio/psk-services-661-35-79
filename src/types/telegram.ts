@@ -28,7 +28,7 @@ export interface MiningSession {
   end_time: string;
   tokens_per_hour: number;
   mining_power_multiplier: number;
-  total_tokens_mined: number;
+  total_mined: number;
   is_active: boolean;
   completed_at?: string;
   created_at: string;

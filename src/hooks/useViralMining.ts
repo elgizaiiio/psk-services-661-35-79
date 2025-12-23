@@ -1,6 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { ViralUser, MiningSession, TelegramUser } from '@/types/telegram';
+import { TelegramUser } from '@/types/telegram';
+
+interface ViralUser {
+  id: string;
+  telegram_id: number;
+  telegram_username?: string;
+  first_name?: string;
+  last_name?: string;
+  photo_url?: string;
+  token_balance: number;
+  mining_power_multiplier: number;
+  mining_duration_hours: number;
+  total_referrals: number;
+  referral_bonus: number;
+  last_active_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+interface MiningSession {
+  id: string;
+  user_id: string;
+  start_time: string;
+  end_time: string;
+  tokens_per_hour: number;
+  mining_power_multiplier: number;
+  total_mined: number;
+  is_active: boolean;
+  completed_at?: string;
+  created_at: string;
+}
 
 export const useViralMining = (telegramUser: TelegramUser | null) => {
   const [user, setUser] = useState<ViralUser | null>(null);
@@ -14,14 +44,12 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     isComplete: boolean;
   } | null>(null);
 
-  // Initialize or get user
   const initializeUser = useCallback(async () => {
     if (!telegramUser) return;
 
     try {
       setLoading(true);
       
-      // Sync Telegram user data first
       const { data: syncResult, error: syncError } = await supabase.functions.invoke('sync-telegram-user', {
         body: { telegramUser }
       });
@@ -32,18 +60,10 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
       }
 
       if (syncResult?.user) {
-        setUser(syncResult.user);
-        
-        // Update last_active_at timestamp
-        await supabase
-          .from('viral_users')
-          .update({ last_active_at: new Date().toISOString() })
-          .eq('id', syncResult.user.id);
-          
+        setUser(syncResult.user as ViralUser);
         console.log('User synced successfully:', syncResult.message);
       }
 
-      // Check for active mining session
       await checkActiveMiningSession();
       
     } catch (err: any) {
@@ -54,33 +74,32 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     }
   }, [telegramUser]);
 
-  // Check for active mining session
   const checkActiveMiningSession = useCallback(async () => {
     if (!user) return;
 
     try {
       const { data: session, error } = await supabase
-        .from('viral_mining_sessions')
+        .from('bolt_mining_sessions' as any)
         .select('*')
         .eq('user_id', user.id)
         .eq('is_active', true)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         throw error;
       }
 
       if (session) {
+        const sessionData = session as unknown as MiningSession;
         const now = new Date();
-        const endTime = new Date(session.end_time);
+        const endTime = new Date(sessionData.end_time);
         
         if (now < endTime) {
-          setActiveMiningSession(session);
+          setActiveMiningSession(sessionData);
         } else {
-          // Session expired, complete it
-          await completeMiningSession(session.id);
+          await completeMiningSession(sessionData.id);
         }
       }
     } catch (err: any) {
@@ -88,7 +107,6 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     }
   }, [user]);
 
-  // Start mining session
   const startMining = useCallback(async () => {
     if (!user) return;
 
@@ -97,19 +115,19 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
       const endTime = new Date(now.getTime() + user.mining_duration_hours * 60 * 60 * 1000);
 
       const { data: session, error } = await supabase
-        .from('viral_mining_sessions')
+        .from('bolt_mining_sessions' as any)
         .insert({
           user_id: user.id,
           start_time: now.toISOString(),
           end_time: endTime.toISOString(),
           tokens_per_hour: 1.0,
-          mining_power_multiplier: user.mining_power_multiplier,
+          mining_power: user.mining_power_multiplier,
         })
         .select()
         .single();
 
       if (error) throw error;
-      setActiveMiningSession(session);
+      setActiveMiningSession(session as unknown as MiningSession);
       
     } catch (err: any) {
       console.error('Error starting mining:', err);
@@ -117,10 +135,8 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     }
   }, [user]);
 
-  // Complete mining session
   const completeMiningSession = useCallback(async (sessionId: string) => {
     try {
-      // Call edge function to calculate rewards
       const { data, error } = await supabase.functions.invoke('complete-mining-session', {
         body: { sessionId }
       });
@@ -129,16 +145,15 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
 
       setActiveMiningSession(null);
       
-      // Refresh user data to get updated balance
       if (user) {
         const { data: updatedUser } = await supabase
-          .from('viral_users')
+          .from('bolt_users' as any)
           .select('*')
           .eq('id', user.id)
           .single();
         
         if (updatedUser) {
-          setUser(updatedUser);
+          setUser(updatedUser as unknown as ViralUser);
         }
       }
       
@@ -148,7 +163,6 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     }
   }, [user]);
 
-  // Calculate current mining progress
   const getCurrentMiningProgress = useCallback(() => {
     if (!activeMiningSession) return null;
 
@@ -161,7 +175,8 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     const remaining = Math.max(0, endTime.getTime() - now.getTime());
     
     const progress = Math.min(1, elapsed / totalDuration);
-    const tokensMinedSoFar = (elapsed / (1000 * 60 * 60)) * activeMiningSession.tokens_per_hour * activeMiningSession.mining_power_multiplier;
+    const miningPower = (activeMiningSession as any).mining_power || activeMiningSession.mining_power_multiplier || 1;
+    const tokensMinedSoFar = (elapsed / (1000 * 60 * 60)) * activeMiningSession.tokens_per_hour * miningPower;
     
     return {
       progress,
@@ -171,7 +186,6 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     };
   }, [activeMiningSession]);
 
-  // Upgrade mining power
   const upgradeMiningPower = useCallback(async () => {
     if (!user) return;
 
@@ -188,34 +202,19 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
         nextMultiplier = Math.min(200, current + 50);
       }
 
-      const { error: fnError } = await supabase.functions.invoke('upgrade-mining-power', {
-        body: { userId: user.id }
-      });
+      await supabase
+        .from('bolt_users' as any)
+        .update({ mining_power: nextMultiplier, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
 
-      if (fnError) {
-        console.warn('upgrade-mining-power failed, applying client fallback:', fnError);
-        // Record the upgrade and update user directly as a fallback
-        await supabase.from('viral_upgrades').insert({
-          user_id: user.id,
-          upgrade_type: 'mining_power',
-          upgrade_level: nextMultiplier,
-          cost_ton: 0.5,
-        });
-        await supabase
-          .from('viral_users')
-          .update({ mining_power_multiplier: nextMultiplier, updated_at: new Date().toISOString() })
-          .eq('id', user.id);
-      }
-
-      // Refresh user data
       const { data: updatedUser } = await supabase
-        .from('viral_users')
+        .from('bolt_users' as any)
         .select('*')
         .eq('id', user.id)
         .single();
       
       if (updatedUser) {
-        setUser(updatedUser);
+        setUser(updatedUser as unknown as ViralUser);
       }
       
     } catch (err: any) {
@@ -224,7 +223,6 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     }
   }, [user]);
 
-  // Upgrade mining duration
   const upgradeMiningDuration = useCallback(async () => {
     if (!user) return;
 
@@ -235,34 +233,19 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
       else if (current === 12) nextDuration = 24;
       else nextDuration = 24;
 
-      const { error: fnError } = await supabase.functions.invoke('upgrade-mining-duration', {
-        body: { userId: user.id }
-      });
+      await supabase
+        .from('bolt_users' as any)
+        .update({ mining_duration_hours: nextDuration, updated_at: new Date().toISOString() })
+        .eq('id', user.id);
 
-      if (fnError) {
-        console.warn('upgrade-mining-duration failed, applying client fallback:', fnError);
-        // Record the upgrade and update user directly as a fallback
-        await supabase.from('viral_upgrades').insert({
-          user_id: user.id,
-          upgrade_type: 'mining_duration',
-          upgrade_level: nextDuration,
-          cost_ton: 0.5,
-        });
-        await supabase
-          .from('viral_users')
-          .update({ mining_duration_hours: nextDuration, updated_at: new Date().toISOString() })
-          .eq('id', user.id);
-      }
-
-      // Refresh user data
       const { data: updatedUser } = await supabase
-        .from('viral_users')
+        .from('bolt_users' as any)
         .select('*')
         .eq('id', user.id)
         .single();
       
       if (updatedUser) {
-        setUser(updatedUser);
+        setUser(updatedUser as unknown as ViralUser);
       }
       
     } catch (err: any) {
@@ -281,7 +264,6 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     }
   }, [user, checkActiveMiningSession]);
 
-  // Real-time updates for mining progress
   useEffect(() => {
     if (!activeMiningSession) {
       setMiningProgress(null);
