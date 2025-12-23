@@ -2,8 +2,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://gzzwjopalvopvgofepvj.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd6endqb3BhbHZvcHZnb2ZlcHZqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5MzQ2NTAsImV4cCI6MjA3MDUxMDY1MH0.tU-a1FG6FOB8WdcXWcl2ZYV8eb4x8-1_mcLkcvbYtOs";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
@@ -15,19 +15,3 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     autoRefreshToken: true,
   }
 });
-
-// Fix RLS policies for tasks and related tables
-export const fixRLSPolicies = async () => {
-  try {
-    const { data, error } = await supabase.functions.invoke('setup-rls');
-    if (error) {
-      console.error('Error fixing RLS policies:', error);
-      throw error;
-    }
-    console.log('RLS policies fixed successfully:', data);
-    return data;
-  } catch (error) {
-    console.error('Failed to fix RLS policies:', error);
-    throw error;
-  }
-};
