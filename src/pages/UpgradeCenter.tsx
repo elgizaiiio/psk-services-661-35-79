@@ -261,11 +261,21 @@ const UpgradeCenterInner = () => {
 
   const specialAddOns = [
     {
+      name: 'Smart Cooling Tower',
+      icon: CloudSnow,
+      description: 'Zero heat generation system',
+      price: 20,
+      boost: '+150% Uptime',
+      duration: 'Permanent',
+      color: 'neon-green',
+      rarity: 'rare'
+    },
+    {
       name: 'Solar Battery',
       icon: Sun,
       description: 'Harness unlimited solar energy',
       price: 50,
-      boost: '+50% Efficiency',
+      boost: '+85% Efficiency',
       duration: 'Permanent',
       color: 'neon-orange',
       rarity: 'epic'
@@ -275,27 +285,17 @@ const UpgradeCenterInner = () => {
       icon: Cpu,
       description: 'Smart optimization algorithms',
       price: 100,
-      boost: '×50 Boost',
+      boost: '×75 Boost',
       duration: '24 Hours',
       color: 'neon-blue',
       rarity: 'legendary'
-    },
-    {
-      name: 'Smart Cooling Tower',
-      icon: CloudSnow,
-      description: 'Zero heat generation system',
-      price: 20,
-      boost: '100% Uptime',
-      duration: 'Permanent',
-      color: 'neon-green',
-      rarity: 'rare'
     },
     {
       name: 'Cloud Mining License',
       icon: Layers,
       description: 'Mine from anywhere in the world',
       price: 150,
-      boost: '24/7 Mining',
+      boost: '+200% Mining',
       duration: '30 Days',
       color: 'neon-purple',
       rarity: 'epic'
