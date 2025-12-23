@@ -12,20 +12,23 @@ import { LossAversionCard } from './LossAversionCard';
 import { VIPStatusCard } from './VIPStatusCard';
 import MiningUpgrades from '@/components/mining/MiningUpgrades';
 import { motion } from 'framer-motion';
+import { ViralUser, MiningSession } from '@/types/telegram';
 
 interface PsychologyUpgradeCenterProps {
   userId: string;
+  user: ViralUser | null;
   userData: {
     token_balance: number;
     mining_power: number;
     mining_duration_hours: number;
   };
-  activeMiningSession: any;
+  activeMiningSession: MiningSession | null;
   onUpgrade: () => void;
 }
 
 export const PsychologyUpgradeCenter = ({
   userId,
+  user,
   userData,
   activeMiningSession,
   onUpgrade
@@ -73,7 +76,7 @@ export const PsychologyUpgradeCenter = ({
 
           {/* Mining Upgrades */}
           <MiningUpgrades
-            userData={userData}
+            user={user}
             activeMiningSession={activeMiningSession}
             onUpgrade={onUpgrade}
           />

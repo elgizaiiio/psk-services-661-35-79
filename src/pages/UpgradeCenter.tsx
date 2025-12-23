@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTonWallet, useTonConnectUI } from "@tonconnect/ui-react";
 import { toast } from 'sonner';
 import { 
@@ -18,9 +19,23 @@ import {
   CloudSnow,
   Layers,
   TrendingUp,
-  Star
+  Star,
+  Brain,
+  Flame,
+  Gift,
+  Crown,
+  Trophy
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { DailyStreakWidget } from '@/components/psychology/DailyStreakWidget';
+import { FlashOfferBanner } from '@/components/psychology/FlashOfferBanner';
+import { LevelProgressCard } from '@/components/psychology/LevelProgressCard';
+import { SocialProofFeed } from '@/components/psychology/SocialProofFeed';
+import { LuckySpinModal } from '@/components/psychology/LuckySpinModal';
+import { LossAversionCard } from '@/components/psychology/LossAversionCard';
+import { VIPStatusCard } from '@/components/psychology/VIPStatusCard';
+import { motion } from 'framer-motion';
 
 const RECEIVER_ADDRESS = "UQBJSGcoWTcjdkWFSxA4A6sLmnD5uFKoKHFEHc3LqGJvFWya";
 
@@ -28,6 +43,55 @@ const UpgradeCenterInner = () => {
   const navigate = useNavigate();
   const wallet = useTonWallet();
   const [tcui] = useTonConnectUI();
+  const [activeTab, setActiveTab] = useState('psychology');
+  const [userId, setUserId] = useState<string>('');
+  const [userData, setUserData] = useState({
+    token_balance: 0,
+    mining_power: 2,
+    mining_duration_hours: 4
+  });
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      // Try to get user from Telegram or localStorage
+      const telegramId = (window as any).Telegram?.WebApp?.initDataUnsafe?.user?.id;
+      
+      if (telegramId) {
+        const { data } = await supabase
+          .from('bolt_users')
+          .select('*')
+          .eq('telegram_id', telegramId)
+          .maybeSingle();
+        
+        if (data) {
+          setUserId(data.id);
+          setUserData({
+            token_balance: Number(data.token_balance) || 0,
+            mining_power: Number(data.mining_power) || 2,
+            mining_duration_hours: data.mining_duration_hours || 4
+          });
+        }
+      } else {
+        // Generate a demo user ID for testing
+        const demoId = localStorage.getItem('demo_user_id') || crypto.randomUUID();
+        localStorage.setItem('demo_user_id', demoId);
+        setUserId(demoId);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      const demoId = localStorage.getItem('demo_user_id') || crypto.randomUUID();
+      localStorage.setItem('demo_user_id', demoId);
+      setUserId(demoId);
+    }
+  };
+
+  const handleUpgrade = () => {
+    loadUserData();
+  };
 
   const buyUpgrade = async (upgradeName: string, price: number) => {
     if (!wallet?.account) {
@@ -47,7 +111,17 @@ const UpgradeCenterInner = () => {
         ]
       });
       
+      // Add social notification
+      await supabase.from('bolt_social_notifications' as any).insert({
+        user_id: userId,
+        username: 'Someone',
+        action_type: 'upgrade',
+        amount: price,
+        product_name: upgradeName
+      });
+      
       toast.success(`${upgradeName} upgraded successfully! 🚀`);
+      handleUpgrade();
     } catch (e: any) {
       console.error("Upgrade failed:", e);
       if (e.message?.includes('User rejects')) {
@@ -76,7 +150,17 @@ const UpgradeCenterInner = () => {
         ]
       });
       
+      // Add social notification
+      await supabase.from('bolt_social_notifications' as any).insert({
+        user_id: userId,
+        username: 'Someone',
+        action_type: 'addon_purchase',
+        amount: price,
+        product_name: addonName
+      });
+      
       toast.success(`${addonName} activated successfully! ✨`);
+      handleUpgrade();
     } catch (e: any) {
       console.error("Purchase failed:", e);
       if (e.message?.includes('User rejects')) {
@@ -253,227 +337,264 @@ const UpgradeCenterInner = () => {
         </div>
       </div>
 
-      {/* Hero Section */}
-      <section className="py-12 px-4 text-center">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <TrendingUp className="w-12 h-12 text-neon-purple animate-pulse" />
-            <h1 className="text-5xl font-orbitron font-black bg-gradient-to-r from-neon-purple via-neon-pink to-neon-orange bg-clip-text text-transparent">
-              UPGRADE MATRIX
-            </h1>
-          </div>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Transform your servers into unstoppable mining machines. Every upgrade brings exponential gains.
-          </p>
+      {/* Social Proof - Always visible */}
+      <div className="px-4 pt-4 max-w-6xl mx-auto">
+        <SocialProofFeed />
+      </div>
+
+      {/* Flash Offers */}
+      {userId && (
+        <div className="px-4 pt-4 max-w-6xl mx-auto">
+          <FlashOfferBanner userId={userId} onPurchase={handleUpgrade} />
         </div>
-      </section>
+      )}
 
-      {/* Core Upgrades */}
-      <section className="py-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-orbitron font-black text-neon-blue mb-2">
-              CORE UPGRADES
-            </h2>
-            <p className="text-muted-foreground">Fundamental enhancements for maximum efficiency</p>
-          </div>
+      {/* Main Tabs */}
+      <div className="px-4 pt-6 max-w-6xl mx-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid grid-cols-4 w-full bg-background/50 backdrop-blur-sm border border-primary/20">
+            <TabsTrigger value="psychology" className="flex items-center gap-1 data-[state=active]:bg-neon-purple/20">
+              <Brain className="w-4 h-4" />
+              <span className="hidden sm:inline">Smart</span>
+            </TabsTrigger>
+            <TabsTrigger value="upgrades" className="flex items-center gap-1 data-[state=active]:bg-neon-blue/20">
+              <Zap className="w-4 h-4" />
+              <span className="hidden sm:inline">Upgrades</span>
+            </TabsTrigger>
+            <TabsTrigger value="addons" className="flex items-center gap-1 data-[state=active]:bg-neon-orange/20">
+              <Star className="w-4 h-4" />
+              <span className="hidden sm:inline">Add-Ons</span>
+            </TabsTrigger>
+            <TabsTrigger value="vip" className="flex items-center gap-1 data-[state=active]:bg-neon-pink/20">
+              <Crown className="w-4 h-4" />
+              <span className="hidden sm:inline">VIP</span>
+            </TabsTrigger>
+          </TabsList>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {coreUpgrades.map((upgrade, index) => (
-              <Card 
-                key={upgrade.id} 
-                className={`relative overflow-hidden border-2 border-${upgrade.color}/30 bg-gradient-to-br from-${upgrade.color}/5 to-background hover:border-${upgrade.color} transition-all duration-500 group animate-fade-in ${upgrade.premium ? 'animate-neon-pulse' : ''}`}
-                style={{ animationDelay: `${index * 0.1}s` }}
-              >
-                {upgrade.premium && (
-                  <div className="absolute top-4 right-4 z-20">
-                    <Badge className="bg-neon-orange/20 text-neon-orange border-neon-orange/30 animate-pulse">
-                      PREMIUM
-                    </Badge>
-                  </div>
-                )}
+          {/* Psychology Tab - Smart Upgrades */}
+          <TabsContent value="psychology" className="space-y-4 mt-4">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-4"
+            >
+              {/* Daily Streak */}
+              {userId && (
+                <DailyStreakWidget userId={userId} onStreakClaimed={handleUpgrade} />
+              )}
 
-                <CardContent className="p-6">
-                  {/* Upgrade Icon & Info */}
-                  <div className="flex items-start gap-4 mb-4">
-                    <div className={`w-14 h-14 rounded-xl bg-${upgrade.color}/10 flex items-center justify-center border-2 border-${upgrade.color}/30 group-hover:border-${upgrade.color} transition-all duration-300`}>
-                      <upgrade.icon className={`w-7 h-7 text-${upgrade.color}`} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-orbitron font-bold text-lg mb-1">{upgrade.name}</h3>
-                      <p className="text-sm text-muted-foreground">{upgrade.description}</p>
-                    </div>
-                  </div>
+              {/* Loss Aversion */}
+              <LossAversionCard
+                userId={userId}
+                currentMiningPower={userData.mining_power}
+                miningDurationHours={userData.mining_duration_hours}
+                tokenBalance={userData.token_balance}
+                onUpgrade={() => setActiveTab('upgrades')}
+              />
 
-                  {/* Progress Bar */}
-                  <div className="mb-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="text-sm text-muted-foreground">
-                        Level {upgrade.currentLevel}/{upgrade.maxLevel}
-                      </span>
-                      <span className={`text-sm font-bold text-${upgrade.color}`}>
-                        {upgrade.boost}
-                      </span>
-                    </div>
-                    <Progress 
-                      value={upgrade.progress} 
-                      className={`h-3 bg-background border border-${upgrade.color}/30`}
-                    />
-                  </div>
+              {/* Level Progress */}
+              {userId && (
+                <LevelProgressCard userId={userId} tokenBalance={userData.token_balance} />
+              )}
 
-                  {/* TON Price */}
-                  <div className={`flex items-center justify-between p-3 rounded-lg bg-${upgrade.color}/5 border border-${upgrade.color}/20 mb-4`}>
-                    <span className="text-sm text-muted-foreground">Next Upgrade:</span>
-                    {upgrade.nextCost ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 rounded-full bg-gradient-to-r from-neon-blue to-neon-green flex items-center justify-center text-xs font-bold text-background">
-                          T
-                        </div>
-                        <span className={`text-lg font-orbitron font-bold text-${upgrade.color}`}>
-                          {upgrade.nextCost} TON
-                        </span>
+              {/* Lucky Boxes */}
+              {userId && (
+                <LuckySpinModal userId={userId} onReward={handleUpgrade} />
+              )}
+            </motion.div>
+          </TabsContent>
+
+          {/* Core Upgrades Tab */}
+          <TabsContent value="upgrades" className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {coreUpgrades.map((upgrade, index) => (
+                <motion.div
+                  key={upgrade.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card 
+                    className={`relative overflow-hidden border-2 border-${upgrade.color}/30 bg-gradient-to-br from-${upgrade.color}/5 to-background hover:border-${upgrade.color} transition-all duration-500 group ${upgrade.premium ? 'animate-neon-pulse' : ''}`}
+                  >
+                    {upgrade.premium && (
+                      <div className="absolute top-4 right-4 z-20">
+                        <Badge className="bg-neon-orange/20 text-neon-orange border-neon-orange/30 animate-pulse">
+                          PREMIUM
+                        </Badge>
                       </div>
-                    ) : (
-                      <Badge className={`bg-${upgrade.color}/20 text-${upgrade.color} border-${upgrade.color}/30`}>
-                        MAXED
-                      </Badge>
                     )}
-                  </div>
 
-                  {/* Upgrade Button */}
-                  <Button 
-                    disabled={!upgrade.nextCost || !wallet?.account}
-                    onClick={() => upgrade.nextCost && buyUpgrade(upgrade.name, upgrade.nextCost)}
-                    className={`w-full font-orbitron font-bold transition-all duration-300 ${
-                      upgrade.premium
-                        ? `bg-gradient-to-r from-${upgrade.color}/20 to-neon-purple/20 border-2 border-${upgrade.color} text-${upgrade.color} hover:bg-gradient-to-r hover:from-${upgrade.color} hover:to-neon-purple hover:text-background`
-                        : `bg-${upgrade.color}/20 border border-${upgrade.color} text-${upgrade.color} hover:bg-${upgrade.color} hover:text-background`
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {!wallet?.account ? 'CONNECT WALLET' : upgrade.nextCost ? `UPGRADE FOR ${upgrade.nextCost} TON` : 'MAX LEVEL'}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3 mb-3">
+                        <div className={`w-12 h-12 rounded-xl bg-${upgrade.color}/10 flex items-center justify-center border border-${upgrade.color}/30`}>
+                          <upgrade.icon className={`w-6 h-6 text-${upgrade.color}`} />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-orbitron font-bold text-sm">{upgrade.name}</h3>
+                          <p className="text-xs text-muted-foreground">{upgrade.description}</p>
+                        </div>
+                      </div>
 
-      {/* Special Add-Ons */}
-      <section className="py-12 px-4 bg-gradient-to-r from-card/30 to-background">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-8">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Star className="w-8 h-8 text-neon-orange animate-pulse" />
-              <h2 className="text-3xl font-orbitron font-black text-neon-orange">
-                SPECIAL ADD-ONS
-              </h2>
-              <Star className="w-8 h-8 text-neon-orange animate-pulse" />
+                      <div className="mb-3">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-xs text-muted-foreground">
+                            Level {upgrade.currentLevel}/{upgrade.maxLevel}
+                          </span>
+                          <span className={`text-xs font-bold text-${upgrade.color}`}>
+                            {upgrade.boost}
+                          </span>
+                        </div>
+                        <Progress value={upgrade.progress} className="h-2" />
+                      </div>
+
+                      <Button 
+                        disabled={!upgrade.nextCost || !wallet?.account}
+                        onClick={() => upgrade.nextCost && buyUpgrade(upgrade.name, upgrade.nextCost)}
+                        className={`w-full text-sm font-orbitron bg-${upgrade.color}/20 border border-${upgrade.color} text-${upgrade.color} hover:bg-${upgrade.color} hover:text-background`}
+                        size="sm"
+                      >
+                        {!wallet?.account ? 'CONNECT WALLET' : upgrade.nextCost ? `${upgrade.nextCost} TON` : 'MAXED'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
             </div>
-            <p className="text-muted-foreground">Legendary enhancements that separate the elite from the masses</p>
-          </div>
+          </TabsContent>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {specialAddOns.map((addon, index) => (
-              <Card 
-                key={addon.name} 
-                className={`relative overflow-hidden ${getRarityStyles(addon.rarity)} hover:scale-105 transition-all duration-500 group`}
-                style={{ animationDelay: `${index * 0.1}s` }}
+          {/* Add-Ons Tab */}
+          <TabsContent value="addons" className="mt-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {specialAddOns.map((addon, index) => (
+                <motion.div
+                  key={addon.name}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className={`relative overflow-hidden ${getRarityStyles(addon.rarity)} hover:scale-105 transition-all duration-500`}>
+                    <div className="absolute top-2 right-2 z-20">
+                      <Badge 
+                        className={`text-xs
+                          ${addon.rarity === 'rare' ? 'bg-neon-green/20 text-neon-green border-neon-green/30' : ''}
+                          ${addon.rarity === 'epic' ? 'bg-neon-orange/20 text-neon-orange border-neon-orange/30' : ''}
+                          ${addon.rarity === 'legendary' ? 'bg-neon-blue/20 text-neon-blue border-neon-blue/30 animate-pulse' : ''}
+                        `}
+                      >
+                        {addon.rarity.toUpperCase()}
+                      </Badge>
+                    </div>
+
+                    <CardContent className="p-4 text-center">
+                      <div className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-${addon.color}/10 flex items-center justify-center border border-${addon.color}/30`}>
+                        <addon.icon className={`w-6 h-6 text-${addon.color}`} />
+                      </div>
+                      
+                      <h3 className="font-orbitron font-bold text-sm mb-1">{addon.name}</h3>
+                      <p className="text-xs text-muted-foreground mb-2">{addon.description}</p>
+                      
+                      <Badge variant="secondary" className={`text-xs text-${addon.color} mb-2`}>
+                        {addon.boost}
+                      </Badge>
+                      
+                      <div className="text-lg font-orbitron font-bold mb-2">{addon.price} TON</div>
+                      
+                      <Button 
+                        disabled={!wallet?.account}
+                        onClick={() => buyAddon(addon.name, addon.price)}
+                        className={`w-full text-xs bg-${addon.color}/20 border border-${addon.color} text-${addon.color} hover:bg-${addon.color} hover:text-background`}
+                        size="sm"
+                      >
+                        {wallet?.account ? 'ACTIVATE' : 'CONNECT'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </TabsContent>
+
+          {/* VIP Tab */}
+          <TabsContent value="vip" className="mt-4 space-y-4">
+            {userId && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
               >
-                {/* Particle Effects */}
-                {addon.rarity === 'legendary' && (
-                  <div className="absolute inset-0 z-0 opacity-30">
-                    <div className="absolute top-2 right-2 w-1 h-1 bg-neon-blue rounded-full animate-ping"></div>
-                    <div className="absolute top-6 right-6 w-1 h-1 bg-neon-purple rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
-                    <div className="absolute bottom-4 left-4 w-1 h-1 bg-neon-orange rounded-full animate-ping" style={{ animationDelay: '1s' }}></div>
-                  </div>
-                )}
+                <VIPStatusCard userId={userId} />
+              </motion.div>
+            )}
 
-                {/* Rarity Badge */}
-                <div className="absolute top-4 right-4 z-20">
-                  <Badge 
-                    className={`
-                      ${addon.rarity === 'rare' ? 'bg-neon-green/20 text-neon-green border-neon-green/30' : ''}
-                      ${addon.rarity === 'epic' ? 'bg-neon-orange/20 text-neon-orange border-neon-orange/30' : ''}
-                      ${addon.rarity === 'legendary' ? 'bg-neon-blue/20 text-neon-blue border-neon-blue/30 animate-pulse' : ''}
-                    `}
-                  >
-                    {addon.rarity.toUpperCase()}
-                  </Badge>
-                </div>
-
-                <CardContent className="p-6 text-center relative z-10">
-                  {/* Add-on Icon */}
-                  <div className={`w-16 h-16 mx-auto mb-4 rounded-xl bg-${addon.color}/10 flex items-center justify-center border-2 border-${addon.color}/30 group-hover:border-${addon.color} transition-all duration-300 group-hover:animate-neon-pulse`}>
-                    <addon.icon className={`w-8 h-8 text-${addon.color}`} />
-                  </div>
-                  
-                  <h3 className="font-orbitron font-bold text-lg mb-2">{addon.name}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">{addon.description}</p>
-                  
-                  {/* Boost & Duration */}
-                  <div className="space-y-2 mb-4">
-                    <Badge variant="secondary" className={`text-${addon.color} border-${addon.color}/30`}>
-                      {addon.boost}
-                    </Badge>
-                    <div className="text-xs text-muted-foreground">
-                      Duration: {addon.duration}
-                    </div>
-                  </div>
-                  
-                  {/* Glowing TON Price */}
-                  <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-full bg-${addon.color}/10 border border-${addon.color}/30 mb-4 group-hover:bg-${addon.color}/20 transition-all duration-300`}>
-                    <div className="w-5 h-5 rounded-full bg-gradient-to-r from-neon-blue to-neon-green flex items-center justify-center text-xs font-bold text-background">
-                      T
-                    </div>
-                    <span className={`text-xl font-orbitron font-black text-${addon.color}`}>
-                      {addon.price}
-                    </span>
-                  </div>
-                  
-                  <Button 
-                    disabled={!wallet?.account}
-                    onClick={() => buyAddon(addon.name, addon.price)}
-                    className={`w-full font-orbitron font-bold transition-all duration-300 ${
-                      addon.rarity === 'legendary'
-                        ? `bg-gradient-to-r from-${addon.color}/20 to-neon-purple/20 border-2 border-${addon.color} text-${addon.color} hover:bg-gradient-to-r hover:from-${addon.color} hover:to-neon-purple hover:text-background animate-neon-pulse`
-                        : `bg-${addon.color}/20 border border-${addon.color} text-${addon.color} hover:bg-${addon.color} hover:text-background`
-                    } disabled:opacity-50 disabled:cursor-not-allowed`}
-                  >
-                    {wallet?.account ? 'ACTIVATE' : 'CONNECT WALLET'}
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Total Investment Showcase */}
-      <section className="py-12 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <Card className="border-2 border-neon-purple/50 bg-gradient-to-br from-neon-purple/10 to-background animate-neon-pulse">
-            <CardContent className="p-8">
-              <h3 className="text-3xl font-orbitron font-black mb-4 bg-gradient-to-r from-neon-purple to-neon-pink bg-clip-text text-transparent">
-                TOTAL INVESTMENT POTENTIAL
+            {/* VIP Benefits */}
+            <Card className="p-4 bg-gradient-to-br from-purple-500/20 to-pink-500/20 border-purple-500/30">
+              <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                <Crown className="w-5 h-5 text-purple-400" />
+                VIP Exclusive Benefits
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                <div className="text-center">
-                  <div className="text-2xl font-orbitron font-black text-neon-blue mb-2">1,100 TON</div>
-                  <div className="text-sm text-muted-foreground">Core Upgrades</div>
+              <div className="grid grid-cols-2 gap-3">
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="p-3 bg-black/20 rounded-lg flex items-center gap-2"
+                >
+                  <Zap className="w-4 h-4 text-yellow-400" />
+                  <span className="text-sm">+30% Mining Bonus</span>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="p-3 bg-black/20 rounded-lg flex items-center gap-2"
+                >
+                  <Gift className="w-4 h-4 text-green-400" />
+                  <span className="text-sm">Unlimited Spins</span>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="p-3 bg-black/20 rounded-lg flex items-center gap-2"
+                >
+                  <Flame className="w-4 h-4 text-orange-400" />
+                  <span className="text-sm">Flash Deals Early</span>
+                </motion.div>
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  className="p-3 bg-black/20 rounded-lg flex items-center gap-2"
+                >
+                  <Trophy className="w-4 h-4 text-cyan-400" />
+                  <span className="text-sm">VIP Support</span>
+                </motion.div>
+              </div>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Stats Footer */}
+      <section className="py-8 px-4 mt-6">
+        <div className="max-w-4xl mx-auto">
+          <Card className="border border-neon-purple/30 bg-gradient-to-br from-neon-purple/5 to-background">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-orbitron font-bold mb-4 text-center bg-gradient-to-r from-neon-purple to-neon-pink bg-clip-text text-transparent">
+                YOUR MINING STATS
+              </h3>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <div className="text-2xl font-orbitron font-bold text-neon-blue">
+                    {userData.token_balance.toFixed(0)}
+                  </div>
+                  <div className="text-xs text-muted-foreground">VIRAL Balance</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-orbitron font-black text-neon-orange mb-2">320 TON</div>
-                  <div className="text-sm text-muted-foreground">Special Add-Ons</div>
+                <div>
+                  <div className="text-2xl font-orbitron font-bold text-neon-green">
+                    {userData.mining_power}x
+                  </div>
+                  <div className="text-xs text-muted-foreground">Mining Power</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl font-orbitron font-black text-neon-purple mb-2">1,420 TON</div>
-                  <div className="text-sm text-muted-foreground">Maximum Power</div>
+                <div>
+                  <div className="text-2xl font-orbitron font-bold text-neon-orange">
+                    {userData.mining_duration_hours}h
+                  </div>
+                  <div className="text-xs text-muted-foreground">Max Duration</div>
                 </div>
               </div>
-              <p className="text-lg text-muted-foreground">
-                Unlock the ultimate mining experience. Every TON invested multiplies your earning potential.
-              </p>
             </CardContent>
           </Card>
         </div>
