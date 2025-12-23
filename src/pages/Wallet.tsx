@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { TonConnectButton, useTonWallet, useTonConnectUI } from "@tonconnect/ui-react";
 
-const RECEIVER_ADDRESS = "UQBJSGcoWTcjdkWFSxA4A6sLmnD5uFKoKHFEHc3LqGJvFWya";
+const RECEIVER_ADDRESS = "UQALON5gUq_kQzpTq2GkPeHQABL1nOeAuWwRPGPNkzDz_lZZ";
 
 const WalletInner: React.FC = () => {
   const { user: tgUser, isLoading: authLoading } = useTelegramAuth();

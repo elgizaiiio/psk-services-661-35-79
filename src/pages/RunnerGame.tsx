@@ -8,7 +8,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTonWallet, useTonConnectUI } from "@tonconnect/ui-react";
 import { toast } from 'sonner';
 import RunnerGame from '@/components/runner/RunnerGame';
-const RECEIVER_ADDRESS = "UQBJSGcoWTcjdkWFSxA4A6sLmnD5uFKoKHFEHc3LqGJvFWya";
+const RECEIVER_ADDRESS = "UQALON5gUq_kQzpTq2GkPeHQABL1nOeAuWwRPGPNkzDz_lZZ";
 
 const RunnerGameInner = () => {
   const { user: telegramUser, hapticFeedback } = useTelegramAuth();
