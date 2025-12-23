@@ -41,11 +41,11 @@ const CreateTask = () => {
     setLoading(true);
     
     try {
-      const { error } = await supabase.from("tasks").insert({
+      const { error } = await supabase.from("bolt_tasks" as any).insert({
         title: formData.title.trim(),
         description: formData.description.trim() || null,
         task_url: formData.task_url.trim(),
-        image_url: formData.image_url.trim() || null,
+        icon: formData.image_url.trim() || null,
         points: formData.points,
         category: formData.category,
         is_active: formData.is_active
