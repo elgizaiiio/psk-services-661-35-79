@@ -6,7 +6,7 @@ import { Zap, Clock, Users, TrendingUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface FlashOffer {
   id: string;
@@ -28,7 +28,6 @@ interface FlashOfferBannerProps {
 
 export const FlashOfferBanner = ({ userId, onPurchase }: FlashOfferBannerProps) => {
   const [offers, setOffers] = useState<FlashOffer[]>([]);
-  const [currentOfferIndex, setCurrentOfferIndex] = useState(0);
   const [timeRemaining, setTimeRemaining] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchasing, setIsPurchasing] = useState(false);
@@ -39,15 +38,6 @@ export const FlashOfferBanner = ({ userId, onPurchase }: FlashOfferBannerProps) 
     const interval = setInterval(updateTimers, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  useEffect(() => {
-    if (offers.length > 1) {
-      const rotateInterval = setInterval(() => {
-        setCurrentOfferIndex(prev => (prev + 1) % offers.length);
-      }, 8000);
-      return () => clearInterval(rotateInterval);
-    }
-  }, [offers.length]);
 
   const loadOffers = async () => {
     try {
@@ -134,105 +124,92 @@ export const FlashOfferBanner = ({ userId, onPurchase }: FlashOfferBannerProps) 
 
   if (isLoading || offers.length === 0) return null;
 
-  const currentOffer = offers[currentOfferIndex];
-  const spotsLeft = currentOffer.max_claims - currentOffer.current_claims;
-  const urgencyLevel = spotsLeft <= 5 ? 'critical' : spotsLeft <= 15 ? 'high' : 'normal';
-
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={currentOffer.id}
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -50 }}
-        transition={{ duration: 0.3 }}
-      >
-        <Card className="p-4 bg-gradient-to-r from-purple-600/30 via-pink-600/30 to-red-600/30 border-purple-500/50 relative overflow-hidden">
-          {/* Animated background */}
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-red-600/10 animate-pulse" />
-          
-          {/* Flash badge */}
-          <div className="absolute top-2 right-2">
-            <Badge className="bg-red-500 text-white animate-pulse">
-              <Zap className="w-3 h-3 mr-1" />
-              FLASH SALE
-            </Badge>
-          </div>
+    <div className="space-y-3">
+      {offers.map((offer, index) => {
+        const spotsLeft = offer.max_claims - offer.current_claims;
+        const urgencyLevel = spotsLeft <= 5 ? 'critical' : spotsLeft <= 15 ? 'high' : 'normal';
 
-          <div className="relative z-10">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="font-bold text-lg">{currentOffer.title}</h3>
-                <p className="text-sm text-muted-foreground">{currentOffer.description}</p>
-              </div>
-            </div>
-
-            {/* Timer and scarcity */}
-            <div className="flex items-center gap-4 mb-3">
-              <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-full">
-                <Clock className="w-4 h-4 text-red-400" />
-                <span className="font-mono font-bold text-red-400">
-                  {timeRemaining[currentOffer.id] || '...'}
-                </span>
-              </div>
+        return (
+          <motion.div
+            key={offer.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+          >
+            <Card className="p-4 bg-gradient-to-r from-purple-600/30 via-pink-600/30 to-red-600/30 border-purple-500/50 relative overflow-hidden">
+              {/* Animated background */}
+              <div className="absolute inset-0 bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-red-600/10 animate-pulse" />
               
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
-                urgencyLevel === 'critical' ? 'bg-red-500/30 text-red-300' :
-                urgencyLevel === 'high' ? 'bg-orange-500/30 text-orange-300' :
-                'bg-green-500/30 text-green-300'
-              }`}>
-                <Users className="w-4 h-4" />
-                <span className="font-bold">{spotsLeft} left</span>
-              </div>
-            </div>
-
-            {/* Price comparison */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="text-muted-foreground line-through text-lg">
-                  {currentOffer.original_price} TON
-                </span>
-                <span className="text-2xl font-bold text-green-400">
-                  {currentOffer.discounted_price} TON
-                </span>
-                <Badge variant="secondary" className="bg-green-500/20 text-green-400">
-                  -{currentOffer.discount_percent}%
+              {/* Flash badge */}
+              <div className="absolute top-2 right-2">
+                <Badge className="bg-red-500 text-white animate-pulse">
+                  <Zap className="w-3 h-3 mr-1" />
+                  FLASH SALE
                 </Badge>
               </div>
-              
-              <Button 
-                onClick={() => purchaseOffer(currentOffer)}
-                disabled={isPurchasing || spotsLeft <= 0}
-                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-              >
-                {isPurchasing ? (
-                  <span className="animate-pulse">Processing...</span>
-                ) : (
-                  <>
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    Grab Deal
-                  </>
-                )}
-              </Button>
-            </div>
 
-            {/* Offer indicators */}
-            {offers.length > 1 && (
-              <div className="flex justify-center gap-1 mt-3">
-                {offers.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentOfferIndex(index)}
-                    className={`w-2 h-2 rounded-full transition-colors ${
-                      index === currentOfferIndex ? 'bg-white' : 'bg-white/30'
-                    }`}
-                  />
-                ))}
+              <div className="relative z-10">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h3 className="font-bold text-lg">{offer.title}</h3>
+                    <p className="text-sm text-muted-foreground">{offer.description}</p>
+                  </div>
+                </div>
+
+                {/* Timer and scarcity */}
+                <div className="flex items-center gap-4 mb-3 flex-wrap">
+                  <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-full">
+                    <Clock className="w-4 h-4 text-red-400" />
+                    <span className="font-mono font-bold text-red-400">
+                      {timeRemaining[offer.id] || '...'}
+                    </span>
+                  </div>
+                  
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
+                    urgencyLevel === 'critical' ? 'bg-red-500/30 text-red-300' :
+                    urgencyLevel === 'high' ? 'bg-orange-500/30 text-orange-300' :
+                    'bg-green-500/30 text-green-300'
+                  }`}>
+                    <Users className="w-4 h-4" />
+                    <span className="font-bold">{spotsLeft} left</span>
+                  </div>
+                </div>
+
+                {/* Price comparison */}
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="text-muted-foreground line-through text-lg">
+                      {offer.original_price} TON
+                    </span>
+                    <span className="text-2xl font-bold text-green-400">
+                      {offer.discounted_price} TON
+                    </span>
+                    <Badge variant="secondary" className="bg-green-500/20 text-green-400">
+                      -{offer.discount_percent}%
+                    </Badge>
+                  </div>
+                  
+                  <Button 
+                    onClick={() => purchaseOffer(offer)}
+                    disabled={isPurchasing || spotsLeft <= 0}
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  >
+                    {isPurchasing ? (
+                      <span className="animate-pulse">Processing...</span>
+                    ) : (
+                      <>
+                        <TrendingUp className="w-4 h-4 mr-2" />
+                        Grab Deal
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-            )}
-          </div>
-        </Card>
-      </motion.div>
-    </AnimatePresence>
+            </Card>
+          </motion.div>
+        );
+      })}
+    </div>
   );
 };
