@@ -14,7 +14,297 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bolt_completed_tasks: {
+        Row: {
+          completed_at: string
+          id: string
+          points_earned: number
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string
+          id?: string
+          points_earned?: number
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string
+          id?: string
+          points_earned?: number
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolt_completed_tasks_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolt_completed_tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bolt_daily_code_attempts: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          date: string
+          id: string
+          points_earned: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          date: string
+          id?: string
+          points_earned?: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          points_earned?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolt_daily_code_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bolt_daily_codes: {
+        Row: {
+          code1: string
+          code2: string
+          code3: string
+          code4: string
+          created_at: string
+          date: string
+          id: string
+          points_reward: number
+        }
+        Insert: {
+          code1: string
+          code2: string
+          code3: string
+          code4: string
+          created_at?: string
+          date: string
+          id?: string
+          points_reward?: number
+        }
+        Update: {
+          code1?: string
+          code2?: string
+          code3?: string
+          code4?: string
+          created_at?: string
+          date?: string
+          id?: string
+          points_reward?: number
+        }
+        Relationships: []
+      }
+      bolt_mining_sessions: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          end_time: string
+          id: string
+          is_active: boolean
+          mining_power: number
+          start_time: string
+          tokens_per_hour: number
+          total_mined: number
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          end_time: string
+          id?: string
+          is_active?: boolean
+          mining_power?: number
+          start_time?: string
+          tokens_per_hour?: number
+          total_mined?: number
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          mining_power?: number
+          start_time?: string
+          tokens_per_hour?: number
+          total_mined?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolt_mining_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bolt_referrals: {
+        Row: {
+          bonus_earned: number
+          created_at: string
+          id: string
+          referred_id: string
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          bonus_earned?: number
+          created_at?: string
+          id?: string
+          referred_id: string
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          bonus_earned?: number
+          created_at?: string
+          id?: string
+          referred_id?: string
+          referrer_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolt_referrals_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolt_referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bolt_tasks: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          points: number
+          task_url: string | null
+          title: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          points?: number
+          task_url?: string | null
+          title: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          points?: number
+          task_url?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      bolt_users: {
+        Row: {
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          mining_duration_hours: number
+          mining_power: number
+          photo_url: string | null
+          referral_bonus: number
+          referred_by: string | null
+          telegram_id: number
+          telegram_username: string | null
+          token_balance: number
+          total_referrals: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          mining_duration_hours?: number
+          mining_power?: number
+          photo_url?: string | null
+          referral_bonus?: number
+          referred_by?: string | null
+          telegram_id: number
+          telegram_username?: string | null
+          token_balance?: number
+          total_referrals?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          mining_duration_hours?: number
+          mining_power?: number
+          photo_url?: string | null
+          referral_bonus?: number
+          referred_by?: string | null
+          telegram_id?: number
+          telegram_username?: string | null
+          token_balance?: number
+          total_referrals?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolt_users_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

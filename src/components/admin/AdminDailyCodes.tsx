@@ -5,18 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-type DailyCodes = {
-  id?: string;
-  code1: string;
-  code2: string;
-  code3: string;
-  code4: string;
-};
+import { BoltDailyCode } from "@/types/bolt";
 
 interface AdminDailyCodesProps {
-  codes: DailyCodes | null;
-  setCodes: React.Dispatch<React.SetStateAction<DailyCodes | null>>;
+  codes: Partial<BoltDailyCode> | null;
+  setCodes: React.Dispatch<React.SetStateAction<Partial<BoltDailyCode> | null>>;
   onCodesUpdate: () => void;
 }
 
@@ -24,14 +17,17 @@ const AdminDailyCodes: React.FC<AdminDailyCodesProps> = ({ codes, setCodes, onCo
   const upsertCodes = async () => {
     if (!codes) return;
     const today = new Date().toISOString().split("T")[0];
-    const { error } = await supabase.from("daily_codes").upsert({
-      id: codes.id,
-      date: today,
-      code1: codes.code1,
-      code2: codes.code2,
-      code3: codes.code3,
-      code4: codes.code4
-    });
+    const { error } = await supabase
+      .from("bolt_daily_codes" as any)
+      .upsert({
+        id: codes.id,
+        date: today,
+        code1: codes.code1,
+        code2: codes.code2,
+        code3: codes.code3,
+        code4: codes.code4,
+        points_reward: codes.points_reward || 100
+      });
     if (error) return toast.error("Failed to update daily codes");
     toast.success("Daily codes updated successfully");
     onCodesUpdate();
@@ -40,7 +36,7 @@ const AdminDailyCodes: React.FC<AdminDailyCodesProps> = ({ codes, setCodes, onCo
   const generateRandomCodes = () => {
     const randomCode = () => Math.random().toString(36).substring(2, 8).toUpperCase();
     setCodes(c => ({
-      ...(c || { code1: '', code2: '', code3: '', code4: '' }),
+      ...(c || { code1: '', code2: '', code3: '', code4: '', points_reward: 100 }),
       code1: randomCode(),
       code2: randomCode(),
       code3: randomCode(),
@@ -65,7 +61,7 @@ const AdminDailyCodes: React.FC<AdminDailyCodesProps> = ({ codes, setCodes, onCo
             <Input 
               value={codes?.code1 || ''} 
               onChange={(e) => setCodes(c => ({ 
-                ...(c || { code1: '', code2: '', code3: '', code4: '' }), 
+                ...(c || { code1: '', code2: '', code3: '', code4: '', points_reward: 100 }), 
                 code1: e.target.value 
               }))}
               className="text-sm font-mono"
@@ -77,7 +73,7 @@ const AdminDailyCodes: React.FC<AdminDailyCodesProps> = ({ codes, setCodes, onCo
             <Input 
               value={codes?.code2 || ''} 
               onChange={(e) => setCodes(c => ({ 
-                ...(c || { code1: '', code2: '', code3: '', code4: '' }), 
+                ...(c || { code1: '', code2: '', code3: '', code4: '', points_reward: 100 }), 
                 code2: e.target.value 
               }))}
               className="text-sm font-mono"
@@ -89,7 +85,7 @@ const AdminDailyCodes: React.FC<AdminDailyCodesProps> = ({ codes, setCodes, onCo
             <Input 
               value={codes?.code3 || ''} 
               onChange={(e) => setCodes(c => ({ 
-                ...(c || { code1: '', code2: '', code3: '', code4: '' }), 
+                ...(c || { code1: '', code2: '', code3: '', code4: '', points_reward: 100 }), 
                 code3: e.target.value 
               }))}
               className="text-sm font-mono"
@@ -101,7 +97,7 @@ const AdminDailyCodes: React.FC<AdminDailyCodesProps> = ({ codes, setCodes, onCo
             <Input 
               value={codes?.code4 || ''} 
               onChange={(e) => setCodes(c => ({ 
-                ...(c || { code1: '', code2: '', code3: '', code4: '' }), 
+                ...(c || { code1: '', code2: '', code3: '', code4: '', points_reward: 100 }), 
                 code4: e.target.value 
               }))}
               className="text-sm font-mono"

@@ -1,15 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { BoltUser } from '@/types/bolt';
 
-interface LeaderboardEntry {
-  id: string;
-  telegram_username?: string;
-  first_name?: string;
-  last_name?: string;
-  photo_url?: string;
-  token_balance: number;
-  mining_power_multiplier: number;
-  created_at: string;
+interface LeaderboardEntry extends BoltUser {
   rank?: number;
 }
 
@@ -23,15 +16,14 @@ export const useLeaderboard = () => {
       setLoading(true);
       
       const { data, error } = await supabase
-        .from('viral_users')
-        .select('id, telegram_username, first_name, last_name, photo_url, token_balance, mining_power_multiplier, created_at')
+        .from('bolt_users' as any)
+        .select('*')
         .order('token_balance', { ascending: false })
         .limit(100);
 
       if (error) throw error;
 
-      // Add rank to each entry
-      const rankedData = (data || []).map((entry, index) => ({
+      const rankedData = ((data || []) as unknown as BoltUser[]).map((entry, index) => ({
         ...entry,
         rank: index + 1
       }));
@@ -48,17 +40,19 @@ export const useLeaderboard = () => {
   const getUserRank = useCallback(async (userId: string) => {
     try {
       const { data: user } = await supabase
-        .from('viral_users')
+        .from('bolt_users' as any)
         .select('token_balance')
         .eq('id', userId)
         .single();
 
       if (!user) return null;
 
+      const userData = user as unknown as { token_balance: number };
+
       const { count } = await supabase
-        .from('viral_users')
+        .from('bolt_users' as any)
         .select('*', { count: 'exact', head: true })
-        .gt('token_balance', user.token_balance);
+        .gt('token_balance', userData.token_balance);
 
       return (count || 0) + 1;
     } catch (err: any) {
@@ -69,18 +63,16 @@ export const useLeaderboard = () => {
 
   useEffect(() => {
     loadLeaderboard();
-    
-    // Refresh every 30 seconds
     const interval = setInterval(loadLeaderboard, 30000);
     return () => clearInterval(interval);
   }, [loadLeaderboard]);
 
-  return {
-    leaderboard,
-    loading,
-    error,
-    refreshLeaderboard: loadLeaderboard,
-    getUserRank,
-    clearError: () => setError(null)
+  return { 
+    leaderboard, 
+    loading, 
+    error, 
+    refreshLeaderboard: loadLeaderboard, 
+    getUserRank, 
+    clearError: () => setError(null) 
   };
 };
