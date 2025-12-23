@@ -539,6 +539,314 @@ export type Database = {
         }
         Relationships: []
       }
+      game_daily_rewards: {
+        Row: {
+          claimed_at: string
+          day_number: number
+          id: string
+          player_id: string | null
+          reward_amount: number
+          reward_type: string
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          day_number?: number
+          id?: string
+          player_id?: string | null
+          reward_amount: number
+          reward_type: string
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          day_number?: number
+          id?: string
+          player_id?: string | null
+          reward_amount?: number
+          reward_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_daily_rewards_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "game_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_players: {
+        Row: {
+          coins: number
+          created_at: string
+          current_skin: string | null
+          games_played: number
+          highest_score: number
+          id: string
+          total_score: number
+          updated_at: string
+          user_id: string
+          username: string | null
+        }
+        Insert: {
+          coins?: number
+          created_at?: string
+          current_skin?: string | null
+          games_played?: number
+          highest_score?: number
+          id?: string
+          total_score?: number
+          updated_at?: string
+          user_id: string
+          username?: string | null
+        }
+        Update: {
+          coins?: number
+          created_at?: string
+          current_skin?: string | null
+          games_played?: number
+          highest_score?: number
+          id?: string
+          total_score?: number
+          updated_at?: string
+          user_id?: string
+          username?: string | null
+        }
+        Relationships: []
+      }
+      game_purchases: {
+        Row: {
+          created_at: string
+          id: string
+          item_id: string
+          item_type: string
+          payment_method: string
+          player_id: string | null
+          price_coins: number | null
+          price_ton: number | null
+          tx_hash: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          item_id: string
+          item_type: string
+          payment_method?: string
+          player_id?: string | null
+          price_coins?: number | null
+          price_ton?: number | null
+          tx_hash?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          item_id?: string
+          item_type?: string
+          payment_method?: string
+          player_id?: string | null
+          price_coins?: number | null
+          price_ton?: number | null
+          tx_hash?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_purchases_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "game_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_scores: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          game_type: string
+          id: string
+          level: number | null
+          player_id: string | null
+          score: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          game_type?: string
+          id?: string
+          level?: number | null
+          player_id?: string | null
+          score: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          game_type?: string
+          id?: string
+          level?: number | null
+          player_id?: string | null
+          score?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_scores_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "game_players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      game_skins: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          price_coins: number
+          price_ton: number | null
+          rarity: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          price_coins?: number
+          price_ton?: number | null
+          rarity?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          price_coins?: number
+          price_ton?: number | null
+          rarity?: string
+        }
+        Relationships: []
+      }
+      server_purchases: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          expires_at: string | null
+          hash_rate: string | null
+          id: string
+          metadata: Json | null
+          payment_id: string | null
+          price_ton: number
+          server_name: string
+          server_tier: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          hash_rate?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_id?: string | null
+          price_ton: number
+          server_name: string
+          server_tier?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          expires_at?: string | null
+          hash_rate?: string | null
+          id?: string
+          metadata?: Json | null
+          payment_id?: string | null
+          price_ton?: number
+          server_name?: string
+          server_tier?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "server_purchases_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "ton_payments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ton_payments: {
+        Row: {
+          amount_ton: number
+          confirmed_at: string | null
+          created_at: string
+          description: string | null
+          destination_address: string
+          id: string
+          metadata: Json | null
+          product_id: string | null
+          product_type: string
+          status: string
+          tx_hash: string | null
+          updated_at: string
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          amount_ton: number
+          confirmed_at?: string | null
+          created_at?: string
+          description?: string | null
+          destination_address: string
+          id?: string
+          metadata?: Json | null
+          product_id?: string | null
+          product_type?: string
+          status?: string
+          tx_hash?: string | null
+          updated_at?: string
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          amount_ton?: number
+          confirmed_at?: string | null
+          created_at?: string
+          description?: string | null
+          destination_address?: string
+          id?: string
+          metadata?: Json | null
+          product_id?: string | null
+          product_type?: string
+          status?: string
+          tx_hash?: string | null
+          updated_at?: string
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

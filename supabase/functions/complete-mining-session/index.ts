@@ -30,9 +30,9 @@ serve(async (req) => {
       );
     }
 
-    // Get the mining session
+    // Get the mining session - using bolt_mining_sessions table
     const { data: session, error: sessionError } = await supabaseClient
-      .from('viral_mining_sessions')
+      .from('bolt_mining_sessions')
       .select('*')
       .eq('id', sessionId)
       .eq('is_active', true)
@@ -49,30 +49,25 @@ serve(async (req) => {
       );
     }
 
-    // Calculate the reward using the database function
-    const { data: rewardData, error: rewardError } = await supabaseClient
-      .rpc('calculate_mining_reward', { session_id: sessionId });
-
-    if (rewardError) {
-      console.error('Error calculating reward:', rewardError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to calculate reward' }),
-        { 
-          status: 500, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
-    }
-
-    const totalReward = rewardData || 0;
+    // Calculate the reward based on mining power and time elapsed
+    const startTime = new Date(session.start_time).getTime();
+    const endTime = new Date(session.end_time).getTime();
+    const now = Date.now();
+    
+    const actualEndTime = Math.min(now, endTime);
+    const elapsedHours = (actualEndTime - startTime) / (1000 * 60 * 60);
+    const tokensPerHour = Number(session.tokens_per_hour) || 1;
+    const miningPower = Number(session.mining_power) || 2;
+    
+    const totalReward = Math.floor(elapsedHours * tokensPerHour * miningPower);
 
     // Update the mining session as completed
     const { error: updateSessionError } = await supabaseClient
-      .from('viral_mining_sessions')
+      .from('bolt_mining_sessions')
       .update({
         is_active: false,
         completed_at: new Date().toISOString(),
-        total_tokens_mined: totalReward
+        total_mined: totalReward
       })
       .eq('id', sessionId);
 
@@ -87,9 +82,9 @@ serve(async (req) => {
       );
     }
 
-    // Update user's token balance (no raw SQL; fetch and increment)
+    // Update user's token balance - using bolt_users table
     const { data: userRow, error: userFetchError } = await supabaseClient
-      .from('viral_users')
+      .from('bolt_users')
       .select('token_balance')
       .eq('id', session.user_id)
       .single();
@@ -108,7 +103,7 @@ serve(async (req) => {
     const newBalance = (Number(userRow?.token_balance) || 0) + Number(totalReward);
 
     const { error: updateBalanceError } = await supabaseClient
-      .from('viral_users')
+      .from('bolt_users')
       .update({ token_balance: newBalance })
       .eq('id', session.user_id);
 
@@ -123,12 +118,13 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Mining session ${sessionId} completed. Reward: ${totalReward} VIRAL`);
+    console.log(`Mining session ${sessionId} completed. Reward: ${totalReward} BOLT`);
 
     return new Response(
       JSON.stringify({ 
         success: true, 
         totalReward,
+        newBalance,
         message: 'Mining session completed successfully'
       }),
       { 
