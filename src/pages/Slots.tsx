@@ -45,7 +45,7 @@ const Slots = () => {
         }
       } catch (error) {
         console.error('Error loading coins:', error);
-        toast.error('فشل في تحميل العملات');
+        toast.error('Failed to load coins');
       } finally {
         setLoading(false);
       }

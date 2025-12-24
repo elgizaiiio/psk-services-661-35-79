@@ -111,7 +111,7 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
   const startMining = useCallback(async () => {
     if (!user) {
       console.error('Cannot start mining: user not initialized');
-      setError('يرجى فتح التطبيق من داخل Telegram');
+      setError('Please open the app from within Telegram');
       return;
     }
 

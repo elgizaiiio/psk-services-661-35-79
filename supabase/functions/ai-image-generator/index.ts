@@ -251,7 +251,7 @@ async function generateImage(params: ImageGenerationParams): Promise<string> {
     console.log(`❌ Failed with ${provider.name}, trying next...`);
   }
 
-  throw new Error('فشل في توليد الصورة، يرجى المحاولة مرة أخرى');
+  throw new Error('Failed to generate image, please try again');
 }
 
 serve(async (req) => {
@@ -271,7 +271,7 @@ serve(async (req) => {
 
     if (!prompt || typeof prompt !== 'string' || prompt.trim().length === 0) {
       return new Response(
-        JSON.stringify({ error: 'يرجى إدخال وصف للصورة' }),
+        JSON.stringify({ error: 'Please enter an image description' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -299,7 +299,7 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'حدث خطأ أثناء توليد الصورة',
+        error: error.message || 'An error occurred while generating the image',
         success: false 
       }),
       { 
