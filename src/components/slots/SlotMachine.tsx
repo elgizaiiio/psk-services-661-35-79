@@ -2,9 +2,11 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlotReel } from "./SlotReel";
 import { Symbol, SYMBOLS, getRandomSymbol, SlotSymbol } from "./SlotSymbol";
-import { Zap, Sparkles, Gift, Clock } from "lucide-react";
+import { Zap, Sparkles, Gift, Clock, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { useSlotSounds } from "@/hooks/useSlotSounds";
+
+const SOUND_ENABLED_KEY = 'slots_sound_enabled';
 
 interface SlotMachineProps {
   coins: number;
@@ -46,9 +48,21 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
   const [hasFreeSpin, setHasFreeSpin] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [lastSpinTime, setLastSpinTime] = useState<number | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    const stored = localStorage.getItem(SOUND_ENABLED_KEY);
+    return stored !== 'false'; // Default to true
+  });
   const spinSoundIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  const { playSpinSound, playStopSound, playWinSound, playJackpotSound, playNoWinSound, playClickSound } = useSlotSounds();
+  const { playSpinSound, playStopSound, playWinSound, playJackpotSound, playNoWinSound, playClickSound } = useSlotSounds(soundEnabled);
+
+  const toggleSound = useCallback(() => {
+    setSoundEnabled(prev => {
+      const newValue = !prev;
+      localStorage.setItem(SOUND_ENABLED_KEY, String(newValue));
+      return newValue;
+    });
+  }, []);
 
   // Check if user has free spin available on mount
   useEffect(() => {
@@ -202,7 +216,16 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
   }, [results, calculateWin, getWinningIndexes, onCoinsChange, coins, spinCost, playStopSound, playWinSound, playJackpotSound, playNoWinSound]);
 
   return (
-    <div className="flex flex-col items-center gap-8">
+    <div className="relative flex flex-col items-center gap-8">
+      {/* Sound toggle */}
+      <motion.button
+        onClick={toggleSound}
+        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        whileTap={{ scale: 0.9 }}
+      >
+        {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+      </motion.button>
+
       {/* Win display */}
       <AnimatePresence>
         {lastWin > 0 && (

@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 
-export const useSlotSounds = () => {
+export const useSlotSounds = (enabled: boolean = true) => {
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const getAudioContext = useCallback(() => {
@@ -12,6 +12,7 @@ export const useSlotSounds = () => {
 
   // Spin sound - rapid clicking/ticking
   const playSpinSound = useCallback(() => {
+    if (!enabled) return;
     const ctx = getAudioContext();
     const duration = 0.05;
     
@@ -34,6 +35,7 @@ export const useSlotSounds = () => {
 
   // Reel stop sound - thunk
   const playStopSound = useCallback(() => {
+    if (!enabled) return;
     const ctx = getAudioContext();
     const duration = 0.15;
     
@@ -56,6 +58,7 @@ export const useSlotSounds = () => {
 
   // Small win sound - cheerful ding
   const playWinSound = useCallback(() => {
+    if (!enabled) return;
     const ctx = getAudioContext();
     
     const playNote = (freq: number, delay: number) => {
@@ -83,6 +86,7 @@ export const useSlotSounds = () => {
 
   // Jackpot sound - triumphant fanfare
   const playJackpotSound = useCallback(() => {
+    if (!enabled) return;
     const ctx = getAudioContext();
     
     const playNote = (freq: number, delay: number, duration: number = 0.25) => {
@@ -115,6 +119,7 @@ export const useSlotSounds = () => {
 
   // No win sound - descending tone
   const playNoWinSound = useCallback(() => {
+    if (!enabled) return;
     const ctx = getAudioContext();
     const duration = 0.3;
     
@@ -137,6 +142,7 @@ export const useSlotSounds = () => {
 
   // Button click sound
   const playClickSound = useCallback(() => {
+    if (!enabled) return;
     const ctx = getAudioContext();
     const duration = 0.08;
     
