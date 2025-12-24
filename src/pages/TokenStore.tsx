@@ -108,7 +108,7 @@ const TokenStore = () => {
 
   const handlePurchase = async (pkg: TokenPackage) => {
     if (!telegramUser) {
-      toast.error('يجب تسجيل الدخول أولاً');
+      toast.error('Please login first');
       return;
     }
 
@@ -128,7 +128,7 @@ const TokenStore = () => {
         .maybeSingle();
 
       if (userError || !userData) {
-        throw new Error('لم يتم العثور على المستخدم');
+        throw new Error('User not found');
       }
 
       const totalTokens = pkg.tokens + pkg.bonusTokens;
@@ -136,7 +136,7 @@ const TokenStore = () => {
       // Send TON transaction
       const success = await sendDirectPayment({
         amount: pkg.price,
-        description: `شراء ${totalTokens.toLocaleString()} VIRAL Token`,
+        description: `Purchase ${totalTokens.toLocaleString()} VIRAL Tokens`,
         productType: 'ai_credits',
         productId: pkg.id,
         credits: totalTokens
@@ -158,15 +158,15 @@ const TokenStore = () => {
             user_id: userData.id,
             action_type: 'token_purchase',
             amount: totalTokens,
-            username: telegramUser.first_name || 'مستخدم',
+            username: telegramUser.first_name || 'User',
             product_name: pkg.name
           });
 
-        toast.success(`🎉 تم إضافة ${totalTokens.toLocaleString()} VIRAL إلى رصيدك!`);
+        toast.success(`🎉 Added ${totalTokens.toLocaleString()} VIRAL to your balance!`);
       }
     } catch (error) {
       console.error('Purchase error:', error);
-      toast.error('حدث خطأ أثناء الشراء');
+      toast.error('An error occurred during purchase');
     } finally {
       setPurchasing(null);
     }
@@ -180,7 +180,7 @@ const TokenStore = () => {
     <main className="min-h-screen bg-background pb-24">
       <Helmet>
         <title>Token Store | VIRAL</title>
-        <meta name="description" content="اشترِ VIRAL Tokens بـ TON" />
+        <meta name="description" content="Buy VIRAL Tokens with TON" />
       </Helmet>
 
       <div className="max-w-md mx-auto px-4 pt-6">
@@ -195,8 +195,8 @@ const TokenStore = () => {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">متجر التوكنز</h1>
-            <p className="text-sm text-muted-foreground">اشترِ VIRAL بـ TON</p>
+            <h1 className="text-2xl font-bold text-foreground">Token Store</h1>
+            <p className="text-sm text-muted-foreground">Buy VIRAL with TON</p>
           </div>
         </div>
 
@@ -219,8 +219,8 @@ const TokenStore = () => {
               <Coins className="w-8 h-8 text-primary-foreground" />
             </motion.div>
             <div>
-              <h2 className="text-lg font-bold text-foreground">عروض حصرية!</h2>
-              <p className="text-sm text-muted-foreground">خصم يصل إلى 40% على الحزم الكبيرة</p>
+              <h2 className="text-lg font-bold text-foreground">Exclusive Offers!</h2>
+              <p className="text-sm text-muted-foreground">Up to 40% off on larger packages</p>
             </div>
           </div>
         </motion.div>
@@ -229,15 +229,15 @@ const TokenStore = () => {
         <div className="grid grid-cols-3 gap-2 mb-6">
           <div className="bg-muted/50 rounded-xl p-3 text-center">
             <Zap className="w-5 h-5 text-primary mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground">تفعيل فوري</p>
+            <p className="text-xs text-muted-foreground">Instant Activation</p>
           </div>
           <div className="bg-muted/50 rounded-xl p-3 text-center">
             <Gift className="w-5 h-5 text-primary mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground">بونص إضافي</p>
+            <p className="text-xs text-muted-foreground">Bonus Tokens</p>
           </div>
           <div className="bg-muted/50 rounded-xl p-3 text-center">
             <TrendingUp className="w-5 h-5 text-primary mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground">قيمة أفضل</p>
+            <p className="text-xs text-muted-foreground">Best Value</p>
           </div>
         </div>
 
@@ -257,12 +257,12 @@ const TokenStore = () => {
                 {/* Badges */}
                 {pkg.popular && (
                   <Badge className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] px-2">
-                    الأكثر شعبية
+                    Most Popular
                   </Badge>
                 )}
                 {pkg.bestValue && (
                   <Badge className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[10px] px-2">
-                    أفضل قيمة
+                    Best Value
                   </Badge>
                 )}
 
@@ -291,7 +291,7 @@ const TokenStore = () => {
                   </p>
                   {pkg.bonusTokens > 0 && (
                     <p className="text-xs text-green-500 font-medium">
-                      +{pkg.bonusTokens.toLocaleString()} بونص
+                      +{pkg.bonusTokens.toLocaleString()} bonus
                     </p>
                   )}
                 </div>
@@ -321,9 +321,9 @@ const TokenStore = () => {
                   {purchasing === pkg.id ? (
                     <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                   ) : !isConnected ? (
-                    'ربط المحفظة'
+                    'Connect Wallet'
                   ) : (
-                    'شراء'
+                    'Buy'
                   )}
                 </Button>
               </Card>
@@ -335,24 +335,24 @@ const TokenStore = () => {
         <div className="mt-6 p-4 bg-muted/30 rounded-xl">
           <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
             <Sparkles className="w-4 h-4 text-primary" />
-            لماذا تشتري VIRAL؟
+            Why buy VIRAL?
           </h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-start gap-2">
               <span className="text-primary">•</span>
-              <span>استخدمها لشراء الشخصيات والترقيات</span>
+              <span>Use them to buy characters and upgrades</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary">•</span>
-              <span>ادخل في المسابقات والتحديات</span>
+              <span>Enter competitions and challenges</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary">•</span>
-              <span>تداول في السوق مع اللاعبين الآخرين</span>
+              <span>Trade in the marketplace with other players</span>
             </li>
             <li className="flex items-start gap-2">
               <span className="text-primary">•</span>
-              <span>احصل على مزايا VIP حصرية</span>
+              <span>Get exclusive VIP benefits</span>
             </li>
           </ul>
         </div>
@@ -360,7 +360,7 @@ const TokenStore = () => {
         {/* Security Note */}
         <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
           <p className="text-xs text-green-600 dark:text-green-400 text-center">
-            🔒 جميع المعاملات آمنة عبر شبكة TON
+            🔒 All transactions are secure via TON network
           </p>
         </div>
       </div>

@@ -82,10 +82,10 @@ const DailyTasksNotification = ({
                     transition={{ delay: 0.2 }}
                   >
                     <h2 className="text-2xl font-bold text-green-300 mb-1">
-                      🌟 مهام جديدة!
+                      🌟 New Tasks!
                     </h2>
                     <p className="text-green-200/80 text-sm">
-                      تم تجديد المهام اليومية
+                      Daily tasks have been refreshed
                     </p>
                   </motion.div>
                 </div>
@@ -100,12 +100,12 @@ const DailyTasksNotification = ({
                   <div className="bg-green-500/20 rounded-xl p-3 text-center">
                     <Sparkles className="w-5 h-5 text-green-400 mx-auto mb-1" />
                     <p className="text-2xl font-bold text-white">{availableTasks}</p>
-                    <p className="text-xs text-green-300">مهام متاحة</p>
+                    <p className="text-xs text-green-300">Tasks Available</p>
                   </div>
                   <div className="bg-green-500/20 rounded-xl p-3 text-center">
                     <Gift className="w-5 h-5 text-green-400 mx-auto mb-1" />
                     <p className="text-2xl font-bold text-white">{totalRewards.toLocaleString()}</p>
-                    <p className="text-xs text-green-300">VIRAL للربح</p>
+                    <p className="text-xs text-green-300">VIRAL to Earn</p>
                   </div>
                 </motion.div>
 
@@ -121,8 +121,8 @@ const DailyTasksNotification = ({
                     className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white font-bold py-3 rounded-xl"
                   >
                     <Calendar className="w-5 h-5 mr-2" />
-                    عرض المهام
-                    <ArrowRight className="w-4 h-4 mr-2" />
+                    View Tasks
+                    <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                   
                   <Button
@@ -130,7 +130,7 @@ const DailyTasksNotification = ({
                     variant="ghost"
                     className="w-full text-green-300 hover:text-green-100 hover:bg-green-500/20"
                   >
-                    لاحقاً
+                    Later
                   </Button>
                 </motion.div>
               </div>
