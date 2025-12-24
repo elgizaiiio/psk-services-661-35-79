@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
@@ -22,7 +22,7 @@ const Characters = () => {
   const [purchaseLoading, setPurchaseLoading] = useState<string | null>(null);
 
   // Get bolt user id
-  useState(() => {
+  useEffect(() => {
     const fetchBoltUser = async () => {
       if (!user?.id) return;
       
@@ -38,7 +38,7 @@ const Characters = () => {
       }
     };
     fetchBoltUser();
-  });
+  }, [user?.id]);
 
   const { 
     characters, 
