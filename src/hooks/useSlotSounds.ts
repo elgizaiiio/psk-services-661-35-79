@@ -31,7 +31,7 @@ export const useSlotSounds = (enabled: boolean = true) => {
     
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration);
-  }, [getAudioContext]);
+  }, [enabled, getAudioContext]);
 
   // Reel stop sound - thunk
   const playStopSound = useCallback(() => {
@@ -54,7 +54,7 @@ export const useSlotSounds = (enabled: boolean = true) => {
     
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration);
-  }, [getAudioContext]);
+  }, [enabled, getAudioContext]);
 
   // Small win sound - cheerful ding
   const playWinSound = useCallback(() => {
@@ -82,7 +82,7 @@ export const useSlotSounds = (enabled: boolean = true) => {
     playNote(523, 0);      // C5
     playNote(659, 0.1);    // E5
     playNote(784, 0.2);    // G5
-  }, [getAudioContext]);
+  }, [enabled, getAudioContext]);
 
   // Jackpot sound - triumphant fanfare
   const playJackpotSound = useCallback(() => {
@@ -115,7 +115,7 @@ export const useSlotSounds = (enabled: boolean = true) => {
     playNote(659, 0.45, 0.3);    // E5
     playNote(784, 0.75, 0.3);    // G5
     playNote(1047, 1.05, 0.5);   // C6
-  }, [getAudioContext]);
+  }, [enabled, getAudioContext]);
 
   // No win sound - descending tone
   const playNoWinSound = useCallback(() => {
@@ -138,7 +138,7 @@ export const useSlotSounds = (enabled: boolean = true) => {
     
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration);
-  }, [getAudioContext]);
+  }, [enabled, getAudioContext]);
 
   // Button click sound
   const playClickSound = useCallback(() => {
@@ -160,7 +160,7 @@ export const useSlotSounds = (enabled: boolean = true) => {
     
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + duration);
-  }, [getAudioContext]);
+  }, [enabled, getAudioContext]);
 
   return {
     playSpinSound,
