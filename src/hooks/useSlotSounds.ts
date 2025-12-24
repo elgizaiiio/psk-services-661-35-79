@@ -1,8 +1,14 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef, useEffect } from 'react';
 
-export const useSlotSounds = (enabled: boolean = true) => {
+export const useSlotSounds = (enabled: boolean = true, musicEnabled: boolean = true) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const spinCountRef = useRef(0);
+  const musicNodesRef = useRef<{
+    oscillators: OscillatorNode[];
+    gains: GainNode[];
+    masterGain: GainNode | null;
+  }>({ oscillators: [], gains: [], masterGain: null });
+  const musicPlayingRef = useRef(false);
 
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
@@ -17,6 +23,129 @@ export const useSlotSounds = (enabled: boolean = true) => {
       await ctx.resume();
     }
   }, [getAudioContext]);
+
+  // Stop background music
+  const stopMusic = useCallback(() => {
+    const { oscillators, gains, masterGain } = musicNodesRef.current;
+    
+    if (masterGain) {
+      const ctx = getAudioContext();
+      masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.5);
+    }
+    
+    setTimeout(() => {
+      oscillators.forEach(osc => {
+        try { osc.stop(); } catch (e) {}
+      });
+      musicNodesRef.current = { oscillators: [], gains: [], masterGain: null };
+      musicPlayingRef.current = false;
+    }, 600);
+  }, [getAudioContext]);
+
+  // Play ambient casino background music
+  const startMusic = useCallback(() => {
+    if (musicPlayingRef.current || !musicEnabled) return;
+    
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') return;
+    
+    musicPlayingRef.current = true;
+    
+    const masterGain = ctx.createGain();
+    masterGain.connect(ctx.destination);
+    masterGain.gain.setValueAtTime(0, ctx.currentTime);
+    masterGain.gain.linearRampToValueAtTime(0.08, ctx.currentTime + 1);
+    
+    const oscillators: OscillatorNode[] = [];
+    const gains: GainNode[] = [];
+    
+    // Deep bass drone
+    const bass = ctx.createOscillator();
+    const bassGain = ctx.createGain();
+    const bassFilter = ctx.createBiquadFilter();
+    bass.connect(bassFilter);
+    bassFilter.connect(bassGain);
+    bassGain.connect(masterGain);
+    bass.type = 'sine';
+    bass.frequency.setValueAtTime(55, ctx.currentTime);
+    bassFilter.type = 'lowpass';
+    bassFilter.frequency.setValueAtTime(100, ctx.currentTime);
+    bassGain.gain.setValueAtTime(0.4, ctx.currentTime);
+    bass.start();
+    oscillators.push(bass);
+    gains.push(bassGain);
+    
+    // Slow modulating pad
+    const pad1 = ctx.createOscillator();
+    const pad1Gain = ctx.createGain();
+    const pad1Filter = ctx.createBiquadFilter();
+    pad1.connect(pad1Filter);
+    pad1Filter.connect(pad1Gain);
+    pad1Gain.connect(masterGain);
+    pad1.type = 'triangle';
+    pad1.frequency.setValueAtTime(110, ctx.currentTime);
+    pad1Filter.type = 'lowpass';
+    pad1Filter.frequency.setValueAtTime(400, ctx.currentTime);
+    pad1Gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    pad1.start();
+    oscillators.push(pad1);
+    gains.push(pad1Gain);
+    
+    // Higher harmonic pad
+    const pad2 = ctx.createOscillator();
+    const pad2Gain = ctx.createGain();
+    pad2.connect(pad2Gain);
+    pad2Gain.connect(masterGain);
+    pad2.type = 'sine';
+    pad2.frequency.setValueAtTime(220, ctx.currentTime);
+    pad2Gain.gain.setValueAtTime(0.08, ctx.currentTime);
+    pad2.start();
+    oscillators.push(pad2);
+    gains.push(pad2Gain);
+    
+    // Subtle shimmer
+    const shimmer = ctx.createOscillator();
+    const shimmerGain = ctx.createGain();
+    const shimmerLfo = ctx.createOscillator();
+    const shimmerLfoGain = ctx.createGain();
+    shimmerLfo.connect(shimmerLfoGain);
+    shimmerLfoGain.connect(shimmerGain.gain);
+    shimmer.connect(shimmerGain);
+    shimmerGain.connect(masterGain);
+    shimmer.type = 'sine';
+    shimmer.frequency.setValueAtTime(440, ctx.currentTime);
+    shimmerGain.gain.setValueAtTime(0.03, ctx.currentTime);
+    shimmerLfo.type = 'sine';
+    shimmerLfo.frequency.setValueAtTime(0.5, ctx.currentTime);
+    shimmerLfoGain.gain.setValueAtTime(0.02, ctx.currentTime);
+    shimmer.start();
+    shimmerLfo.start();
+    oscillators.push(shimmer, shimmerLfo);
+    gains.push(shimmerGain);
+    
+    musicNodesRef.current = { oscillators, gains, masterGain };
+  }, [musicEnabled, getAudioContext]);
+
+  // Handle music enable/disable
+  useEffect(() => {
+    if (musicEnabled) {
+      // Music will start when audio is unlocked
+    } else {
+      stopMusic();
+    }
+    
+    return () => {
+      stopMusic();
+    };
+  }, [musicEnabled, stopMusic]);
+
+  // Unlock and start music
+  const unlockAndStartMusic = useCallback(async () => {
+    await unlockAudio();
+    if (musicEnabled && !musicPlayingRef.current) {
+      startMusic();
+    }
+  }, [unlockAudio, musicEnabled, startMusic]);
 
   // Spin sound - casino slot machine tick with variation
   const playSpinSound = useCallback(() => {
@@ -342,6 +471,7 @@ export const useSlotSounds = (enabled: boolean = true) => {
 
   return {
     unlockAudio,
+    unlockAndStartMusic,
     playSpinSound,
     playStopSound,
     playWinSound,
