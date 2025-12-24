@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlotReel } from "./SlotReel";
 import { Symbol, SYMBOLS, getRandomSymbol, SlotSymbol } from "./SlotSymbol";
-import { Zap, Sparkles, Gift, Clock, Volume2, VolumeX, Music, Music2 } from "lucide-react";
+import { Zap, Sparkles, Gift, Clock, Volume2, VolumeX } from "lucide-react";
 import { toast } from "sonner";
 import { useSlotSounds } from "@/hooks/useSlotSounds";
 
