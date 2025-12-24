@@ -1,7 +1,7 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Zap, Wallet, ArrowUp, Settings, Target, Users, Trophy, Crown, Coins } from "lucide-react";
+import { Zap, Wallet, ArrowUp, Settings, Target, Users, Trophy, Crown, Coins, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
@@ -150,6 +150,14 @@ const Index = () => {
             >
               <Zap className="w-5 h-5 mr-2" />
               Start Mining
+            </Button>
+            
+            <Button 
+              onClick={() => navigate('/daily-tasks')}
+              className="w-full h-12 rounded-full bg-gradient-to-r from-green-500 to-emerald-600 text-white font-semibold hover:opacity-90"
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Daily Tasks
             </Button>
             
             <Button 
