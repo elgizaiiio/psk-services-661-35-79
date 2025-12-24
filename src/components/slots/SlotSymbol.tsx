@@ -10,36 +10,43 @@ export interface Symbol {
   id: string;
   image: string;
   value: number;
-  color: string;
 }
 
 export const SYMBOLS: Symbol[] = [
-  { id: 'star-happy', image: starHappy, value: 10, color: '#FFE066' },
-  { id: 'star-angry', image: starAngry, value: 15, color: '#FFD43B' },
-  { id: 'bolt', image: bolt, value: 25, color: '#74C0FC' },
-  { id: 'b-logo', image: bLogo, value: 50, color: '#00D9FF' },
-  { id: 'battery', image: battery, value: 100, color: '#FFD700' },
+  { id: 'star-happy', image: starHappy, value: 10 },
+  { id: 'star-angry', image: starAngry, value: 15 },
+  { id: 'bolt', image: bolt, value: 25 },
+  { id: 'b-logo', image: bLogo, value: 50 },
+  { id: 'battery', image: battery, value: 100 },
 ];
 
 interface SlotSymbolProps {
   symbol: Symbol;
+  size?: 'sm' | 'md' | 'lg';
   isWinning?: boolean;
 }
 
-export const SlotSymbol = ({ symbol, isWinning }: SlotSymbolProps) => {
+export const SlotSymbol = ({ symbol, size = 'md', isWinning }: SlotSymbolProps) => {
+  const sizeClasses = {
+    sm: 'w-8 h-8',
+    md: 'w-14 h-14',
+    lg: 'w-20 h-20'
+  };
+
   return (
     <motion.div
-      className="w-20 h-20 flex items-center justify-center"
+      className={`flex items-center justify-center ${sizeClasses[size]}`}
       animate={isWinning ? {
-        scale: [1, 1.2, 1],
-        filter: ['brightness(1)', 'brightness(1.5)', 'brightness(1)'],
+        scale: [1, 1.15, 1],
+        filter: ['drop-shadow(0 0 8px rgba(0,255,150,0.5))', 'drop-shadow(0 0 20px rgba(0,255,150,1))', 'drop-shadow(0 0 8px rgba(0,255,150,0.5))'],
       } : {}}
-      transition={{ duration: 0.5, repeat: isWinning ? Infinity : 0 }}
+      transition={{ duration: 0.6, repeat: isWinning ? Infinity : 0 }}
     >
       <img 
         src={symbol.image} 
         alt={symbol.id} 
-        className="w-16 h-16 object-contain drop-shadow-lg"
+        className="w-full h-full object-contain"
+        draggable={false}
       />
     </motion.div>
   );

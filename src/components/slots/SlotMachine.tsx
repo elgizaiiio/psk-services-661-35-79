@@ -1,9 +1,8 @@
 import { useState, useCallback } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { SlotReel } from "./SlotReel";
-import { Symbol, SYMBOLS, getRandomSymbol } from "./SlotSymbol";
-import { Coins, Sparkles, Zap } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Symbol, SYMBOLS, getRandomSymbol, SlotSymbol } from "./SlotSymbol";
+import { Zap, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 interface SlotMachineProps {
@@ -22,12 +21,10 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10 }: SlotMachine
   const calculateWin = useCallback((symbols: Symbol[]): number => {
     const [s1, s2, s3] = symbols;
     
-    // 3 matching symbols - big win!
     if (s1.id === s2.id && s2.id === s3.id) {
       return s1.value * 10;
     }
     
-    // 2 matching symbols - small win
     if (s1.id === s2.id || s2.id === s3.id || s1.id === s3.id) {
       const matchingSymbol = s1.id === s2.id ? s1 : (s2.id === s3.id ? s2 : s1);
       return matchingSymbol.value * 2;
@@ -39,9 +36,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10 }: SlotMachine
   const getWinningIndexes = useCallback((symbols: Symbol[]): number[] => {
     const [s1, s2, s3] = symbols;
     
-    if (s1.id === s2.id && s2.id === s3.id) {
-      return [0, 1, 2];
-    }
+    if (s1.id === s2.id && s2.id === s3.id) return [0, 1, 2];
     if (s1.id === s2.id) return [0, 1];
     if (s2.id === s3.id) return [1, 2];
     if (s1.id === s3.id) return [0, 2];
@@ -57,7 +52,6 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10 }: SlotMachine
       return;
     }
 
-    // Deduct spin cost
     onCoinsChange(coins - spinCost);
     
     setSpinning(true);
@@ -65,10 +59,8 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10 }: SlotMachine
     setLastWin(0);
     setCompletedReels(0);
 
-    // Generate random results
     const newResults = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
     setResults(newResults);
-
   }, [spinning, coins, spinCost, onCoinsChange]);
 
   const handleReelComplete = useCallback(() => {
@@ -76,7 +68,6 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10 }: SlotMachine
       const newCount = prev + 1;
       
       if (newCount === 3) {
-        // All reels stopped - calculate win
         setSpinning(false);
         const winAmount = calculateWin(results);
         const indexes = getWinningIndexes(results);
@@ -88,11 +79,9 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10 }: SlotMachine
           onCoinsChange(coins - spinCost + winAmount);
           
           if (indexes.length === 3) {
-            toast.success(`🎰 جاكبوت! ربحت ${winAmount} عملة!`, {
-              duration: 3000,
-            });
+            toast.success(`🎰 جاكبوت! +${winAmount}`, { duration: 3000 });
           } else {
-            toast.success(`🎉 فوز! ربحت ${winAmount} عملة!`);
+            toast.success(`🎉 فوز! +${winAmount}`);
           }
         }
       }
@@ -102,53 +91,30 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10 }: SlotMachine
   }, [results, calculateWin, getWinningIndexes, onCoinsChange, coins, spinCost]);
 
   return (
-    <div className="flex flex-col items-center gap-6">
-      {/* Coins display */}
-      <motion.div 
-        className="flex items-center gap-2 bg-gradient-to-r from-yellow-600/20 to-yellow-500/20 px-6 py-3 rounded-full border border-yellow-500/30"
-        animate={lastWin > 0 ? { scale: [1, 1.1, 1] } : {}}
-        transition={{ duration: 0.3 }}
-      >
-        <Coins className="w-6 h-6 text-yellow-400" />
-        <span className="text-2xl font-bold text-yellow-400">{coins.toLocaleString()}</span>
-      </motion.div>
+    <div className="flex flex-col items-center gap-8">
+      {/* Win display */}
+      <AnimatePresence>
+        {lastWin > 0 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            className="flex items-center gap-3 px-6 py-3 rounded-full bg-primary/20 border border-primary/40"
+          >
+            <Sparkles className="w-5 h-5 text-primary" />
+            <span className="text-2xl font-bold text-primary">+{lastWin}</span>
+            <Sparkles className="w-5 h-5 text-primary" />
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Last win display */}
-      {lastWin > 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center gap-2 text-xl font-bold text-primary"
-        >
-          <Sparkles className="w-5 h-5" />
-          <span>+{lastWin}</span>
-          <Sparkles className="w-5 h-5" />
-        </motion.div>
-      )}
-
-      {/* Slot machine frame */}
-      <div className="relative p-6 bg-gradient-to-b from-muted/50 to-card rounded-3xl border-2 border-primary/30 shadow-[0_0_40px_hsl(var(--primary)/0.2)]">
-        {/* Decorative lights */}
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex gap-2">
-          {[...Array(5)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="w-3 h-3 rounded-full bg-primary"
-              animate={{ 
-                opacity: spinning ? [0.3, 1, 0.3] : 1,
-                scale: spinning ? [1, 1.2, 1] : 1
-              }}
-              transition={{ 
-                duration: 0.5, 
-                delay: i * 0.1,
-                repeat: spinning ? Infinity : 0
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Reels container */}
-        <div className="flex gap-3 p-4 bg-black/50 rounded-2xl">
+      {/* Machine frame */}
+      <div className="relative p-6 rounded-3xl bg-gradient-to-b from-card to-card/50 border border-border/50 shadow-2xl">
+        {/* Top accent line */}
+        <div className="absolute top-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
+        
+        {/* Reels */}
+        <div className="flex gap-4 p-5 rounded-2xl bg-muted/30 border border-border/30">
           <SlotReel 
             spinning={spinning} 
             finalSymbol={results[0]} 
@@ -159,81 +125,77 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10 }: SlotMachine
           <SlotReel 
             spinning={spinning} 
             finalSymbol={results[1]} 
-            delay={300}
+            delay={200}
             isWinning={winningIndexes.includes(1)}
             onSpinComplete={handleReelComplete}
           />
           <SlotReel 
             spinning={spinning} 
             finalSymbol={results[2]} 
-            delay={600}
+            delay={400}
             isWinning={winningIndexes.includes(2)}
             onSpinComplete={handleReelComplete}
           />
         </div>
 
-        {/* Win line indicator */}
-        <div className="absolute left-2 right-2 top-1/2 -translate-y-1/2 pointer-events-none">
-          <div className={`h-0.5 ${winningIndexes.length > 0 ? 'bg-yellow-400 shadow-[0_0_10px_#FFD700]' : 'bg-primary/30'}`} />
-        </div>
-      </div>
-
-      {/* Spin cost indicator */}
-      <div className="flex items-center gap-2 text-muted-foreground text-sm">
-        <Coins className="w-4 h-4" />
-        <span>تكلفة الدوران: {spinCost} عملة</span>
+        {/* Bottom accent line */}
+        <div className="absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
       </div>
 
       {/* Spin button */}
-      <motion.div
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
+      <motion.button
+        onClick={handleSpin}
+        disabled={spinning || coins < spinCost}
+        className={`
+          relative w-20 h-20 rounded-full
+          flex items-center justify-center
+          font-bold text-lg
+          transition-all duration-200
+          ${spinning || coins < spinCost 
+            ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+            : 'bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.6)]'
+          }
+        `}
+        whileHover={!spinning && coins >= spinCost ? { scale: 1.05 } : {}}
+        whileTap={!spinning && coins >= spinCost ? { scale: 0.95 } : {}}
+        animate={!spinning && coins >= spinCost ? {
+          boxShadow: ['0 0 20px hsl(var(--primary)/0.3)', '0 0 35px hsl(var(--primary)/0.5)', '0 0 20px hsl(var(--primary)/0.3)']
+        } : {}}
+        transition={{ duration: 2, repeat: Infinity }}
       >
-        <Button
-          size="lg"
-          onClick={handleSpin}
-          disabled={spinning || coins < spinCost}
-          className="px-12 py-6 text-xl font-bold bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90 rounded-full shadow-[0_0_30px_hsl(var(--primary)/0.5)] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {spinning ? (
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            >
-              <Zap className="w-8 h-8" />
-            </motion.div>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Zap className="w-6 h-6" />
-              SPIN
-            </span>
-          )}
-        </Button>
-      </motion.div>
+        {spinning ? (
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+          >
+            <Zap className="w-8 h-8" />
+          </motion.div>
+        ) : (
+          <Zap className="w-8 h-8" />
+        )}
+      </motion.button>
+
+      {/* Spin cost */}
+      <p className="text-sm text-muted-foreground">
+        تكلفة الدوران: <span className="text-primary font-medium">{spinCost}</span>
+      </p>
 
       {/* Prize table */}
-      <div className="w-full max-w-sm bg-card/50 rounded-xl p-4 border border-border">
-        <h3 className="text-center font-bold text-primary mb-3">جدول الجوائز</h3>
-        <div className="space-y-2 text-sm">
-          <div className="flex justify-between items-center">
-            <span>7️⃣ 7️⃣ 7️⃣</span>
-            <span className="text-yellow-400 font-bold">×1000</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span>💎 💎 💎</span>
-            <span className="text-yellow-400 font-bold">×500</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span>⭐ ⭐ ⭐</span>
-            <span className="text-yellow-400 font-bold">×750</span>
-          </div>
-          <div className="flex justify-between items-center text-muted-foreground">
-            <span>أي 3 متطابقة</span>
-            <span>×10</span>
-          </div>
-          <div className="flex justify-between items-center text-muted-foreground">
-            <span>أي 2 متطابقة</span>
-            <span>×2</span>
+      <div className="w-full max-w-xs p-4 rounded-2xl bg-card/50 border border-border/30">
+        <h3 className="text-center text-sm font-medium text-muted-foreground mb-4">الجوائز</h3>
+        <div className="space-y-3">
+          {SYMBOLS.slice().reverse().map((symbol) => (
+            <div key={symbol.id} className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <SlotSymbol symbol={symbol} size="sm" />
+                <SlotSymbol symbol={symbol} size="sm" />
+                <SlotSymbol symbol={symbol} size="sm" />
+              </div>
+              <span className="text-primary font-bold">×{symbol.value * 10}</span>
+            </div>
+          ))}
+          <div className="pt-2 border-t border-border/30 text-xs text-muted-foreground text-center">
+            2 متطابقة = ×2
           </div>
         </div>
       </div>
