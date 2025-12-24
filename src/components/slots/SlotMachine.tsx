@@ -2,11 +2,12 @@ import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlotReel } from "./SlotReel";
 import { Symbol, SYMBOLS, getRandomSymbol, SlotSymbol } from "./SlotSymbol";
-import { Zap, Sparkles, Gift, Clock, Volume2, VolumeX } from "lucide-react";
+import { Zap, Sparkles, Gift, Clock, Volume2, VolumeX, Music, Music2 } from "lucide-react";
 import { toast } from "sonner";
 import { useSlotSounds } from "@/hooks/useSlotSounds";
 
 const SOUND_ENABLED_KEY = 'slots_sound_enabled';
+const MUSIC_ENABLED_KEY = 'slots_music_enabled';
 
 interface SlotMachineProps {
   coins: number;
@@ -52,9 +53,13 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
     const stored = localStorage.getItem(SOUND_ENABLED_KEY);
     return stored !== 'false'; // Default to true
   });
+  const [musicEnabled, setMusicEnabled] = useState(() => {
+    const stored = localStorage.getItem(MUSIC_ENABLED_KEY);
+    return stored !== 'false'; // Default to true
+  });
   const spinSoundIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  const { playSpinSound, playStopSound, playWinSound, playJackpotSound, playNoWinSound, playClickSound, unlockAudio } = useSlotSounds(soundEnabled);
+  const { playSpinSound, playStopSound, playWinSound, playJackpotSound, playNoWinSound, playClickSound, unlockAudio, unlockAndStartMusic } = useSlotSounds(soundEnabled, musicEnabled);
 
   const toggleSound = useCallback(() => {
     setSoundEnabled(prev => {
@@ -66,6 +71,17 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
       return newValue;
     });
   }, [unlockAudio]);
+
+  const toggleMusic = useCallback(() => {
+    setMusicEnabled(prev => {
+      const newValue = !prev;
+      localStorage.setItem(MUSIC_ENABLED_KEY, String(newValue));
+      if (newValue) {
+        void unlockAndStartMusic();
+      }
+      return newValue;
+    });
+  }, [unlockAndStartMusic]);
 
   // Check if user has free spin available on mount
   useEffect(() => {
@@ -283,14 +299,31 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
       </div>
 
       {/* Buttons row */}
-      <div className="flex items-center justify-center gap-4 w-full">
-        {/* Sound toggle button - far left */}
+      <div className="flex items-center justify-center gap-3 w-full">
+        {/* Music toggle button */}
         <motion.button
-          onClick={toggleSound}
-          className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border border-border/30"
+          onClick={toggleMusic}
+          className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors border border-border/30 ${
+            musicEnabled 
+              ? 'bg-primary/20 text-primary' 
+              : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
+          }`}
           whileTap={{ scale: 0.9 }}
         >
-          {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+          {musicEnabled ? <Music className="w-4 h-4" /> : <Music2 className="w-4 h-4 opacity-50" />}
+        </motion.button>
+
+        {/* Sound toggle button */}
+        <motion.button
+          onClick={toggleSound}
+          className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors border border-border/30 ${
+            soundEnabled 
+              ? 'bg-primary/20 text-primary' 
+              : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
+          }`}
+          whileTap={{ scale: 0.9 }}
+        >
+          {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
         </motion.button>
 
         {/* Spin button - center */}
