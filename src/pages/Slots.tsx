@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, Coins, ShoppingBag, Users, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SlotMachine } from "@/components/slots/SlotMachine";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,26 +10,29 @@ const Slots = () => {
   const navigate = useNavigate();
   const { user } = useTelegramAuth();
   const [coins, setCoins] = useState(1000);
+  const [boltTokens, setBoltTokens] = useState(0);
+  const [freeSpins, setFreeSpins] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUserCoins = async () => {
+    const loadUserData = async () => {
       if (!user?.id) {
         setLoading(false);
         return;
       }
 
       try {
-        const { data, error } = await supabase
+        // Load game player data
+        const { data: playerData, error: playerError } = await supabase
           .from('game_players')
           .select('coins')
           .eq('user_id', user.id.toString())
           .maybeSingle();
 
-        if (error) throw error;
+        if (playerError) throw playerError;
 
-        if (data) {
-          setCoins(data.coins);
+        if (playerData) {
+          setCoins(playerData.coins);
         } else {
           const { error: insertError } = await supabase
             .from('game_players')
@@ -43,15 +45,27 @@ const Slots = () => {
           if (insertError) throw insertError;
           setCoins(1000);
         }
+
+        // Load bolt tokens
+        const { data: boltData, error: boltError } = await supabase
+          .from('bolt_users')
+          .select('token_balance')
+          .eq('telegram_id', user.id)
+          .maybeSingle();
+
+        if (!boltError && boltData) {
+          setBoltTokens(boltData.token_balance);
+        }
+
       } catch (error) {
-        console.error('Error loading coins:', error);
-        toast.error('Failed to load coins');
+        console.error('Error loading data:', error);
+        toast.error('Failed to load data');
       } finally {
         setLoading(false);
       }
     };
 
-    loadUserCoins();
+    loadUserData();
   }, [user]);
 
   const handleCoinsChange = async (newCoins: number) => {
@@ -73,32 +87,45 @@ const Slots = () => {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
-        <div className="flex items-center justify-between px-4 py-3">
-          <motion.button
-            onClick={() => navigate(-1)}
-            className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center"
-            whileTap={{ scale: 0.9 }}
-          >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </motion.button>
+      {/* Header with 3 stats */}
+      <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-2xl border-b border-border/20">
+        <div className="px-4 py-4">
+          {/* Title */}
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-black text-foreground">Slots</h1>
+            <button 
+              onClick={() => navigate(-1)}
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Back
+            </button>
+          </div>
           
-          <h1 className="text-lg font-semibold">Slots</h1>
-          
-          <motion.div 
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20"
-            animate={{ scale: [1, 1.02, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <Coins className="w-4 h-4 text-primary" />
-            <span className="font-bold text-primary">{coins.toLocaleString()}</span>
-          </motion.div>
+          {/* 3 Stats Row */}
+          <div className="grid grid-cols-3 gap-2">
+            {/* Free Spins */}
+            <div className="bg-gradient-to-br from-amber-500/15 to-orange-500/10 rounded-2xl p-3 text-center border border-amber-500/20">
+              <div className="text-2xl font-black text-amber-400">{freeSpins}</div>
+              <div className="text-[10px] uppercase tracking-wider text-amber-400/70 font-medium">Spins</div>
+            </div>
+            
+            {/* Coins */}
+            <div className="bg-gradient-to-br from-yellow-500/15 to-yellow-500/5 rounded-2xl p-3 text-center border border-yellow-500/20">
+              <div className="text-2xl font-black text-yellow-400">{coins.toLocaleString()}</div>
+              <div className="text-[10px] uppercase tracking-wider text-yellow-400/70 font-medium">Coins</div>
+            </div>
+            
+            {/* Bolt Tokens */}
+            <div className="bg-gradient-to-br from-primary/15 to-primary/5 rounded-2xl p-3 text-center border border-primary/20">
+              <div className="text-2xl font-black text-primary">{boltTokens.toLocaleString()}</div>
+              <div className="text-[10px] uppercase tracking-wider text-primary/70 font-medium">Bolt</div>
+            </div>
+          </div>
         </div>
       </header>
 
       {/* Main content */}
-      <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-6">
         {loading ? (
           <div className="simple-loader" />
         ) : (
@@ -116,34 +143,8 @@ const Slots = () => {
           </motion.div>
         )}
       </main>
-
-      {/* Bottom navigation */}
-      <nav className="sticky bottom-0 bg-background/80 backdrop-blur-xl border-t border-border/50 px-6 py-4">
-        <div className="flex justify-center gap-6">
-          <NavButton icon={ShoppingBag} label="Shop" onClick={() => navigate('/game-2048-store')} />
-          <NavButton icon={Users} label="Friends" onClick={() => navigate('/invite')} />
-          <NavButton icon={Gift} label="Earn" onClick={() => navigate('/tasks')} />
-        </div>
-      </nav>
     </div>
   );
 };
-
-interface NavButtonProps {
-  icon: React.ElementType;
-  label: string;
-  onClick: () => void;
-}
-
-const NavButton = ({ icon: Icon, label, onClick }: NavButtonProps) => (
-  <motion.button
-    onClick={onClick}
-    className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
-    whileTap={{ scale: 0.95 }}
-  >
-    <Icon className="w-5 h-5" />
-    <span className="text-xs font-medium">{label}</span>
-  </motion.button>
-);
 
 export default Slots;

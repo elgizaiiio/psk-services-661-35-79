@@ -400,26 +400,6 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
         )}
       </div>
 
-
-      {/* Prize table */}
-      <div className="w-full max-w-xs p-4 rounded-2xl bg-card/50 border border-border/30">
-        <h3 className="text-center text-sm font-medium text-muted-foreground mb-4">Prizes</h3>
-        <div className="space-y-3">
-          {SYMBOLS.slice().reverse().map((symbol) => (
-            <div key={symbol.id} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <SlotSymbol symbol={symbol} size="sm" />
-                <SlotSymbol symbol={symbol} size="sm" />
-                <SlotSymbol symbol={symbol} size="sm" />
-              </div>
-              <span className="text-primary font-bold">×{symbol.value * 10}</span>
-            </div>
-          ))}
-          <div className="pt-2 border-t border-border/30 text-xs text-muted-foreground text-center">
-            2 matching = ×2
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
