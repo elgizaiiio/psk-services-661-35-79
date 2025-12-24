@@ -216,11 +216,11 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
   }, [results, calculateWin, getWinningIndexes, onCoinsChange, coins, spinCost, playStopSound, playWinSound, playJackpotSound, playNoWinSound]);
 
   return (
-    <div className="relative flex flex-col items-center gap-8">
-      {/* Sound toggle */}
+    <div className="flex flex-col items-center gap-8">
+      {/* Sound toggle - at top */}
       <motion.button
         onClick={toggleSound}
-        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        className="self-end w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border border-border/30"
         whileTap={{ scale: 0.9 }}
       >
         {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
