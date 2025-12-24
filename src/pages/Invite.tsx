@@ -1,13 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useBoltMining } from "@/hooks/useBoltMining";
 import { useBoltReferrals } from "@/hooks/useBoltReferrals";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Copy, Check, Users } from "lucide-react";
+import { Copy, Check, Users, Gift, TrendingUp, Share2 } from "lucide-react";
 
 const Invite: React.FC = () => {
   const { user: tgUser } = useTelegramAuth();
@@ -24,7 +24,6 @@ const Invite: React.FC = () => {
   }, [tgUser]);
   
   const referralLink = useMemo(() => {
-    console.log('🔗 Creating referral link with code:', referralCode);
     return `https://t.me/Vlralbot?startapp=${encodeURIComponent(referralCode)}`;
   }, [referralCode]);
 
@@ -32,26 +31,25 @@ const Invite: React.FC = () => {
     try {
       await navigator.clipboard.writeText(referralLink);
       setCopied(true);
-      toast({ title: "Copied", description: "Invitation link copied successfully" });
+      toast({ title: "تم النسخ", description: "تم نسخ رابط الدعوة بنجاح" });
       setTimeout(() => setCopied(false), 1500);
     } catch (e) {
-      toast({ title: "Error", description: "Cannot copy link, try again" });
+      toast({ title: "خطأ", description: "لا يمكن نسخ الرابط، حاول مرة أخرى" });
     }
   };
 
   const handleShareViaTelegram = () => {
-    const message = `🎯 Join me in mining BOLT and earn real cryptocurrency!
+    const message = `🎯 انضم إلي في تعدين BOLT واربح عملات حقيقية!
 
-💎 Start mining BOLT tokens now: ${referralLink}
+💎 ابدأ التعدين الآن: ${referralLink}
 
-🚀 What you'll get:
-• Free mining setup
-• Earn tokens while idle
-• Complete daily tasks for rewards  
-• Upgrade your mining power
+🚀 ما ستحصل عليه:
+• إعداد تعدين مجاني
+• اربح التوكنات بدون جهد
+• أكمل المهام اليومية للمكافآت
+• طور قوة التعدين
 
-🎁 Join thousands earning real crypto daily!
-⚡ Click the link and start mining now!`;
+🎁 انضم للآلاف الذين يربحون يومياً!`;
 
     const encodedMessage = encodeURIComponent(message);
     const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodedMessage}`;
@@ -64,7 +62,7 @@ const Invite: React.FC = () => {
       window.open(telegramShareUrl, '_blank');
     }
     
-    toast({ title: "Shared!", description: "Opening Telegram to share your invitation" });
+    toast({ title: "تمت المشاركة!", description: "جاري فتح تيليجرام للمشاركة" });
   };
 
   const jsonLd = {
@@ -81,6 +79,19 @@ const Invite: React.FC = () => {
     return (baseEarning + variation).toFixed(2);
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
     <>
       <Helmet>
@@ -93,47 +104,80 @@ const Invite: React.FC = () => {
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>
 
-      <div className="safe-area pb-24 min-h-screen bg-background">
-        <div className="max-w-md mx-auto px-4 py-6">
-          
+      <div className="min-h-screen bg-background pb-32">
+        <motion.div 
+          className="max-w-md mx-auto px-4 py-6"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-primary mb-2">Friends</h1>
-            <p className="text-muted-foreground text-lg">
-              Get BOLT for every server rental by your friends!
+          <motion.div variants={itemVariants} className="text-center mb-8">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-primary" />
+            </div>
+            <h1 className="text-3xl font-bold text-foreground mb-2">الأصدقاء</h1>
+            <p className="text-muted-foreground">
+              احصل على BOLT لكل صديق ينضم!
             </p>
-          </div>
+          </motion.div>
 
-          {/* Stats Card */}
-          <Card className="bg-card border-border rounded-2xl p-6 mb-6">
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div>
-                <p className="text-2xl font-bold text-primary">{stats.total_referrals}</p>
-                <p className="text-sm text-muted-foreground">Total Friends</p>
+          {/* Stats Cards */}
+          <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
+            <div className="p-4 rounded-2xl bg-card border border-border/50">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                <Users className="w-5 h-5 text-primary" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{stats.total_referrals}</p>
+              <p className="text-sm text-muted-foreground">إجمالي الأصدقاء</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-card border border-border/50">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
+                <TrendingUp className="w-5 h-5 text-primary" />
+              </div>
+              <p className="text-2xl font-bold text-foreground">{stats.total_bonus.toFixed(0)}</p>
+              <p className="text-sm text-muted-foreground">BOLT مكتسب</p>
+            </div>
+          </motion.div>
+
+          {/* Bonus Info */}
+          <motion.div 
+            variants={itemVariants}
+            className="p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 mb-6"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                <Gift className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-primary">{stats.total_bonus.toFixed(0)}</p>
-                <p className="text-sm text-muted-foreground">BOLT Earned</p>
+                <p className="font-medium text-foreground">مكافأة الدعوة</p>
+                <p className="text-sm text-muted-foreground">احصل على 10% من أرباح أصدقائك</p>
               </div>
             </div>
-          </Card>
+          </motion.div>
 
-          {/* Friends Level Card */}
-          <Card className="bg-card border-border rounded-2xl p-6 mb-6">
-            <div className="mb-4">
-              <h2 className="text-xl font-semibold text-foreground mb-2">Friends</h2>
+          {/* Friends List */}
+          <motion.div 
+            variants={itemVariants}
+            className="rounded-2xl bg-card border border-border/50 overflow-hidden"
+          >
+            <div className="p-4 border-b border-border/50">
+              <h2 className="font-semibold text-foreground">قائمة الأصدقاء</h2>
             </div>
             
-            <div className="border-t border-border pt-4">
+            <div className="p-4">
               {friendsLoading || miningLoading ? (
-                <div className="text-center py-6">
-                  <div className="simple-loader mx-auto mb-2"></div>
-                  <p className="text-sm text-muted-foreground">Loading...</p>
+                <div className="text-center py-8">
+                  <div className="simple-loader mx-auto mb-3"></div>
+                  <p className="text-sm text-muted-foreground">جاري التحميل...</p>
                 </div>
               ) : referrals.length === 0 ? (
-                <div className="text-center py-6">
-                  <Users className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No friends invited yet</p>
+                <div className="text-center py-8">
+                  <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                    <Users className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-muted-foreground mb-1">لا يوجد أصدقاء بعد</p>
+                  <p className="text-sm text-muted-foreground">شارك الرابط وابدأ الربح!</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -143,51 +187,67 @@ const Invite: React.FC = () => {
                     const earnings = getEarnings(index);
                     
                     return (
-                      <div key={friend.id} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-3">
-                          <Avatar className="h-10 w-10 bg-primary/20">
+                      <motion.div 
+                        key={friend.id} 
+                        className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 border-2 border-primary/20">
                             <AvatarImage src={friend.referred?.photo_url} alt={name} />
-                            <AvatarFallback className="bg-primary/20 text-primary font-semibold">
+                            <AvatarFallback className="bg-primary/10 text-primary font-semibold text-sm">
                               {initials}
                             </AvatarFallback>
                           </Avatar>
                           <span className="text-foreground font-medium">{name}</span>
                         </div>
-                        <div className="text-primary text-sm font-medium">
-                          + {friend.bonus_earned || earnings} BOLT
+                        <div className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium">
+                          +{friend.bonus_earned || earnings}
                         </div>
-                      </div>
+                      </motion.div>
                     );
                   })}
                 </div>
               )}
             </div>
-          </Card>
+          </motion.div>
+        </motion.div>
 
-          {/* Share Link Button */}
-          <div className="fixed bottom-20 left-0 right-0 p-4">
-            <div className="max-w-md mx-auto">
-              <div className="flex items-center gap-3">
-                <Button 
-                  onClick={handleShareViaTelegram}
-                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-4 rounded-2xl text-lg"
-                  size="lg"
-                >
-                  Share Link
-                </Button>
+        {/* Bottom Share Buttons */}
+        <div className="fixed bottom-20 left-0 right-0 p-4 bg-gradient-to-t from-background via-background to-transparent">
+          <div className="max-w-md mx-auto">
+            <motion.div 
+              className="flex items-center gap-3"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Button 
+                onClick={handleShareViaTelegram}
+                className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-6 rounded-2xl text-lg gap-2"
+                size="lg"
+              >
+                <Share2 className="w-5 h-5" />
+                شارك الرابط
+              </Button>
+              <motion.div whileTap={{ scale: 0.95 }}>
                 <Button 
                   onClick={copyLink}
                   variant="outline"
                   size="lg"
-                  className="px-4 py-4 rounded-2xl border-border bg-card hover:bg-muted"
-                  title="Copy Link"
+                  className="h-14 w-14 p-0 rounded-2xl border-border/50 bg-card hover:bg-muted"
                 >
-                  {copied ? <Check className="h-5 w-5 text-primary" /> : <Copy className="h-5 w-5" />}
+                  {copied ? (
+                    <Check className="h-5 w-5 text-primary" />
+                  ) : (
+                    <Copy className="h-5 w-5" />
+                  )}
                 </Button>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
-
         </div>
       </div>
     </>
