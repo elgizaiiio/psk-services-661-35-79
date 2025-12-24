@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, Trophy, Crown, Gem, Lock, Unlock, Gift, Sparkles } from 'lucide-react';
+import { Star, Trophy, Crown, Gem, Lock, Unlock, Gift, Sparkles, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -21,13 +21,13 @@ interface LevelReward {
 }
 
 const RANKS = [
-  { level: 1, title: 'Bronze Miner', xpRequired: 0, icon: Star, color: 'text-orange-400', benefits: ['Basic Mining'], reward: { spins: 0, tokens: 0 } },
-  { level: 2, title: 'Silver Miner', xpRequired: 100, icon: Star, color: 'text-gray-300', benefits: ['+5% Mining Speed'], reward: { spins: 3, tokens: 50 } },
-  { level: 3, title: 'Gold Miner', xpRequired: 300, icon: Trophy, color: 'text-yellow-400', benefits: ['+10% Mining Speed', 'Flash Sale Access'], reward: { spins: 5, tokens: 100 } },
-  { level: 4, title: 'Platinum Miner', xpRequired: 600, icon: Trophy, color: 'text-cyan-300', benefits: ['+15% Mining Speed', 'Lucky Box Discount'], reward: { spins: 7, tokens: 200 } },
-  { level: 5, title: 'Diamond Miner', xpRequired: 1000, icon: Crown, color: 'text-blue-400', benefits: ['+20% Mining Speed', 'VIP Support'], reward: { spins: 10, tokens: 350 } },
-  { level: 6, title: 'Elite Miner', xpRequired: 1500, icon: Crown, color: 'text-purple-400', benefits: ['+25% Mining Speed', 'Exclusive Offers'], reward: { spins: 15, tokens: 500 } },
-  { level: 7, title: 'Legend', xpRequired: 2500, icon: Gem, color: 'text-pink-400', benefits: ['+30% Mining Speed', 'All Features Unlocked'], reward: { spins: 25, tokens: 1000 } },
+  { level: 1, title: 'Bronze Miner', titleAr: 'عامل برونزي', xpRequired: 0, icon: Star, color: 'text-orange-400', bgColor: 'from-orange-500/20 to-orange-600/20', benefits: ['Basic Mining'], reward: { spins: 0, tokens: 0 } },
+  { level: 2, title: 'Silver Miner', titleAr: 'عامل فضي', xpRequired: 100, icon: Star, color: 'text-gray-300', bgColor: 'from-gray-400/20 to-gray-500/20', benefits: ['+5% Mining Speed'], reward: { spins: 3, tokens: 50 } },
+  { level: 3, title: 'Gold Miner', titleAr: 'عامل ذهبي', xpRequired: 300, icon: Trophy, color: 'text-yellow-400', bgColor: 'from-yellow-500/20 to-yellow-600/20', benefits: ['+10% Mining Speed', 'Flash Sale Access'], reward: { spins: 5, tokens: 100 } },
+  { level: 4, title: 'Platinum Miner', titleAr: 'عامل بلاتيني', xpRequired: 600, icon: Trophy, color: 'text-cyan-300', bgColor: 'from-cyan-400/20 to-cyan-500/20', benefits: ['+15% Mining Speed', 'Lucky Box Discount'], reward: { spins: 7, tokens: 200 } },
+  { level: 5, title: 'Diamond Miner', titleAr: 'عامل ماسي', xpRequired: 1000, icon: Crown, color: 'text-blue-400', bgColor: 'from-blue-500/20 to-blue-600/20', benefits: ['+20% Mining Speed', 'VIP Support'], reward: { spins: 10, tokens: 350 } },
+  { level: 6, title: 'Elite Miner', titleAr: 'عامل نخبة', xpRequired: 1500, icon: Crown, color: 'text-purple-400', bgColor: 'from-purple-500/20 to-purple-600/20', benefits: ['+25% Mining Speed', 'Exclusive Offers'], reward: { spins: 15, tokens: 500 } },
+  { level: 7, title: 'Legend', titleAr: 'أسطورة', xpRequired: 2500, icon: Gem, color: 'text-pink-400', bgColor: 'from-pink-500/20 to-pink-600/20', benefits: ['+30% Mining Speed', 'All Features Unlocked'], reward: { spins: 25, tokens: 1000 } },
 ];
 
 export const LevelProgressCard = ({ userId, tokenBalance, onLevelReward }: LevelProgressCardProps) => {
@@ -35,6 +35,7 @@ export const LevelProgressCard = ({ userId, tokenBalance, onLevelReward }: Level
   const [lastClaimedLevel, setLastClaimedLevel] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [showLevelUpModal, setShowLevelUpModal] = useState(false);
+  const [showAllLevels, setShowAllLevels] = useState(false);
   const [pendingReward, setPendingReward] = useState<{ level: number; reward: LevelReward } | null>(null);
 
   useEffect(() => {
@@ -293,6 +294,142 @@ export const LevelProgressCard = ({ userId, tokenBalance, onLevelReward }: Level
                 );
               })}
             </div>
+
+            {/* View All Levels Button */}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAllLevels(!showAllLevels)}
+              className="w-full mt-3 text-muted-foreground hover:text-white"
+            >
+              {showAllLevels ? (
+                <>
+                  <ChevronUp className="w-4 h-4 mr-1" />
+                  إخفاء قائمة المستويات
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4 mr-1" />
+                  عرض جميع المستويات والمكافآت
+                </>
+              )}
+            </Button>
+
+            {/* All Levels List */}
+            <AnimatePresence>
+              {showAllLevels && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="overflow-hidden"
+                >
+                  <div className="mt-4 space-y-2">
+                    {RANKS.map((rank) => {
+                      const RankIcon = rank.icon;
+                      const isUnlocked = userLevel.level >= rank.level;
+                      const isCurrent = userLevel.level === rank.level;
+                      
+                      return (
+                        <motion.div
+                          key={rank.level}
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          transition={{ delay: rank.level * 0.05 }}
+                          className={`p-3 rounded-lg border ${
+                            isCurrent 
+                              ? 'border-yellow-500/50 bg-gradient-to-r ' + rank.bgColor 
+                              : isUnlocked 
+                                ? 'border-green-500/30 bg-green-500/5' 
+                                : 'border-gray-700/30 bg-gray-800/20'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-full bg-gradient-to-br ${rank.bgColor} ${rank.color}`}>
+                                <RankIcon className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <span className={`font-bold ${rank.color}`}>{rank.titleAr}</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    Lv.{rank.level}
+                                  </Badge>
+                                  {isCurrent && (
+                                    <Badge className="text-xs bg-yellow-500/20 text-yellow-400 border-yellow-500/30">
+                                      الحالي
+                                    </Badge>
+                                  )}
+                                  {isUnlocked && !isCurrent && (
+                                    <Check className="w-4 h-4 text-green-400" />
+                                  )}
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                  {rank.xpRequired} XP مطلوب
+                                </p>
+                              </div>
+                            </div>
+                            
+                            {/* Rewards */}
+                            {rank.level > 1 && (
+                              <div className="text-right">
+                                <p className="text-xs text-muted-foreground mb-1">المكافآت:</p>
+                                <div className="flex gap-2 text-xs">
+                                  <span className={isUnlocked ? 'text-green-400' : 'text-gray-500'}>
+                                    🎰 {rank.reward.spins}
+                                  </span>
+                                  <span className={isUnlocked ? 'text-blue-400' : 'text-gray-500'}>
+                                    💎 {rank.reward.tokens}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Benefits */}
+                          <div className="mt-2 flex flex-wrap gap-1">
+                            {rank.benefits.map((benefit, idx) => (
+                              <Badge 
+                                key={idx} 
+                                variant="outline" 
+                                className={`text-xs ${
+                                  isUnlocked 
+                                    ? 'border-green-500/30 text-green-400' 
+                                    : 'border-gray-600/30 text-gray-500'
+                                }`}
+                              >
+                                {isUnlocked ? <Unlock className="w-3 h-3 mr-1" /> : <Lock className="w-3 h-3 mr-1" />}
+                                {benefit}
+                              </Badge>
+                            ))}
+                          </div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Total Rewards Summary */}
+                  <div className="mt-4 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg border border-yellow-500/20">
+                    <h4 className="text-sm font-bold text-yellow-400 mb-2 text-center">إجمالي المكافآت المتاحة</h4>
+                    <div className="flex justify-center gap-6">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-green-400">
+                          {RANKS.reduce((sum, r) => sum + r.reward.spins, 0)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">🎰 سبينات</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-blue-400">
+                          {RANKS.reduce((sum, r) => sum + r.reward.tokens, 0).toLocaleString()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">💎 VIRAL</p>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </Card>
       </motion.div>
@@ -316,7 +453,7 @@ export const LevelProgressCard = ({ userId, tokenBalance, onLevelReward }: Level
             >
               <div className="text-6xl">🎉</div>
               <p className="text-xl text-white">
-                أنت الآن <span className={currentRank.color}>{currentRank.title}</span>!
+                أنت الآن <span className={currentRank.color}>{currentRank.titleAr}</span>!
               </p>
               
               <div className="bg-black/30 p-4 rounded-xl space-y-3">
