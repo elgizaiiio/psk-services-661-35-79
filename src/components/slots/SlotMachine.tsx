@@ -161,7 +161,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
 
     playClickSound();
     useFreeSpin();
-    toast.info("🎁 لفة مجانية!");
+    toast.info("🎁 Free Spin!");
 
     setSpinning(true);
     setWinningIndexes([]);
@@ -182,7 +182,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
     if (spinning) return;
 
     if (coins < spinCost) {
-      toast.error(`تحتاج ${spinCost} عملة للدوران!`);
+      toast.error(`You need ${spinCost} coins to spin!`);
       return;
     }
 
@@ -234,10 +234,10 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
           
           if (indexes.length === 3) {
             playJackpotSound();
-            toast.success(`🎰 جاكبوت! +${winAmount}`, { duration: 3000 });
+            toast.success(`🎰 Jackpot! +${winAmount}`, { duration: 3000 });
           } else {
             playWinSound();
-            toast.success(`🎉 فوز! +${winAmount}`);
+            toast.success(`🎉 You Win! +${winAmount}`);
           }
         } else {
           playNoWinSound();
@@ -380,7 +380,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
       {/* Spin cost & free spin info */}
       <div className="text-center space-y-2">
         <p className="text-sm text-muted-foreground">
-          تكلفة الدوران: <span className="text-primary font-medium">{spinCost}</span>
+          Spin Cost: <span className="text-primary font-medium">{spinCost}</span>
         </p>
         
         {hasFreeSpin ? (
@@ -389,12 +389,12 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
             animate={{ scale: [1, 1.05, 1] }}
             transition={{ duration: 1.5, repeat: Infinity }}
           >
-            🎁 لديك لفة مجانية!
+            🎁 You have a free spin!
           </motion.p>
         ) : (
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Clock className="w-3.5 h-3.5" />
-            <span>اللفة المجانية القادمة:</span>
+            <span>Next free spin:</span>
             <span className="font-mono text-primary font-medium">{formatCountdown(countdown)}</span>
           </div>
         )}
@@ -403,7 +403,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
 
       {/* Prize table */}
       <div className="w-full max-w-xs p-4 rounded-2xl bg-card/50 border border-border/30">
-        <h3 className="text-center text-sm font-medium text-muted-foreground mb-4">الجوائز</h3>
+        <h3 className="text-center text-sm font-medium text-muted-foreground mb-4">Prizes</h3>
         <div className="space-y-3">
           {SYMBOLS.slice().reverse().map((symbol) => (
             <div key={symbol.id} className="flex items-center justify-between">
@@ -416,7 +416,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
             </div>
           ))}
           <div className="pt-2 border-t border-border/30 text-xs text-muted-foreground text-center">
-            2 متطابقة = ×2
+            2 matching = ×2
           </div>
         </div>
       </div>
