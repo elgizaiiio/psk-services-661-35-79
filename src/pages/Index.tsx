@@ -1,7 +1,7 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Zap, Wallet, ArrowUp, Settings, Target, Users, Trophy, Crown } from "lucide-react";
+import { Zap, Wallet, ArrowUp, Settings, Target, Users, Trophy, Crown, Coins } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
@@ -194,6 +194,14 @@ const Index = () => {
             >
               <Crown className="w-4 h-4 mr-2" />
               VIP Subscription
+            </Button>
+            
+            <Button 
+              onClick={() => navigate('/token-store')}
+              className="w-full h-12 rounded-full bg-gradient-to-r from-primary to-blue-600 text-primary-foreground font-semibold hover:opacity-90"
+            >
+              <Coins className="w-4 h-4 mr-2" />
+              Buy Tokens
             </Button>
           </div>
         )}
