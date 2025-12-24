@@ -1,0 +1,371 @@
+import { useState } from 'react';
+import { Helmet } from 'react-helmet-async';
+import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+import { 
+  Coins, 
+  Zap, 
+  Gift, 
+  ArrowLeft,
+  Sparkles,
+  TrendingUp,
+  Star,
+  Flame,
+  Crown,
+  Percent
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useTelegramAuth } from '@/hooks/useTelegramAuth';
+import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
+import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
+interface TokenPackage {
+  id: string;
+  name: string;
+  tokens: number;
+  bonusTokens: number;
+  price: number;
+  popular?: boolean;
+  bestValue?: boolean;
+  discount?: number;
+  icon: React.ReactNode;
+  gradient: string;
+}
+
+const tokenPackages: TokenPackage[] = [
+  {
+    id: 'starter',
+    name: 'Starter',
+    tokens: 500,
+    bonusTokens: 0,
+    price: 0.5,
+    icon: <Coins className="w-6 h-6" />,
+    gradient: 'from-blue-400 to-cyan-500'
+  },
+  {
+    id: 'basic',
+    name: 'Basic',
+    tokens: 1200,
+    bonusTokens: 100,
+    price: 1,
+    icon: <Zap className="w-6 h-6" />,
+    gradient: 'from-green-400 to-emerald-500'
+  },
+  {
+    id: 'popular',
+    name: 'Popular',
+    tokens: 3000,
+    bonusTokens: 500,
+    price: 2,
+    popular: true,
+    discount: 15,
+    icon: <Star className="w-6 h-6" />,
+    gradient: 'from-yellow-400 to-orange-500'
+  },
+  {
+    id: 'premium',
+    name: 'Premium',
+    tokens: 8000,
+    bonusTokens: 2000,
+    price: 5,
+    discount: 20,
+    icon: <Flame className="w-6 h-6" />,
+    gradient: 'from-orange-400 to-red-500'
+  },
+  {
+    id: 'elite',
+    name: 'Elite',
+    tokens: 20000,
+    bonusTokens: 6000,
+    price: 10,
+    bestValue: true,
+    discount: 30,
+    icon: <Crown className="w-6 h-6" />,
+    gradient: 'from-purple-400 to-pink-500'
+  },
+  {
+    id: 'whale',
+    name: 'Whale',
+    tokens: 50000,
+    bonusTokens: 20000,
+    price: 20,
+    discount: 40,
+    icon: <Sparkles className="w-6 h-6" />,
+    gradient: 'from-indigo-400 to-purple-600'
+  }
+];
+
+const TokenStore = () => {
+  const navigate = useNavigate();
+  const { user: telegramUser } = useTelegramAuth();
+  const { isConnected, connectWallet } = useTelegramTonConnect();
+  const { sendDirectPayment, isProcessing } = useDirectTonPayment();
+  const [purchasing, setPurchasing] = useState<string | null>(null);
+
+  const handlePurchase = async (pkg: TokenPackage) => {
+    if (!telegramUser) {
+      toast.error('يجب تسجيل الدخول أولاً');
+      return;
+    }
+
+    if (!isConnected) {
+      await connectWallet();
+      return;
+    }
+
+    setPurchasing(pkg.id);
+
+    try {
+      // Get user from database
+      const { data: userData, error: userError } = await supabase
+        .from('bolt_users')
+        .select('id, token_balance')
+        .eq('telegram_id', telegramUser.id)
+        .maybeSingle();
+
+      if (userError || !userData) {
+        throw new Error('لم يتم العثور على المستخدم');
+      }
+
+      const totalTokens = pkg.tokens + pkg.bonusTokens;
+
+      // Send TON transaction
+      const success = await sendDirectPayment({
+        amount: pkg.price,
+        description: `شراء ${totalTokens.toLocaleString()} VIRAL Token`,
+        productType: 'ai_credits',
+        productId: pkg.id,
+        credits: totalTokens
+      });
+
+      if (success) {
+        // Update user balance
+        await supabase
+          .from('bolt_users')
+          .update({ 
+            token_balance: (userData.token_balance || 0) + totalTokens 
+          })
+          .eq('id', userData.id);
+
+        // Create social notification
+        await supabase
+          .from('bolt_social_notifications')
+          .insert({
+            user_id: userData.id,
+            action_type: 'token_purchase',
+            amount: totalTokens,
+            username: telegramUser.first_name || 'مستخدم',
+            product_name: pkg.name
+          });
+
+        toast.success(`🎉 تم إضافة ${totalTokens.toLocaleString()} VIRAL إلى رصيدك!`);
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error('حدث خطأ أثناء الشراء');
+    } finally {
+      setPurchasing(null);
+    }
+  };
+
+  const calculateTokensPerTon = (pkg: TokenPackage) => {
+    return Math.round((pkg.tokens + pkg.bonusTokens) / pkg.price);
+  };
+
+  return (
+    <main className="min-h-screen bg-background pb-24">
+      <Helmet>
+        <title>Token Store | VIRAL</title>
+        <meta name="description" content="اشترِ VIRAL Tokens بـ TON" />
+      </Helmet>
+
+      <div className="max-w-md mx-auto px-4 pt-6">
+        {/* Header */}
+        <div className="flex items-center gap-4 mb-6">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => navigate(-1)}
+            className="rounded-full"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">متجر التوكنز</h1>
+            <p className="text-sm text-muted-foreground">اشترِ VIRAL بـ TON</p>
+          </div>
+        </div>
+
+        {/* Hero Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative rounded-2xl overflow-hidden mb-6 p-6 bg-gradient-to-br from-primary/30 via-primary/10 to-background border border-primary/30"
+        >
+          <div className="absolute top-0 right-0 w-40 h-40 bg-primary/20 rounded-full blur-3xl" />
+          <div className="relative z-10 flex items-center gap-4">
+            <motion.div
+              animate={{ 
+                scale: [1, 1.1, 1],
+                rotate: [0, 5, -5, 0]
+              }}
+              transition={{ duration: 2, repeat: Infinity }}
+              className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center"
+            >
+              <Coins className="w-8 h-8 text-primary-foreground" />
+            </motion.div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">عروض حصرية!</h2>
+              <p className="text-sm text-muted-foreground">خصم يصل إلى 40% على الحزم الكبيرة</p>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Benefits */}
+        <div className="grid grid-cols-3 gap-2 mb-6">
+          <div className="bg-muted/50 rounded-xl p-3 text-center">
+            <Zap className="w-5 h-5 text-primary mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">تفعيل فوري</p>
+          </div>
+          <div className="bg-muted/50 rounded-xl p-3 text-center">
+            <Gift className="w-5 h-5 text-primary mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">بونص إضافي</p>
+          </div>
+          <div className="bg-muted/50 rounded-xl p-3 text-center">
+            <TrendingUp className="w-5 h-5 text-primary mx-auto mb-1" />
+            <p className="text-xs text-muted-foreground">قيمة أفضل</p>
+          </div>
+        </div>
+
+        {/* Packages Grid */}
+        <div className="grid grid-cols-2 gap-3">
+          {tokenPackages.map((pkg, index) => (
+            <motion.div
+              key={pkg.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: index * 0.05 }}
+              className="relative"
+            >
+              <Card className={`relative overflow-hidden p-4 border-2 ${
+                pkg.popular ? 'border-primary' : pkg.bestValue ? 'border-yellow-500' : 'border-border'
+              }`}>
+                {/* Badges */}
+                {pkg.popular && (
+                  <Badge className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] px-2">
+                    الأكثر شعبية
+                  </Badge>
+                )}
+                {pkg.bestValue && (
+                  <Badge className="absolute -top-1 -right-1 bg-yellow-500 text-black text-[10px] px-2">
+                    أفضل قيمة
+                  </Badge>
+                )}
+
+                {/* Discount Badge */}
+                {pkg.discount && (
+                  <div className="absolute top-2 left-2">
+                    <Badge variant="destructive" className="text-[10px] px-1.5 py-0.5">
+                      <Percent className="w-2.5 h-2.5 mr-0.5" />
+                      {pkg.discount}%
+                    </Badge>
+                  </div>
+                )}
+
+                {/* Icon */}
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${pkg.gradient} flex items-center justify-center text-white mb-3 mx-auto`}>
+                  {pkg.icon}
+                </div>
+
+                {/* Package Name */}
+                <h3 className="font-bold text-foreground text-center text-sm mb-1">{pkg.name}</h3>
+
+                {/* Tokens */}
+                <div className="text-center mb-2">
+                  <p className="text-lg font-bold text-primary">
+                    {pkg.tokens.toLocaleString()}
+                  </p>
+                  {pkg.bonusTokens > 0 && (
+                    <p className="text-xs text-green-500 font-medium">
+                      +{pkg.bonusTokens.toLocaleString()} بونص
+                    </p>
+                  )}
+                </div>
+
+                {/* Price */}
+                <div className="text-center mb-3">
+                  <span className="text-xl font-bold text-foreground">{pkg.price}</span>
+                  <span className="text-xs text-muted-foreground ml-1">TON</span>
+                </div>
+
+                {/* Tokens per TON */}
+                <p className="text-[10px] text-muted-foreground text-center mb-3">
+                  {calculateTokensPerTon(pkg).toLocaleString()} VIRAL/TON
+                </p>
+
+                {/* Buy Button */}
+                <Button
+                  onClick={() => handlePurchase(pkg)}
+                  disabled={purchasing === pkg.id || isProcessing}
+                  size="sm"
+                  className={`w-full ${
+                    pkg.popular || pkg.bestValue
+                      ? 'bg-primary hover:bg-primary/90'
+                      : 'bg-muted hover:bg-muted/80 text-foreground'
+                  }`}
+                >
+                  {purchasing === pkg.id ? (
+                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : !isConnected ? (
+                    'ربط المحفظة'
+                  ) : (
+                    'شراء'
+                  )}
+                </Button>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Info Section */}
+        <div className="mt-6 p-4 bg-muted/30 rounded-xl">
+          <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary" />
+            لماذا تشتري VIRAL؟
+          </h3>
+          <ul className="space-y-2 text-sm text-muted-foreground">
+            <li className="flex items-start gap-2">
+              <span className="text-primary">•</span>
+              <span>استخدمها لشراء الشخصيات والترقيات</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary">•</span>
+              <span>ادخل في المسابقات والتحديات</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary">•</span>
+              <span>تداول في السوق مع اللاعبين الآخرين</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-primary">•</span>
+              <span>احصل على مزايا VIP حصرية</span>
+            </li>
+          </ul>
+        </div>
+
+        {/* Security Note */}
+        <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl">
+          <p className="text-xs text-green-600 dark:text-green-400 text-center">
+            🔒 جميع المعاملات آمنة عبر شبكة TON
+          </p>
+        </div>
+      </div>
+    </main>
+  );
+};
+
+export default TokenStore;
