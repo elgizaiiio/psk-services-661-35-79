@@ -1,14 +1,10 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useChallenges } from '@/hooks/useChallenges';
-import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Challenges = () => {
@@ -54,116 +50,148 @@ const Challenges = () => {
     return `${hours}h`;
   };
 
-  const ChallengeItem = ({ challenge }: { challenge: any }) => {
+  const ChallengeItem = ({ challenge, index }: { challenge: any; index: number }) => {
     const userChallenge = userChallenges.find(uc => uc.challenge_id === challenge.id);
     const isJoined = !!userChallenge;
     const isCompleted = userChallenge?.completed;
     const progress = userChallenge ? (userChallenge.current_value / challenge.target_value) * 100 : 0;
 
     return (
-      <div className={`p-5 rounded-2xl border transition-all duration-300 ${
-        isCompleted 
-          ? 'bg-primary/10 border-primary/30' 
-          : 'bg-card/60 border-border/30 hover:border-primary/20'
-      }`}>
-        <div className="flex items-start justify-between gap-4 mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                challenge.challenge_type === 'daily' 
-                  ? 'bg-emerald-500/20 text-emerald-400' 
-                  : challenge.challenge_type === 'weekly'
-                  ? 'bg-blue-500/20 text-blue-400'
-                  : 'bg-purple-500/20 text-purple-400'
-              }`}>
-                {challenge.challenge_type === 'daily' 
-                  ? (language === 'ar' ? 'يومي' : language === 'ru' ? 'Ежедневно' : 'Daily')
-                  : challenge.challenge_type === 'weekly'
-                  ? (language === 'ar' ? 'أسبوعي' : language === 'ru' ? 'Еженедельно' : 'Weekly')
-                  : (language === 'ar' ? 'خاص' : language === 'ru' ? 'Особый' : 'Special')}
-              </span>
-              {isCompleted && (
-                <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/20 text-primary">
-                  {language === 'ar' ? 'مكتمل' : language === 'ru' ? 'Завершено' : 'Completed'}
+      <div 
+        className={`relative overflow-hidden rounded-3xl border transition-all duration-500 animate-fade-in ${
+          isCompleted 
+            ? 'bg-gradient-to-br from-primary/15 to-primary/5 border-primary/40' 
+            : 'bg-gradient-to-br from-card to-card/50 border-border/30 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5'
+        }`}
+        style={{ animationDelay: `${index * 100}ms` }}
+      >
+        {/* Decorative gradient orb */}
+        <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="relative p-6">
+          {/* Header */}
+          <div className="flex items-start justify-between gap-4 mb-5">
+            <div className="flex-1">
+              <div className="flex flex-wrap items-center gap-2 mb-3">
+                <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${
+                  challenge.challenge_type === 'daily' 
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' 
+                    : challenge.challenge_type === 'weekly'
+                    ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
+                    : 'bg-violet-500/15 text-violet-400 border border-violet-500/20'
+                }`}>
+                  {challenge.challenge_type === 'daily' 
+                    ? (language === 'ar' ? 'يومي' : language === 'ru' ? 'Ежедневно' : 'Daily')
+                    : challenge.challenge_type === 'weekly'
+                    ? (language === 'ar' ? 'أسبوعي' : language === 'ru' ? 'Еженедельно' : 'Weekly')
+                    : (language === 'ar' ? 'خاص' : language === 'ru' ? 'Особый' : 'Special')}
                 </span>
+                {isCompleted && (
+                  <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-primary/15 text-primary border border-primary/20">
+                    {language === 'ar' ? 'مكتمل' : language === 'ru' ? 'Завершено' : 'Done'}
+                  </span>
+                )}
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2 leading-tight">{getTitle(challenge)}</h3>
+              {getDescription(challenge) && (
+                <p className="text-sm text-muted-foreground/80 leading-relaxed">{getDescription(challenge)}</p>
               )}
             </div>
-            <h3 className="text-lg font-bold text-foreground mb-1">{getTitle(challenge)}</h3>
-            {getDescription(challenge) && (
-              <p className="text-sm text-muted-foreground leading-relaxed">{getDescription(challenge)}</p>
-            )}
           </div>
-        </div>
 
-        <div className="flex flex-wrap gap-4 text-sm mb-4">
-          <div className="flex flex-col">
-            <span className="text-muted-foreground text-xs mb-0.5">
-              {language === 'ar' ? 'الوقت المتبقي' : language === 'ru' ? 'Осталось' : 'Time Left'}
-            </span>
-            <span className="font-semibold text-foreground">{getTimeLeft(challenge.ends_at)}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-muted-foreground text-xs mb-0.5">
-              {language === 'ar' ? 'الهدف' : language === 'ru' ? 'Цель' : 'Target'}
-            </span>
-            <span className="font-semibold text-foreground">{challenge.target_value}</span>
-          </div>
-          <div className="flex flex-col">
-            <span className="text-muted-foreground text-xs mb-0.5">
-              {language === 'ar' ? 'المكافأة' : language === 'ru' ? 'Награда' : 'Reward'}
-            </span>
-            <span className="font-semibold text-primary">{challenge.reward_tokens.toLocaleString()} B</span>
-          </div>
-        </div>
-
-        {isJoined && !isCompleted && (
-          <div className="mb-4">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-muted-foreground">
-                {language === 'ar' ? 'التقدم' : language === 'ru' ? 'Прогресс' : 'Progress'}
-              </span>
-              <span className="font-medium text-foreground">
-                {userChallenge.current_value} / {challenge.target_value}
-              </span>
+          {/* Stats Grid */}
+          <div className="grid grid-cols-3 gap-3 mb-5">
+            <div className="bg-background/50 rounded-2xl p-3 text-center border border-border/10">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-1">
+                {language === 'ar' ? 'الوقت' : language === 'ru' ? 'Время' : 'Time'}
+              </div>
+              <div className="text-sm font-bold text-foreground">{getTimeLeft(challenge.ends_at)}</div>
             </div>
-            <div className="h-2 bg-muted/30 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all duration-500"
-                style={{ width: `${Math.min(progress, 100)}%` }}
-              />
+            <div className="bg-background/50 rounded-2xl p-3 text-center border border-border/10">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-1">
+                {language === 'ar' ? 'الهدف' : language === 'ru' ? 'Цель' : 'Goal'}
+              </div>
+              <div className="text-sm font-bold text-foreground">{challenge.target_value}</div>
+            </div>
+            <div className="bg-background/50 rounded-2xl p-3 text-center border border-border/10">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-1">
+                {language === 'ar' ? 'جائزة' : language === 'ru' ? 'Приз' : 'Prize'}
+              </div>
+              <div className="text-sm font-bold text-primary">{challenge.reward_tokens.toLocaleString()}</div>
             </div>
           </div>
-        )}
 
-        {!isJoined && (
-          <Button
-            className="w-full h-11 rounded-xl font-semibold"
-            onClick={() => joinChallenge(challenge.id)}
-            disabled={loading}
-          >
-            {language === 'ar' ? 'انضم الآن' : language === 'ru' ? 'Присоединиться' : 'Join Challenge'}
-          </Button>
-        )}
+          {/* Progress Bar */}
+          {isJoined && !isCompleted && (
+            <div className="mb-5">
+              <div className="flex justify-between text-xs mb-2">
+                <span className="text-muted-foreground font-medium">
+                  {language === 'ar' ? 'التقدم' : language === 'ru' ? 'Прогресс' : 'Progress'}
+                </span>
+                <span className="font-bold text-foreground">
+                  {userChallenge.current_value} / {challenge.target_value}
+                </span>
+              </div>
+              <div className="h-3 bg-muted/20 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-primary via-primary to-primary/60 rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${Math.min(progress, 100)}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Action Button */}
+          {!isJoined && (
+            <Button
+              className="w-full h-12 rounded-2xl font-bold text-sm tracking-wide transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+              onClick={() => joinChallenge(challenge.id)}
+              disabled={loading}
+            >
+              {language === 'ar' ? 'انضم الآن' : language === 'ru' ? 'Присоединиться' : 'Join Now'}
+            </Button>
+          )}
+        </div>
       </div>
     );
   };
 
   const EmptyState = ({ type }: { type: 'daily' | 'weekly' }) => (
-    <div className="text-center py-12 px-6">
-      <div className="w-16 h-16 rounded-full bg-muted/20 mx-auto mb-4 flex items-center justify-center">
-        <span className="text-2xl">🎯</span>
+    <div className="text-center py-16 px-8 animate-fade-in">
+      <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-muted/30 to-muted/10 mx-auto mb-5 flex items-center justify-center border border-border/20">
+        <span className="text-3xl font-bold text-muted-foreground/40">?</span>
       </div>
-      <h3 className="font-bold text-foreground mb-2">
+      <h3 className="text-lg font-bold text-foreground mb-2">
         {type === 'daily' 
           ? (language === 'ar' ? 'لا توجد تحديات يومية' : language === 'ru' ? 'Нет ежедневных заданий' : 'No Daily Challenges')
           : (language === 'ar' ? 'لا توجد تحديات أسبوعية' : language === 'ru' ? 'Нет еженедельных заданий' : 'No Weekly Challenges')
         }
       </h3>
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-muted-foreground/70">
         {language === 'ar' ? 'تحقق لاحقًا للحصول على تحديات جديدة' : 
          language === 'ru' ? 'Проверьте позже для новых заданий' : 
          'Check back later for new challenges'}
       </p>
+    </div>
+  );
+
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[1, 2, 3].map(i => (
+        <div key={i} className="bg-card/50 rounded-3xl p-6 border border-border/20 animate-pulse">
+          <div className="flex gap-2 mb-4">
+            <div className="h-6 w-16 bg-muted/20 rounded-full" />
+            <div className="h-6 w-12 bg-muted/20 rounded-full" />
+          </div>
+          <div className="h-6 w-3/4 bg-muted/20 rounded-lg mb-2" />
+          <div className="h-4 w-1/2 bg-muted/20 rounded-lg mb-5" />
+          <div className="grid grid-cols-3 gap-3">
+            {[1, 2, 3].map(j => (
+              <div key={j} className="h-16 bg-muted/10 rounded-2xl" />
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 
@@ -174,50 +202,48 @@ const Challenges = () => {
         <meta name="description" content="Complete daily and weekly challenges to earn rewards" />
       </Helmet>
 
-      <div className={`min-h-screen bg-background pb-24 ${isRTL ? 'rtl' : 'ltr'}`}>
+      <div className={`min-h-screen bg-background pb-28 ${isRTL ? 'rtl' : 'ltr'}`}>
         {/* Header */}
-        <div className="sticky top-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/20 px-5 py-4">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate(-1)}
-              className="shrink-0 rounded-xl hover:bg-muted/50"
-            >
-              <ArrowLeft className={`w-5 h-5 ${isRTL ? 'rotate-180' : ''}`} />
-            </Button>
-            <div className="flex-1">
-              <h1 className="text-2xl font-bold text-foreground">
+        <div className="sticky top-0 z-40 bg-background/90 backdrop-blur-2xl border-b border-border/10">
+          <div className="px-6 py-5">
+            <div className="flex items-center justify-between mb-1">
+              <h1 className="text-3xl font-black text-foreground tracking-tight">
                 {language === 'ar' ? 'التحديات' : language === 'ru' ? 'Задания' : 'Challenges'}
               </h1>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                {language === 'ar' ? 'أكمل التحديات واربح المكافآت' : 
-                 language === 'ru' ? 'Выполняйте задания и получайте награды' : 
-                 'Complete challenges and earn rewards'}
-              </p>
+              <button 
+                onClick={() => navigate(-1)}
+                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {language === 'ar' ? 'رجوع' : language === 'ru' ? 'Назад' : 'Back'}
+              </button>
             </div>
+            <p className="text-sm text-muted-foreground/70">
+              {language === 'ar' ? 'أكمل التحديات واربح المكافآت' : 
+               language === 'ru' ? 'Выполняйте задания и получайте награды' : 
+               'Complete challenges and earn rewards'}
+            </p>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="px-5 py-5">
-          <div className="grid grid-cols-3 gap-3">
-            <div className="bg-card/60 rounded-2xl p-4 text-center border border-border/20">
-              <div className="text-3xl font-bold text-foreground mb-1">{completedCount}</div>
-              <div className="text-xs text-muted-foreground">
-                {language === 'ar' ? 'مكتملة' : language === 'ru' ? 'Завершено' : 'Completed'}
+        {/* Stats Row */}
+        <div className="px-6 py-5">
+          <div className="flex gap-3">
+            <div className="flex-1 bg-gradient-to-br from-card to-card/50 rounded-2xl p-4 text-center border border-border/20">
+              <div className="text-4xl font-black text-foreground mb-0.5">{completedCount}</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-medium">
+                {language === 'ar' ? 'مكتملة' : language === 'ru' ? 'Готово' : 'Done'}
               </div>
             </div>
-            <div className="bg-card/60 rounded-2xl p-4 text-center border border-border/20">
-              <div className="text-3xl font-bold text-foreground mb-1">{totalJoined}</div>
-              <div className="text-xs text-muted-foreground">
-                {language === 'ar' ? 'منضم' : language === 'ru' ? 'Активно' : 'Joined'}
+            <div className="flex-1 bg-gradient-to-br from-card to-card/50 rounded-2xl p-4 text-center border border-border/20">
+              <div className="text-4xl font-black text-foreground mb-0.5">{totalJoined}</div>
+              <div className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-medium">
+                {language === 'ar' ? 'نشط' : language === 'ru' ? 'Активно' : 'Active'}
               </div>
             </div>
-            <div className="bg-card/60 rounded-2xl p-4 text-center border border-border/20">
-              <div className="text-3xl font-bold text-primary mb-1">{challenges.length}</div>
-              <div className="text-xs text-muted-foreground">
-                {language === 'ar' ? 'متاح' : language === 'ru' ? 'Доступно' : 'Available'}
+            <div className="flex-1 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-4 text-center border border-primary/20">
+              <div className="text-4xl font-black text-primary mb-0.5">{challenges.length}</div>
+              <div className="text-[10px] uppercase tracking-widest text-primary/60 font-medium">
+                {language === 'ar' ? 'متاح' : language === 'ru' ? 'Всего' : 'Total'}
               </div>
             </div>
           </div>
@@ -225,57 +251,49 @@ const Challenges = () => {
 
         {/* Featured Challenge */}
         {specialChallenges.length > 0 && (
-          <div className="px-5 mb-5">
-            <div className="bg-gradient-to-br from-purple-500/20 via-pink-500/10 to-primary/10 rounded-2xl p-5 border border-purple-500/20">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="text-lg">✨</span>
-                <span className="font-bold text-foreground">
-                  {language === 'ar' ? 'تحدي مميز' : language === 'ru' ? 'Особый вызов' : 'Featured Challenge'}
-                </span>
+          <div className="px-6 mb-6">
+            <div className="relative overflow-hidden bg-gradient-to-br from-violet-500/20 via-purple-500/10 to-pink-500/10 rounded-3xl p-1 border border-violet-500/30">
+              <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-transparent to-pink-500/10 animate-pulse" />
+              <div className="relative bg-background/80 backdrop-blur-sm rounded-[22px] p-5">
+                <div className="text-[10px] uppercase tracking-widest text-violet-400 font-bold mb-4">
+                  {language === 'ar' ? 'تحدي مميز' : language === 'ru' ? 'Особый вызов' : 'Featured'}
+                </div>
+                <ChallengeItem challenge={specialChallenges[0]} index={0} />
               </div>
-              <ChallengeItem challenge={specialChallenges[0]} />
             </div>
           </div>
         )}
 
         {/* Tabs */}
-        <div className="px-5">
+        <div className="px-6">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-5 h-12 p-1 bg-muted/30 rounded-xl">
+            <TabsList className="grid w-full grid-cols-2 mb-6 h-14 p-1.5 bg-card/50 rounded-2xl border border-border/20">
               <TabsTrigger 
                 value="daily" 
-                className="rounded-lg h-10 font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="rounded-xl h-11 font-bold text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300"
               >
                 {language === 'ar' ? 'يومي' : language === 'ru' ? 'Ежедневно' : 'Daily'}
                 {dailyChallenges.length > 0 && (
-                  <span className="ml-2 text-xs opacity-70">({dailyChallenges.length})</span>
+                  <span className="ml-2 opacity-60">({dailyChallenges.length})</span>
                 )}
               </TabsTrigger>
               <TabsTrigger 
                 value="weekly" 
-                className="rounded-lg h-10 font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                className="rounded-xl h-11 font-bold text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300"
               >
                 {language === 'ar' ? 'أسبوعي' : language === 'ru' ? 'Еженедельно' : 'Weekly'}
                 {weeklyChallenges.length > 0 && (
-                  <span className="ml-2 text-xs opacity-70">({weeklyChallenges.length})</span>
+                  <span className="ml-2 opacity-60">({weeklyChallenges.length})</span>
                 )}
               </TabsTrigger>
             </TabsList>
 
             <TabsContent value="daily" className="space-y-4 mt-0">
               {loading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="bg-card/60 rounded-2xl p-5 border border-border/20 animate-pulse">
-                      <div className="h-6 w-20 bg-muted/30 rounded-full mb-3" />
-                      <div className="h-5 w-3/4 bg-muted/30 rounded mb-2" />
-                      <div className="h-4 w-1/2 bg-muted/30 rounded" />
-                    </div>
-                  ))}
-                </div>
+                <LoadingSkeleton />
               ) : dailyChallenges.length > 0 ? (
-                dailyChallenges.map(challenge => (
-                  <ChallengeItem key={challenge.id} challenge={challenge} />
+                dailyChallenges.map((challenge, index) => (
+                  <ChallengeItem key={challenge.id} challenge={challenge} index={index} />
                 ))
               ) : (
                 <EmptyState type="daily" />
@@ -284,18 +302,10 @@ const Challenges = () => {
 
             <TabsContent value="weekly" className="space-y-4 mt-0">
               {loading ? (
-                <div className="space-y-4">
-                  {[1, 2].map(i => (
-                    <div key={i} className="bg-card/60 rounded-2xl p-5 border border-border/20 animate-pulse">
-                      <div className="h-6 w-20 bg-muted/30 rounded-full mb-3" />
-                      <div className="h-5 w-3/4 bg-muted/30 rounded mb-2" />
-                      <div className="h-4 w-1/2 bg-muted/30 rounded" />
-                    </div>
-                  ))}
-                </div>
+                <LoadingSkeleton />
               ) : weeklyChallenges.length > 0 ? (
-                weeklyChallenges.map(challenge => (
-                  <ChallengeItem key={challenge.id} challenge={challenge} />
+                weeklyChallenges.map((challenge, index) => (
+                  <ChallengeItem key={challenge.id} challenge={challenge} index={index} />
                 ))
               ) : (
                 <EmptyState type="weekly" />
@@ -304,38 +314,30 @@ const Challenges = () => {
           </Tabs>
         </div>
 
-        {/* Info Banner */}
-        <div className="px-5 mt-6">
-          <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-2xl p-5 border border-primary/10">
-            <h3 className="font-bold text-foreground mb-3">
-              {language === 'ar' ? 'كيف تعمل التحديات؟' : language === 'ru' ? 'Как работают задания?' : 'How Challenges Work'}
+        {/* Tips Section */}
+        <div className="px-6 mt-8">
+          <div className="bg-gradient-to-br from-card to-card/30 rounded-3xl p-6 border border-border/20">
+            <h3 className="text-sm font-bold text-foreground mb-4 uppercase tracking-wider">
+              {language === 'ar' ? 'نصائح' : language === 'ru' ? 'Советы' : 'Tips'}
             </h3>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">•</span>
-                <span>
-                  {language === 'ar' ? 'انضم إلى التحديات واربح رموز B' : 
-                   language === 'ru' ? 'Присоединяйтесь к заданиям и зарабатывайте токены B' : 
-                   'Join challenges and earn B tokens'}
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">•</span>
-                <span>
-                  {language === 'ar' ? 'التحديات اليومية تنتهي كل 24 ساعة' : 
-                   language === 'ru' ? 'Ежедневные задания обновляются каждые 24 часа' : 
-                   'Daily challenges reset every 24 hours'}
-                </span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">•</span>
-                <span>
-                  {language === 'ar' ? 'أكمل التحديات الخاصة للحصول على مكافآت أكبر' : 
-                   language === 'ru' ? 'Выполняйте особые задания для больших наград' : 
-                   'Complete special challenges for bigger rewards'}
-                </span>
-              </li>
-            </ul>
+            <div className="space-y-3">
+              {[
+                language === 'ar' ? 'انضم إلى التحديات واربح رموز B' : 
+                language === 'ru' ? 'Присоединяйтесь к заданиям за токены' : 
+                'Join challenges to earn B tokens',
+                language === 'ar' ? 'التحديات اليومية تتجدد كل 24 ساعة' : 
+                language === 'ru' ? 'Ежедневные задания каждые 24 часа' : 
+                'Daily challenges reset every 24 hours',
+                language === 'ar' ? 'التحديات الخاصة تمنح مكافآت أكبر' : 
+                language === 'ru' ? 'Особые задания дают больше наград' : 
+                'Special challenges give bigger rewards'
+              ].map((tip, i) => (
+                <div key={i} className="flex items-center gap-3 text-sm text-muted-foreground/80">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary/60 shrink-0" />
+                  <span>{tip}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>
