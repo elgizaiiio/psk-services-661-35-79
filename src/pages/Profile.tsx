@@ -16,8 +16,10 @@ import {
   Target,
   TrendingUp,
   Users,
-  Gift
+  Gift,
+  Settings
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
 import { useTasks } from "@/hooks/useTasks";
@@ -31,6 +33,7 @@ const Profile: React.FC = () => {
   const { completedTasks, loading: tasksLoading } = useTasks();
   const { getUserRank } = useLeaderboard();
   const [userRank, setUserRank] = React.useState<number | null>(null);
+  const navigate = useNavigate();
 
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
@@ -137,6 +140,18 @@ const Profile: React.FC = () => {
       <main className="safe-area pb-24">
         <div className="max-w-md mx-auto px-4 py-6 space-y-6">
           
+          {/* Settings Button */}
+          <div className="flex justify-end">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/settings')}
+              className="rounded-full"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
+          </div>
+
           {/* User Profile Header */}
           <Card className="overflow-hidden">
             <CardHeader className="pb-3 bg-gradient-to-r from-primary/5 to-secondary/5">

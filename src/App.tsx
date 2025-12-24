@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { TelegramTonConnectProvider } from "@/providers/TelegramTonConnectProvider";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import { useTelegramAuth } from "./hooks/useTelegramAuth";
 import { useReferralHandler } from "./hooks/useReferralHandler";
 import Index from "./pages/Index";
@@ -40,6 +41,7 @@ import CreateTask from "./pages/CreateTask";
 import Admin from "./pages/Admin";
 import ChatAI from "./pages/ChatAI";
 import Slots from "./pages/Slots";
+import Settings from "./pages/Settings";
 import SplashScreen from "./components/SplashScreen";
 
 
@@ -101,50 +103,53 @@ const App = () => (
     <QueryClientProvider client={queryClient}>
       <Router>
         <TelegramTonConnectProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <TelegramWebAppWrapper>
-              <div className="tg-webapp-container min-h-screen bg-background relative">
-                <div className="pt-6 relative z-10">
-                  <ScrollToBottom />
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    <Route path="/mining" element={<Mining />} />
-                    <Route path="/apps" element={<Apps />} />
-                    <Route path="/games" element={<Games />} />
-                    <Route path="/runner" element={<Runner />} />
-                    <Route path="/runner-game" element={<RunnerGamePage />} />
-                    <Route path="/ai-generator" element={<AiGenerator />} />
-                    <Route path="/profile" element={<Profile />} />
-                    <Route path="/game" element={<Game />} />
-                    <Route path="/skins" element={<Skins />} />
-                    <Route path="/leaderboard" element={<Leaderboard />} />
-                    <Route path="/tasks" element={<Tasks />} />
-                    <Route path="/invite" element={<Invite />} />
-                    <Route path="/wallet" element={<Wallet />} />
-                    <Route path="/server-store" element={<ServerStore />} />
-                    <Route path="/upgrade-center" element={<UpgradeCenter />} />
-                    <Route path="/premium-packages" element={<PremiumPackages />} />
-                    <Route path="/elite-addons" element={<EliteAddOns />} />
-                    <Route path="/upgrade-matrix" element={<UpgradeMatrix />} />
-                    <Route path="/legendary-servers" element={<LegendaryServers />} />
-                    <Route path="/ai-subscription" element={<AiSubscription />} />
-                    <Route path="/mining-servers" element={<MiningServers />} />
-                    <Route path="/events" element={<Events />} />
-                    <Route path="/ai-image-store" element={<AiImageStore />} />
-                    <Route path="/game-2048-store" element={<Game2048Store />} />
-                    <Route path="/giveaways" element={<Giveaways />} />
-                    <Route path="/admin" element={<Admin />} />
-                    <Route path="/create-task" element={<CreateTask />} />
-                    <Route path="/chat-ai" element={<ChatAI />} />
-                    <Route path="/slots" element={<Slots />} />
-                  </Routes>
-                  <BottomNavigation />
+          <LanguageProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <TelegramWebAppWrapper>
+                <div className="tg-webapp-container min-h-screen bg-background relative">
+                  <div className="pt-6 relative z-10">
+                    <ScrollToBottom />
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      <Route path="/mining" element={<Mining />} />
+                      <Route path="/apps" element={<Apps />} />
+                      <Route path="/games" element={<Games />} />
+                      <Route path="/runner" element={<Runner />} />
+                      <Route path="/runner-game" element={<RunnerGamePage />} />
+                      <Route path="/ai-generator" element={<AiGenerator />} />
+                      <Route path="/profile" element={<Profile />} />
+                      <Route path="/game" element={<Game />} />
+                      <Route path="/skins" element={<Skins />} />
+                      <Route path="/leaderboard" element={<Leaderboard />} />
+                      <Route path="/tasks" element={<Tasks />} />
+                      <Route path="/invite" element={<Invite />} />
+                      <Route path="/wallet" element={<Wallet />} />
+                      <Route path="/server-store" element={<ServerStore />} />
+                      <Route path="/upgrade-center" element={<UpgradeCenter />} />
+                      <Route path="/premium-packages" element={<PremiumPackages />} />
+                      <Route path="/elite-addons" element={<EliteAddOns />} />
+                      <Route path="/upgrade-matrix" element={<UpgradeMatrix />} />
+                      <Route path="/legendary-servers" element={<LegendaryServers />} />
+                      <Route path="/ai-subscription" element={<AiSubscription />} />
+                      <Route path="/mining-servers" element={<MiningServers />} />
+                      <Route path="/events" element={<Events />} />
+                      <Route path="/ai-image-store" element={<AiImageStore />} />
+                      <Route path="/game-2048-store" element={<Game2048Store />} />
+                      <Route path="/giveaways" element={<Giveaways />} />
+                      <Route path="/admin" element={<Admin />} />
+                      <Route path="/create-task" element={<CreateTask />} />
+                      <Route path="/chat-ai" element={<ChatAI />} />
+                      <Route path="/slots" element={<Slots />} />
+                      <Route path="/settings" element={<Settings />} />
+                    </Routes>
+                    <BottomNavigation />
+                  </div>
                 </div>
-              </div>
-            </TelegramWebAppWrapper>
-          </TooltipProvider>
+              </TelegramWebAppWrapper>
+            </TooltipProvider>
+          </LanguageProvider>
         </TelegramTonConnectProvider>
       </Router>
     </QueryClientProvider>
