@@ -45,6 +45,7 @@ import Settings from "./pages/Settings";
 import Challenges from "./pages/Challenges";
 import Characters from "./pages/Characters";
 import Achievements from "./pages/Achievements";
+import VIPSubscription from "./pages/VIPSubscription";
 import SplashScreen from "./components/SplashScreen";
 
 
@@ -149,6 +150,7 @@ const App = () => (
                       <Route path="/challenges" element={<Challenges />} />
                       <Route path="/characters" element={<Characters />} />
                       <Route path="/achievements" element={<Achievements />} />
+                      <Route path="/vip" element={<VIPSubscription />} />
                     </Routes>
                     <BottomNavigation />
                   </div>

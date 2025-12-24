@@ -1,7 +1,7 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Zap, Wallet, ArrowUp, Settings, Target, Users, Trophy } from "lucide-react";
+import { Zap, Wallet, ArrowUp, Settings, Target, Users, Trophy, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
@@ -186,6 +186,14 @@ const Index = () => {
             >
               <Trophy className="w-4 h-4 mr-2" />
               Achievements
+            </Button>
+            
+            <Button 
+              onClick={() => navigate('/vip')}
+              className="w-full h-12 rounded-full bg-gradient-to-r from-yellow-500 to-amber-600 text-black font-semibold hover:from-yellow-400 hover:to-amber-500"
+            >
+              <Crown className="w-4 h-4 mr-2" />
+              VIP Subscription
             </Button>
           </div>
         )}
