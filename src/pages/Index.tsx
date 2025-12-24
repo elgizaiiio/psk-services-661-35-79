@@ -1,7 +1,7 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Zap, Wallet, ArrowUp } from "lucide-react";
+import { Zap, Wallet, ArrowUp, Settings } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
@@ -77,8 +77,15 @@ const Index = () => {
 
       <div className="max-w-md mx-auto px-6 pt-8 pb-6">
         
-        {/* Wallet */}
-        <div className="flex justify-end mb-12">
+        {/* Header with Settings & Wallet */}
+        <div className="flex justify-between items-center mb-12">
+          <button
+            onClick={() => navigate('/settings')}
+            className="flex items-center justify-center w-10 h-10 rounded-full bg-muted/50 hover:bg-muted transition-colors"
+          >
+            <Settings className="w-5 h-5 text-muted-foreground" />
+          </button>
+          
           {!isConnected ? (
             <button
               onClick={handleConnectWallet}
