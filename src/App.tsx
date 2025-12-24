@@ -39,6 +39,7 @@ import Giveaways from "./pages/Giveaways";
 import CreateTask from "./pages/CreateTask";
 import Admin from "./pages/Admin";
 import ChatAI from "./pages/ChatAI";
+import Slots from "./pages/Slots";
 import SplashScreen from "./components/SplashScreen";
 
 
@@ -137,6 +138,7 @@ const App = () => (
                     <Route path="/admin" element={<Admin />} />
                     <Route path="/create-task" element={<CreateTask />} />
                     <Route path="/chat-ai" element={<ChatAI />} />
+                    <Route path="/slots" element={<Slots />} />
                   </Routes>
                   <BottomNavigation />
                 </div>

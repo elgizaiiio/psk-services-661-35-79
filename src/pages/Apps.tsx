@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { MessageCircle, Image, ChevronRight } from "lucide-react";
+import { MessageCircle, Image, ChevronRight, Gamepad2 } from "lucide-react";
 
 const Apps: React.FC = () => {
   const navigate = useNavigate();
@@ -17,6 +17,12 @@ const Apps: React.FC = () => {
       description: 'Create stunning AI artwork',
       icon: Image,
       path: '/runner'
+    },
+    {
+      title: '🎰 Slots',
+      description: 'Spin & win coins!',
+      icon: Gamepad2,
+      path: '/slots'
     }
   ];
 
