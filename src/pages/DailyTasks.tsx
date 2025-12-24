@@ -112,7 +112,7 @@ const DailyTasks = () => {
     if (result.success) {
       toast.success(`🎉 +${result.reward} VIRAL!`);
     } else {
-      toast.error(result.error || 'فشل إكمال المهمة');
+      toast.error(result.error || 'Failed to complete task');
     }
   };
 
@@ -122,7 +122,7 @@ const DailyTasks = () => {
     <main className="min-h-screen bg-background pb-24">
       <Helmet>
         <title>Daily Tasks | VIRAL</title>
-        <meta name="description" content="أكمل المهام اليومية واحصل على مكافآت" />
+        <meta name="description" content="Complete daily tasks and earn rewards" />
       </Helmet>
 
       <div className="max-w-md mx-auto px-4 pt-6">
@@ -138,8 +138,8 @@ const DailyTasks = () => {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">المهام اليومية</h1>
-              <p className="text-sm text-muted-foreground">تتجدد يومياً</p>
+              <h1 className="text-2xl font-bold text-foreground">Daily Tasks</h1>
+              <p className="text-sm text-muted-foreground">Renews daily</p>
             </div>
           </div>
           <Button
@@ -164,12 +164,12 @@ const DailyTasks = () => {
                 <Clock className="w-6 h-6 text-primary" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">تتجدد المهام خلال</p>
+                <p className="text-sm text-muted-foreground">Tasks reset in</p>
                 <p className="text-xl font-bold text-primary font-mono">{timeUntilReset}</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-sm text-muted-foreground">ربحت اليوم</p>
+              <p className="text-sm text-muted-foreground">Earned today</p>
               <p className="text-xl font-bold text-foreground">{todayEarned.toLocaleString()} VIRAL</p>
             </div>
           </div>
@@ -180,7 +180,7 @@ const DailyTasks = () => {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <Gift className="w-5 h-5 text-primary" />
-              <span className="font-semibold text-foreground">تقدم اليوم</span>
+              <span className="font-semibold text-foreground">Today's Progress</span>
             </div>
             <Badge variant="outline">
               {completedCount}/{totalCount}
@@ -191,10 +191,10 @@ const DailyTasks = () => {
           
           <div className="flex items-center justify-between text-sm">
             <span className="text-muted-foreground">
-              {completedCount === totalCount ? '🎉 أكملت كل المهام!' : `${totalCount - completedCount} مهام متبقية`}
+              {completedCount === totalCount ? '🎉 All tasks completed!' : `${totalCount - completedCount} tasks remaining`}
             </span>
             <span className="text-primary font-medium">
-              {totalRewards.toLocaleString()} VIRAL متاحة
+              {totalRewards.toLocaleString()} VIRAL available
             </span>
           </div>
         </Card>
@@ -227,10 +227,10 @@ const DailyTasks = () => {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <h3 className={`font-semibold ${task.is_completed ? 'text-green-500' : 'text-foreground'}`}>
-                        {task.title_ar}
+                        {task.title}
                       </h3>
                       <p className="text-sm text-muted-foreground truncate">
-                        {task.description_ar}
+                        {task.description}
                       </p>
                     </div>
 
@@ -251,14 +251,14 @@ const DailyTasks = () => {
                       size="sm"
                     >
                       <Zap className="w-4 h-4 mr-2" />
-                      إكمال المهمة
+                      Complete Task
                     </Button>
                   )}
 
                   {task.is_completed && (
                     <div className="flex items-center justify-center gap-2 mt-3 py-2 bg-green-500/10 rounded-lg">
                       <Check className="w-4 h-4 text-green-500" />
-                      <span className="text-sm text-green-500 font-medium">مكتملة</span>
+                      <span className="text-sm text-green-500 font-medium">Completed</span>
                     </div>
                   )}
                 </Card>
@@ -275,20 +275,20 @@ const DailyTasks = () => {
             className="mt-6 p-4 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-2xl text-center"
           >
             <Sparkles className="w-12 h-12 text-yellow-500 mx-auto mb-2" />
-            <h3 className="text-lg font-bold text-foreground mb-1">🎉 رائع!</h3>
+            <h3 className="text-lg font-bold text-foreground mb-1">🎉 Amazing!</h3>
             <p className="text-sm text-muted-foreground">
-              أكملت جميع المهام اليومية! عد غداً للمزيد
+              You completed all daily tasks! Come back tomorrow for more
             </p>
           </motion.div>
         )}
 
         {/* Info */}
         <div className="mt-6 p-4 bg-muted/30 rounded-xl">
-          <h3 className="font-semibold text-foreground mb-2">💡 نصائح</h3>
+          <h3 className="font-semibold text-foreground mb-2">💡 Tips</h3>
           <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>• المهام تتجدد كل يوم في منتصف الليل UTC</li>
-            <li>• أكمل جميع المهام للحصول على أقصى المكافآت</li>
-            <li>• بعض المهام تتطلب إجراءات محددة</li>
+            <li>• Tasks reset daily at midnight UTC</li>
+            <li>• Complete all tasks for maximum rewards</li>
+            <li>• Some tasks require specific actions</li>
           </ul>
         </div>
       </div>
