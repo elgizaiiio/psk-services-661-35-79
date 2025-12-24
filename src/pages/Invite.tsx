@@ -31,25 +31,25 @@ const Invite: React.FC = () => {
     try {
       await navigator.clipboard.writeText(referralLink);
       setCopied(true);
-      toast({ title: "تم النسخ", description: "تم نسخ رابط الدعوة بنجاح" });
+      toast({ title: "Copied!", description: "Referral link copied successfully" });
       setTimeout(() => setCopied(false), 1500);
     } catch (e) {
-      toast({ title: "خطأ", description: "لا يمكن نسخ الرابط، حاول مرة أخرى" });
+      toast({ title: "Error", description: "Could not copy the link, please try again" });
     }
   };
 
   const handleShareViaTelegram = () => {
-    const message = `🎯 انضم إلي في تعدين BOLT واربح عملات حقيقية!
+    const message = `🎯 Join me in BOLT mining and earn real tokens!
 
-💎 ابدأ التعدين الآن: ${referralLink}
+💎 Start mining now: ${referralLink}
 
-🚀 ما ستحصل عليه:
-• إعداد تعدين مجاني
-• اربح التوكنات بدون جهد
-• أكمل المهام اليومية للمكافآت
-• طور قوة التعدين
+🚀 What you will get:
+• Free mining setup
+• Earn tokens effortlessly
+• Complete daily tasks for rewards
+• Upgrade your mining power
 
-🎁 انضم للآلاف الذين يربحون يومياً!`;
+🎁 Join thousands earning daily!`;
 
     const encodedMessage = encodeURIComponent(message);
     const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodedMessage}`;
@@ -62,7 +62,7 @@ const Invite: React.FC = () => {
       window.open(telegramShareUrl, '_blank');
     }
     
-    toast({ title: "تمت المشاركة!", description: "جاري فتح تيليجرام للمشاركة" });
+    toast({ title: "Shared!", description: "Opening Telegram to share" });
   };
 
   const jsonLd = {
@@ -116,9 +116,9 @@ const Invite: React.FC = () => {
             <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
               <Users className="w-8 h-8 text-primary" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">الأصدقاء</h1>
+            <h1 className="text-3xl font-bold text-foreground mb-2">Friends</h1>
             <p className="text-muted-foreground">
-              احصل على BOLT لكل صديق ينضم!
+              Earn BOLT for every friend who joins!
             </p>
           </motion.div>
 
@@ -129,14 +129,14 @@ const Invite: React.FC = () => {
                 <Users className="w-5 h-5 text-primary" />
               </div>
               <p className="text-2xl font-bold text-foreground">{stats.total_referrals}</p>
-              <p className="text-sm text-muted-foreground">إجمالي الأصدقاء</p>
+              <p className="text-sm text-muted-foreground">Total Friends</p>
             </div>
             <div className="p-4 rounded-2xl bg-card border border-border/50">
               <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-3">
                 <TrendingUp className="w-5 h-5 text-primary" />
               </div>
               <p className="text-2xl font-bold text-foreground">{stats.total_bonus.toFixed(0)}</p>
-              <p className="text-sm text-muted-foreground">BOLT مكتسب</p>
+              <p className="text-sm text-muted-foreground">BOLT Earned</p>
             </div>
           </motion.div>
 
@@ -150,8 +150,8 @@ const Invite: React.FC = () => {
                 <Gift className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium text-foreground">مكافأة الدعوة</p>
-                <p className="text-sm text-muted-foreground">احصل على 10% من أرباح أصدقائك</p>
+                <p className="font-medium text-foreground">Referral Bonus</p>
+                <p className="text-sm text-muted-foreground">Get 10% of your friends earnings</p>
               </div>
             </div>
           </motion.div>
@@ -162,22 +162,22 @@ const Invite: React.FC = () => {
             className="rounded-2xl bg-card border border-border/50 overflow-hidden"
           >
             <div className="p-4 border-b border-border/50">
-              <h2 className="font-semibold text-foreground">قائمة الأصدقاء</h2>
+              <h2 className="font-semibold text-foreground">Friends List</h2>
             </div>
             
             <div className="p-4">
               {friendsLoading || miningLoading ? (
                 <div className="text-center py-8">
                   <div className="simple-loader mx-auto mb-3"></div>
-                  <p className="text-sm text-muted-foreground">جاري التحميل...</p>
+                  <p className="text-sm text-muted-foreground">Loading...</p>
                 </div>
               ) : referrals.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
                     <Users className="w-8 h-8 text-muted-foreground" />
                   </div>
-                  <p className="text-muted-foreground mb-1">لا يوجد أصدقاء بعد</p>
-                  <p className="text-sm text-muted-foreground">شارك الرابط وابدأ الربح!</p>
+                  <p className="text-muted-foreground mb-1">No friends yet</p>
+                  <p className="text-sm text-muted-foreground">Share the link and start earning!</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -230,7 +230,7 @@ const Invite: React.FC = () => {
                 size="lg"
               >
                 <Share2 className="w-5 h-5" />
-                شارك الرابط
+                Share Link
               </Button>
               <motion.div whileTap={{ scale: 0.95 }}>
                 <Button 
