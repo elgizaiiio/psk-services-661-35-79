@@ -1,22 +1,52 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlotReel } from "./SlotReel";
 import { Symbol, SYMBOLS, getRandomSymbol, SlotSymbol } from "./SlotSymbol";
-import { Zap, Sparkles } from "lucide-react";
+import { Zap, Sparkles, Gift } from "lucide-react";
 import { toast } from "sonner";
 
 interface SlotMachineProps {
   coins: number;
   onCoinsChange: (newCoins: number) => void;
   spinCost?: number;
+  userId?: string;
 }
 
-export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10 }: SlotMachineProps) => {
+// Get 3 different symbols (no matches = no win)
+const getNoWinSymbols = (): Symbol[] => {
+  const shuffled = [...SYMBOLS].sort(() => Math.random() - 0.5);
+  return [shuffled[0], shuffled[1], shuffled[2]];
+};
+
+const FREE_SPIN_KEY = 'slots_free_spin_date';
+
+export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: SlotMachineProps) => {
   const [spinning, setSpinning] = useState(false);
   const [results, setResults] = useState<Symbol[]>([SYMBOLS[0], SYMBOLS[1], SYMBOLS[2]]);
   const [winningIndexes, setWinningIndexes] = useState<number[]>([]);
   const [lastWin, setLastWin] = useState<number>(0);
   const [completedReels, setCompletedReels] = useState(0);
+  const [hasFreeSpin, setHasFreeSpin] = useState(false);
+
+  // Check if user has free spin available
+  useEffect(() => {
+    const checkFreeSpin = () => {
+      const lastFreeSpinDate = localStorage.getItem(`${FREE_SPIN_KEY}_${userId || 'guest'}`);
+      const today = new Date().toDateString();
+      
+      if (lastFreeSpinDate !== today) {
+        setHasFreeSpin(true);
+      }
+    };
+    
+    checkFreeSpin();
+  }, [userId]);
+
+  const useFreeSpin = () => {
+    const today = new Date().toDateString();
+    localStorage.setItem(`${FREE_SPIN_KEY}_${userId || 'guest'}`, today);
+    setHasFreeSpin(false);
+  };
 
   const calculateWin = useCallback((symbols: Symbol[]): number => {
     const [s1, s2, s3] = symbols;
@@ -43,6 +73,22 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10 }: SlotMachine
     
     return [];
   }, []);
+
+  const handleFreeSpin = useCallback(() => {
+    if (spinning || !hasFreeSpin) return;
+    
+    useFreeSpin();
+    toast.info("🎁 لفة مجانية!");
+    
+    setSpinning(true);
+    setWinningIndexes([]);
+    setLastWin(0);
+    setCompletedReels(0);
+
+    // Always give non-matching symbols
+    const newResults = getNoWinSymbols();
+    setResults(newResults);
+  }, [spinning, hasFreeSpin]);
 
   const handleSpin = useCallback(() => {
     if (spinning) return;
@@ -142,40 +188,76 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10 }: SlotMachine
         <div className="absolute bottom-0 left-8 right-8 h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent" />
       </div>
 
-      {/* Spin button */}
-      <motion.button
-        onClick={handleSpin}
-        disabled={spinning || coins < spinCost}
-        className={`
-          relative w-20 h-20 rounded-full
-          flex items-center justify-center
-          font-bold text-lg
-          transition-all duration-200
-          ${spinning || coins < spinCost 
-            ? 'bg-muted text-muted-foreground cursor-not-allowed' 
-            : 'bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.6)]'
-          }
-        `}
-        whileHover={!spinning && coins >= spinCost ? { scale: 1.05 } : {}}
-        whileTap={!spinning && coins >= spinCost ? { scale: 0.95 } : {}}
-        animate={!spinning && coins >= spinCost ? {
-          boxShadow: ['0 0 20px hsl(var(--primary)/0.3)', '0 0 35px hsl(var(--primary)/0.5)', '0 0 20px hsl(var(--primary)/0.3)']
-        } : {}}
-        transition={{ duration: 2, repeat: Infinity }}
-      >
-        {spinning ? (
-          <motion.div
-            animate={{ rotate: 360 }}
+      {/* Buttons row */}
+      <div className="flex items-center gap-4">
+        {/* Free spin button */}
+        {hasFreeSpin && (
+          <motion.button
+            onClick={handleFreeSpin}
+            disabled={spinning}
+            className={`
+              relative w-16 h-16 rounded-full
+              flex items-center justify-center
+              transition-all duration-200
+              ${spinning 
+                ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                : 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-[0_0_20px_rgba(234,179,8,0.4)]'
+              }
+            `}
+            whileHover={!spinning ? { scale: 1.05 } : {}}
+            whileTap={!spinning ? { scale: 0.95 } : {}}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+          >
+            <Gift className="w-6 h-6" />
+          </motion.button>
+        )}
+
+        {/* Spin button */}
+        <motion.button
+          onClick={handleSpin}
+          disabled={spinning || coins < spinCost}
+          className={`
+            relative w-20 h-20 rounded-full
+            flex items-center justify-center
+            font-bold text-lg
+            transition-all duration-200
+            ${spinning || coins < spinCost 
+              ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+              : 'bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-[0_0_30px_hsl(var(--primary)/0.4)] hover:shadow-[0_0_40px_hsl(var(--primary)/0.6)]'
+            }
+          `}
+          whileHover={!spinning && coins >= spinCost ? { scale: 1.05 } : {}}
+          whileTap={!spinning && coins >= spinCost ? { scale: 0.95 } : {}}
+          animate={!spinning && coins >= spinCost ? {
+            boxShadow: ['0 0 20px hsl(var(--primary)/0.3)', '0 0 35px hsl(var(--primary)/0.5)', '0 0 20px hsl(var(--primary)/0.3)']
+          } : {}}
+          transition={{ duration: 2, repeat: Infinity }}
+        >
+          {spinning ? (
+            <motion.div
+              animate={{ rotate: 360 }}
             transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
           >
             <Zap className="w-8 h-8" />
           </motion.div>
         ) : (
-          <Zap className="w-8 h-8" />
-        )}
-      </motion.button>
+            <Zap className="w-8 h-8" />
+          )}
+        </motion.button>
+      </div>
 
-      {/* Spin cost */}
+      {/* Spin cost & free spin hint */}
+      <div className="text-center">
+        <p className="text-sm text-muted-foreground">
+          تكلفة الدوران: <span className="text-primary font-medium">{spinCost}</span>
+        </p>
+        {hasFreeSpin && (
+          <p className="text-xs text-yellow-500 mt-1">🎁 لديك لفة مجانية!</p>
+        )}
+      </div>
+
+      {/* Original Spin cost */}
       <p className="text-sm text-muted-foreground">
         تكلفة الدوران: <span className="text-primary font-medium">{spinCost}</span>
       </p>

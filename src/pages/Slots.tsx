@@ -111,6 +111,7 @@ const Slots = () => {
               coins={coins} 
               onCoinsChange={handleCoinsChange}
               spinCost={10}
+              userId={user?.id?.toString()}
             />
           </motion.div>
         )}
