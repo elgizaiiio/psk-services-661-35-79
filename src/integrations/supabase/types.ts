@@ -1267,6 +1267,36 @@ export type Database = {
           },
         ]
       }
+      user_free_spins: {
+        Row: {
+          created_at: string
+          daily_claimed: boolean
+          id: string
+          last_daily_claim: string | null
+          total_spins: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_claimed?: boolean
+          id?: string
+          last_daily_claim?: string | null
+          total_spins?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_claimed?: boolean
+          id?: string
+          last_daily_claim?: string | null
+          total_spins?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_upgrades: {
         Row: {
           id: string
