@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlotReel } from "./SlotReel";
 import { Symbol, SYMBOLS, getRandomSymbol, SlotSymbol } from "./SlotSymbol";
-import { Zap, Sparkles, Gift } from "lucide-react";
+import { Zap, Sparkles, Gift, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 interface SlotMachineProps {
@@ -20,6 +20,22 @@ const getNoWinSymbols = (): Symbol[] => {
 
 const FREE_SPIN_KEY = 'slots_free_spin_date';
 
+// Calculate time until midnight
+const getTimeUntilMidnight = () => {
+  const now = new Date();
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(0, 0, 0, 0);
+  return tomorrow.getTime() - now.getTime();
+};
+
+const formatCountdown = (ms: number) => {
+  const hours = Math.floor(ms / (1000 * 60 * 60));
+  const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((ms % (1000 * 60)) / 1000);
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
+
 export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: SlotMachineProps) => {
   const [spinning, setSpinning] = useState(false);
   const [results, setResults] = useState<Symbol[]>([SYMBOLS[0], SYMBOLS[1], SYMBOLS[2]]);
@@ -27,6 +43,24 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
   const [lastWin, setLastWin] = useState<number>(0);
   const [completedReels, setCompletedReels] = useState(0);
   const [hasFreeSpin, setHasFreeSpin] = useState(false);
+  const [countdown, setCountdown] = useState(getTimeUntilMidnight());
+
+  // Countdown timer
+  useEffect(() => {
+    if (hasFreeSpin) return; // Don't count if free spin available
+    
+    const timer = setInterval(() => {
+      const remaining = getTimeUntilMidnight();
+      setCountdown(remaining);
+      
+      // Check if new day started
+      if (remaining > 23 * 60 * 60 * 1000) {
+        setHasFreeSpin(true);
+      }
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [hasFreeSpin]);
 
   // Check if user has free spin available
   useEffect(() => {
@@ -46,6 +80,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
     const today = new Date().toDateString();
     localStorage.setItem(`${FREE_SPIN_KEY}_${userId || 'guest'}`, today);
     setHasFreeSpin(false);
+    setCountdown(getTimeUntilMidnight());
   };
 
   const calculateWin = useCallback((symbols: Symbol[]): number => {
@@ -247,13 +282,26 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
         </motion.button>
       </div>
 
-      {/* Spin cost & free spin hint */}
-      <div className="text-center">
+      {/* Spin cost & free spin info */}
+      <div className="text-center space-y-2">
         <p className="text-sm text-muted-foreground">
           تكلفة الدوران: <span className="text-primary font-medium">{spinCost}</span>
         </p>
-        {hasFreeSpin && (
-          <p className="text-xs text-yellow-500 mt-1">🎁 لديك لفة مجانية!</p>
+        
+        {hasFreeSpin ? (
+          <motion.p 
+            className="text-xs text-yellow-500 font-medium"
+            animate={{ scale: [1, 1.05, 1] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          >
+            🎁 لديك لفة مجانية!
+          </motion.p>
+        ) : (
+          <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+            <Clock className="w-3.5 h-3.5" />
+            <span>اللفة المجانية القادمة:</span>
+            <span className="font-mono text-primary font-medium">{formatCountdown(countdown)}</span>
+          </div>
         )}
       </div>
 
