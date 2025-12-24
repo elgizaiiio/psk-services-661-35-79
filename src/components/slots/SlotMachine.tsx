@@ -268,8 +268,8 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
       </div>
 
       {/* Buttons row */}
-      <div className="flex items-center gap-4">
-        {/* Sound toggle button */}
+      <div className="flex items-center justify-center gap-4 w-full">
+        {/* Sound toggle button - far left */}
         <motion.button
           onClick={toggleSound}
           className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border border-border/30"
@@ -278,30 +278,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
           {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
         </motion.button>
 
-        {/* Free spin button */}
-        {hasFreeSpin && (
-          <motion.button
-            onClick={handleFreeSpin}
-            disabled={spinning}
-            className={`
-              relative w-16 h-16 rounded-full
-              flex items-center justify-center
-              transition-all duration-200
-              ${spinning 
-                ? 'bg-muted text-muted-foreground cursor-not-allowed' 
-                : 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-[0_0_20px_rgba(234,179,8,0.4)]'
-              }
-            `}
-            whileHover={!spinning ? { scale: 1.05 } : {}}
-            whileTap={!spinning ? { scale: 0.95 } : {}}
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-          >
-            <Gift className="w-6 h-6" />
-          </motion.button>
-        )}
-
-        {/* Spin button */}
+        {/* Spin button - center */}
         <motion.button
           onClick={handleSpin}
           disabled={spinning || coins < spinCost}
@@ -325,14 +302,39 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
           {spinning ? (
             <motion.div
               animate={{ rotate: 360 }}
-            transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-          >
-            <Zap className="w-8 h-8" />
-          </motion.div>
-        ) : (
+              transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+            >
+              <Zap className="w-8 h-8" />
+            </motion.div>
+          ) : (
             <Zap className="w-8 h-8" />
           )}
         </motion.button>
+
+        {/* Free spin button - far right */}
+        {hasFreeSpin ? (
+          <motion.button
+            onClick={handleFreeSpin}
+            disabled={spinning}
+            className={`
+              relative w-12 h-12 rounded-full
+              flex items-center justify-center
+              transition-all duration-200
+              ${spinning 
+                ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                : 'bg-gradient-to-br from-yellow-500 to-orange-500 text-white shadow-[0_0_20px_rgba(234,179,8,0.4)]'
+              }
+            `}
+            whileHover={!spinning ? { scale: 1.05 } : {}}
+            whileTap={!spinning ? { scale: 0.95 } : {}}
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+          >
+            <Gift className="w-5 h-5" />
+          </motion.button>
+        ) : (
+          <div className="w-12 h-12" /> 
+        )}
       </div>
 
       {/* Spin cost & free spin info */}
