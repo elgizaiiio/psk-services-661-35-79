@@ -154,8 +154,9 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
   const handleFreeSpin = useCallback(async () => {
     if (spinning || !hasFreeSpin) return;
 
-    if (soundEnabled) {
-      await unlockAudio();
+    // Unlock audio and start music if enabled
+    if (soundEnabled || musicEnabled) {
+      await unlockAndStartMusic();
     }
 
     playClickSound();
@@ -175,7 +176,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
     // Always give non-matching symbols
     const newResults = getNoWinSymbols();
     setResults(newResults);
-  }, [spinning, hasFreeSpin, soundEnabled, unlockAudio, playClickSound, playSpinSound]);
+  }, [spinning, hasFreeSpin, soundEnabled, musicEnabled, unlockAndStartMusic, playClickSound, playSpinSound]);
 
   const handleSpin = useCallback(async () => {
     if (spinning) return;
@@ -185,8 +186,9 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
       return;
     }
 
-    if (soundEnabled) {
-      await unlockAudio();
+    // Unlock audio and start music if enabled
+    if (soundEnabled || musicEnabled) {
+      await unlockAndStartMusic();
     }
 
     playClickSound();
@@ -204,7 +206,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
 
     const newResults = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
     setResults(newResults);
-  }, [spinning, coins, spinCost, onCoinsChange, soundEnabled, unlockAudio, playClickSound, playSpinSound]);
+  }, [spinning, coins, spinCost, onCoinsChange, soundEnabled, musicEnabled, unlockAndStartMusic, playClickSound, playSpinSound]);
 
   const handleReelComplete = useCallback(() => {
     setCompletedReels(prev => {
