@@ -44,6 +44,7 @@ import Slots from "./pages/Slots";
 import Settings from "./pages/Settings";
 import Challenges from "./pages/Challenges";
 import Characters from "./pages/Characters";
+import Achievements from "./pages/Achievements";
 import SplashScreen from "./components/SplashScreen";
 
 
@@ -147,6 +148,7 @@ const App = () => (
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/challenges" element={<Challenges />} />
                       <Route path="/characters" element={<Characters />} />
+                      <Route path="/achievements" element={<Achievements />} />
                     </Routes>
                     <BottomNavigation />
                   </div>
