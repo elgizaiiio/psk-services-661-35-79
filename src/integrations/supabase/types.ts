@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          description_ar: string | null
+          description_ru: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string
+          name_ru: string
+          reward_tokens: number
+          target_value: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          description_ru?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar: string
+          name_ru: string
+          reward_tokens?: number
+          target_value?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          description_ru?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string
+          name_ru?: string
+          reward_tokens?: number
+          target_value?: number
+        }
+        Relationships: []
+      }
       bolt_completed_tasks: {
         Row: {
           completed_at: string
@@ -539,6 +587,68 @@ export type Database = {
         }
         Relationships: []
       }
+      character_upgrades: {
+        Row: {
+          bonus_value: number
+          character_id: string | null
+          created_at: string
+          description: string | null
+          description_ar: string | null
+          description_ru: string | null
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string
+          name_ru: string
+          price_tokens: number
+          price_ton: number
+          required_level: number
+          upgrade_type: string
+        }
+        Insert: {
+          bonus_value?: number
+          character_id?: string | null
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          description_ru?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar: string
+          name_ru: string
+          price_tokens?: number
+          price_ton?: number
+          required_level?: number
+          upgrade_type: string
+        }
+        Update: {
+          bonus_value?: number
+          character_id?: string | null
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          description_ru?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string
+          name_ru?: string
+          price_tokens?: number
+          price_ton?: number
+          required_level?: number
+          upgrade_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "character_upgrades_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "mining_characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_daily_rewards: {
         Row: {
           claimed_at: string
@@ -743,6 +853,181 @@ export type Database = {
         }
         Relationships: []
       }
+      marketplace_listings: {
+        Row: {
+          buyer_id: string | null
+          created_at: string
+          id: string
+          price_tokens: number
+          price_ton: number
+          seller_id: string
+          sold_at: string | null
+          status: string
+          user_character_id: string
+        }
+        Insert: {
+          buyer_id?: string | null
+          created_at?: string
+          id?: string
+          price_tokens?: number
+          price_ton: number
+          seller_id: string
+          sold_at?: string | null
+          status?: string
+          user_character_id: string
+        }
+        Update: {
+          buyer_id?: string | null
+          created_at?: string
+          id?: string
+          price_tokens?: number
+          price_ton?: number
+          seller_id?: string
+          sold_at?: string | null
+          status?: string
+          user_character_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketplace_listings_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_listings_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_listings_user_character_id_fkey"
+            columns: ["user_character_id"]
+            isOneToOne: false
+            referencedRelation: "user_characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      mining_challenges: {
+        Row: {
+          challenge_type: string
+          created_at: string
+          description: string | null
+          description_ar: string | null
+          description_ru: string | null
+          ends_at: string
+          id: string
+          is_active: boolean
+          reward_tokens: number
+          reward_ton: number
+          starts_at: string
+          target_value: number
+          title: string
+          title_ar: string
+          title_ru: string
+        }
+        Insert: {
+          challenge_type: string
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          description_ru?: string | null
+          ends_at: string
+          id?: string
+          is_active?: boolean
+          reward_tokens?: number
+          reward_ton?: number
+          starts_at?: string
+          target_value?: number
+          title: string
+          title_ar: string
+          title_ru: string
+        }
+        Update: {
+          challenge_type?: string
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          description_ru?: string | null
+          ends_at?: string
+          id?: string
+          is_active?: boolean
+          reward_tokens?: number
+          reward_ton?: number
+          starts_at?: string
+          target_value?: number
+          title?: string
+          title_ar?: string
+          title_ru?: string
+        }
+        Relationships: []
+      }
+      mining_characters: {
+        Row: {
+          boost_duration_minutes: number
+          boost_percentage: number
+          created_at: string
+          description: string | null
+          description_ar: string | null
+          description_ru: string | null
+          extra_coins: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          jackpot_chance_bonus: number
+          mining_speed_multiplier: number
+          name: string
+          name_ar: string
+          name_ru: string
+          price_tokens: number
+          price_ton: number
+          tier: string
+        }
+        Insert: {
+          boost_duration_minutes?: number
+          boost_percentage?: number
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          description_ru?: string | null
+          extra_coins?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          jackpot_chance_bonus?: number
+          mining_speed_multiplier?: number
+          name: string
+          name_ar: string
+          name_ru: string
+          price_tokens?: number
+          price_ton?: number
+          tier?: string
+        }
+        Update: {
+          boost_duration_minutes?: number
+          boost_percentage?: number
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          description_ru?: string | null
+          extra_coins?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          jackpot_chance_bonus?: number
+          mining_speed_multiplier?: number
+          name?: string
+          name_ar?: string
+          name_ru?: string
+          price_tokens?: number
+          price_ton?: number
+          tier?: string
+        }
+        Relationships: []
+      }
       server_purchases: {
         Row: {
           activated_at: string | null
@@ -846,6 +1131,177 @@ export type Database = {
           wallet_address?: string | null
         }
         Relationships: []
+      }
+      user_achievements: {
+        Row: {
+          achievement_id: string
+          created_at: string
+          current_value: number
+          id: string
+          unlocked: boolean
+          unlocked_at: string | null
+          user_id: string
+        }
+        Insert: {
+          achievement_id: string
+          created_at?: string
+          current_value?: number
+          id?: string
+          unlocked?: boolean
+          unlocked_at?: string | null
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string
+          created_at?: string
+          current_value?: number
+          id?: string
+          unlocked?: boolean
+          unlocked_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_achievements_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_challenges: {
+        Row: {
+          challenge_id: string
+          completed: boolean
+          completed_at: string | null
+          current_value: number
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          completed?: boolean
+          completed_at?: string | null
+          current_value?: number
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          completed?: boolean
+          completed_at?: string | null
+          current_value?: number
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_challenges_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "mining_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_challenges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_characters: {
+        Row: {
+          character_id: string
+          experience: number
+          id: string
+          is_active: boolean
+          level: number
+          purchased_at: string
+          user_id: string
+        }
+        Insert: {
+          character_id: string
+          experience?: number
+          id?: string
+          is_active?: boolean
+          level?: number
+          purchased_at?: string
+          user_id: string
+        }
+        Update: {
+          character_id?: string
+          experience?: number
+          id?: string
+          is_active?: boolean
+          level?: number
+          purchased_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_characters_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "mining_characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_characters_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_upgrades: {
+        Row: {
+          id: string
+          purchased_at: string
+          upgrade_id: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          purchased_at?: string
+          upgrade_id: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          purchased_at?: string
+          upgrade_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_upgrades_upgrade_id_fkey"
+            columns: ["upgrade_id"]
+            isOneToOne: false
+            referencedRelation: "character_upgrades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_upgrades_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
