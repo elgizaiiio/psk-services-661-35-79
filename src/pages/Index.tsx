@@ -6,6 +6,8 @@ import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
+import { useAchievementNotifications } from '@/hooks/useAchievementNotifications';
+import AchievementUnlockNotification from '@/components/achievements/AchievementUnlockNotification';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -24,6 +26,7 @@ const Index = () => {
     isConnecting, 
     connectWallet 
   } = useTelegramTonConnect();
+  const { notification, closeNotification } = useAchievementNotifications(user?.id || null);
 
   const handleStartMining = async () => {
     hapticFeedback.impact('medium');
@@ -69,8 +72,13 @@ const Index = () => {
   const progress = miningProgress ? Math.round(miningProgress.progress * 100) : 0;
 
   return (
-    <main className="min-h-screen bg-background pb-24">
-      <Helmet>
+    <>
+      <AchievementUnlockNotification 
+        achievement={notification} 
+        onClose={closeNotification} 
+      />
+      <main className="min-h-screen bg-background pb-24">
+        <Helmet>
         <title>Bolt | Mining</title>
         <meta name="description" content="Mine BOLT tokens" />
       </Helmet>
@@ -182,8 +190,9 @@ const Index = () => {
           </div>
         )}
 
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 };
 
