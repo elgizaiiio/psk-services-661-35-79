@@ -1,9 +1,10 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SlotReel } from "./SlotReel";
 import { Symbol, SYMBOLS, getRandomSymbol, SlotSymbol } from "./SlotSymbol";
 import { Zap, Sparkles, Gift, Clock } from "lucide-react";
 import { toast } from "sonner";
+import { useSlotSounds } from "@/hooks/useSlotSounds";
 
 interface SlotMachineProps {
   coins: number;
@@ -45,6 +46,9 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
   const [hasFreeSpin, setHasFreeSpin] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const [lastSpinTime, setLastSpinTime] = useState<number | null>(null);
+  const spinSoundIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
+  const { playSpinSound, playStopSound, playWinSound, playJackpotSound, playNoWinSound, playClickSound } = useSlotSounds();
 
   // Check if user has free spin available on mount
   useEffect(() => {
@@ -117,6 +121,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
   const handleFreeSpin = useCallback(() => {
     if (spinning || !hasFreeSpin) return;
     
+    playClickSound();
     useFreeSpin();
     toast.info("🎁 لفة مجانية!");
     
@@ -125,10 +130,13 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
     setLastWin(0);
     setCompletedReels(0);
 
+    // Start spin sound loop
+    spinSoundIntervalRef.current = setInterval(playSpinSound, 80);
+
     // Always give non-matching symbols
     const newResults = getNoWinSymbols();
     setResults(newResults);
-  }, [spinning, hasFreeSpin]);
+  }, [spinning, hasFreeSpin, playClickSound, playSpinSound]);
 
   const handleSpin = useCallback(() => {
     if (spinning) return;
@@ -138,6 +146,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
       return;
     }
 
+    playClickSound();
     onCoinsChange(coins - spinCost);
     
     setSpinning(true);
@@ -145,15 +154,27 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
     setLastWin(0);
     setCompletedReels(0);
 
+    // Start spin sound loop
+    spinSoundIntervalRef.current = setInterval(playSpinSound, 80);
+
     const newResults = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
     setResults(newResults);
-  }, [spinning, coins, spinCost, onCoinsChange]);
+  }, [spinning, coins, spinCost, onCoinsChange, playClickSound, playSpinSound]);
 
   const handleReelComplete = useCallback(() => {
     setCompletedReels(prev => {
       const newCount = prev + 1;
       
+      // Play stop sound for each reel
+      playStopSound();
+      
       if (newCount === 3) {
+        // Stop spin sound
+        if (spinSoundIntervalRef.current) {
+          clearInterval(spinSoundIntervalRef.current);
+          spinSoundIntervalRef.current = null;
+        }
+        
         setSpinning(false);
         const winAmount = calculateWin(results);
         const indexes = getWinningIndexes(results);
@@ -165,16 +186,20 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
           onCoinsChange(coins - spinCost + winAmount);
           
           if (indexes.length === 3) {
+            playJackpotSound();
             toast.success(`🎰 جاكبوت! +${winAmount}`, { duration: 3000 });
           } else {
+            playWinSound();
             toast.success(`🎉 فوز! +${winAmount}`);
           }
+        } else {
+          playNoWinSound();
         }
       }
       
       return newCount;
     });
-  }, [results, calculateWin, getWinningIndexes, onCoinsChange, coins, spinCost]);
+  }, [results, calculateWin, getWinningIndexes, onCoinsChange, coins, spinCost, playStopSound, playWinSound, playJackpotSound, playNoWinSound]);
 
   return (
     <div className="flex flex-col items-center gap-8">
