@@ -310,10 +310,6 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
         )}
       </div>
 
-      {/* Original Spin cost */}
-      <p className="text-sm text-muted-foreground">
-        تكلفة الدوران: <span className="text-primary font-medium">{spinCost}</span>
-      </p>
 
       {/* Prize table */}
       <div className="w-full max-w-xs p-4 rounded-2xl bg-card/50 border border-border/30">
