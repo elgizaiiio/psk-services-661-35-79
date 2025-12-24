@@ -217,15 +217,6 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
 
   return (
     <div className="flex flex-col items-center gap-8">
-      {/* Sound toggle - at top */}
-      <motion.button
-        onClick={toggleSound}
-        className="self-end w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border border-border/30"
-        whileTap={{ scale: 0.9 }}
-      >
-        {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-      </motion.button>
-
       {/* Win display */}
       <AnimatePresence>
         {lastWin > 0 && (
@@ -278,6 +269,15 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
 
       {/* Buttons row */}
       <div className="flex items-center gap-4">
+        {/* Sound toggle button */}
+        <motion.button
+          onClick={toggleSound}
+          className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors border border-border/30"
+          whileTap={{ scale: 0.9 }}
+        >
+          {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+        </motion.button>
+
         {/* Free spin button */}
         {hasFreeSpin && (
           <motion.button
