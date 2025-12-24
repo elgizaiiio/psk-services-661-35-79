@@ -1,17 +1,20 @@
 import { motion } from 'framer-motion';
-import { Settings as SettingsIcon, Globe, ChevronRight, Info, Bell, Palette } from 'lucide-react';
-import { useLanguage } from '@/contexts/LanguageContext';
+import { Settings as SettingsIcon, Globe, ChevronRight, Info, Bell, Palette, Check } from 'lucide-react';
+import { useLanguage, languageNames } from '@/contexts/LanguageContext';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+type Language = 'en' | 'ar' | 'es' | 'fr' | 'de' | 'ru' | 'zh' | 'ja' | 'ko' | 'pt' | 'tr' | 'hi';
 
 const Settings = () => {
   const { language, setLanguage, t } = useLanguage();
-  const navigate = useNavigate();
 
-  const handleLanguageChange = (lang: 'en' | 'ar') => {
+  const handleLanguageChange = (lang: Language) => {
     setLanguage(lang);
     toast.success(t('settings.languageChanged'));
   };
+
+  const languages = Object.entries(languageNames) as [Language, { name: string; nativeName: string; flag: string }][];
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -49,57 +52,46 @@ const Settings = () => {
               <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
                 <Globe className="w-5 h-5 text-blue-500" />
               </div>
-              <span className="font-medium text-foreground">{t('settings.language')}</span>
+              <div>
+                <span className="font-medium text-foreground">{t('settings.language')}</span>
+                <p className="text-xs text-muted-foreground">{t('settings.selectLanguage')}</p>
+              </div>
             </div>
           </div>
           
-          <div className="p-2">
-            <button
-              onClick={() => handleLanguageChange('en')}
-              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
-                language === 'en' 
-                  ? 'bg-primary/20 text-primary' 
-                  : 'hover:bg-muted/50 text-foreground'
-              }`}
-            >
-              <span className="flex items-center gap-3">
-                <span className="text-xl">🇺🇸</span>
-                <span>{t('settings.english')}</span>
-              </span>
-              {language === 'en' && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"
+          <ScrollArea className="h-[320px]">
+            <div className="p-2">
+              {languages.map(([langCode, langInfo]) => (
+                <motion.button
+                  key={langCode}
+                  onClick={() => handleLanguageChange(langCode)}
+                  whileTap={{ scale: 0.98 }}
+                  className={`w-full flex items-center justify-between p-3 rounded-xl transition-all mb-1 ${
+                    language === langCode 
+                      ? 'bg-primary/20 text-primary' 
+                      : 'hover:bg-muted/50 text-foreground'
+                  }`}
                 >
-                  <span className="text-xs text-primary-foreground">✓</span>
-                </motion.div>
-              )}
-            </button>
-            
-            <button
-              onClick={() => handleLanguageChange('ar')}
-              className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
-                language === 'ar' 
-                  ? 'bg-primary/20 text-primary' 
-                  : 'hover:bg-muted/50 text-foreground'
-              }`}
-            >
-              <span className="flex items-center gap-3">
-                <span className="text-xl">🇸🇦</span>
-                <span>{t('settings.arabic')}</span>
-              </span>
-              {language === 'ar' && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="w-5 h-5 rounded-full bg-primary flex items-center justify-center"
-                >
-                  <span className="text-xs text-primary-foreground">✓</span>
-                </motion.div>
-              )}
-            </button>
-          </div>
+                  <span className="flex items-center gap-3">
+                    <span className="text-2xl">{langInfo.flag}</span>
+                    <div className="text-left">
+                      <p className="font-medium">{langInfo.nativeName}</p>
+                      <p className="text-xs text-muted-foreground">{langInfo.name}</p>
+                    </div>
+                  </span>
+                  {language === langCode && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="w-6 h-6 rounded-full bg-primary flex items-center justify-center"
+                    >
+                      <Check className="w-4 h-4 text-primary-foreground" />
+                    </motion.div>
+                  )}
+                </motion.button>
+              ))}
+            </div>
+          </ScrollArea>
         </motion.div>
 
         {/* Other Settings */}
