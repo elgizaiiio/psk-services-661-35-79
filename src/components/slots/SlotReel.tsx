@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState, useRef } from "react";
+import { motion } from "framer-motion";
 import { Symbol, SYMBOLS, SlotSymbol } from "./SlotSymbol";
 
 interface SlotReelProps {
@@ -11,93 +11,89 @@ interface SlotReelProps {
 }
 
 export const SlotReel = ({ spinning, finalSymbol, delay, isWinning, onSpinComplete }: SlotReelProps) => {
-  const [displayedSymbols, setDisplayedSymbols] = useState<Symbol[]>([
-    SYMBOLS[0], SYMBOLS[1], SYMBOLS[2]
-  ]);
-  const [isSpinning, setIsSpinning] = useState(false);
+  const [currentSymbol, setCurrentSymbol] = useState<Symbol>(SYMBOLS[0]);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (spinning) {
-      setIsSpinning(true);
+      setIsAnimating(true);
       
-      // Rapid symbol changes during spin
-      const spinInterval = setInterval(() => {
-        setDisplayedSymbols([
-          SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-          SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-          SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-        ]);
-      }, 80);
+      // Fast symbol cycling
+      intervalRef.current = setInterval(() => {
+        setCurrentSymbol(SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)]);
+      }, 60);
 
       // Stop after delay
-      const stopTimeout = setTimeout(() => {
-        clearInterval(spinInterval);
-        if (finalSymbol) {
-          setDisplayedSymbols([
-            SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-            finalSymbol,
-            SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)],
-          ]);
+      timeoutRef.current = setTimeout(() => {
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
         }
-        setIsSpinning(false);
+        if (finalSymbol) {
+          setCurrentSymbol(finalSymbol);
+        }
+        setIsAnimating(false);
         onSpinComplete?.();
-      }, 1000 + delay);
-
-      return () => {
-        clearInterval(spinInterval);
-        clearTimeout(stopTimeout);
-      };
+      }, 800 + delay);
     }
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
   }, [spinning, finalSymbol, delay, onSpinComplete]);
 
   return (
-    <div className="relative w-24 h-28 overflow-hidden rounded-xl bg-gradient-to-b from-muted/80 to-muted border-2 border-primary/30 shadow-[0_0_20px_hsl(var(--primary)/0.3)]">
-      {/* Top shadow overlay */}
-      <div className="absolute top-0 left-0 right-0 h-6 bg-gradient-to-b from-black/60 to-transparent z-10 pointer-events-none" />
-      
-      {/* Bottom shadow overlay */}
-      <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-black/60 to-transparent z-10 pointer-events-none" />
-
-      {/* Symbols container */}
+    <div className="relative">
+      {/* Reel container */}
       <motion.div 
-        className="flex flex-col items-center justify-center h-full"
-        animate={isSpinning ? { y: [-10, 10] } : { y: 0 }}
-        transition={isSpinning ? { 
-          duration: 0.1, 
-          repeat: Infinity, 
-          repeatType: "reverse" 
+        className={`
+          w-24 h-24 
+          flex items-center justify-center 
+          rounded-2xl
+          bg-gradient-to-b from-muted/80 to-muted/40
+          border border-border/50
+          backdrop-blur-sm
+          overflow-hidden
+          ${isWinning && !isAnimating ? 'ring-2 ring-primary ring-offset-2 ring-offset-background' : ''}
+        `}
+        animate={isAnimating ? { 
+          y: [0, -4, 4, -2, 2, 0]
+        } : isWinning ? {
+          scale: [1, 1.02, 1]
+        } : {}}
+        transition={isAnimating ? { 
+          duration: 0.15, 
+          repeat: Infinity,
+          ease: "linear"
         } : { 
-          type: "spring", 
-          stiffness: 300, 
-          damping: 20 
+          duration: 0.4,
+          repeat: isWinning ? Infinity : 0
         }}
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={displayedSymbols[1].id + Math.random()}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.1 }}
-          >
-            <SlotSymbol symbol={displayedSymbols[1]} isWinning={isWinning && !isSpinning} />
-          </motion.div>
-        </AnimatePresence>
+        {/* Symbol */}
+        <SlotSymbol 
+          symbol={currentSymbol} 
+          size="lg"
+          isWinning={isWinning && !isAnimating} 
+        />
+
+        {/* Spinning overlay effect */}
+        {isAnimating && (
+          <div className="absolute inset-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/10 pointer-events-none" />
+        )}
       </motion.div>
 
-      {/* Spinning blur effect */}
-      {isSpinning && (
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/10 to-transparent animate-pulse" />
-      )}
-
-      {/* Win glow effect */}
-      {isWinning && !isSpinning && (
+      {/* Win glow */}
+      {isWinning && !isAnimating && (
         <motion.div
-          className="absolute inset-0 border-2 border-yellow-400 rounded-xl"
+          className="absolute -inset-1 rounded-2xl bg-primary/20 -z-10"
           animate={{ 
-            boxShadow: ['0 0 10px #FFD700', '0 0 30px #FFD700', '0 0 10px #FFD700']
+            opacity: [0.3, 0.6, 0.3],
+            scale: [1, 1.05, 1]
           }}
-          transition={{ duration: 0.5, repeat: Infinity }}
+          transition={{ duration: 1, repeat: Infinity }}
         />
       )}
     </div>

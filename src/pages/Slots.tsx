@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, ShoppingBag, Users, Gift, Coins } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowLeft, Coins, ShoppingBag, Users, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { SlotMachine } from "@/components/slots/SlotMachine";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,7 +13,6 @@ const Slots = () => {
   const [coins, setCoins] = useState(1000);
   const [loading, setLoading] = useState(true);
 
-  // Load user coins from database
   useEffect(() => {
     const loadUserCoins = async () => {
       if (!user?.id) {
@@ -34,7 +32,6 @@ const Slots = () => {
         if (data) {
           setCoins(data.coins);
         } else {
-          // Create player if doesn't exist
           const { error: insertError } = await supabase
             .from('game_players')
             .insert({
@@ -57,7 +54,6 @@ const Slots = () => {
     loadUserCoins();
   }, [user]);
 
-  // Update coins in database
   const handleCoinsChange = async (newCoins: number) => {
     setCoins(newCoins);
 
@@ -76,43 +72,40 @@ const Slots = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="sticky top-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3"
-      >
-        <div className="flex items-center justify-between">
-          <Button
-            variant="ghost"
-            size="icon"
+      <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="flex items-center justify-between px-4 py-3">
+          <motion.button
             onClick={() => navigate(-1)}
-            className="text-foreground"
+            className="w-10 h-10 rounded-full bg-muted/50 flex items-center justify-center"
+            whileTap={{ scale: 0.9 }}
           >
-            <ArrowLeft className="w-6 h-6" />
-          </Button>
+            <ArrowLeft className="w-5 h-5 text-foreground" />
+          </motion.button>
           
-          <h1 className="text-xl font-bold text-primary">🎰 Slots</h1>
+          <h1 className="text-lg font-semibold">Slots</h1>
           
-          <div className="flex items-center gap-1 bg-yellow-500/20 px-3 py-1.5 rounded-full">
-            <Coins className="w-4 h-4 text-yellow-400" />
-            <span className="font-bold text-yellow-400">{coins}</span>
-          </div>
+          <motion.div 
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/20"
+            animate={{ scale: [1, 1.02, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          >
+            <Coins className="w-4 h-4 text-primary" />
+            <span className="font-bold text-primary">{coins.toLocaleString()}</span>
+          </motion.div>
         </div>
-      </motion.div>
+      </header>
 
       {/* Main content */}
-      <div className="px-4 py-6">
+      <main className="flex-1 flex flex-col items-center justify-center px-4 py-8">
         {loading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="simple-loader" />
-          </div>
+          <div className="simple-loader" />
         ) : (
           <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
           >
             <SlotMachine 
               coins={coins} 
@@ -121,49 +114,35 @@ const Slots = () => {
             />
           </motion.div>
         )}
-      </div>
+      </main>
 
-      {/* Bottom action buttons */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="fixed bottom-20 left-0 right-0 px-4"
-      >
-        <div className="flex justify-center gap-4">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => navigate('/game-2048-store')}
-            className="flex-1 max-w-[120px] flex flex-col items-center gap-1 h-auto py-3 border-primary/30 hover:bg-primary/10"
-          >
-            <ShoppingBag className="w-5 h-5 text-primary" />
-            <span className="text-xs">Shop</span>
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => navigate('/invite')}
-            className="flex-1 max-w-[120px] flex flex-col items-center gap-1 h-auto py-3 border-primary/30 hover:bg-primary/10"
-          >
-            <Users className="w-5 h-5 text-primary" />
-            <span className="text-xs">Friends</span>
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={() => navigate('/tasks')}
-            className="flex-1 max-w-[120px] flex flex-col items-center gap-1 h-auto py-3 border-primary/30 hover:bg-primary/10"
-          >
-            <Gift className="w-5 h-5 text-primary" />
-            <span className="text-xs">Earn</span>
-          </Button>
+      {/* Bottom navigation */}
+      <nav className="sticky bottom-0 bg-background/80 backdrop-blur-xl border-t border-border/50 px-6 py-4">
+        <div className="flex justify-center gap-6">
+          <NavButton icon={ShoppingBag} label="Shop" onClick={() => navigate('/game-2048-store')} />
+          <NavButton icon={Users} label="Friends" onClick={() => navigate('/invite')} />
+          <NavButton icon={Gift} label="Earn" onClick={() => navigate('/tasks')} />
         </div>
-      </motion.div>
+      </nav>
     </div>
   );
 };
+
+interface NavButtonProps {
+  icon: React.ElementType;
+  label: string;
+  onClick: () => void;
+}
+
+const NavButton = ({ icon: Icon, label, onClick }: NavButtonProps) => (
+  <motion.button
+    onClick={onClick}
+    className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors"
+    whileTap={{ scale: 0.95 }}
+  >
+    <Icon className="w-5 h-5" />
+    <span className="text-xs font-medium">{label}</span>
+  </motion.button>
+);
 
 export default Slots;
