@@ -18,15 +18,15 @@ const getNoWinSymbols = (): Symbol[] => {
   return [shuffled[0], shuffled[1], shuffled[2]];
 };
 
-const FREE_SPIN_KEY = 'slots_free_spin_date';
+const FREE_SPIN_KEY = 'slots_free_spin_time';
+const FREE_SPIN_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
 
-// Calculate time until midnight
-const getTimeUntilMidnight = () => {
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(0, 0, 0, 0);
-  return tomorrow.getTime() - now.getTime();
+// Calculate time remaining until next free spin
+const getTimeUntilFreeSpin = (lastSpinTime: number | null) => {
+  if (!lastSpinTime) return 0;
+  const nextSpinTime = lastSpinTime + FREE_SPIN_INTERVAL;
+  const remaining = nextSpinTime - Date.now();
+  return remaining > 0 ? remaining : 0;
 };
 
 const formatCountdown = (ms: number) => {
@@ -43,44 +43,49 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
   const [lastWin, setLastWin] = useState<number>(0);
   const [completedReels, setCompletedReels] = useState(0);
   const [hasFreeSpin, setHasFreeSpin] = useState(false);
-  const [countdown, setCountdown] = useState(getTimeUntilMidnight());
+  const [countdown, setCountdown] = useState(0);
+  const [lastSpinTime, setLastSpinTime] = useState<number | null>(null);
+
+  // Check if user has free spin available on mount
+  useEffect(() => {
+    const storedTime = localStorage.getItem(`${FREE_SPIN_KEY}_${userId || 'guest'}`);
+    if (storedTime) {
+      const time = parseInt(storedTime, 10);
+      setLastSpinTime(time);
+      const remaining = getTimeUntilFreeSpin(time);
+      if (remaining === 0) {
+        setHasFreeSpin(true);
+      } else {
+        setCountdown(remaining);
+      }
+    } else {
+      // First time user - give free spin
+      setHasFreeSpin(true);
+    }
+  }, [userId]);
 
   // Countdown timer
   useEffect(() => {
-    if (hasFreeSpin) return; // Don't count if free spin available
+    if (hasFreeSpin || !lastSpinTime) return;
     
     const timer = setInterval(() => {
-      const remaining = getTimeUntilMidnight();
+      const remaining = getTimeUntilFreeSpin(lastSpinTime);
       setCountdown(remaining);
       
-      // Check if new day started
-      if (remaining > 23 * 60 * 60 * 1000) {
+      if (remaining === 0) {
         setHasFreeSpin(true);
       }
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [hasFreeSpin]);
-
-  // Check if user has free spin available
-  useEffect(() => {
-    const checkFreeSpin = () => {
-      const lastFreeSpinDate = localStorage.getItem(`${FREE_SPIN_KEY}_${userId || 'guest'}`);
-      const today = new Date().toDateString();
-      
-      if (lastFreeSpinDate !== today) {
-        setHasFreeSpin(true);
-      }
-    };
-    
-    checkFreeSpin();
-  }, [userId]);
+  }, [hasFreeSpin, lastSpinTime]);
 
   const useFreeSpin = () => {
-    const today = new Date().toDateString();
-    localStorage.setItem(`${FREE_SPIN_KEY}_${userId || 'guest'}`, today);
+    const now = Date.now();
+    localStorage.setItem(`${FREE_SPIN_KEY}_${userId || 'guest'}`, now.toString());
+    setLastSpinTime(now);
     setHasFreeSpin(false);
-    setCountdown(getTimeUntilMidnight());
+    setCountdown(FREE_SPIN_INTERVAL);
   };
 
   const calculateWin = useCallback((symbols: Symbol[]): number => {
