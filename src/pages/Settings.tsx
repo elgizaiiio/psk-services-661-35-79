@@ -38,7 +38,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-type Language = 'en' | 'ru';
+type Language = 'en' | 'ru' | 'ar';
 
 const Settings = () => {
   const { language, setLanguage, t } = useLanguage();
