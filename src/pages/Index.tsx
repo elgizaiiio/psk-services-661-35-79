@@ -1,7 +1,7 @@
 import React from "react";
 import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
-import { Zap, Wallet, ArrowUp, Settings } from "lucide-react";
+import { Zap, Wallet, ArrowUp, Settings, Target } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
@@ -151,6 +151,15 @@ const Index = () => {
             >
               <ArrowUp className="w-4 h-4 mr-2" />
               Upgrades
+            </Button>
+            
+            <Button 
+              onClick={() => navigate('/challenges')}
+              variant="outline"
+              className="w-full h-12 rounded-full border-border text-foreground hover:bg-muted"
+            >
+              <Target className="w-4 h-4 mr-2" />
+              Challenges
             </Button>
           </div>
         )}
