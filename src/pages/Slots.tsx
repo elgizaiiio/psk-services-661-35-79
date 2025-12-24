@@ -390,21 +390,21 @@ const Slots = () => {
         <div className="px-4 py-4">
           {/* Title & Streak */}
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-black text-foreground">Slots</h1>
-              {currentStreak > 0 && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/10 rounded-full border border-orange-500/20">
-                  <span className="text-sm">🔥</span>
-                  <span className="text-xs font-bold text-orange-400">{currentStreak}</span>
-                </div>
-              )}
-            </div>
             <button 
               onClick={() => navigate(-1)}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
             >
               Back
             </button>
+            <div className="flex items-center gap-3">
+              {currentStreak > 0 && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-orange-500/10 rounded-full border border-orange-500/20">
+                  <span className="text-sm">🔥</span>
+                  <span className="text-xs font-bold text-orange-400">{currentStreak}</span>
+                </div>
+              )}
+              <h1 className="text-2xl font-black text-foreground">Slots</h1>
+            </div>
           </div>
           
           {/* 3 Stats Row */}
