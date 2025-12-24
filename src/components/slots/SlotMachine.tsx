@@ -299,32 +299,35 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
       </div>
 
       {/* Buttons row */}
-      <div className="flex items-center justify-center gap-3 w-full">
-        {/* Music toggle button */}
-        <motion.button
-          onClick={toggleMusic}
-          className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors border border-border/30 ${
-            musicEnabled 
-              ? 'bg-primary/20 text-primary' 
-              : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
-          }`}
-          whileTap={{ scale: 0.9 }}
-        >
-          {musicEnabled ? <Music className="w-4 h-4" /> : <Music2 className="w-4 h-4 opacity-50" />}
-        </motion.button>
+      <div className="flex items-center justify-center gap-4 w-full">
+        {/* Left side controls */}
+        <div className="flex items-center gap-2">
+          {/* Music toggle button */}
+          <motion.button
+            onClick={toggleMusic}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors border border-border/30 ${
+              musicEnabled 
+                ? 'bg-primary/20 text-primary' 
+                : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+            whileTap={{ scale: 0.9 }}
+          >
+            {musicEnabled ? <Music className="w-4 h-4" /> : <Music2 className="w-4 h-4 opacity-50" />}
+          </motion.button>
 
-        {/* Sound toggle button */}
-        <motion.button
-          onClick={toggleSound}
-          className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors border border-border/30 ${
-            soundEnabled 
-              ? 'bg-primary/20 text-primary' 
-              : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
-          }`}
-          whileTap={{ scale: 0.9 }}
-        >
-          {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
-        </motion.button>
+          {/* Sound toggle button */}
+          <motion.button
+            onClick={toggleSound}
+            className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors border border-border/30 ${
+              soundEnabled 
+                ? 'bg-primary/20 text-primary' 
+                : 'bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted'
+            }`}
+            whileTap={{ scale: 0.9 }}
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </motion.button>
+        </div>
 
         {/* Spin button - center */}
         <motion.button
