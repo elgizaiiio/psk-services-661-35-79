@@ -11,6 +11,13 @@ export const useSlotSounds = (enabled: boolean = true) => {
     return audioContextRef.current;
   }, []);
 
+  const unlockAudio = useCallback(async () => {
+    const ctx = getAudioContext();
+    if (ctx.state === 'suspended') {
+      await ctx.resume();
+    }
+  }, [getAudioContext]);
+
   // Spin sound - casino slot machine tick with variation
   const playSpinSound = useCallback(() => {
     if (!enabled) return;
@@ -334,6 +341,7 @@ export const useSlotSounds = (enabled: boolean = true) => {
   }, [enabled, getAudioContext]);
 
   return {
+    unlockAudio,
     playSpinSound,
     playStopSound,
     playWinSound,

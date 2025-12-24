@@ -54,15 +54,18 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
   });
   const spinSoundIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
-  const { playSpinSound, playStopSound, playWinSound, playJackpotSound, playNoWinSound, playClickSound } = useSlotSounds(soundEnabled);
+  const { playSpinSound, playStopSound, playWinSound, playJackpotSound, playNoWinSound, playClickSound, unlockAudio } = useSlotSounds(soundEnabled);
 
   const toggleSound = useCallback(() => {
     setSoundEnabled(prev => {
       const newValue = !prev;
       localStorage.setItem(SOUND_ENABLED_KEY, String(newValue));
+      if (newValue) {
+        void unlockAudio();
+      }
       return newValue;
     });
-  }, []);
+  }, [unlockAudio]);
 
   // Check if user has free spin available on mount
   useEffect(() => {
@@ -132,48 +135,60 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
     return [];
   }, []);
 
-  const handleFreeSpin = useCallback(() => {
+  const handleFreeSpin = useCallback(async () => {
     if (spinning || !hasFreeSpin) return;
-    
+
+    if (soundEnabled) {
+      await unlockAudio();
+    }
+
     playClickSound();
     useFreeSpin();
     toast.info("🎁 لفة مجانية!");
-    
+
     setSpinning(true);
     setWinningIndexes([]);
     setLastWin(0);
     setCompletedReels(0);
 
     // Start spin sound loop
-    spinSoundIntervalRef.current = setInterval(playSpinSound, 80);
+    if (soundEnabled) {
+      spinSoundIntervalRef.current = setInterval(playSpinSound, 80);
+    }
 
     // Always give non-matching symbols
     const newResults = getNoWinSymbols();
     setResults(newResults);
-  }, [spinning, hasFreeSpin, playClickSound, playSpinSound]);
+  }, [spinning, hasFreeSpin, soundEnabled, unlockAudio, playClickSound, playSpinSound]);
 
-  const handleSpin = useCallback(() => {
+  const handleSpin = useCallback(async () => {
     if (spinning) return;
-    
+
     if (coins < spinCost) {
       toast.error(`تحتاج ${spinCost} عملة للدوران!`);
       return;
     }
 
+    if (soundEnabled) {
+      await unlockAudio();
+    }
+
     playClickSound();
     onCoinsChange(coins - spinCost);
-    
+
     setSpinning(true);
     setWinningIndexes([]);
     setLastWin(0);
     setCompletedReels(0);
 
     // Start spin sound loop
-    spinSoundIntervalRef.current = setInterval(playSpinSound, 80);
+    if (soundEnabled) {
+      spinSoundIntervalRef.current = setInterval(playSpinSound, 80);
+    }
 
     const newResults = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
     setResults(newResults);
-  }, [spinning, coins, spinCost, onCoinsChange, playClickSound, playSpinSound]);
+  }, [spinning, coins, spinCost, onCoinsChange, soundEnabled, unlockAudio, playClickSound, playSpinSound]);
 
   const handleReelComplete = useCallback(() => {
     setCompletedReels(prev => {
