@@ -169,6 +169,93 @@ export type Database = {
         }
         Relationships: []
       }
+      bolt_daily_task_completions: {
+        Row: {
+          completed_date: string
+          created_at: string
+          id: string
+          points_earned: number
+          task_id: string
+          user_id: string
+        }
+        Insert: {
+          completed_date?: string
+          created_at?: string
+          id?: string
+          points_earned?: number
+          task_id: string
+          user_id: string
+        }
+        Update: {
+          completed_date?: string
+          created_at?: string
+          id?: string
+          points_earned?: number
+          task_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolt_daily_task_completions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_daily_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolt_daily_task_completions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bolt_daily_tasks: {
+        Row: {
+          action_url: string | null
+          created_at: string
+          description: string | null
+          description_ar: string | null
+          icon: string | null
+          id: string
+          is_active: boolean
+          required_action: string | null
+          reward_tokens: number
+          task_type: string
+          title: string
+          title_ar: string
+        }
+        Insert: {
+          action_url?: string | null
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          required_action?: string | null
+          reward_tokens?: number
+          task_type?: string
+          title: string
+          title_ar: string
+        }
+        Update: {
+          action_url?: string | null
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean
+          required_action?: string | null
+          reward_tokens?: number
+          task_type?: string
+          title?: string
+          title_ar?: string
+        }
+        Relationships: []
+      }
       bolt_flash_offers: {
         Row: {
           created_at: string
