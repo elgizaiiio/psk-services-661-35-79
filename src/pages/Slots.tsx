@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { SlotMachine } from "@/components/slots/SlotMachine";
@@ -6,13 +6,29 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { toast } from "sonner";
 
+const DAILY_FREE_SPINS = 5;
+
 const Slots = () => {
   const navigate = useNavigate();
   const { user } = useTelegramAuth();
   const [coins, setCoins] = useState(1000);
   const [boltTokens, setBoltTokens] = useState(0);
   const [freeSpins, setFreeSpins] = useState(0);
+  const [canClaimDaily, setCanClaimDaily] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const checkDailyClaim = useCallback((lastClaim: string | null) => {
+    if (!lastClaim) return true;
+    
+    const lastClaimDate = new Date(lastClaim);
+    const now = new Date();
+    
+    // Reset at midnight UTC
+    const lastClaimDay = new Date(lastClaimDate.toDateString());
+    const today = new Date(now.toDateString());
+    
+    return today > lastClaimDay;
+  }, []);
 
   useEffect(() => {
     const loadUserData = async () => {
@@ -57,6 +73,34 @@ const Slots = () => {
           setBoltTokens(boltData.token_balance);
         }
 
+        // Load free spins data
+        const { data: spinsData, error: spinsError } = await supabase
+          .from('user_free_spins')
+          .select('*')
+          .eq('user_id', user.id.toString())
+          .maybeSingle();
+
+        if (spinsError) throw spinsError;
+
+        if (spinsData) {
+          setFreeSpins(spinsData.total_spins);
+          setCanClaimDaily(checkDailyClaim(spinsData.last_daily_claim));
+        } else {
+          // Create initial record with daily spins
+          const { error: insertSpinsError } = await supabase
+            .from('user_free_spins')
+            .insert({
+              user_id: user.id.toString(),
+              total_spins: DAILY_FREE_SPINS,
+              daily_claimed: true,
+              last_daily_claim: new Date().toISOString(),
+            });
+
+          if (insertSpinsError) throw insertSpinsError;
+          setFreeSpins(DAILY_FREE_SPINS);
+          setCanClaimDaily(false);
+        }
+
       } catch (error) {
         console.error('Error loading data:', error);
         toast.error('Failed to load data');
@@ -66,7 +110,34 @@ const Slots = () => {
     };
 
     loadUserData();
-  }, [user]);
+  }, [user, checkDailyClaim]);
+
+  const claimDailySpins = async () => {
+    if (!user?.id || !canClaimDaily) return;
+
+    try {
+      const newSpins = freeSpins + DAILY_FREE_SPINS;
+      
+      const { error } = await supabase
+        .from('user_free_spins')
+        .update({
+          total_spins: newSpins,
+          daily_claimed: true,
+          last_daily_claim: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id.toString());
+
+      if (error) throw error;
+
+      setFreeSpins(newSpins);
+      setCanClaimDaily(false);
+      toast.success(`🎁 +${DAILY_FREE_SPINS} Free Spins!`);
+    } catch (error) {
+      console.error('Error claiming daily spins:', error);
+      toast.error('Failed to claim daily spins');
+    }
+  };
 
   const handleCoinsChange = async (newCoins: number) => {
     setCoins(newCoins);
@@ -82,6 +153,27 @@ const Slots = () => {
       if (error) throw error;
     } catch (error) {
       console.error('Error updating coins:', error);
+    }
+  };
+
+  const handleFreeSpinUsed = async () => {
+    if (!user?.id || freeSpins <= 0) return;
+
+    const newSpins = freeSpins - 1;
+    setFreeSpins(newSpins);
+
+    try {
+      const { error } = await supabase
+        .from('user_free_spins')
+        .update({
+          total_spins: newSpins,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('user_id', user.id.toString());
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error updating free spins:', error);
     }
   };
 
@@ -103,11 +195,25 @@ const Slots = () => {
           
           {/* 3 Stats Row */}
           <div className="grid grid-cols-3 gap-2">
-            {/* Free Spins */}
-            <div className="bg-gradient-to-br from-amber-500/15 to-orange-500/10 rounded-2xl p-3 text-center border border-amber-500/20">
+            {/* Free Spins - Clickable if can claim */}
+            <motion.button
+              onClick={canClaimDaily ? claimDailySpins : undefined}
+              disabled={!canClaimDaily}
+              className={`relative bg-gradient-to-br from-amber-500/15 to-orange-500/10 rounded-2xl p-3 text-center border transition-all ${
+                canClaimDaily 
+                  ? 'border-amber-500/50 cursor-pointer hover:scale-105 active:scale-95' 
+                  : 'border-amber-500/20 cursor-default'
+              }`}
+              whileTap={canClaimDaily ? { scale: 0.95 } : {}}
+            >
+              {canClaimDaily && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+              )}
               <div className="text-2xl font-black text-amber-400">{freeSpins}</div>
-              <div className="text-[10px] uppercase tracking-wider text-amber-400/70 font-medium">Spins</div>
-            </div>
+              <div className="text-[10px] uppercase tracking-wider text-amber-400/70 font-medium">
+                {canClaimDaily ? 'Claim!' : 'Spins'}
+              </div>
+            </motion.button>
             
             {/* Coins */}
             <div className="bg-gradient-to-br from-yellow-500/15 to-yellow-500/5 rounded-2xl p-3 text-center border border-yellow-500/20">
@@ -139,6 +245,8 @@ const Slots = () => {
               onCoinsChange={handleCoinsChange}
               spinCost={10}
               userId={user?.id?.toString()}
+              freeSpins={freeSpins}
+              onFreeSpinUsed={handleFreeSpinUsed}
             />
           </motion.div>
         )}

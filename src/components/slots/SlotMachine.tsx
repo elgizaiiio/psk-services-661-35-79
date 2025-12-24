@@ -14,6 +14,8 @@ interface SlotMachineProps {
   onCoinsChange: (newCoins: number) => void;
   spinCost?: number;
   userId?: string;
+  freeSpins?: number;
+  onFreeSpinUsed?: () => void;
 }
 
 // Get 3 different symbols (no matches = no win)
@@ -40,7 +42,7 @@ const formatCountdown = (ms: number) => {
   return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
 };
 
-export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: SlotMachineProps) => {
+export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId, freeSpins = 0, onFreeSpinUsed }: SlotMachineProps) => {
   const [spinning, setSpinning] = useState(false);
   const [results, setResults] = useState<Symbol[]>([SYMBOLS[0], SYMBOLS[1], SYMBOLS[2]]);
   const [winningIndexes, setWinningIndexes] = useState<number[]>([]);
@@ -152,9 +154,36 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
   }, []);
 
   const handleFreeSpin = useCallback(async () => {
-    if (spinning || !hasFreeSpin) return;
+    if (spinning) return;
+    
+    // Check for database free spins first
+    if (freeSpins > 0 && onFreeSpinUsed) {
+      // Use database free spin
+      if (soundEnabled || musicEnabled) {
+        await unlockAndStartMusic();
+      }
 
-    // Unlock audio and start music if enabled
+      playClickSound();
+      onFreeSpinUsed();
+      toast.info("🎁 Free Spin!");
+
+      setSpinning(true);
+      setWinningIndexes([]);
+      setLastWin(0);
+      setCompletedReels(0);
+
+      if (soundEnabled) {
+        spinSoundIntervalRef.current = setInterval(playSpinSound, 80);
+      }
+
+      const newResults = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
+      setResults(newResults);
+      return;
+    }
+    
+    // Fallback to localStorage free spin
+    if (!hasFreeSpin) return;
+
     if (soundEnabled || musicEnabled) {
       await unlockAndStartMusic();
     }
@@ -168,15 +197,13 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
     setLastWin(0);
     setCompletedReels(0);
 
-    // Start spin sound loop
     if (soundEnabled) {
       spinSoundIntervalRef.current = setInterval(playSpinSound, 80);
     }
 
-    // Always give non-matching symbols
     const newResults = getNoWinSymbols();
     setResults(newResults);
-  }, [spinning, hasFreeSpin, soundEnabled, musicEnabled, unlockAndStartMusic, playClickSound, playSpinSound]);
+  }, [spinning, hasFreeSpin, freeSpins, onFreeSpinUsed, soundEnabled, musicEnabled, unlockAndStartMusic, playClickSound, playSpinSound]);
 
   const handleSpin = useCallback(async () => {
     if (spinning) return;
@@ -352,7 +379,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
         </motion.button>
 
         {/* Free spin button - far right */}
-        {hasFreeSpin ? (
+        {(freeSpins > 0 || hasFreeSpin) ? (
           <motion.button
             onClick={handleFreeSpin}
             disabled={spinning}
@@ -383,13 +410,13 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId }: Slo
           Spin Cost: <span className="text-primary font-medium">{spinCost}</span>
         </p>
         
-        {hasFreeSpin ? (
+        {(freeSpins > 0 || hasFreeSpin) ? (
           <motion.p 
             className="text-xs text-yellow-500 font-medium"
             animate={{ scale: [1, 1.05, 1] }}
             transition={{ duration: 1.5, repeat: Infinity }}
           >
-            🎁 You have a free spin!
+            🎁 {freeSpins > 0 ? `${freeSpins} free spins available!` : 'You have a free spin!'}
           </motion.p>
         ) : (
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
