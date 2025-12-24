@@ -43,6 +43,7 @@ import ChatAI from "./pages/ChatAI";
 import Slots from "./pages/Slots";
 import Settings from "./pages/Settings";
 import Challenges from "./pages/Challenges";
+import Characters from "./pages/Characters";
 import SplashScreen from "./components/SplashScreen";
 
 
@@ -145,6 +146,7 @@ const App = () => (
                       <Route path="/slots" element={<Slots />} />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="/challenges" element={<Challenges />} />
+                      <Route path="/characters" element={<Characters />} />
                     </Routes>
                     <BottomNavigation />
                   </div>
