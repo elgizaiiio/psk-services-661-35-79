@@ -63,7 +63,7 @@ export const LevelProgressCard = ({ userId, tokenBalance, onLevelReward }: Level
         .from('bolt_user_levels')
         .select('*')
         .eq('user_id', userId)
-        .single();
+        .maybeSingle();
 
       const previousLevel = existingLevel?.level || 1;
       const claimedLevel = (existingLevel?.unlocked_features as any)?.last_claimed_level || 0;
