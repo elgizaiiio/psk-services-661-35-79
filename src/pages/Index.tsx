@@ -7,7 +7,9 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useAchievementNotifications } from '@/hooks/useAchievementNotifications';
+import { useDailyTasksNotification } from '@/hooks/useDailyTasksNotification';
 import AchievementUnlockNotification from '@/components/achievements/AchievementUnlockNotification';
+import DailyTasksNotification from '@/components/notifications/DailyTasksNotification';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -27,6 +29,12 @@ const Index = () => {
     connectWallet 
   } = useTelegramTonConnect();
   const { notification, closeNotification } = useAchievementNotifications(user?.id || null);
+  const { 
+    notification: dailyNotification, 
+    showNotification: showDailyNotification, 
+    dismissNotification: dismissDailyNotification,
+    markAsViewed: markDailyAsViewed 
+  } = useDailyTasksNotification(user?.id || null);
 
   const handleStartMining = async () => {
     hapticFeedback.impact('medium');
@@ -76,6 +84,13 @@ const Index = () => {
       <AchievementUnlockNotification 
         achievement={notification} 
         onClose={closeNotification} 
+      />
+      <DailyTasksNotification
+        isVisible={showDailyNotification}
+        availableTasks={dailyNotification?.availableTasks || 0}
+        totalRewards={dailyNotification?.totalRewards || 0}
+        onDismiss={dismissDailyNotification}
+        onNavigate={markDailyAsViewed}
       />
       <main className="min-h-screen bg-background pb-24">
         <Helmet>
