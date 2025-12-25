@@ -1,23 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Crown, 
-  Trophy, 
-  Medal, 
-  Zap, 
-  TrendingUp, 
-  Users, 
-  Star,
-  Sparkles,
-  Target,
-  ArrowUp,
-  Flame,
-  Gift,
-  Clock,
-  UserPlus,
-  Calendar
-} from "lucide-react";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { useBoltLeaderboard } from '@/hooks/useBoltLeaderboard';
@@ -25,40 +8,25 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, Area, AreaChart } from 'recharts';
 
-// Floating particles
-const FloatingParticles = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none">
-    {[...Array(15)].map((_, i) => (
-      <motion.div
-        key={i}
-        className="absolute w-1 h-1 bg-yellow-500/30 rounded-full"
-        initial={{ 
-          x: Math.random() * 400,
-          y: Math.random() * 300,
-          opacity: 0 
-        }}
-        animate={{ 
-          y: [null, -80],
-          opacity: [0, 0.8, 0],
-        }}
-        transition={{ 
-          duration: 3 + Math.random() * 2,
-          repeat: Infinity,
-          delay: Math.random() * 2
-        }}
-      />
-    ))}
-  </div>
-);
+// Mock performance history data (in production, fetch from database)
+const generatePerformanceHistory = (currentRank: number) => {
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+  return days.map((day, index) => ({
+    day,
+    rank: Math.max(1, currentRank + Math.floor(Math.random() * 10) - 5),
+    balance: Math.floor(Math.random() * 5000) + 1000
+  }));
+};
 
 // Rank rewards data
 const RANK_REWARDS = [
-  { rank: 1, reward: 10000, icon: Crown, color: 'from-yellow-400 to-amber-500', label: 'Champion' },
-  { rank: 2, reward: 5000, icon: Trophy, color: 'from-gray-300 to-gray-400', label: 'Elite' },
-  { rank: 3, reward: 2500, icon: Medal, color: 'from-amber-500 to-orange-600', label: 'Pro' },
-  { rank: '4-10', reward: 1000, icon: Star, color: 'from-purple-500 to-pink-500', label: 'Top 10' },
-  { rank: '11-50', reward: 500, icon: Target, color: 'from-blue-500 to-cyan-500', label: 'Top 50' },
+  { rank: 1, reward: 10000, label: 'Champion', color: '#F59E0B' },
+  { rank: 2, reward: 5000, label: 'Elite', color: '#9CA3AF' },
+  { rank: 3, reward: 2500, label: 'Pro', color: '#D97706' },
+  { rank: '4-10', reward: 1000, label: 'Top 10', color: '#8B5CF6' },
+  { rank: '11-50', reward: 500, label: 'Top 50', color: '#3B82F6' },
 ];
 
 type TimeFilter = 'all' | 'week' | 'month';
@@ -81,23 +49,22 @@ const Leaderboard: React.FC = () => {
     return userEntry?.rank || null;
   }, [leaderboard, boltUser]);
 
-  // Filter leaderboard based on time (simulated - in production would be server-side)
+  // Performance history for chart
+  const performanceHistory = useMemo(() => {
+    return generatePerformanceHistory(currentUserRank || 50);
+  }, [currentUserRank]);
+
+  // Filter leaderboard
   const filteredLeaderboard = useMemo(() => {
     let filtered = [...leaderboard];
     
-    // In a real app, time filtering would be done server-side
-    // This is a simulation for UI purposes
     if (timeFilter === 'week') {
-      // Simulate weekly data (shuffle slightly for demo)
       filtered = filtered.slice(0, Math.ceil(filtered.length * 0.8));
     } else if (timeFilter === 'month') {
       filtered = filtered.slice(0, Math.ceil(filtered.length * 0.9));
     }
     
-    // For friends filter - in production this would use referrals table
-    // For now, show top referrers as "friends" simulation
     if (viewFilter === 'friends' && boltUser) {
-      // Filter to show only users with referrals (simulating friend network)
       filtered = filtered.filter(user => 
         (user.total_referrals || 0) > 0 || user.id === boltUser.id
       ).slice(0, 10);
@@ -106,30 +73,30 @@ const Leaderboard: React.FC = () => {
     return filtered;
   }, [leaderboard, timeFilter, viewFilter, boltUser]);
 
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "WebPage",
-    name: "Leaderboard",
-    description: "View top BOLT miners and compare your ranking with other players.",
-    url: currentUrl
+  const topThree = filteredLeaderboard.slice(0, 3);
+  const restOfLeaderboard = filteredLeaderboard.slice(3);
+
+  const getRankStyle = (rank: number) => {
+    if (rank === 1) return 'from-yellow-500 to-amber-600';
+    if (rank === 2) return 'from-gray-400 to-gray-500';
+    if (rank === 3) return 'from-amber-600 to-orange-700';
+    return 'from-primary/80 to-purple-600';
   };
 
   if (loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           className="text-center space-y-4"
         >
           <motion.div 
             animate={{ rotate: 360 }}
             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-            className="w-16 h-16 rounded-2xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center mx-auto shadow-lg shadow-yellow-500/30"
-          >
-            <Crown className="w-8 h-8 text-white" />
-          </motion.div>
-          <p className="text-muted-foreground text-sm">Loading rankings...</p>
+            className="w-14 h-14 rounded-full border-4 border-primary border-t-transparent mx-auto"
+          />
+          <p className="text-muted-foreground text-sm">Loading...</p>
         </motion.div>
       </main>
     );
@@ -138,116 +105,57 @@ const Leaderboard: React.FC = () => {
   if (error) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center p-6">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-sm w-full text-center space-y-6"
-        >
-          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
-            <Trophy className="w-8 h-8 text-destructive" />
-          </div>
+        <div className="max-w-sm w-full text-center space-y-6">
           <p className="text-destructive text-sm">{error}</p>
-          <Button onClick={clearError} className="w-full bg-primary text-primary-foreground rounded-full">
+          <Button onClick={clearError} className="w-full rounded-full">
             Try Again
           </Button>
-        </motion.div>
+        </div>
       </main>
     );
   }
 
-  const getRankIcon = (rank: number) => {
-    switch (rank) {
-      case 1:
-        return <Crown className="w-5 h-5 text-yellow-400" />;
-      case 2:
-        return <Trophy className="w-5 h-5 text-gray-400" />;
-      case 3:
-        return <Medal className="w-5 h-5 text-amber-600" />;
-      default:
-        return <span className="text-sm font-bold text-muted-foreground">#{rank}</span>;
-    }
-  };
-
-  const getRankBadge = (rank: number) => {
-    if (rank === 1) return { color: 'from-yellow-500 to-amber-500', label: 'Champion', icon: Crown };
-    if (rank === 2) return { color: 'from-gray-400 to-gray-500', label: 'Elite', icon: Trophy };
-    if (rank === 3) return { color: 'from-amber-600 to-orange-600', label: 'Pro', icon: Medal };
-    if (rank <= 10) return { color: 'from-purple-500 to-pink-500', label: 'Top 10', icon: Star };
-    if (rank <= 50) return { color: 'from-blue-500 to-cyan-500', label: 'Top 50', icon: Target };
-    return { color: 'from-primary to-purple-500', label: 'Miner', icon: Zap };
-  };
-
-  // Get top 3 for podium
-  const topThree = filteredLeaderboard.slice(0, 3);
-  const restOfLeaderboard = filteredLeaderboard.slice(3);
-
   return (
     <>
       <Helmet>
-        <title>Leaderboard | Top Miners</title>
-        <meta name="description" content="View top BOLT miners and compare your ranking with other players." />
-        <meta property="og:title" content="Leaderboard | Top Miners" />
-        <meta property="og:description" content="View top BOLT miners and compare your ranking with other players." />
-        <meta property="og:url" content={currentUrl} />
-        <link rel="canonical" href={currentUrl} />
-        <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
+        <title>Leaderboard | Rankings</title>
+        <meta name="description" content="View top BOLT miners and your ranking history." />
       </Helmet>
 
-      <main className="min-h-screen bg-background pb-24 relative">
-        <FloatingParticles />
-        
-        <div className="max-w-md mx-auto px-4 py-6 relative z-10">
+      <main className="min-h-screen bg-background pb-24">
+        <div className="max-w-md mx-auto px-4 py-6">
           
           {/* Header */}
           <motion.div 
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-4"
+            className="mb-6"
           >
-            <div className="flex items-center justify-center gap-3 mb-2">
-              <motion.div
-                animate={{ rotate: [0, 10, -10, 0] }}
-                transition={{ repeat: Infinity, duration: 3 }}
-              >
-                <Crown className="w-8 h-8 text-yellow-500" />
-              </motion.div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 bg-clip-text text-transparent">
-                Leaderboard
-              </h1>
-              <motion.div
-                animate={{ rotate: [0, -10, 10, 0] }}
-                transition={{ repeat: Infinity, duration: 3 }}
-              >
-                <Crown className="w-8 h-8 text-yellow-500" />
-              </motion.div>
-            </div>
-            <p className="text-muted-foreground text-sm flex items-center justify-center gap-2">
-              <Users className="w-4 h-4" />
-              {filteredLeaderboard.length} Active Miners
+            <h1 className="text-2xl font-bold text-foreground">Leaderboard</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              {filteredLeaderboard.length} miners competing
             </p>
           </motion.div>
 
-          {/* View Filter Tabs */}
+          {/* View Filter */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.1 }}
             className="mb-4"
           >
             <Tabs value={viewFilter} onValueChange={(v) => setViewFilter(v as ViewFilter)}>
-              <TabsList className="w-full grid grid-cols-2 h-12 bg-muted/50 rounded-xl p-1">
+              <TabsList className="w-full grid grid-cols-2 h-11 bg-muted rounded-xl p-1">
                 <TabsTrigger 
                   value="all"
-                  className="rounded-lg text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-500 data-[state=active]:text-white"
+                  className="rounded-lg text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
                 >
-                  <Users className="w-4 h-4 mr-1.5" />
                   All Miners
                 </TabsTrigger>
                 <TabsTrigger 
                   value="friends"
-                  className="rounded-lg text-sm font-semibold data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white"
+                  className="rounded-lg text-sm font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm"
                 >
-                  <UserPlus className="w-4 h-4 mr-1.5" />
                   Friends
                 </TabsTrigger>
               </TabsList>
@@ -256,65 +164,120 @@ const Leaderboard: React.FC = () => {
 
           {/* Time Filter */}
           <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ delay: 0.15 }}
-            className="flex gap-2 mb-4 overflow-x-auto pb-1"
+            className="flex gap-2 mb-5"
           >
             {[
-              { value: 'all', label: 'All Time', icon: Sparkles },
-              { value: 'month', label: 'This Month', icon: Calendar },
-              { value: 'week', label: 'This Week', icon: Clock },
+              { value: 'all', label: 'All Time' },
+              { value: 'month', label: 'Month' },
+              { value: 'week', label: 'Week' },
             ].map((filter) => (
               <Button
                 key={filter.value}
-                variant={timeFilter === filter.value ? "default" : "outline"}
+                variant={timeFilter === filter.value ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setTimeFilter(filter.value as TimeFilter)}
-                className={`flex-1 rounded-xl text-xs ${
-                  timeFilter === filter.value 
-                    ? 'bg-gradient-to-r from-primary to-purple-500 border-0' 
-                    : 'border-border'
+                className={`flex-1 rounded-lg text-xs h-9 ${
+                  timeFilter === filter.value ? 'bg-primary' : 'bg-muted'
                 }`}
               >
-                <filter.icon className="w-3 h-3 mr-1" />
                 {filter.label}
               </Button>
             ))}
           </motion.div>
 
-          {/* Rank Rewards Card */}
+          {/* Your Rank & Performance Card */}
+          {boltUser && currentUserRank && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="mb-5"
+            >
+              <Card className="p-4 bg-gradient-to-br from-primary/5 to-purple-500/5 border-primary/20">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Your Rank</p>
+                    <p className="text-3xl font-bold text-foreground">#{currentUserRank}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Balance</p>
+                    <p className="text-xl font-bold text-primary">
+                      {(boltUser.token_balance || 0).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Performance Chart */}
+                <div className="h-24 mt-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={performanceHistory}>
+                      <defs>
+                        <linearGradient id="rankGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3}/>
+                          <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis 
+                        dataKey="day" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                      />
+                      <YAxis 
+                        reversed 
+                        hide 
+                        domain={['dataMin - 5', 'dataMax + 5']}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          background: 'hsl(var(--card))', 
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                        formatter={(value: number) => [`#${value}`, 'Rank']}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="rank" 
+                        stroke="hsl(var(--primary))" 
+                        strokeWidth={2}
+                        fill="url(#rankGradient)"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                <p className="text-[10px] text-muted-foreground text-center mt-1">
+                  Your rank history this week
+                </p>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Weekly Rewards */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-4"
+            transition={{ delay: 0.25 }}
+            className="mb-5"
           >
             <Card 
-              className="p-3 bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-red-500/10 border-yellow-500/30 cursor-pointer"
+              className="p-3 cursor-pointer hover:bg-muted/50 transition-colors"
               onClick={() => setShowRewards(!showRewards)}
             >
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    animate={{ scale: [1, 1.1, 1] }}
-                    transition={{ repeat: Infinity, duration: 2 }}
-                    className="w-10 h-10 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-500 flex items-center justify-center"
-                  >
-                    <Gift className="w-5 h-5 text-white" />
-                  </motion.div>
-                  <div>
-                    <p className="font-bold text-foreground text-sm">Weekly Rewards</p>
-                    <p className="text-xs text-muted-foreground">Tap to see prizes</p>
-                  </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">Weekly Rewards</p>
+                  <p className="text-xs text-muted-foreground">Tap to view prizes</p>
                 </div>
-                <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30">
-                  <Trophy className="w-3 h-3 mr-1" />
+                <Badge variant="secondary" className="text-xs">
                   20K+ BOLT
                 </Badge>
               </div>
 
-              {/* Expandable rewards */}
               <AnimatePresence>
                 {showRewards && (
                   <motion.div
@@ -323,35 +286,25 @@ const Leaderboard: React.FC = () => {
                     exit={{ height: 0, opacity: 0 }}
                     className="overflow-hidden"
                   >
-                    <div className="mt-4 space-y-2 pt-3 border-t border-yellow-500/20">
+                    <div className="mt-3 pt-3 border-t border-border space-y-2">
                       {RANK_REWARDS.map((item, idx) => (
-                        <motion.div
+                        <div
                           key={idx}
-                          initial={{ x: -20, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: idx * 0.05 }}
-                          className="flex items-center justify-between p-2 rounded-lg bg-background/50"
+                          className="flex items-center justify-between py-1.5"
                         >
-                          <div className="flex items-center gap-2">
-                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${item.color} flex items-center justify-center`}>
-                              <item.icon className="w-4 h-4 text-white" />
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
+                              style={{ background: item.color }}
+                            >
+                              {typeof item.rank === 'number' ? `#${item.rank}` : item.rank}
                             </div>
-                            <div>
-                              <p className="text-xs font-semibold text-foreground">
-                                {typeof item.rank === 'number' ? `Rank #${item.rank}` : `Rank ${item.rank}`}
-                              </p>
-                              <p className="text-xs text-muted-foreground">{item.label}</p>
-                            </div>
+                            <span className="text-sm text-foreground">{item.label}</span>
                           </div>
-                          <div className="flex items-center gap-1">
-                            <img 
-                              src="/lovable-uploads/bb2ce9b7-afd0-4e2c-8447-351c0ae1f27d.png" 
-                              alt="BOLT" 
-                              className="w-4 h-4"
-                            />
-                            <span className="font-bold text-sm text-yellow-500">+{item.reward.toLocaleString()}</span>
-                          </div>
-                        </motion.div>
+                          <span className="font-bold text-sm text-primary">
+                            +{item.reward.toLocaleString()}
+                          </span>
+                        </div>
                       ))}
                     </div>
                   </motion.div>
@@ -360,243 +313,89 @@ const Leaderboard: React.FC = () => {
             </Card>
           </motion.div>
 
-          {/* Your Rank Card */}
-          {boltUser && currentUserRank && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.25 }}
-              className="mb-4"
-            >
-              <Card className="p-4 bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 border-primary/30 relative overflow-hidden">
-                <motion.div
-                  animate={{ opacity: [0.3, 0.5, 0.3] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
-                  className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10"
-                />
-                
-                <div className="relative z-10 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${getRankBadge(currentUserRank).color} flex items-center justify-center shadow-lg`}>
-                      <span className="text-xl font-bold text-white">#{currentUserRank}</span>
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Your Rank</p>
-                      <p className="font-bold text-foreground flex items-center gap-2">
-                        {boltUser.first_name || boltUser.telegram_username || 'You'}
-                        <Badge className={`bg-gradient-to-r ${getRankBadge(currentUserRank).color} text-white border-0 text-xs`}>
-                          {getRankBadge(currentUserRank).label}
-                        </Badge>
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Balance</p>
-                    <p className="text-lg font-bold text-primary flex items-center gap-1">
-                      <img 
-                        src="/lovable-uploads/bb2ce9b7-afd0-4e2c-8447-351c0ae1f27d.png" 
-                        alt="BOLT" 
-                        className="w-5 h-5"
-                      />
-                      {(boltUser.token_balance || 0).toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          )}
-
-          {/* Stats Row */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="grid grid-cols-3 gap-2 mb-4"
-          >
-            <Card className="p-2.5 text-center bg-yellow-500/10 border-yellow-500/20">
-              <Crown className="w-4 h-4 text-yellow-500 mx-auto mb-1" />
-              <p className="text-[10px] text-muted-foreground">Top Prize</p>
-              <p className="font-bold text-yellow-500 text-xs">10K</p>
-            </Card>
-            <Card className="p-2.5 text-center bg-green-500/10 border-green-500/20">
-              <TrendingUp className="w-4 h-4 text-green-500 mx-auto mb-1" />
-              <p className="text-[10px] text-muted-foreground">Total Mined</p>
-              <p className="font-bold text-green-500 text-xs">
-                {(filteredLeaderboard.reduce((sum, e) => sum + (e.token_balance || 0), 0) / 1000).toFixed(0)}K
-              </p>
-            </Card>
-            <Card className="p-2.5 text-center bg-purple-500/10 border-purple-500/20">
-              <Flame className="w-4 h-4 text-purple-500 mx-auto mb-1" />
-              <p className="text-[10px] text-muted-foreground">Status</p>
-              <p className="font-bold text-purple-500 text-xs">Active</p>
-            </Card>
-          </motion.div>
-
           {filteredLeaderboard.length === 0 ? (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-center py-16"
-            >
-              <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-                {viewFilter === 'friends' ? (
-                  <UserPlus className="w-10 h-10 text-muted-foreground" />
-                ) : (
-                  <Crown className="w-10 h-10 text-muted-foreground" />
-                )}
-              </div>
-              <h3 className="font-medium text-foreground mb-1">
+            <div className="text-center py-16">
+              <p className="text-muted-foreground">
                 {viewFilter === 'friends' ? 'No friends yet' : 'No miners yet'}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {viewFilter === 'friends' ? 'Invite friends to see them here!' : 'Be the first to start mining!'}
               </p>
               {viewFilter === 'friends' && (
                 <Button 
-                  className="mt-4 bg-gradient-to-r from-green-500 to-emerald-500"
+                  className="mt-4"
                   onClick={() => window.location.href = '/invite'}
                 >
-                  <UserPlus className="w-4 h-4 mr-2" />
                   Invite Friends
                 </Button>
               )}
-            </motion.div>
+            </div>
           ) : (
             <>
-              {/* Top 3 Podium - Enhanced */}
+              {/* Top 3 Podium - Minimal Design */}
               {topThree.length >= 3 && viewFilter === 'all' && (
                 <motion.div
-                  initial={{ opacity: 0, y: 20 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.35 }}
-                  className="mb-4"
+                  transition={{ delay: 0.3 }}
+                  className="mb-5"
                 >
-                  <Card className="p-4 relative overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-b from-yellow-500/10 via-transparent to-transparent" />
-                    
-                    <div className="relative z-10 flex items-end justify-center gap-3 pt-4">
-                      {/* 2nd Place */}
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.5 }}
-                        className="flex flex-col items-center"
-                      >
-                        <motion.div 
-                          whileHover={{ scale: 1.1 }}
-                          className="w-14 h-14 rounded-2xl bg-gradient-to-br from-gray-300 to-gray-400 flex items-center justify-center mb-2 shadow-lg relative"
-                        >
-                          <span className="text-lg font-bold text-white">
-                            {(topThree[1].first_name || topThree[1].telegram_username || 'A').charAt(0).toUpperCase()}
-                          </span>
-                          <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-gray-400 flex items-center justify-center">
-                            <span className="text-xs font-bold text-white">2</span>
-                          </div>
-                        </motion.div>
-                        <Trophy className="w-5 h-5 text-gray-400 mb-1" />
-                        <p className="text-xs text-foreground font-medium truncate max-w-[60px] text-center">
-                          {topThree[1].first_name || topThree[1].telegram_username || 'Anonymous'}
-                        </p>
-                        <p className="text-xs font-bold text-gray-500 flex items-center gap-1 mt-1">
-                          <Zap className="w-3 h-3" />
-                          {(topThree[1].token_balance || 0).toLocaleString()}
-                        </p>
-                        <div className="w-16 h-14 bg-gradient-to-t from-gray-400/30 to-gray-400/10 rounded-t-xl mt-2" />
-                      </motion.div>
-
-                      {/* 1st Place */}
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.4 }}
-                        className="flex flex-col items-center -mt-6"
-                      >
-                        <motion.div
-                          animate={{ y: [0, -5, 0] }}
-                          transition={{ repeat: Infinity, duration: 2 }}
-                        >
-                          <Sparkles className="w-6 h-6 text-yellow-500 mb-1" />
-                        </motion.div>
-                        <motion.div 
-                          whileHover={{ scale: 1.1 }}
-                          className="w-18 h-18 rounded-2xl bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center mb-2 shadow-xl shadow-yellow-500/30 relative w-[72px] h-[72px]"
-                        >
-                          <span className="text-2xl font-bold text-white">
-                            {(topThree[0].first_name || topThree[0].telegram_username || 'A').charAt(0).toUpperCase()}
-                          </span>
-                          <motion.div 
-                            animate={{ rotate: 360 }}
-                            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                            className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-gradient-to-br from-yellow-300 to-yellow-500 flex items-center justify-center shadow-lg"
-                          >
-                            <Crown className="w-4 h-4 text-white" />
-                          </motion.div>
-                        </motion.div>
-                        <Crown className="w-6 h-6 text-yellow-500 mb-1" />
-                        <p className="text-sm text-foreground font-bold truncate max-w-[70px] text-center">
-                          {topThree[0].first_name || topThree[0].telegram_username || 'Anonymous'}
-                        </p>
-                        <p className="text-sm font-bold text-yellow-500 flex items-center gap-1 mt-1">
-                          <Zap className="w-4 h-4" />
-                          {(topThree[0].token_balance || 0).toLocaleString()}
-                        </p>
-                        <div className="w-20 h-20 bg-gradient-to-t from-yellow-500/30 to-yellow-500/10 rounded-t-xl mt-2" />
-                      </motion.div>
-
-                      {/* 3rd Place */}
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6 }}
-                        className="flex flex-col items-center"
-                      >
-                        <motion.div 
-                          whileHover={{ scale: 1.1 }}
-                          className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center mb-2 shadow-lg relative"
-                        >
-                          <span className="text-lg font-bold text-white">
-                            {(topThree[2].first_name || topThree[2].telegram_username || 'A').charAt(0).toUpperCase()}
-                          </span>
-                          <div className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-amber-600 flex items-center justify-center">
-                            <span className="text-xs font-bold text-white">3</span>
-                          </div>
-                        </motion.div>
-                        <Medal className="w-5 h-5 text-amber-600 mb-1" />
-                        <p className="text-xs text-foreground font-medium truncate max-w-[60px] text-center">
-                          {topThree[2].first_name || topThree[2].telegram_username || 'Anonymous'}
-                        </p>
-                        <p className="text-xs font-bold text-amber-600 flex items-center gap-1 mt-1">
-                          <Zap className="w-3 h-3" />
-                          {(topThree[2].token_balance || 0).toLocaleString()}
-                        </p>
-                        <div className="w-16 h-10 bg-gradient-to-t from-amber-600/30 to-amber-600/10 rounded-t-xl mt-2" />
-                      </motion.div>
+                  <div className="flex items-end justify-center gap-2 px-2">
+                    {/* 2nd Place */}
+                    <div className="flex-1 flex flex-col items-center">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getRankStyle(2)} flex items-center justify-center mb-2`}>
+                        <span className="text-lg font-bold text-white">
+                          {(topThree[1].first_name || topThree[1].telegram_username || 'A').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium text-foreground truncate max-w-full text-center">
+                        {topThree[1].first_name || topThree[1].telegram_username || 'Anonymous'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {(topThree[1].token_balance || 0).toLocaleString()}
+                      </p>
+                      <div className="w-full h-16 bg-muted rounded-t-lg mt-2 flex items-center justify-center">
+                        <span className="text-2xl font-bold text-muted-foreground">2</span>
+                      </div>
                     </div>
-                  </Card>
+
+                    {/* 1st Place */}
+                    <div className="flex-1 flex flex-col items-center -mt-4">
+                      <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${getRankStyle(1)} flex items-center justify-center mb-2 shadow-lg`}>
+                        <span className="text-2xl font-bold text-white">
+                          {(topThree[0].first_name || topThree[0].telegram_username || 'A').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-sm font-semibold text-foreground truncate max-w-full text-center">
+                        {topThree[0].first_name || topThree[0].telegram_username || 'Anonymous'}
+                      </p>
+                      <p className="text-xs text-primary font-medium">
+                        {(topThree[0].token_balance || 0).toLocaleString()}
+                      </p>
+                      <div className="w-full h-24 bg-primary/20 rounded-t-lg mt-2 flex items-center justify-center">
+                        <span className="text-3xl font-bold text-primary">1</span>
+                      </div>
+                    </div>
+
+                    {/* 3rd Place */}
+                    <div className="flex-1 flex flex-col items-center">
+                      <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${getRankStyle(3)} flex items-center justify-center mb-2`}>
+                        <span className="text-lg font-bold text-white">
+                          {(topThree[2].first_name || topThree[2].telegram_username || 'A').charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium text-foreground truncate max-w-full text-center">
+                        {topThree[2].first_name || topThree[2].telegram_username || 'Anonymous'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {(topThree[2].token_balance || 0).toLocaleString()}
+                      </p>
+                      <div className="w-full h-12 bg-muted rounded-t-lg mt-2 flex items-center justify-center">
+                        <span className="text-xl font-bold text-muted-foreground">3</span>
+                      </div>
+                    </div>
+                  </div>
                 </motion.div>
               )}
 
-              {/* Section Title */}
-              {((viewFilter === 'all' && restOfLeaderboard.length > 0) || viewFilter === 'friends') && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
-                  className="flex items-center gap-2 mb-3"
-                >
-                  <div className="h-px flex-1 bg-border" />
-                  <span className="text-xs text-muted-foreground flex items-center gap-1">
-                    {viewFilter === 'friends' ? (
-                      <><UserPlus className="w-3 h-3" /> Your Friends</>
-                    ) : (
-                      <><Users className="w-3 h-3" /> Other Miners</>
-                    )}
-                  </span>
-                  <div className="h-px flex-1 bg-border" />
-                </motion.div>
-              )}
-
-              {/* Rest of Leaderboard / Friends List */}
+              {/* Leaderboard List */}
               <div className="space-y-2">
                 {(viewFilter === 'friends' ? filteredLeaderboard : restOfLeaderboard).map((entry, index) => {
                   const name = entry.first_name || entry.telegram_username || 'Anonymous';
@@ -607,57 +406,44 @@ const Leaderboard: React.FC = () => {
                   return (
                     <motion.div 
                       key={entry.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.7 + index * 0.03 }}
-                      whileHover={{ scale: 1.02, x: 5 }}
-                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all duration-300 ${
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.3 + index * 0.02 }}
+                      className={`flex items-center gap-3 p-3 rounded-xl transition-colors ${
                         isCurrentUser 
-                          ? 'bg-gradient-to-r from-primary/20 to-purple-500/10 border-primary/50 shadow-lg shadow-primary/10' 
-                          : 'bg-card border-border hover:border-primary/30 hover:shadow-md'
+                          ? 'bg-primary/10 border border-primary/30' 
+                          : 'bg-muted/50 hover:bg-muted'
                       }`}
                     >
                       {/* Rank */}
-                      <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                        {getRankIcon(rank)}
+                      <div className="w-8 text-center">
+                        <span className="text-sm font-bold text-muted-foreground">
+                          {rank}
+                        </span>
                       </div>
 
                       {/* Avatar */}
-                      <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
                         isCurrentUser 
-                          ? 'bg-gradient-to-br from-primary to-purple-500' 
-                          : 'bg-gradient-to-br from-muted to-muted/80'
+                          ? 'bg-primary text-primary-foreground' 
+                          : 'bg-muted-foreground/20 text-foreground'
                       }`}>
-                        <span className={`text-sm font-bold ${isCurrentUser ? 'text-white' : 'text-foreground'}`}>
-                          {initials}
-                        </span>
+                        <span className="text-sm font-semibold">{initials}</span>
                       </div>
 
                       {/* Name */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate flex items-center gap-2">
+                        <p className="text-sm font-medium text-foreground truncate">
                           {name}
                           {isCurrentUser && (
-                            <Badge className="bg-primary/20 text-primary border-primary/30 text-xs">
-                              You
-                            </Badge>
+                            <span className="ml-2 text-xs text-primary">(You)</span>
                           )}
                         </p>
-                        {rank <= 10 && (
-                          <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            <Star className="w-3 h-3 text-yellow-500" /> Top 10 Miner
-                          </p>
-                        )}
                       </div>
 
                       {/* Balance */}
-                      <div className="flex items-center gap-1.5 bg-muted/50 px-3 py-1.5 rounded-lg">
-                        <img 
-                          src="/lovable-uploads/bb2ce9b7-afd0-4e2c-8447-351c0ae1f27d.png" 
-                          alt="BOLT" 
-                          className="w-4 h-4"
-                        />
-                        <span className="text-sm font-bold text-foreground">
+                      <div className="text-right">
+                        <span className="text-sm font-semibold text-foreground">
                           {(entry.token_balance || 0).toLocaleString()}
                         </span>
                       </div>
@@ -668,26 +454,27 @@ const Leaderboard: React.FC = () => {
             </>
           )}
 
-          {/* Motivation Card */}
-          {currentUserRank && currentUserRank > 3 && viewFilter === 'all' && (
+          {/* Progress to next rank */}
+          {currentUserRank && currentUserRank > 1 && viewFilter === 'all' && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 1 }}
-              className="mt-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="mt-5"
             >
-              <Card className="p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/20">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                    <ArrowUp className="w-6 h-6 text-blue-500" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-foreground">Keep Mining!</p>
-                    <p className="text-xs text-muted-foreground">
-                      You need {((leaderboard[currentUserRank - 2]?.token_balance || 0) - (boltUser?.token_balance || 0)).toLocaleString()} more BOLT to reach rank #{currentUserRank - 1}
-                    </p>
-                  </div>
+              <Card className="p-4">
+                <p className="text-sm font-medium text-foreground mb-2">Progress to Rank #{currentUserRank - 1}</p>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: '65%' }}
+                    transition={{ duration: 1, delay: 0.6 }}
+                    className="h-full bg-gradient-to-r from-primary to-purple-500 rounded-full"
+                  />
                 </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Need {((leaderboard[currentUserRank - 2]?.token_balance || 0) - (boltUser?.token_balance || 0)).toLocaleString()} more BOLT
+                </p>
               </Card>
             </motion.div>
           )}
