@@ -24,8 +24,33 @@ const getNoWinSymbols = (): Symbol[] => {
   return [shuffled[0], shuffled[1], shuffled[2]];
 };
 
+// Get winning symbols (2 or 3 matching)
+const getWinningSymbols = (): Symbol[] => {
+  const symbol = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+  // 30% chance for jackpot (3 matching), 70% for 2 matching
+  if (Math.random() < 0.3) {
+    return [symbol, symbol, symbol];
+  } else {
+    const otherSymbols = SYMBOLS.filter(s => s.id !== symbol.id);
+    const other = otherSymbols[Math.floor(Math.random() * otherSymbols.length)];
+    // Randomly place the non-matching symbol
+    const position = Math.floor(Math.random() * 3);
+    const result = [symbol, symbol, symbol];
+    result[position] = other;
+    return result;
+  }
+};
+
+// Get symbols for free spin with 95% win rate
+const getFreeSpinSymbols = (): Symbol[] => {
+  if (Math.random() < 0.95) {
+    return getWinningSymbols();
+  }
+  return getNoWinSymbols();
+};
+
 const FREE_SPIN_KEY = 'slots_free_spin_time';
-const FREE_SPIN_INTERVAL = 12 * 60 * 60 * 1000; // 12 hours in milliseconds
+const FREE_SPIN_INTERVAL = 4 * 60 * 60 * 1000; // 4 hours in milliseconds
 
 // Calculate time remaining until next free spin
 const getTimeUntilFreeSpin = (lastSpinTime: number | null) => {
@@ -176,7 +201,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId, freeS
         spinSoundIntervalRef.current = setInterval(playSpinSound, 80);
       }
 
-      const newResults = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
+      const newResults = getFreeSpinSymbols();
       setResults(newResults);
       return;
     }
@@ -201,7 +226,7 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId, freeS
       spinSoundIntervalRef.current = setInterval(playSpinSound, 80);
     }
 
-    const newResults = getNoWinSymbols();
+    const newResults = getFreeSpinSymbols();
     setResults(newResults);
   }, [spinning, hasFreeSpin, freeSpins, onFreeSpinUsed, soundEnabled, musicEnabled, unlockAndStartMusic, playClickSound, playSpinSound]);
 
