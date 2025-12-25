@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft,
   Check,
@@ -15,7 +15,12 @@ import {
   Send,
   BarChart,
   Star,
-  RefreshCw
+  RefreshCw,
+  Crown,
+  Rocket,
+  Target,
+  Medal,
+  TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -38,11 +43,39 @@ const iconMap: Record<string, React.ReactNode> = {
   star: <Star className="w-5 h-5" />
 };
 
+// Floating particles component
+const FloatingParticles = () => (
+  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+    {[...Array(15)].map((_, i) => (
+      <motion.div
+        key={i}
+        className="absolute w-2 h-2 bg-primary/30 rounded-full"
+        initial={{ 
+          x: Math.random() * 400,
+          y: Math.random() * 200,
+          opacity: 0 
+        }}
+        animate={{ 
+          y: [null, -100],
+          opacity: [0, 0.6, 0],
+        }}
+        transition={{ 
+          duration: 3 + Math.random() * 2,
+          repeat: Infinity,
+          delay: Math.random() * 2
+        }}
+      />
+    ))}
+  </div>
+);
+
 const DailyTasks = () => {
   const navigate = useNavigate();
   const { user: telegramUser } = useTelegramAuth();
   const [userId, setUserId] = useState<string | null>(null);
   const [timeUntilReset, setTimeUntilReset] = useState('');
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [streak, setStreak] = useState(0);
 
   // Get user ID from telegram user
   useEffect(() => {
@@ -55,7 +88,17 @@ const DailyTasks = () => {
         .eq('telegram_id', telegramUser.id)
         .maybeSingle();
       
-      if (data) setUserId(data.id);
+      if (data) {
+        setUserId(data.id);
+        // Fetch streak
+        const { data: streakData } = await supabase
+          .from('bolt_user_streaks')
+          .select('current_streak')
+          .eq('user_id', data.id)
+          .maybeSingle();
+        
+        if (streakData) setStreak(streakData.current_streak);
+      }
     };
     
     fetchUserId();
@@ -93,6 +136,14 @@ const DailyTasks = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Show celebration when all tasks completed
+  useEffect(() => {
+    if (completedCount === totalCount && totalCount > 0) {
+      setShowCelebration(true);
+      setTimeout(() => setShowCelebration(false), 3000);
+    }
+  }, [completedCount, totalCount]);
+
   const handleCompleteTask = async (taskId: string, requiredAction: string | null) => {
     // Handle navigation for certain tasks
     const navigationTasks: Record<string, string> = {
@@ -119,90 +170,253 @@ const DailyTasks = () => {
   const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
 
   return (
-    <main className="min-h-screen bg-background pb-24">
+    <main className="min-h-screen bg-background pb-24 relative">
       <Helmet>
         <title>Daily Tasks | VIRAL</title>
         <meta name="description" content="Complete daily tasks and earn rewards" />
       </Helmet>
 
+      {/* Celebration Overlay */}
+      <AnimatePresence>
+        {showCelebration && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center"
+          >
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              exit={{ scale: 0, rotate: 180 }}
+              className="bg-gradient-to-br from-yellow-500 via-orange-500 to-red-500 p-8 rounded-3xl text-center"
+            >
+              <motion.div
+                animate={{ rotate: [0, 10, -10, 0] }}
+                transition={{ repeat: Infinity, duration: 0.5 }}
+              >
+                <Crown className="w-20 h-20 text-white mx-auto mb-4" />
+              </motion.div>
+              <h2 className="text-3xl font-bold text-white mb-2">All Tasks Done!</h2>
+              <p className="text-white/80">You're a VIRAL Champion! 🏆</p>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-md mx-auto px-4 pt-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Header with gradient */}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between mb-6"
+        >
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => navigate('/')}
-              className="rounded-full"
+              className="rounded-full bg-primary/10 hover:bg-primary/20"
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">Daily Tasks</h1>
-              <p className="text-sm text-muted-foreground">Renews daily</p>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-purple-500 bg-clip-text text-transparent">
+                Daily Tasks
+              </h1>
+              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                <Rocket className="w-3 h-3" /> Complete & Earn VIRAL
+              </p>
             </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
             onClick={refreshTasks}
-            className="rounded-full"
+            className="rounded-full bg-primary/10 hover:bg-primary/20"
           >
             <RefreshCw className="w-5 h-5" />
           </Button>
+        </motion.div>
+
+        {/* Streak Card - NEW! */}
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          className="relative mb-4 overflow-hidden"
+        >
+          <Card className="p-4 bg-gradient-to-r from-orange-500/20 via-red-500/20 to-pink-500/20 border-orange-500/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <motion.div
+                    animate={{ scale: [1, 1.2, 1] }}
+                    transition={{ repeat: Infinity, duration: 2 }}
+                    className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center"
+                  >
+                    <Flame className="w-7 h-7 text-white" />
+                  </motion.div>
+                  {streak > 0 && (
+                    <Badge className="absolute -top-1 -right-1 bg-yellow-500 text-black text-xs px-1.5">
+                      {streak}
+                    </Badge>
+                  )}
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">Daily Streak</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {streak === 0 ? 'Start your streak today!' : `${streak} day${streak > 1 ? 's' : ''} in a row!`}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Bonus</p>
+                <p className="text-lg font-bold text-orange-500">+{Math.min(streak * 5, 50)}%</p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+
+        {/* Timer & Stats Cards */}
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <Card className="p-4 relative overflow-hidden">
+              <FloatingParticles />
+              <div className="relative z-10">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center mb-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                </div>
+                <p className="text-xs text-muted-foreground">Reset in</p>
+                <p className="text-lg font-bold text-primary font-mono">{timeUntilReset}</p>
+              </div>
+            </Card>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card className="p-4 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-green-500/20">
+              <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center mb-2">
+                <TrendingUp className="w-5 h-5 text-green-500" />
+              </div>
+              <p className="text-xs text-muted-foreground">Earned Today</p>
+              <p className="text-lg font-bold text-green-500">{todayEarned.toLocaleString()}</p>
+            </Card>
+          </motion.div>
         </div>
 
-        {/* Timer Card */}
+        {/* Progress Card - Enhanced */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-primary/20 via-primary/10 to-background border border-primary/30 rounded-2xl p-4 mb-6"
+          transition={{ delay: 0.4 }}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
-                <Clock className="w-6 h-6 text-primary" />
+          <Card className="p-4 mb-6 relative overflow-hidden">
+            {/* Background glow effect */}
+            {progress === 100 && (
+              <motion.div
+                animate={{ opacity: [0.3, 0.6, 0.3] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="absolute inset-0 bg-gradient-to-r from-yellow-500/20 via-green-500/20 to-yellow-500/20"
+              />
+            )}
+            
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-primary" />
+                  <span className="font-semibold text-foreground">Today's Progress</span>
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className={progress === 100 ? 'bg-green-500/20 border-green-500 text-green-500' : ''}
+                >
+                  {completedCount}/{totalCount}
+                </Badge>
               </div>
-              <div>
-                <p className="text-sm text-muted-foreground">Tasks reset in</p>
-                <p className="text-xl font-bold text-primary font-mono">{timeUntilReset}</p>
+              
+              <div className="relative h-4 mb-3 bg-muted rounded-full overflow-hidden">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className={`absolute inset-y-0 left-0 rounded-full ${
+                    progress === 100 
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-500' 
+                      : 'bg-gradient-to-r from-primary to-purple-500'
+                  }`}
+                />
+                {/* Shimmer effect */}
+                <motion.div
+                  animate={{ x: [-100, 400] }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
+                  className="absolute inset-y-0 w-20 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                />
+              </div>
+              
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground flex items-center gap-1">
+                  {completedCount === totalCount ? (
+                    <>
+                      <Sparkles className="w-4 h-4 text-yellow-500" />
+                      All tasks completed!
+                    </>
+                  ) : (
+                    `${totalCount - completedCount} tasks remaining`
+                  )}
+                </span>
+                <span className="text-primary font-medium flex items-center gap-1">
+                  <Gift className="w-4 h-4" />
+                  {totalRewards.toLocaleString()} VIRAL
+                </span>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm text-muted-foreground">Earned today</p>
-              <p className="text-xl font-bold text-foreground">{todayEarned.toLocaleString()} VIRAL</p>
-            </div>
-          </div>
+          </Card>
         </motion.div>
 
-        {/* Progress Card */}
-        <Card className="p-4 mb-6">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Gift className="w-5 h-5 text-primary" />
-              <span className="font-semibold text-foreground">Today's Progress</span>
-            </div>
-            <Badge variant="outline">
-              {completedCount}/{totalCount}
-            </Badge>
-          </div>
-          
-          <Progress value={progress} className="h-3 mb-3" />
-          
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
-              {completedCount === totalCount ? '🎉 All tasks completed!' : `${totalCount - completedCount} tasks remaining`}
-            </span>
-            <span className="text-primary font-medium">
-              {totalRewards.toLocaleString()} VIRAL available
-            </span>
-          </div>
-        </Card>
+        {/* Bonus Reward Card - Shows when close to completion */}
+        {completedCount > 0 && completedCount < totalCount && totalCount - completedCount <= 2 && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="mb-4"
+          >
+            <Card className="p-3 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-purple-500/20 border-purple-500/30">
+              <div className="flex items-center gap-3">
+                <motion.div
+                  animate={{ rotate: [0, 15, -15, 0] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                >
+                  <Medal className="w-8 h-8 text-purple-500" />
+                </motion.div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">Almost there!</p>
+                  <p className="text-xs text-muted-foreground">
+                    Complete {totalCount - completedCount} more for bonus rewards
+                  </p>
+                </div>
+                <Badge className="bg-purple-500">+500</Badge>
+              </div>
+            </Card>
+          </motion.div>
+        )}
 
-        {/* Tasks List */}
+        {/* Tasks List - Enhanced */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="flex flex-col items-center justify-center py-12 gap-4">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+              className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full"
+            />
+            <p className="text-muted-foreground">Loading tasks...</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -212,17 +426,31 @@ const DailyTasks = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                <Card className={`p-4 ${task.is_completed ? 'bg-green-500/10 border-green-500/30' : ''}`}>
+                <Card className={`p-4 transition-all duration-300 ${
+                  task.is_completed 
+                    ? 'bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30' 
+                    : 'hover:border-primary/50 hover:shadow-lg hover:shadow-primary/10'
+                }`}>
                   <div className="flex items-center gap-4">
-                    {/* Icon */}
-                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                      task.is_completed 
-                        ? 'bg-green-500/20 text-green-500' 
-                        : 'bg-primary/20 text-primary'
-                    }`}>
-                      {task.is_completed ? <Check className="w-6 h-6" /> : iconMap[task.icon || 'star']}
-                    </div>
+                    {/* Icon with animation */}
+                    <motion.div 
+                      className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        task.is_completed 
+                          ? 'bg-gradient-to-br from-green-500 to-emerald-500' 
+                          : 'bg-gradient-to-br from-primary/20 to-purple-500/20'
+                      }`}
+                      animate={task.is_completed ? { scale: [1, 1.1, 1] } : {}}
+                      transition={{ repeat: task.is_completed ? Infinity : 0, duration: 2 }}
+                    >
+                      {task.is_completed ? (
+                        <Check className="w-6 h-6 text-white" />
+                      ) : (
+                        <span className="text-primary">{iconMap[task.icon || 'star']}</span>
+                      )}
+                    </motion.div>
 
                     {/* Content */}
                     <div className="flex-1 min-w-0">
@@ -234,11 +462,22 @@ const DailyTasks = () => {
                       </p>
                     </div>
 
-                    {/* Reward & Action */}
+                    {/* Reward with coin effect */}
                     <div className="text-right">
-                      <p className={`font-bold ${task.is_completed ? 'text-green-500' : 'text-primary'}`}>
-                        +{task.reward_tokens}
-                      </p>
+                      <motion.div
+                        animate={!task.is_completed ? { y: [0, -2, 0] } : {}}
+                        transition={{ repeat: Infinity, duration: 1.5 }}
+                        className="flex items-center gap-1 justify-end"
+                      >
+                        <img 
+                          src="/lovable-uploads/bb2ce9b7-afd0-4e2c-8447-351c0ae1f27d.png" 
+                          alt="VIRAL" 
+                          className="w-4 h-4"
+                        />
+                        <span className={`font-bold ${task.is_completed ? 'text-green-500' : 'text-primary'}`}>
+                          +{task.reward_tokens}
+                        </span>
+                      </motion.div>
                       <p className="text-xs text-muted-foreground">VIRAL</p>
                     </div>
                   </div>
@@ -247,7 +486,7 @@ const DailyTasks = () => {
                   {!task.is_completed && (
                     <Button
                       onClick={() => handleCompleteTask(task.id, task.required_action)}
-                      className="w-full mt-3 bg-primary hover:bg-primary/90"
+                      className="w-full mt-3 bg-gradient-to-r from-primary to-purple-500 hover:opacity-90"
                       size="sm"
                     >
                       <Zap className="w-4 h-4 mr-2" />
@@ -256,10 +495,14 @@ const DailyTasks = () => {
                   )}
 
                   {task.is_completed && (
-                    <div className="flex items-center justify-center gap-2 mt-3 py-2 bg-green-500/10 rounded-lg">
+                    <motion.div 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="flex items-center justify-center gap-2 mt-3 py-2 bg-green-500/10 rounded-lg"
+                    >
                       <Check className="w-4 h-4 text-green-500" />
                       <span className="text-sm text-green-500 font-medium">Completed</span>
-                    </div>
+                    </motion.div>
                   )}
                 </Card>
               </motion.div>
@@ -267,30 +510,64 @@ const DailyTasks = () => {
           </div>
         )}
 
-        {/* Bonus Card */}
+        {/* Completion Bonus Card */}
         {completedCount === totalCount && totalCount > 0 && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="mt-6 p-4 bg-gradient-to-br from-yellow-500/20 to-orange-500/20 border border-yellow-500/30 rounded-2xl text-center"
+            className="mt-6"
           >
-            <Sparkles className="w-12 h-12 text-yellow-500 mx-auto mb-2" />
-            <h3 className="text-lg font-bold text-foreground mb-1">🎉 Amazing!</h3>
-            <p className="text-sm text-muted-foreground">
-              You completed all daily tasks! Come back tomorrow for more
-            </p>
+            <Card className="p-6 bg-gradient-to-br from-yellow-500/20 via-orange-500/20 to-red-500/20 border-yellow-500/30 text-center relative overflow-hidden">
+              <FloatingParticles />
+              <motion.div
+                animate={{ rotate: [0, 5, -5, 0], scale: [1, 1.1, 1] }}
+                transition={{ repeat: Infinity, duration: 3 }}
+                className="relative z-10"
+              >
+                <Crown className="w-16 h-16 text-yellow-500 mx-auto mb-3" />
+              </motion.div>
+              <h3 className="text-xl font-bold text-foreground mb-2 relative z-10">Daily Champion!</h3>
+              <p className="text-sm text-muted-foreground mb-4 relative z-10">
+                You've completed all tasks! Come back tomorrow for more rewards.
+              </p>
+              <div className="flex items-center justify-center gap-2 relative z-10">
+                <Badge className="bg-yellow-500/20 text-yellow-500 border-yellow-500/30">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  +500 Bonus VIRAL
+                </Badge>
+              </div>
+            </Card>
           </motion.div>
         )}
 
-        {/* Info */}
-        <div className="mt-6 p-4 bg-muted/30 rounded-xl">
-          <h3 className="font-semibold text-foreground mb-2">💡 Tips</h3>
-          <ul className="space-y-1 text-sm text-muted-foreground">
-            <li>• Tasks reset daily at midnight UTC</li>
-            <li>• Complete all tasks for maximum rewards</li>
-            <li>• Some tasks require specific actions</li>
-          </ul>
-        </div>
+        {/* Quick Tips - Enhanced */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.6 }}
+          className="mt-6"
+        >
+          <Card className="p-4 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 border-blue-500/20">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-blue-500" />
+              <h3 className="font-semibold text-foreground">Pro Tips</h3>
+            </div>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                Tasks reset daily at midnight UTC
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                Complete all tasks for +500 bonus VIRAL
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                Keep your streak for up to +50% bonus
+              </li>
+            </ul>
+          </Card>
+        </motion.div>
       </div>
     </main>
   );
