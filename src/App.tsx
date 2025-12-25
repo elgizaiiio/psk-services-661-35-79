@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,63 +10,70 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { useTelegramAuth } from "./hooks/useTelegramAuth";
 import { useReferralHandler } from "./hooks/useReferralHandler";
 import Index from "./pages/Index";
-
-import ServerStore from "./pages/ServerStore";
-import UpgradeCenter from "./pages/UpgradeCenter";
-import Tasks from "./pages/Tasks";
-import Game from "./pages/Game";
-import Games from "./pages/Games";
-import Apps from "./pages/Apps";
-import Skins from "./pages/Skins";
-import Leaderboard from "./pages/Leaderboard";
 import BottomNavigation from "./components/BottomNavigation";
-import Runner from "./pages/Runner";
-import RunnerGamePage from "./pages/RunnerGame";
-import AiGenerator from "./pages/AiGenerator";
-import Profile from "./pages/Profile";
-import Wallet from "./pages/Wallet";
-import Mining from "./pages/Mining";
-import Invite from "./pages/Invite";
-import PremiumPackages from "./pages/PremiumPackages";
-import EliteAddOns from "./pages/EliteAddOns";
-import UpgradeMatrix from "./pages/UpgradeMatrix";
-import LegendaryServers from "./pages/LegendaryServers";
-import AiSubscription from "./pages/AiSubscription";
-import MiningServers from "./pages/MiningServers";
-import Events from "./pages/Events";
-import AiImageStore from "./pages/AiImageStore";
-import Game2048Store from "./pages/Game2048Store";
-import Giveaways from "./pages/Giveaways";
-import CreateTask from "./pages/CreateTask";
-import Admin from "./pages/Admin";
-import ChatAI from "./pages/ChatAI";
-import Slots from "./pages/Slots";
-import Settings from "./pages/Settings";
-import Challenges from "./pages/Challenges";
-import Characters from "./pages/Characters";
-import Achievements from "./pages/Achievements";
-import VIPSubscription from "./pages/VIPSubscription";
-import TokenStore from "./pages/TokenStore";
-import DailyTasks from "./pages/DailyTasks";
-import MiniGames from "./pages/MiniGames";
-import SpinWheel from "./pages/SpinWheel";
-import CoinFlip from "./pages/CoinFlip";
-import DiceGame from "./pages/DiceGame";
-import MemoryGame from "./pages/MemoryGame";
-import Arcade from "./pages/Arcade";
-import ExternalGame from "./pages/ExternalGame";
 import SplashScreen from "./components/SplashScreen";
 
+// Lazy load pages for better performance
+const ServerStore = lazy(() => import("./pages/ServerStore"));
+const UpgradeCenter = lazy(() => import("./pages/UpgradeCenter"));
+const Tasks = lazy(() => import("./pages/Tasks"));
+const Game = lazy(() => import("./pages/Game"));
+const Games = lazy(() => import("./pages/Games"));
+const Apps = lazy(() => import("./pages/Apps"));
+const Skins = lazy(() => import("./pages/Skins"));
+const Leaderboard = lazy(() => import("./pages/Leaderboard"));
+const Runner = lazy(() => import("./pages/Runner"));
+const RunnerGamePage = lazy(() => import("./pages/RunnerGame"));
+const AiGenerator = lazy(() => import("./pages/AiGenerator"));
+const Profile = lazy(() => import("./pages/Profile"));
+const Wallet = lazy(() => import("./pages/Wallet"));
+const Mining = lazy(() => import("./pages/Mining"));
+const Invite = lazy(() => import("./pages/Invite"));
+const PremiumPackages = lazy(() => import("./pages/PremiumPackages"));
+const EliteAddOns = lazy(() => import("./pages/EliteAddOns"));
+const UpgradeMatrix = lazy(() => import("./pages/UpgradeMatrix"));
+const LegendaryServers = lazy(() => import("./pages/LegendaryServers"));
+const AiSubscription = lazy(() => import("./pages/AiSubscription"));
+const MiningServers = lazy(() => import("./pages/MiningServers"));
+const Events = lazy(() => import("./pages/Events"));
+const AiImageStore = lazy(() => import("./pages/AiImageStore"));
+const Game2048Store = lazy(() => import("./pages/Game2048Store"));
+const Giveaways = lazy(() => import("./pages/Giveaways"));
+const CreateTask = lazy(() => import("./pages/CreateTask"));
+const Admin = lazy(() => import("./pages/Admin"));
+const ChatAI = lazy(() => import("./pages/ChatAI"));
+const Slots = lazy(() => import("./pages/Slots"));
+const Settings = lazy(() => import("./pages/Settings"));
+const Challenges = lazy(() => import("./pages/Challenges"));
+const Characters = lazy(() => import("./pages/Characters"));
+const Achievements = lazy(() => import("./pages/Achievements"));
+const VIPSubscription = lazy(() => import("./pages/VIPSubscription"));
+const TokenStore = lazy(() => import("./pages/TokenStore"));
+const DailyTasks = lazy(() => import("./pages/DailyTasks"));
+const MiniGames = lazy(() => import("./pages/MiniGames"));
+const SpinWheel = lazy(() => import("./pages/SpinWheel"));
+const CoinFlip = lazy(() => import("./pages/CoinFlip"));
+const DiceGame = lazy(() => import("./pages/DiceGame"));
+const MemoryGame = lazy(() => import("./pages/MemoryGame"));
+const Arcade = lazy(() => import("./pages/Arcade"));
+const ExternalGame = lazy(() => import("./pages/ExternalGame"));
 
-function ScrollToBottom() {
-  const location = useLocation();
-  useEffect(() => {
-    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: "smooth" });
-  }, [location.pathname, location.search]);
-  return null;
-}
+// Loading component
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-screen bg-background">
+    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
   const { webApp } = useTelegramAuth();
@@ -123,14 +130,14 @@ const App = () => (
               <TelegramWebAppWrapper>
                 <div className="tg-webapp-container min-h-screen bg-background relative">
                   <div className="pt-6 relative z-10">
-                    <ScrollToBottom />
-                    <Routes>
-                      <Route path="/" element={<Index />} />
-                      <Route path="/mining" element={<Mining />} />
-                      <Route path="/apps" element={<Apps />} />
-                      <Route path="/games" element={<Games />} />
-                      <Route path="/runner" element={<Runner />} />
-                      <Route path="/runner-game" element={<RunnerGamePage />} />
+                    <Suspense fallback={<PageLoader />}>
+                      <Routes>
+                        <Route path="/" element={<Index />} />
+                        <Route path="/mining" element={<Mining />} />
+                        <Route path="/apps" element={<Apps />} />
+                        <Route path="/games" element={<Games />} />
+                        <Route path="/runner" element={<Runner />} />
+                        <Route path="/runner-game" element={<RunnerGamePage />} />
                       <Route path="/ai-generator" element={<AiGenerator />} />
                       <Route path="/profile" element={<Profile />} />
                       <Route path="/game" element={<Game />} />
@@ -168,8 +175,9 @@ const App = () => (
                       <Route path="/dice-game" element={<DiceGame />} />
                       <Route path="/memory-game" element={<MemoryGame />} />
                       <Route path="/arcade" element={<Arcade />} />
-                      <Route path="/arcade/game/:gameId" element={<ExternalGame />} />
-                    </Routes>
+                        <Route path="/arcade/game/:gameId" element={<ExternalGame />} />
+                      </Routes>
+                    </Suspense>
                     <BottomNavigation />
                   </div>
                 </div>
