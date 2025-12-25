@@ -29,7 +29,7 @@ export const useDirectTonPayment = () => {
     setIsProcessing(true);
     
     try {
-      const destinationAddress = 'UQALON5gUq_kQzpTq2GkPeHQABL1nOeAuWwRPGPNkzDz_lZZ';
+      const destinationAddress = 'UQB3zld6sleav5U7Rga1JmpHJccaczHzCuTRNK4QM5i001Vm';
       const amountNano = Math.floor(params.amount * 1e9);
 
       if (amountNano <= 0) {
