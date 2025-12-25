@@ -1,19 +1,21 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { MiningCharacter, UserCharacter } from '@/types/mining';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Zap, Clock, Coins, Target, Check, Crown, Sparkles, ArrowUp } from 'lucide-react';
+import { Zap, Clock, Coins, Target, Check, Crown, Sparkles, ArrowUp, Wallet } from 'lucide-react';
 
 interface CharacterCardProps {
   character: MiningCharacter;
   userCharacter?: UserCharacter;
   onPurchase: (characterId: string, method: 'ton' | 'tokens') => void;
   onActivate: (userCharacterId: string) => void;
-  onEvolve?: (userCharacterId: string) => void;
+  onEvolve?: (userCharacterId: string, method: 'ton' | 'tokens') => void;
+  getEvolutionTonCost?: (character: MiningCharacter, currentStage: number) => number;
   isLoading?: boolean;
+  isWalletConnected?: boolean;
 }
 
 const tierColors: Record<string, string> = {
@@ -38,9 +40,13 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
   onPurchase,
   onActivate,
   onEvolve,
-  isLoading
+  getEvolutionTonCost,
+  isLoading,
+  isWalletConnected
 }) => {
   const { language } = useLanguage();
+  const [showPaymentOptions, setShowPaymentOptions] = useState(false);
+  const [showEvolveOptions, setShowEvolveOptions] = useState(false);
   
   const getName = () => {
     if (language === 'ar') return character.name_ar;
@@ -62,11 +68,26 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
   const maxStages = character.max_evolution_stages;
   const evolutionProgress = (currentStage / maxStages) * 100;
   const canEvolve = isOwned && currentStage < maxStages;
-  const nextEvolutionCost = canEvolve ? character.evolution_costs[currentStage - 1] : 0;
+  const nextEvolutionTokenCost = canEvolve ? character.evolution_costs[currentStage - 1] : 0;
+  const nextEvolutionTonCost = canEvolve && getEvolutionTonCost 
+    ? getEvolutionTonCost(character, currentStage) 
+    : 0;
 
   // Calculate boosted stats based on evolution
-  const speedBoost = 1 + ((currentStage - 1) * 0.2); // +20% per evolution
+  const speedBoost = 1 + ((currentStage - 1) * 0.2);
   const effectiveSpeed = character.mining_speed_multiplier * speedBoost;
+
+  const handlePurchase = (method: 'ton' | 'tokens') => {
+    setShowPaymentOptions(false);
+    onPurchase(character.id, method);
+  };
+
+  const handleEvolve = (method: 'ton' | 'tokens') => {
+    setShowEvolveOptions(false);
+    if (onEvolve && userCharacter) {
+      onEvolve(userCharacter.id, method);
+    }
+  };
 
   return (
     <Card className={`p-4 bg-gradient-to-br ${tierGradients[character.tier]} border-2 ${isActive ? 'border-primary' : 'border-border/50'} relative overflow-hidden`}>
@@ -84,7 +105,15 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
       )}
 
       <div className="text-center mb-4 mt-4">
-        <div className="text-5xl mb-2">{character.image_url}</div>
+        {character.image_url?.startsWith('http') ? (
+          <img 
+            src={character.image_url} 
+            alt={getName()} 
+            className="w-16 h-16 mx-auto rounded-full mb-2"
+          />
+        ) : (
+          <div className="text-5xl mb-2">{character.image_url}</div>
+        )}
         <h3 className="font-bold text-lg text-foreground">{getName()}</h3>
         <Badge className={`${tierColors[character.tier]} text-white mt-1`}>
           {character.tier.toUpperCase()}
@@ -167,14 +196,46 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
           </Button>
           
           {canEvolve && onEvolve && (
-            <Button
-              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-              onClick={() => onEvolve(userCharacter!.id)}
-              disabled={isLoading}
-            >
-              <ArrowUp className="w-4 h-4 mr-2" />
-              Evolve - {nextEvolutionCost.toLocaleString()} BOLT
-            </Button>
+            <>
+              {showEvolveOptions ? (
+                <div className="space-y-2">
+                  <Button
+                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+                    onClick={() => handleEvolve('ton')}
+                    disabled={isLoading || !isWalletConnected}
+                  >
+                    <Wallet className="w-4 h-4 mr-2" />
+                    {nextEvolutionTonCost} TON
+                  </Button>
+                  <Button
+                    className="w-full"
+                    variant="outline"
+                    onClick={() => handleEvolve('tokens')}
+                    disabled={isLoading}
+                  >
+                    <Coins className="w-4 h-4 mr-2" />
+                    {nextEvolutionTokenCost.toLocaleString()} BOLT
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setShowEvolveOptions(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+                  onClick={() => setShowEvolveOptions(true)}
+                  disabled={isLoading}
+                >
+                  <ArrowUp className="w-4 h-4 mr-2" />
+                  Evolve Character
+                </Button>
+              )}
+            </>
           )}
           
           {currentStage >= maxStages && (
@@ -193,13 +254,44 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
             >
               🎁 Claim FREE
             </Button>
+          ) : showPaymentOptions ? (
+            <div className="space-y-2">
+              <Button
+                className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+                onClick={() => handlePurchase('ton')}
+                disabled={isLoading || !isWalletConnected}
+              >
+                <Wallet className="w-4 h-4 mr-2" />
+                {character.price_ton} TON
+              </Button>
+              {character.price_tokens > 0 && (
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() => handlePurchase('tokens')}
+                  disabled={isLoading}
+                >
+                  <Coins className="w-4 h-4 mr-2" />
+                  {character.price_tokens.toLocaleString()} BOLT
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full"
+                onClick={() => setShowPaymentOptions(false)}
+              >
+                Cancel
+              </Button>
+            </div>
           ) : (
             <Button
-              className="w-full"
-              onClick={() => onPurchase(character.id, 'tokens')}
+              className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+              onClick={() => setShowPaymentOptions(true)}
               disabled={isLoading}
             >
-              Buy - {character.price_tokens.toLocaleString()} BOLT
+              <Wallet className="w-4 h-4 mr-2" />
+              Buy - {character.price_ton} TON
             </Button>
           )}
         </div>
@@ -208,11 +300,11 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
       {/* Evolution costs preview for unowned characters */}
       {!isOwned && character.evolution_costs.length > 0 && (
         <div className="mt-3 pt-3 border-t border-border/30">
-          <p className="text-xs text-muted-foreground text-center mb-1">Evolution Costs:</p>
+          <p className="text-xs text-muted-foreground text-center mb-1">Evolution Costs (TON):</p>
           <div className="flex flex-wrap gap-1 justify-center">
             {character.evolution_costs.map((cost, idx) => (
               <Badge key={idx} variant="outline" className="text-xs">
-                {cost.toLocaleString()}
+                {(cost / 10000).toFixed(2)} TON
               </Badge>
             ))}
           </div>

@@ -44,9 +44,12 @@ const Characters = () => {
     userCharacters, 
     activeCharacter, 
     loading, 
+    isProcessing,
+    isWalletConnected,
     purchaseCharacter, 
     activateCharacter,
     evolveCharacter,
+    getEvolutionTonCost,
     refetch 
   } = useMiningCharacters(boltUserId);
 
@@ -74,9 +77,9 @@ const Characters = () => {
     setPurchaseLoading(null);
   };
 
-  const handleEvolve = async (userCharacterId: string) => {
+  const handleEvolve = async (userCharacterId: string, method: 'ton' | 'tokens') => {
     setPurchaseLoading(userCharacterId);
-    const success = await evolveCharacter(userCharacterId);
+    const success = await evolveCharacter(userCharacterId, method);
     if (success) await refreshBalance();
     setPurchaseLoading(null);
   };
@@ -267,7 +270,9 @@ const Characters = () => {
                     onPurchase={handlePurchase}
                     onActivate={handleActivate}
                     onEvolve={handleEvolve}
-                    isLoading={purchaseLoading === character.id || purchaseLoading === getUserCharacter(character.id)?.id}
+                    getEvolutionTonCost={getEvolutionTonCost}
+                    isLoading={purchaseLoading === character.id || purchaseLoading === getUserCharacter(character.id)?.id || isProcessing}
+                    isWalletConnected={isWalletConnected}
                   />
                 </motion.div>
               ))}
