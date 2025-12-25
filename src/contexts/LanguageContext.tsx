@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
-type Language = 'en' | 'ru' | 'ar';
+type Language = 'en' | 'ru';
 
 interface LanguageContextType {
   language: Language;
@@ -12,7 +12,6 @@ interface LanguageContextType {
 export const languageNames: Record<Language, { name: string; nativeName: string; flag: string }> = {
   en: { name: 'English', nativeName: 'English', flag: '🇺🇸' },
   ru: { name: 'Russian', nativeName: 'Русский', flag: '🇷🇺' },
-  ar: { name: 'Arabic', nativeName: 'العربية', flag: '🇸🇦' },
 };
 
 const translations: Record<Language, Record<string, string>> = {
@@ -112,54 +111,6 @@ const translations: Record<Language, Record<string, string>> = {
     'ranking.player': 'Игрок',
     'ranking.tokens': 'Токены',
   },
-  ar: {
-    'settings.title': 'الإعدادات',
-    'settings.language': 'اللغة',
-    'settings.theme': 'المظهر',
-    'settings.notifications': 'الإشعارات',
-    'settings.about': 'حول التطبيق',
-    'settings.languageChanged': 'تم تغيير اللغة بنجاح',
-    'settings.selectLanguage': 'اختر اللغة',
-    // Mining Characters
-    'mining.characters': 'شخصيات التعدين',
-    'mining.myCharacters': 'شخصياتي',
-    'mining.allCharacters': 'جميع الشخصيات',
-    'mining.speed': 'سرعة التعدين',
-    'mining.boost': 'التعزيز',
-    'mining.extraCoins': 'عملات إضافية',
-    'mining.jackpotBonus': 'مكافأة الجائزة الكبرى',
-    'mining.buy': 'شراء',
-    'mining.activate': 'تفعيل',
-    'mining.active': 'نشط',
-    'mining.owned': 'مملوك',
-    'mining.level': 'المستوى',
-    // Challenges
-    'challenges.title': 'التحديات',
-    'challenges.daily': 'يومي',
-    'challenges.weekly': 'أسبوعي',
-    'challenges.special': 'خاص',
-    'challenges.progress': 'التقدم',
-    'challenges.reward': 'المكافأة',
-    'challenges.join': 'انضمام',
-    'challenges.completed': 'مكتمل',
-    // Achievements
-    'achievements.title': 'الإنجازات',
-    'achievements.unlocked': 'مفتوح',
-    'achievements.locked': 'مقفل',
-    'achievements.progress': 'التقدم',
-    // Marketplace
-    'marketplace.title': 'السوق',
-    'marketplace.buy': 'شراء',
-    'marketplace.sell': 'بيع',
-    'marketplace.myListings': 'عروضي',
-    'marketplace.price': 'السعر',
-    'marketplace.seller': 'البائع',
-    // Ranking
-    'ranking.title': 'التصنيف',
-    'ranking.rank': 'الترتيب',
-    'ranking.player': 'اللاعب',
-    'ranking.tokens': 'الرموز',
-  },
 };
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
@@ -173,8 +124,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
     localStorage.setItem('app-language', lang);
-    const isRTL = lang === 'ar';
-    document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+    document.documentElement.dir = 'ltr';
     document.documentElement.lang = lang;
   };
 
@@ -182,11 +132,10 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     return translations[language][key] || key;
   };
 
-  const isRTL = language === 'ar';
+  const isRTL = false;
 
   useEffect(() => {
-    const rtl = language === 'ar';
-    document.documentElement.dir = rtl ? 'rtl' : 'ltr';
+    document.documentElement.dir = 'ltr';
     document.documentElement.lang = language;
   }, [language]);
 

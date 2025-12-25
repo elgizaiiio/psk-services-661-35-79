@@ -28,13 +28,11 @@ const Challenges = () => {
   const totalJoined = userChallenges.length;
 
   const getTitle = (challenge: any) => {
-    if (language === 'ar') return challenge.title_ar;
     if (language === 'ru') return challenge.title_ru;
     return challenge.title;
   };
 
   const getDescription = (challenge: any) => {
-    if (language === 'ar') return challenge.description_ar;
     if (language === 'ru') return challenge.description_ru;
     return challenge.description;
   };
@@ -81,14 +79,14 @@ const Challenges = () => {
                     : 'bg-violet-500/15 text-violet-400 border border-violet-500/20'
                 }`}>
                   {challenge.challenge_type === 'daily' 
-                    ? (language === 'ar' ? 'يومي' : language === 'ru' ? 'Ежедневно' : 'Daily')
+                    ? (language === 'ru' ? 'Ежедневно' : 'Daily')
                     : challenge.challenge_type === 'weekly'
-                    ? (language === 'ar' ? 'أسبوعي' : language === 'ru' ? 'Еженедельно' : 'Weekly')
-                    : (language === 'ar' ? 'خاص' : language === 'ru' ? 'Особый' : 'Special')}
+                    ? (language === 'ru' ? 'Еженедельно' : 'Weekly')
+                    : (language === 'ru' ? 'Особый' : 'Special')}
                 </span>
                 {isCompleted && (
                   <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full bg-primary/15 text-primary border border-primary/20">
-                    {language === 'ar' ? 'مكتمل' : language === 'ru' ? 'Завершено' : 'Done'}
+                    {language === 'ru' ? 'Завершено' : 'Done'}
                   </span>
                 )}
               </div>
@@ -103,19 +101,19 @@ const Challenges = () => {
           <div className="grid grid-cols-3 gap-3 mb-5">
             <div className="bg-background/50 rounded-2xl p-3 text-center border border-border/10">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-1">
-                {language === 'ar' ? 'الوقت' : language === 'ru' ? 'Время' : 'Time'}
+                {language === 'ru' ? 'Время' : 'Time'}
               </div>
               <div className="text-sm font-bold text-foreground">{getTimeLeft(challenge.ends_at)}</div>
             </div>
             <div className="bg-background/50 rounded-2xl p-3 text-center border border-border/10">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-1">
-                {language === 'ar' ? 'الهدف' : language === 'ru' ? 'Цель' : 'Goal'}
+                {language === 'ru' ? 'Цель' : 'Goal'}
               </div>
               <div className="text-sm font-bold text-foreground">{challenge.target_value}</div>
             </div>
             <div className="bg-background/50 rounded-2xl p-3 text-center border border-border/10">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground/60 mb-1">
-                {language === 'ar' ? 'جائزة' : language === 'ru' ? 'Приз' : 'Prize'}
+                {language === 'ru' ? 'Приз' : 'Prize'}
               </div>
               <div className="text-sm font-bold text-primary">{challenge.reward_tokens.toLocaleString()}</div>
             </div>
@@ -125,8 +123,8 @@ const Challenges = () => {
           {isJoined && !isCompleted && (
             <div className="mb-5">
               <div className="flex justify-between text-xs mb-2">
-                <span className="text-muted-foreground font-medium">
-                  {language === 'ar' ? 'التقدم' : language === 'ru' ? 'Прогресс' : 'Progress'}
+              <span className="text-muted-foreground font-medium">
+                  {language === 'ru' ? 'Прогресс' : 'Progress'}
                 </span>
                 <span className="font-bold text-foreground">
                   {userChallenge.current_value} / {challenge.target_value}
@@ -148,7 +146,7 @@ const Challenges = () => {
               onClick={() => joinChallenge(challenge.id)}
               disabled={loading}
             >
-              {language === 'ar' ? 'انضم الآن' : language === 'ru' ? 'Присоединиться' : 'Join Now'}
+              {language === 'ru' ? 'Присоединиться' : 'Join Now'}
             </Button>
           )}
         </div>
@@ -163,13 +161,12 @@ const Challenges = () => {
       </div>
       <h3 className="text-lg font-bold text-foreground mb-2">
         {type === 'daily' 
-          ? (language === 'ar' ? 'لا توجد تحديات يومية' : language === 'ru' ? 'Нет ежедневных заданий' : 'No Daily Challenges')
-          : (language === 'ar' ? 'لا توجد تحديات أسبوعية' : language === 'ru' ? 'Нет еженедельных заданий' : 'No Weekly Challenges')
+          ? (language === 'ru' ? 'Нет ежедневных заданий' : 'No Daily Challenges')
+          : (language === 'ru' ? 'Нет еженедельных заданий' : 'No Weekly Challenges')
         }
       </h3>
       <p className="text-sm text-muted-foreground/70">
-        {language === 'ar' ? 'تحقق لاحقًا للحصول على تحديات جديدة' : 
-         language === 'ru' ? 'Проверьте позже для новых заданий' : 
+        {language === 'ru' ? 'Проверьте позже для новых заданий' : 
          'Check back later for new challenges'}
       </p>
     </div>
@@ -208,18 +205,17 @@ const Challenges = () => {
           <div className="px-6 py-5">
             <div className="flex items-center justify-between mb-1">
               <h1 className="text-3xl font-black text-foreground tracking-tight">
-                {language === 'ar' ? 'التحديات' : language === 'ru' ? 'Задания' : 'Challenges'}
+                {language === 'ru' ? 'Задания' : 'Challenges'}
               </h1>
               <button 
                 onClick={() => navigate(-1)}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
-                {language === 'ar' ? 'رجوع' : language === 'ru' ? 'Назад' : 'Back'}
+                {language === 'ru' ? 'Назад' : 'Back'}
               </button>
             </div>
             <p className="text-sm text-muted-foreground/70">
-              {language === 'ar' ? 'أكمل التحديات واربح المكافآت' : 
-               language === 'ru' ? 'Выполняйте задания и получайте награды' : 
+              {language === 'ru' ? 'Выполняйте задания и получайте награды' : 
                'Complete challenges and earn rewards'}
             </p>
           </div>
@@ -231,19 +227,19 @@ const Challenges = () => {
             <div className="flex-1 bg-gradient-to-br from-card to-card/50 rounded-2xl p-4 text-center border border-border/20">
               <div className="text-4xl font-black text-foreground mb-0.5">{completedCount}</div>
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-medium">
-                {language === 'ar' ? 'مكتملة' : language === 'ru' ? 'Готово' : 'Done'}
+                {language === 'ru' ? 'Готово' : 'Done'}
               </div>
             </div>
             <div className="flex-1 bg-gradient-to-br from-card to-card/50 rounded-2xl p-4 text-center border border-border/20">
               <div className="text-4xl font-black text-foreground mb-0.5">{totalJoined}</div>
               <div className="text-[10px] uppercase tracking-widest text-muted-foreground/60 font-medium">
-                {language === 'ar' ? 'نشط' : language === 'ru' ? 'Активно' : 'Active'}
+                {language === 'ru' ? 'Активно' : 'Active'}
               </div>
             </div>
             <div className="flex-1 bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-4 text-center border border-primary/20">
               <div className="text-4xl font-black text-primary mb-0.5">{challenges.length}</div>
               <div className="text-[10px] uppercase tracking-widest text-primary/60 font-medium">
-                {language === 'ar' ? 'متاح' : language === 'ru' ? 'Всего' : 'Total'}
+                {language === 'ru' ? 'Всего' : 'Total'}
               </div>
             </div>
           </div>
@@ -256,7 +252,7 @@ const Challenges = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-transparent to-pink-500/10 animate-pulse" />
               <div className="relative bg-background/80 backdrop-blur-sm rounded-[22px] p-5">
                 <div className="text-[10px] uppercase tracking-widest text-violet-400 font-bold mb-4">
-                  {language === 'ar' ? 'تحدي مميز' : language === 'ru' ? 'Особый вызов' : 'Featured'}
+                  {language === 'ru' ? 'Особый вызов' : 'Featured'}
                 </div>
                 <ChallengeItem challenge={specialChallenges[0]} index={0} />
               </div>
@@ -272,7 +268,7 @@ const Challenges = () => {
                 value="daily" 
                 className="rounded-xl h-11 font-bold text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300"
               >
-                {language === 'ar' ? 'يومي' : language === 'ru' ? 'Ежедневно' : 'Daily'}
+                {language === 'ru' ? 'Ежедневно' : 'Daily'}
                 {dailyChallenges.length > 0 && (
                   <span className="ml-2 opacity-60">({dailyChallenges.length})</span>
                 )}
@@ -281,7 +277,7 @@ const Challenges = () => {
                 value="weekly" 
                 className="rounded-xl h-11 font-bold text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300"
               >
-                {language === 'ar' ? 'أسبوعي' : language === 'ru' ? 'Еженедельно' : 'Weekly'}
+                {language === 'ru' ? 'Еженедельно' : 'Weekly'}
                 {weeklyChallenges.length > 0 && (
                   <span className="ml-2 opacity-60">({weeklyChallenges.length})</span>
                 )}
@@ -318,17 +314,14 @@ const Challenges = () => {
         <div className="px-6 mt-8">
           <div className="bg-gradient-to-br from-card to-card/30 rounded-3xl p-6 border border-border/20">
             <h3 className="text-sm font-bold text-foreground mb-4 uppercase tracking-wider">
-              {language === 'ar' ? 'نصائح' : language === 'ru' ? 'Советы' : 'Tips'}
+              {language === 'ru' ? 'Советы' : 'Tips'}
             </h3>
             <div className="space-y-3">
               {[
-                language === 'ar' ? 'انضم إلى التحديات واربح رموز B' : 
                 language === 'ru' ? 'Присоединяйтесь к заданиям за токены' : 
                 'Join challenges to earn B tokens',
-                language === 'ar' ? 'التحديات اليومية تتجدد كل 24 ساعة' : 
                 language === 'ru' ? 'Ежедневные задания каждые 24 часа' : 
                 'Daily challenges reset every 24 hours',
-                language === 'ar' ? 'التحديات الخاصة تمنح مكافآت أكبر' : 
                 language === 'ru' ? 'Особые задания дают больше наград' : 
                 'Special challenges give bigger rewards'
               ].map((tip, i) => (

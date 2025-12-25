@@ -35,7 +35,6 @@ export const MarketplaceCard: React.FC<MarketplaceCardProps> = ({
   if (!character) return null;
 
   const getName = () => {
-    if (language === 'ar') return character.name_ar;
     if (language === 'ru') return character.name_ru;
     return character.name;
   };

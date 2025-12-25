@@ -24,13 +24,11 @@ export const AchievementCard: React.FC<AchievementCardProps> = ({
   const { language, t } = useLanguage();
   
   const getName = () => {
-    if (language === 'ar') return achievement.name_ar;
     if (language === 'ru') return achievement.name_ru;
     return achievement.name;
   };
 
   const getDescription = () => {
-    if (language === 'ar') return achievement.description_ar;
     if (language === 'ru') return achievement.description_ru;
     return achievement.description;
   };

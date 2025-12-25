@@ -81,13 +81,11 @@ const Achievements = () => {
   };
 
   const getName = (achievement: any) => {
-    if (language === 'ar') return achievement.name_ar;
     if (language === 'ru') return achievement.name_ru;
     return achievement.name;
   };
 
   const getDescription = (achievement: any) => {
-    if (language === 'ar') return achievement.description_ar;
     if (language === 'ru') return achievement.description_ru;
     return achievement.description;
   };
