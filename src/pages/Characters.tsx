@@ -6,16 +6,15 @@ import { useMiningCharacters } from "@/hooks/useMiningCharacters";
 import { CharacterCard } from "@/components/mining/CharacterCard";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Users, Crown, Zap, Sparkles, Loader2 } from "lucide-react";
+import { ArrowRight, Users, Crown, Zap, Sparkles, Loader2, Gift } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const Characters = () => {
   const navigate = useNavigate();
   const { user } = useTelegramAuth();
-  const { t, isRTL } = useLanguage();
+  const { isRTL } = useLanguage();
   const [boltUserId, setBoltUserId] = useState<string | undefined>();
   const [tokenBalance, setTokenBalance] = useState(0);
   const [activeTab, setActiveTab] = useState("all");
@@ -47,29 +46,38 @@ const Characters = () => {
     loading, 
     purchaseCharacter, 
     activateCharacter,
+    evolveCharacter,
     refetch 
   } = useMiningCharacters(boltUserId);
+
+  const refreshBalance = async () => {
+    if (boltUserId) {
+      const { data } = await supabase
+        .from('bolt_users')
+        .select('token_balance')
+        .eq('id', boltUserId)
+        .single();
+      if (data) setTokenBalance(data.token_balance);
+    }
+  };
 
   const handlePurchase = async (characterId: string, method: 'ton' | 'tokens') => {
     setPurchaseLoading(characterId);
     const success = await purchaseCharacter(characterId, method);
-    if (success) {
-      // Refresh token balance
-      if (boltUserId) {
-        const { data } = await supabase
-          .from('bolt_users')
-          .select('token_balance')
-          .eq('id', boltUserId)
-          .single();
-        if (data) setTokenBalance(data.token_balance);
-      }
-    }
+    if (success) await refreshBalance();
     setPurchaseLoading(null);
   };
 
   const handleActivate = async (userCharacterId: string) => {
     setPurchaseLoading(userCharacterId);
     await activateCharacter(userCharacterId);
+    setPurchaseLoading(null);
+  };
+
+  const handleEvolve = async (userCharacterId: string) => {
+    setPurchaseLoading(userCharacterId);
+    const success = await evolveCharacter(userCharacterId);
+    if (success) await refreshBalance();
     setPurchaseLoading(null);
   };
 
@@ -80,16 +88,12 @@ const Characters = () => {
   const filteredCharacters = characters.filter(char => {
     if (activeTab === "all") return true;
     if (activeTab === "owned") return getUserCharacter(char.id);
+    if (activeTab === "free") return char.price_tokens === 0;
     return char.tier === activeTab;
   });
 
-  const tierCounts = {
-    beginner: characters.filter(c => c.tier === 'beginner').length,
-    professional: characters.filter(c => c.tier === 'professional').length,
-    expert: characters.filter(c => c.tier === 'expert').length,
-    master: characters.filter(c => c.tier === 'master').length,
-    legendary: characters.filter(c => c.tier === 'legendary').length,
-  };
+  const freeCharacter = characters.find(c => c.price_tokens === 0);
+  const hasFreeCharacter = freeCharacter && getUserCharacter(freeCharacter.id);
 
   return (
     <div className="min-h-screen bg-background pb-24" dir={isRTL ? 'rtl' : 'ltr'}>
@@ -117,7 +121,7 @@ const Characters = () => {
             <Card className="p-3 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 text-center">
               <p className="text-xs text-muted-foreground">Balance</p>
               <p className="text-lg font-bold text-primary">{tokenBalance.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">VIRAL</p>
+              <p className="text-xs text-muted-foreground">BOLT</p>
             </Card>
             <Card className="p-3 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 text-center">
               <p className="text-xs text-muted-foreground">Owned</p>
@@ -134,6 +138,30 @@ const Characters = () => {
         </div>
       </header>
 
+      {/* Free Character Banner */}
+      {!hasFreeCharacter && freeCharacter && (
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-4 py-3"
+        >
+          <Card className="p-4 bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-teal-500/20 border-green-500/30">
+            <div className="flex items-center gap-4">
+              <div className="text-5xl">{freeCharacter.image_url}</div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-green-400" />
+                  <h3 className="font-bold text-lg text-foreground">Free Starter Character!</h3>
+                </div>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Claim your free {freeCharacter.name} to start mining!
+                </p>
+              </div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Active Character Highlight */}
       {activeCharacter && (
         <motion.div
@@ -148,11 +176,14 @@ const Characters = () => {
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-lg text-foreground">{activeCharacter.character?.name}</h3>
                   <Badge className="bg-primary text-primary-foreground">Active</Badge>
+                  <Badge variant="outline" className="text-xs">
+                    Stage {activeCharacter.evolution_stage}/{activeCharacter.character?.max_evolution_stages}
+                  </Badge>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2 text-xs">
                   <span className="text-green-400 flex items-center gap-1">
                     <Zap className="w-3 h-3" />
-                    {activeCharacter.character?.mining_speed_multiplier}x Speed
+                    {((activeCharacter.character?.mining_speed_multiplier || 1) * (1 + (activeCharacter.evolution_stage - 1) * 0.2)).toFixed(1)}x Speed
                   </span>
                   <span className="text-blue-400 flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
@@ -175,11 +206,11 @@ const Characters = () => {
             <TabsTrigger value="owned" className="text-xs py-2">
               Owned ({userCharacters.length})
             </TabsTrigger>
-            <TabsTrigger value="professional" className="text-xs py-2 text-blue-400">
-              Pro ({tierCounts.professional})
+            <TabsTrigger value="free" className="text-xs py-2 text-green-400">
+              Free
             </TabsTrigger>
             <TabsTrigger value="legendary" className="text-xs py-2 text-yellow-400">
-              Legend ({tierCounts.legendary})
+              Legend
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -192,7 +223,6 @@ const Characters = () => {
             { tier: 'beginner', label: 'Beginner', color: 'bg-slate-500' },
             { tier: 'professional', label: 'Pro', color: 'bg-blue-500' },
             { tier: 'expert', label: 'Expert', color: 'bg-purple-500' },
-            { tier: 'master', label: 'Master', color: 'bg-orange-500' },
             { tier: 'legendary', label: 'Legend', color: 'bg-yellow-500' },
           ].map(({ tier, label, color }) => (
             <button
@@ -236,6 +266,7 @@ const Characters = () => {
                     userCharacter={getUserCharacter(character.id)}
                     onPurchase={handlePurchase}
                     onActivate={handleActivate}
+                    onEvolve={handleEvolve}
                     isLoading={purchaseLoading === character.id || purchaseLoading === getUserCharacter(character.id)?.id}
                   />
                 </motion.div>
@@ -254,20 +285,20 @@ const Characters = () => {
           </h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-start gap-2">
-              <span className="text-green-400">•</span>
-              Each character gives you a different mining speed multiplier
+              <span className="text-green-400">🎁</span>
+              Claim your FREE Bolt Starter character to begin!
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-blue-400">•</span>
-              Higher tier characters provide bigger boosts
+              <span className="text-blue-400">⚡</span>
+              Each character gives different mining speed multipliers
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-purple-400">•</span>
-              You can own multiple characters but only activate one
+              <span className="text-purple-400">✨</span>
+              Evolve characters using BOLT tokens to boost their power
             </li>
             <li className="flex items-start gap-2">
-              <span className="text-yellow-400">•</span>
-              Legendary characters give extra jackpot bonuses
+              <span className="text-yellow-400">👑</span>
+              Higher evolution = +20% speed per stage!
             </li>
           </ul>
         </Card>

@@ -17,6 +17,8 @@ export interface MiningCharacter {
   image_url: string | null;
   is_active: boolean;
   created_at: string;
+  max_evolution_stages: number;
+  evolution_costs: number[];
 }
 
 export interface UserCharacter {
@@ -27,6 +29,7 @@ export interface UserCharacter {
   experience: number;
   is_active: boolean;
   purchased_at: string;
+  evolution_stage: number;
   character?: MiningCharacter;
 }
 

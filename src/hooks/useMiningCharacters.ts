@@ -15,10 +15,19 @@ export const useMiningCharacters = (userId: string | undefined) => {
         .from('mining_characters')
         .select('*')
         .eq('is_active', true)
-        .order('price_ton', { ascending: true });
+        .order('price_tokens', { ascending: true });
 
       if (error) throw error;
-      setCharacters(data as MiningCharacter[] || []);
+      
+      // Parse evolution_costs from JSON to array
+      const parsedData = (data || []).map(char => ({
+        ...char,
+        evolution_costs: Array.isArray(char.evolution_costs) 
+          ? char.evolution_costs 
+          : JSON.parse(char.evolution_costs as string || '[]')
+      })) as MiningCharacter[];
+      
+      setCharacters(parsedData);
     } catch (error) {
       console.error('Error fetching characters:', error);
     }
@@ -40,7 +49,12 @@ export const useMiningCharacters = (userId: string | undefined) => {
       
       const userChars = (data || []).map(uc => ({
         ...uc,
-        character: uc.character as MiningCharacter
+        character: uc.character ? {
+          ...uc.character,
+          evolution_costs: Array.isArray(uc.character.evolution_costs)
+            ? uc.character.evolution_costs
+            : JSON.parse(uc.character.evolution_costs as string || '[]')
+        } : undefined
       })) as UserCharacter[];
       
       setUserCharacters(userChars);
@@ -73,7 +87,8 @@ export const useMiningCharacters = (userId: string | undefined) => {
           .insert({
             user_id: userId,
             character_id: characterId,
-            is_active: userCharacters.length === 0
+            is_active: userCharacters.length === 0,
+            evolution_stage: 1
           });
 
         if (error) throw error;
@@ -94,7 +109,7 @@ export const useMiningCharacters = (userId: string | undefined) => {
         if (userError) throw userError;
 
         if ((userData?.token_balance || 0) < character.price_tokens) {
-          toast.error('Not enough tokens');
+          toast.error('Not enough BOLT tokens');
           return false;
         }
 
@@ -113,7 +128,8 @@ export const useMiningCharacters = (userId: string | undefined) => {
           .insert({
             user_id: userId,
             character_id: characterId,
-            is_active: userCharacters.length === 0
+            is_active: userCharacters.length === 0,
+            evolution_stage: 1
           });
 
         if (insertError) throw insertError;
@@ -129,6 +145,73 @@ export const useMiningCharacters = (userId: string | undefined) => {
     } catch (error) {
       console.error('Error purchasing character:', error);
       toast.error('Failed to purchase character');
+      return false;
+    }
+  };
+
+  const evolveCharacter = async (userCharacterId: string) => {
+    if (!userId) return false;
+
+    const userChar = userCharacters.find(uc => uc.id === userCharacterId);
+    if (!userChar || !userChar.character) return false;
+
+    const character = userChar.character;
+    const currentStage = userChar.evolution_stage;
+    const maxStages = character.max_evolution_stages;
+    const evolutionCosts = character.evolution_costs;
+
+    // Check if already at max evolution
+    if (currentStage >= maxStages) {
+      toast.error('Character is already at max evolution!');
+      return false;
+    }
+
+    // Get cost for next evolution (0-indexed, so currentStage - 1 gives current cost)
+    const nextEvolutionCost = evolutionCosts[currentStage - 1];
+    if (!nextEvolutionCost) {
+      toast.error('Evolution cost not found');
+      return false;
+    }
+
+    try {
+      // Check token balance
+      const { data: userData, error: userError } = await supabase
+        .from('bolt_users')
+        .select('token_balance')
+        .eq('id', userId)
+        .single();
+
+      if (userError) throw userError;
+
+      if ((userData?.token_balance || 0) < nextEvolutionCost) {
+        toast.error(`Not enough BOLT! Need ${nextEvolutionCost} BOLT`);
+        return false;
+      }
+
+      // Deduct tokens
+      const { error: updateError } = await supabase
+        .from('bolt_users')
+        .update({ 
+          token_balance: (userData?.token_balance || 0) - nextEvolutionCost 
+        })
+        .eq('id', userId);
+
+      if (updateError) throw updateError;
+
+      // Upgrade character evolution stage
+      const { error: evolveError } = await supabase
+        .from('user_characters')
+        .update({ evolution_stage: currentStage + 1 })
+        .eq('id', userCharacterId);
+
+      if (evolveError) throw evolveError;
+
+      toast.success(`Character evolved to stage ${currentStage + 1}!`);
+      await fetchUserCharacters();
+      return true;
+    } catch (error) {
+      console.error('Error evolving character:', error);
+      toast.error('Failed to evolve character');
       return false;
     }
   };
@@ -177,6 +260,7 @@ export const useMiningCharacters = (userId: string | undefined) => {
     loading,
     purchaseCharacter,
     activateCharacter,
+    evolveCharacter,
     refetch: () => Promise.all([fetchCharacters(), fetchUserCharacters()])
   };
 };
