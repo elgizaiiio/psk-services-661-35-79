@@ -256,7 +256,8 @@ export const SlotMachine = ({ coins, onCoinsChange, spinCost = 10, userId, freeS
       spinSoundIntervalRef.current = setInterval(playSpinSound, 80);
     }
 
-    const newResults = [getRandomSymbol(), getRandomSymbol(), getRandomSymbol()];
+    // 85% win rate - very high chance to win!
+    const newResults = Math.random() < 0.85 ? getWinningSymbols() : getNoWinSymbols();
     setResults(newResults);
   }, [spinning, coins, spinCost, onCoinsChange, soundEnabled, musicEnabled, unlockAndStartMusic, playClickSound, playSpinSound]);
 
