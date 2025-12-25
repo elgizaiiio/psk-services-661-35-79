@@ -33,7 +33,7 @@ export const useTonPayment = () => {
     
     try {
       const paymentId = `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const destinationAddress = 'UQALON5gUq_kQzpTq2GkPeHQABL1nOeAuWwRPGPNkzDz_lZZ';
+      const destinationAddress = 'UQB3zld6sleav5U7Rga1JmpHJccaczHzCuTRNK4QM5i001Vm';
       
       const paymentData = {
         id: paymentId,
