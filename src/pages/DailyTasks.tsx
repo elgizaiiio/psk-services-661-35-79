@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Check, Clock, Gift, Zap, Flame, Users, Trophy, Sparkles, Send, BarChart, Star, RefreshCw, Crown, Rocket, Target, Medal, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Check, Clock, Zap, Flame, Users, Trophy, Sparkles, Send, BarChart, Star, RefreshCw, Crown, Rocket, Medal, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -200,14 +200,7 @@ const DailyTasks = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <motion.div animate={{
-                  scale: [1, 1.2, 1]
-                }} transition={{
-                  repeat: Infinity,
-                  duration: 2
-                }} className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center">
-                    <Flame className="w-7 h-7 text-white" />
-                  </motion.div>
+                  
                   {streak > 0 && <Badge className="absolute -top-1 -right-1 bg-yellow-500 text-black text-xs px-1.5">
                       {streak}
                     </Badge>}
@@ -291,7 +284,7 @@ const DailyTasks = () => {
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <Target className="w-5 h-5 text-primary" />
+                  
                   <span className="font-semibold text-foreground">Today's Progress</span>
                 </div>
                 <Badge variant="outline" className={progress === 100 ? 'bg-green-500/20 border-green-500 text-green-500' : ''}>
@@ -321,12 +314,12 @@ const DailyTasks = () => {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground flex items-center gap-1">
                   {completedCount === totalCount ? <>
-                      <Sparkles className="w-4 h-4 text-yellow-500" />
+                      
                       All tasks completed!
                     </> : `${totalCount - completedCount} tasks remaining`}
                 </span>
                 <span className="text-primary font-medium flex items-center gap-1">
-                  <Gift className="w-4 h-4" />
+                  
                   {totalRewards.toLocaleString()} VIRAL
                 </span>
               </div>
