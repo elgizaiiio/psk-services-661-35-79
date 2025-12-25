@@ -7,14 +7,6 @@ const MiniGames: React.FC = () => {
 
   const games = [
     {
-      id: 'spin-wheel',
-      title: 'عجلة الحظ',
-      description: 'دوّر واربح جوائز!',
-      path: '/spin-wheel',
-      reward: '1,000+',
-      emoji: '🎡'
-    },
-    {
       id: 'slots',
       title: 'Slots',
       description: 'Spin & win coins!',

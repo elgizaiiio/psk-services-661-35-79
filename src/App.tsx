@@ -49,7 +49,7 @@ const VIPSubscription = lazy(() => import("./pages/VIPSubscription"));
 const TokenStore = lazy(() => import("./pages/TokenStore"));
 const DailyTasks = lazy(() => import("./pages/DailyTasks"));
 const MiniGames = lazy(() => import("./pages/MiniGames"));
-const SpinWheel = lazy(() => import("./pages/SpinWheel"));
+
 
 // Loading component
 const PageLoader = () => (
@@ -161,7 +161,7 @@ const App = () => (
                       <Route path="/token-store" element={<TokenStore />} />
                       <Route path="/daily-tasks" element={<DailyTasks />} />
                       <Route path="/mini-games" element={<MiniGames />} />
-                      <Route path="/spin-wheel" element={<SpinWheel />} />
+                      
                       </Routes>
                     </Suspense>
                     <BottomNavigation />
