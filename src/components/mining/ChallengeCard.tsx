@@ -29,13 +29,11 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
   const { language, t } = useLanguage();
   
   const getTitle = () => {
-    if (language === 'ar') return challenge.title_ar;
     if (language === 'ru') return challenge.title_ru;
     return challenge.title;
   };
 
   const getDescription = () => {
-    if (language === 'ar') return challenge.description_ar;
     if (language === 'ru') return challenge.description_ru;
     return challenge.description;
   };

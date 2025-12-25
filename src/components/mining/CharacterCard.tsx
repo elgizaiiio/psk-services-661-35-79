@@ -49,13 +49,11 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
   const [showEvolveOptions, setShowEvolveOptions] = useState(false);
   
   const getName = () => {
-    if (language === 'ar') return character.name_ar;
     if (language === 'ru') return character.name_ru;
     return character.name;
   };
 
   const getDescription = () => {
-    if (language === 'ar') return character.description_ar;
     if (language === 'ru') return character.description_ru;
     return character.description;
   };
