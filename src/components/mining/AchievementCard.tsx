@@ -11,10 +11,10 @@ interface AchievementCardProps {
 }
 
 const categoryColors: Record<string, string> = {
-  mining: 'from-orange-500/20 to-orange-600/20',
-  characters: 'from-purple-500/20 to-purple-600/20',
-  challenges: 'from-blue-500/20 to-blue-600/20',
-  social: 'from-green-500/20 to-green-600/20',
+  mining: 'from-primary/20 to-primary/30',
+  characters: 'from-primary/15 to-primary/25',
+  challenges: 'from-primary/20 to-primary/30',
+  social: 'from-primary/15 to-primary/25',
 };
 
 export const AchievementCard: React.FC<AchievementCardProps> = ({

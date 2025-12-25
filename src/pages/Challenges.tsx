@@ -73,10 +73,10 @@ const Challenges = () => {
               <div className="flex flex-wrap items-center gap-2 mb-3">
                 <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full ${
                   challenge.challenge_type === 'daily' 
-                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' 
+                    ? 'bg-primary/15 text-primary border border-primary/20' 
                     : challenge.challenge_type === 'weekly'
-                    ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20'
-                    : 'bg-violet-500/15 text-violet-400 border border-violet-500/20'
+                    ? 'bg-primary/10 text-primary/80 border border-primary/15'
+                    : 'bg-primary/20 text-primary border border-primary/25'
                 }`}>
                   {challenge.challenge_type === 'daily' 
                     ? (language === 'ru' ? 'Ежедневно' : 'Daily')
@@ -248,10 +248,10 @@ const Challenges = () => {
         {/* Featured Challenge */}
         {specialChallenges.length > 0 && (
           <div className="px-6 mb-6">
-            <div className="relative overflow-hidden bg-gradient-to-br from-violet-500/20 via-purple-500/10 to-pink-500/10 rounded-3xl p-1 border border-violet-500/30">
-              <div className="absolute inset-0 bg-gradient-to-r from-violet-500/10 via-transparent to-pink-500/10 animate-pulse" />
+            <div className="relative overflow-hidden bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 rounded-3xl p-1 border border-primary/30">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/5 animate-pulse" />
               <div className="relative bg-background/80 backdrop-blur-sm rounded-[22px] p-5">
-                <div className="text-[10px] uppercase tracking-widest text-violet-400 font-bold mb-4">
+                <div className="text-[10px] uppercase tracking-widest text-primary font-bold mb-4">
                   {language === 'ru' ? 'Особый вызов' : 'Featured'}
                 </div>
                 <ChallengeItem challenge={specialChallenges[0]} index={0} />
