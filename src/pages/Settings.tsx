@@ -325,7 +325,10 @@ const Settings = () => {
           </div>
 
           {/* Security */}
-          <button className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors">
+          <button 
+            onClick={() => toast.info('Security settings coming soon!')}
+            className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-indigo-500" />
@@ -416,7 +419,10 @@ const Settings = () => {
           </button>
 
           {/* Rate App */}
-          <button className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b border-border/30">
+          <button 
+            onClick={() => toast.success('Thank you for rating!')}
+            className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b border-border/30"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
                 <Star className="w-5 h-5 text-amber-500" />
@@ -430,7 +436,10 @@ const Settings = () => {
           </button>
 
           {/* Help */}
-          <button className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b border-border/30">
+          <button 
+            onClick={() => toast.info('Contact us at support@boltmining.com')}
+            className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b border-border/30"
+          >
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center">
                 <HelpCircle className="w-5 h-5 text-sky-500" />
