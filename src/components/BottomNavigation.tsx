@@ -71,13 +71,6 @@ const BottomNavigation = () => {
                     )} 
                     strokeWidth={isActive ? 2.5 : 2} 
                   />
-                  {isActive && (
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-primary"
-                    />
-                  )}
                 </div>
                 
                 <span className={cn(
