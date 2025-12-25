@@ -182,8 +182,8 @@ const Settings = () => {
             className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b border-border/30"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                <Globe className="w-5 h-5 text-blue-500" />
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Globe className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left">
                 <span className="font-medium text-foreground">{t('settings.language')}</span>
@@ -233,8 +233,8 @@ const Settings = () => {
           {/* Dark Mode */}
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                {isDarkMode ? <Moon className="w-5 h-5 text-purple-500" /> : <Sun className="w-5 h-5 text-purple-500" />}
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                {isDarkMode ? <Moon className="w-5 h-5 text-primary" /> : <Sun className="w-5 h-5 text-primary" />}
               </div>
               <div>
                 <span className="font-medium text-foreground">{t('settings.theme')}</span>
@@ -259,8 +259,8 @@ const Settings = () => {
           {/* Sound */}
           <div className="flex items-center justify-between p-4 border-b border-border/30">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
-                {soundEnabled ? <Volume2 className="w-5 h-5 text-green-500" /> : <VolumeX className="w-5 h-5 text-green-500" />}
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                {soundEnabled ? <Volume2 className="w-5 h-5 text-primary" /> : <VolumeX className="w-5 h-5 text-primary" />}
               </div>
               <div>
                 <span className="font-medium text-foreground">Sound Effects</span>
@@ -273,8 +273,8 @@ const Settings = () => {
           {/* Vibration */}
           <div className="flex items-center justify-between p-4 border-b border-border/30">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
-                <Vibrate className="w-5 h-5 text-orange-500" />
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Vibrate className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <span className="font-medium text-foreground">Vibration</span>
@@ -287,8 +287,8 @@ const Settings = () => {
           {/* Notifications */}
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-red-500/20 flex items-center justify-center">
-                <Bell className="w-5 h-5 text-red-500" />
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Bell className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <span className="font-medium text-foreground">{t('settings.notifications')}</span>
@@ -313,8 +313,8 @@ const Settings = () => {
           {/* Hide Balance */}
           <div className="flex items-center justify-between p-4 border-b border-border/30">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-cyan-500/20 flex items-center justify-center">
-                {hideBalance ? <EyeOff className="w-5 h-5 text-cyan-500" /> : <Eye className="w-5 h-5 text-cyan-500" />}
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                {hideBalance ? <EyeOff className="w-5 h-5 text-primary" /> : <Eye className="w-5 h-5 text-primary" />}
               </div>
               <div>
                 <span className="font-medium text-foreground">Hide Balance</span>
@@ -330,8 +330,8 @@ const Settings = () => {
             className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/20 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-indigo-500" />
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left">
                 <span className="font-medium text-foreground">Security</span>
@@ -359,8 +359,8 @@ const Settings = () => {
             className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b border-border/30"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
-                <Trash2 className="w-5 h-5 text-yellow-500" />
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Trash2 className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left">
                 <span className="font-medium text-foreground">Clear Cache</span>
@@ -378,8 +378,8 @@ const Settings = () => {
             className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-teal-500/20 flex items-center justify-center">
-                <RefreshCw className="w-5 h-5 text-teal-500" />
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <RefreshCw className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left">
                 <span className="font-medium text-foreground">Refresh Data</span>
@@ -407,8 +407,8 @@ const Settings = () => {
             className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b border-border/30"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-pink-500/20 flex items-center justify-center">
-                <Share2 className="w-5 h-5 text-pink-500" />
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Share2 className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left">
                 <span className="font-medium text-foreground">Share App</span>
@@ -424,8 +424,8 @@ const Settings = () => {
             className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b border-border/30"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                <Star className="w-5 h-5 text-amber-500" />
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Star className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left">
                 <span className="font-medium text-foreground">Rate Us</span>
@@ -441,8 +441,8 @@ const Settings = () => {
             className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b border-border/30"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-sky-500/20 flex items-center justify-center">
-                <HelpCircle className="w-5 h-5 text-sky-500" />
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <HelpCircle className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left">
                 <span className="font-medium text-foreground">Help & Support</span>
@@ -455,8 +455,8 @@ const Settings = () => {
           {/* App Info */}
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gray-500/20 flex items-center justify-center">
-                <Smartphone className="w-5 h-5 text-gray-500" />
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Smartphone className="w-5 h-5 text-primary" />
               </div>
               <div className="text-left">
                 <span className="font-medium text-foreground">{t('settings.about')}</span>

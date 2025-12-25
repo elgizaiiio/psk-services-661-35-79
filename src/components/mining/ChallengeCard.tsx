@@ -15,9 +15,9 @@ interface ChallengeCardProps {
 }
 
 const typeColors: Record<string, string> = {
-  daily: 'bg-green-500',
-  weekly: 'bg-blue-500',
-  special: 'bg-purple-500',
+  daily: 'bg-primary',
+  weekly: 'bg-primary/80',
+  special: 'bg-primary/60',
 };
 
 export const ChallengeCard: React.FC<ChallengeCardProps> = ({
@@ -54,7 +54,7 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
   };
 
   return (
-    <Card className={`p-4 bg-card/50 border ${isCompleted ? 'border-green-500/50' : 'border-border/50'}`}>
+    <Card className={`p-4 bg-card/50 border ${isCompleted ? 'border-primary/50' : 'border-border/50'}`}>
       <div className="flex items-start justify-between mb-3">
         <div>
           <Badge className={`${typeColors[challenge.challenge_type]} text-white mb-2`}>
@@ -67,8 +67,8 @@ export const ChallengeCard: React.FC<ChallengeCardProps> = ({
         </div>
         
         {isCompleted && (
-          <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
-            <Check className="w-5 h-5 text-green-500" />
+          <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+            <Check className="w-5 h-5 text-primary" />
           </div>
         )}
       </div>

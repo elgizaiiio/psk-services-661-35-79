@@ -169,7 +169,7 @@ export const FlashOfferBanner = ({ userId, onPurchase }: FlashOfferBannerProps) 
                   <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full ${
                     urgencyLevel === 'critical' ? 'bg-red-500/30 text-red-300' :
                     urgencyLevel === 'high' ? 'bg-orange-500/30 text-orange-300' :
-                    'bg-green-500/30 text-green-300'
+                    'bg-primary/30 text-primary'
                   }`}>
                     <Users className="w-4 h-4" />
                     <span className="font-bold">{spotsLeft} left</span>
@@ -182,10 +182,10 @@ export const FlashOfferBanner = ({ userId, onPurchase }: FlashOfferBannerProps) 
                     <span className="text-muted-foreground line-through text-lg">
                       {offer.original_price} TON
                     </span>
-                    <span className="text-2xl font-bold text-green-400">
+                    <span className="text-2xl font-bold text-primary">
                       {offer.discounted_price} TON
                     </span>
-                    <Badge variant="secondary" className="bg-green-500/20 text-green-400">
+                    <Badge variant="secondary" className="bg-primary/20 text-primary">
                       -{offer.discount_percent}%
                     </Badge>
                   </div>
