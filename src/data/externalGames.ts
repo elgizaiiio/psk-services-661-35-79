@@ -3,157 +3,133 @@ export interface ExternalGame {
   title: string;
   thumbnail: string;
   embedUrl: string;
-  category: 'action' | 'racing' | 'puzzle' | 'sports' | 'casual' | 'adventure' | 'simulation';
+  category: 'action' | 'racing' | 'puzzle' | 'sports' | 'casual' | 'arcade';
   description: string;
   reward: number;
 }
 
 export const externalGames: ExternalGame[] = [
-  // ألعاب أكشن
+  // ألعاب ألغاز
   {
-    id: 'gta-simulator',
-    title: 'GTA Simulator',
-    thumbnail: 'https://www.onlinegames.io/media/posts/416/responsive/GTA-Simulator-xs.jpg',
-    embedUrl: 'https://www.onlinegames.io/games/2023/unity2/gta-simulator/index.html',
-    category: 'action',
-    description: 'استكشف المدينة مثل GTA!',
+    id: '2048',
+    title: '2048',
+    thumbnail: 'https://play2048.co/meta/apple-touch-icon.png',
+    embedUrl: 'https://play2048.co/',
+    category: 'puzzle',
+    description: 'اجمع الأرقام للوصول إلى 2048!',
+    reward: 25
+  },
+  {
+    id: 'hextris',
+    title: 'Hextris',
+    thumbnail: 'https://hextris.io/images/hextris.png',
+    embedUrl: 'https://hextris.io/',
+    category: 'puzzle',
+    description: 'تتريس سداسي سريع ومسبب للإدمان!',
     reward: 30
   },
   {
-    id: 'cs-online',
-    title: 'CS Online',
-    thumbnail: 'https://www.onlinegames.io/media/posts/434/responsive/CS-Online-xs.jpg',
-    embedUrl: 'https://www.onlinegames.io/games/2023/unity2/cs-online/index.html',
-    category: 'action',
-    description: 'لعبة إطلاق نار متعددة اللاعبين!',
-    reward: 35
+    id: '0hh1',
+    title: '0h h1',
+    thumbnail: 'https://0hh1.com/icon512.png',
+    embedUrl: 'https://0hh1.com/',
+    category: 'puzzle',
+    description: 'ألغاز منطقية ثنائية أنيقة!',
+    reward: 20
   },
   {
-    id: 'masked-special-forces',
-    title: 'Masked Special Forces',
-    thumbnail: 'https://www.onlinegames.io/media/posts/310/responsive/Masked-Special-Forces-FPS-xs.jpg',
-    embedUrl: 'https://www.onlinegames.io/games/2022/unity2/masked-special-forces/index.html',
-    category: 'action',
-    description: 'معارك FPS مع تخصيص كامل!',
-    reward: 30
+    id: '0hn0',
+    title: '0h n0',
+    thumbnail: 'https://0hn0.com/icon512.png',
+    embedUrl: 'https://0hn0.com/',
+    category: 'puzzle',
+    description: 'ألغاز أرقام تحتاج للتفكير!',
+    reward: 20
   },
   {
-    id: 'stickman-gta-city',
-    title: 'Stickman GTA City',
-    thumbnail: 'https://www.onlinegames.io/media/posts/900/responsive/stickman-gta-city-free-xs.jpg',
-    embedUrl: 'https://cloud.onlinegames.io/games/2024/unity3/stickman-gta-city/index-og.html',
-    category: 'action',
-    description: 'GTA بأسلوب Stickman!',
+    id: 'cube-composer',
+    title: 'Cube Composer',
+    thumbnail: 'https://david-peter.de/cube-composer/img/icon.png',
+    embedUrl: 'https://david-peter.de/cube-composer/',
+    category: 'puzzle',
+    description: 'ألغاز مكعبات ملونة!',
     reward: 25
   },
   
   // ألعاب سباقات
   {
-    id: 'drift-king',
-    title: 'Drift King',
-    thumbnail: 'https://www.onlinegames.io/media/posts/729/responsive/Drift-King-xs.jpg',
-    embedUrl: 'https://www.onlinegames.io/games/2024/unity/drift-king/index.html',
+    id: 'hexgl',
+    title: 'HexGL',
+    thumbnail: 'https://hexgl.bkcore.com/play/css/title.png',
+    embedUrl: 'https://hexgl.bkcore.com/play/',
     category: 'racing',
-    description: 'ملك الدريفت مع 10 سيارات!',
+    description: 'سباق فضائي 3D مثل F-Zero!',
+    reward: 35
+  },
+  
+  // ألعاب أركيد
+  {
+    id: 'astray',
+    title: 'Astray',
+    thumbnail: 'https://wwwtyro.github.io/Astray/favicon.ico',
+    embedUrl: 'https://wwwtyro.github.io/Astray/',
+    category: 'arcade',
+    description: 'متاهة 3D - حرك الكرة للخروج!',
     reward: 25
   },
   {
-    id: 'drift-hunters-pro',
-    title: 'Drift Hunters Pro',
-    thumbnail: 'https://www.onlinegames.io/media/posts/397/responsive/Drift-Hunters-Pro-xs.jpg',
-    embedUrl: 'https://www.onlinegames.io/games/2023/unity/drift-hunters-pro/index.html',
-    category: 'racing',
-    description: 'سباقات دريفت 3D احترافية!',
-    reward: 30
-  },
-  {
-    id: 'madalin-stunt-cars',
-    title: 'Madalin Stunt Cars Pro',
-    thumbnail: 'https://www.onlinegames.io/media/posts/401/responsive/Madalin-Stunt-Cars-Pro-Game-xs.jpg',
-    embedUrl: 'https://www.onlinegames.io/games/2023/unity/madalin-stunt-cars-pro/index.html',
-    category: 'racing',
-    description: 'سيارات فاخرة وحركات جنونية!',
-    reward: 25
-  },
-  {
-    id: 'highway-traffic',
-    title: 'Highway Traffic',
-    thumbnail: 'https://www.onlinegames.io/media/posts/32/responsive/Highway-Traffic-2-xs.jpg',
-    embedUrl: 'https://www.onlinegames.io/games/2022/unity/highway-traffic/index.html',
-    category: 'racing',
-    description: 'تجنب السيارات على الطريق السريع!',
-    reward: 20
-  },
-  {
-    id: 'burnout-city',
-    title: 'Burnout City',
-    thumbnail: 'https://www.onlinegames.io/media/posts/861/responsive/burnoutcity-xs.jpg',
-    embedUrl: 'https://cloud.onlinegames.io/games/2024/unity/burnout-city/index-og.html',
-    category: 'racing',
-    description: 'مدينة الليل والدريفت!',
-    reward: 25
-  },
-  
-  // ألعاب مغامرة
-  {
-    id: 'cubecraft-survival',
-    title: 'CubeCraft Survival',
-    thumbnail: 'https://www.onlinegames.io/media/posts/1113/responsive/cubecraft-survival-xs.webp',
-    embedUrl: 'https://cloud.onlinegames.io/games/2025/unity4/cubecraft-survival/index-og.html',
-    category: 'adventure',
-    description: 'مثل Minecraft - بناء واستكشاف!',
-    reward: 30
-  },
-  
-  // ألعاب محاكاة
-  {
-    id: 'real-flight-simulator',
-    title: 'Real Flight Simulator',
-    thumbnail: 'https://www.onlinegames.io/media/posts/342/responsive/Real-Flight-Simulator-2-xs.jpg',
-    embedUrl: 'https://cloud.onlinegames.io/games/2023/unity2/real-flight-simulator/index.html',
-    category: 'simulation',
-    description: 'قيادة طائرات واقعية!',
-    reward: 20
-  },
-  
-  // ألعاب رياضة
-  {
-    id: 'basket-hoop',
-    title: 'Basket Hoop',
-    thumbnail: 'https://www.onlinegames.io/media/posts/843/responsive/Basket-Hoop-xs.jpg',
-    embedUrl: 'https://cloud.onlinegames.io/games/2024/construct/311/basket-hoop/index-og.html',
-    category: 'sports',
-    description: 'كرة سلة بسيطة وممتعة!',
+    id: 'snake',
+    title: 'Snake',
+    thumbnail: 'https://snake-pwa.github.io/favicon.ico',
+    embedUrl: 'https://snake-pwa.github.io/',
+    category: 'arcade',
+    description: 'لعبة الثعبان الكلاسيكية!',
     reward: 15
+  },
+  {
+    id: 'flappy-2048',
+    title: 'Flappy 2048',
+    thumbnail: 'https://hczhcz.github.io/Flappy-2048/favicon.ico',
+    embedUrl: 'https://hczhcz.github.io/Flappy-2048/',
+    category: 'arcade',
+    description: 'Flappy Bird + 2048 معاً!',
+    reward: 30
+  },
+  {
+    id: 'tetris',
+    title: 'Tetris',
+    thumbnail: 'https://aerolab.github.io/blockrain.js/favicon.ico',
+    embedUrl: 'https://aerolab.github.io/blockrain.js/',
+    category: 'arcade',
+    description: 'تتريس الكلاسيكي!',
+    reward: 20
   },
   
   // ألعاب عادية
   {
-    id: 'stickman-parkour',
-    title: 'Stickman Parkour',
-    thumbnail: 'https://www.onlinegames.io/media/posts/871/responsive/stickman-parkour-OG-xs.jpg',
-    embedUrl: 'https://cloud.onlinegames.io/games/2024/construct/219/stickman-parkour/index-og.html',
+    id: 'solitaire',
+    title: 'Solitaire',
+    thumbnail: 'https://vue-solitaire.netlify.app/favicon.ico',
+    embedUrl: 'https://vue-solitaire.netlify.app/',
     category: 'casual',
-    description: 'باركور مع Stickman!',
+    description: 'سوليتير الورق الكلاسيكية!',
     reward: 15
   },
   {
-    id: 'get-on-top',
-    title: 'Get On Top',
-    thumbnail: 'https://www.onlinegames.io/media/posts/697/responsive/Get-on-Top-xs.jpg',
-    embedUrl: 'https://www.onlinegames.io/games/2024/code/6/get-on-top/index.html',
+    id: 'memory-game',
+    title: 'Memory Game',
+    thumbnail: 'https://pwa-memory-game.surge.sh/favicon.ico',
+    embedUrl: 'https://pwa-memory-game.surge.sh/',
     category: 'casual',
-    description: 'لاعبين 2 - مصارعة مضحكة!',
+    description: 'اختبر ذاكرتك!',
     reward: 20
   }
 ];
 
 export const categories = [
   { id: 'all', label: 'الكل', emoji: '🎮' },
-  { id: 'action', label: 'أكشن', emoji: '🔫' },
+  { id: 'puzzle', label: 'ألغاز', emoji: '🧩' },
   { id: 'racing', label: 'سباقات', emoji: '🚗' },
-  { id: 'adventure', label: 'مغامرة', emoji: '⚔️' },
-  { id: 'sports', label: 'رياضة', emoji: '⚽' },
-  { id: 'casual', label: 'عادية', emoji: '🎯' },
-  { id: 'simulation', label: 'محاكاة', emoji: '✈️' }
+  { id: 'arcade', label: 'أركيد', emoji: '👾' },
+  { id: 'casual', label: 'عادية', emoji: '🎯' }
 ];
