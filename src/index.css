@@ -153,6 +153,27 @@
   .glow-mint {
     box-shadow: 0 0 20px hsl(158 100% 50% / 0.3);
   }
+
+  /* Enhanced card styles */
+  .card-premium {
+    @apply bg-gradient-to-br from-card via-card to-primary/5 border border-border/50 rounded-2xl;
+    box-shadow: 0 4px 24px -4px hsl(158 100% 50% / 0.1);
+  }
+
+  /* Glass effect */
+  .glass {
+    @apply bg-background/60 backdrop-blur-xl border border-border/30;
+  }
+
+  /* Glow effects */
+  .glow-primary {
+    box-shadow: 0 0 30px hsl(158 100% 50% / 0.2), 0 0 60px hsl(158 100% 50% / 0.1);
+  }
+
+  /* Smooth transitions */
+  .transition-smooth {
+    @apply transition-all duration-300 ease-out;
+  }
 }
 
 /* Simple loader */
