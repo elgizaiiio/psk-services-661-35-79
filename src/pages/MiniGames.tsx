@@ -7,6 +7,14 @@ const MiniGames: React.FC = () => {
 
   const games = [
     {
+      id: 'arcade',
+      title: 'Arcade Games',
+      description: 'العب 50+ لعبة خارجية!',
+      path: '/arcade',
+      reward: '30+',
+      emoji: '🕹️'
+    },
+    {
       id: 'spin-wheel',
       title: 'عجلة الحظ',
       description: 'دوّر واربح جوائز!',
