@@ -106,11 +106,12 @@ const TokenStore = () => {
   const { sendDirectPayment, isProcessing } = useDirectTonPayment();
   const [purchasing, setPurchasing] = useState<string | null>(null);
 
+  // Development mode: use mock user ID
+  const isDev = !telegramUser;
+  const mockTelegramId = 123456789;
+
   const handlePurchase = async (pkg: TokenPackage) => {
-    if (!telegramUser) {
-      toast.error('Please login first');
-      return;
-    }
+    const telegramId = telegramUser?.id || mockTelegramId;
 
     if (!isConnected) {
       await connectWallet();
@@ -124,11 +125,13 @@ const TokenStore = () => {
       const { data: userData, error: userError } = await supabase
         .from('bolt_users')
         .select('id, token_balance')
-        .eq('telegram_id', telegramUser.id)
+        .eq('telegram_id', telegramId)
         .maybeSingle();
 
       if (userError || !userData) {
-        throw new Error('User not found');
+        toast.error('User not found. Please open the app in Telegram.');
+        setPurchasing(null);
+        return;
       }
 
       const totalTokens = pkg.tokens + pkg.bonusTokens;
@@ -158,7 +161,7 @@ const TokenStore = () => {
             user_id: userData.id,
             action_type: 'token_purchase',
             amount: totalTokens,
-            username: telegramUser.first_name || 'User',
+            username: telegramUser?.first_name || 'User',
             product_name: pkg.name
           });
 
