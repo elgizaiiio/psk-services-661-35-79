@@ -12,35 +12,17 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'subway-surfers',
     title: 'Subway Surfers',
-    thumbnail: 'https://img.gamemonetize.com/ulb3rxplz1v5dxghxkp0s4c4vm7x8rlq/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/ulb3rxplz1v5dxghxkp0s4c4vm7x8rlq/',
+    thumbnail: 'https://img.gamemonetize.com/12b8whsjuoo362g7nvr31fxzbs19jnrl/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/12b8whsjuoo362g7nvr31fxzbs19jnrl/',
     category: 'action',
     description: 'Run, dodge trains and collect coins!',
     reward: 25
   },
   {
-    id: 'temple-run-2',
-    title: 'Temple Run 2',
-    thumbnail: 'https://img.gamemonetize.com/s9hqw8m7oj8hlfcn3q7vcf6k3v0fxr6f/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/s9hqw8m7oj8hlfcn3q7vcf6k3v0fxr6f/',
-    category: 'action',
-    description: 'Escape the temple and survive!',
-    reward: 25
-  },
-  {
-    id: 'racing-limits',
-    title: 'Racing Limits',
-    thumbnail: 'https://img.gamemonetize.com/h5vgkx9kqxvnm8qhfxqhxg2d5xkjxkqm/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/h5vgkx9kqxvnm8qhfxqhxg2d5xkjxkqm/',
-    category: 'racing',
-    description: 'High-speed racing action!',
-    reward: 30
-  },
-  {
     id: 'moto-x3m',
     title: 'Moto X3M',
-    thumbnail: 'https://img.gamemonetize.com/t4b5mzcxqo1ht0hl9i1xhm5v0hvxk9mx/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/t4b5mzcxqo1ht0hl9i1xhm5v0hvxk9mx/',
+    thumbnail: 'https://img.gamemonetize.com/dpjd4cafq7knxvebtsvl23isv9o0d3vq/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/dpjd4cafq7knxvebtsvl23isv9o0d3vq/',
     category: 'racing',
     description: 'Extreme motorcycle stunts!',
     reward: 30
@@ -48,74 +30,92 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'basketball-stars',
     title: 'Basketball Stars',
-    thumbnail: 'https://img.gamemonetize.com/g7wqkfm5z8lx3ht0hl9ixhm5v0hvxk9m/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/g7wqkfm5z8lx3ht0hl9ixhm5v0hvxk9m/',
+    thumbnail: 'https://img.gamemonetize.com/rqh4acdr5ufucw4pfeazjxq0qaftgnv8/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/rqh4acdr5ufucw4pfeazjxq0qaftgnv8/',
     category: 'sports',
     description: 'Become a basketball legend!',
     reward: 20
   },
   {
-    id: 'soccer-skills',
-    title: 'Soccer Skills World Cup',
-    thumbnail: 'https://img.gamemonetize.com/zx8m5v0hvxk9mxt4b5mzcxqo1ht0hl9i/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/zx8m5v0hvxk9mxt4b5mzcxqo1ht0hl9i/',
-    category: 'sports',
-    description: 'Win the World Cup!',
-    reward: 20
-  },
-  {
     id: 'bubble-shooter',
     title: 'Bubble Shooter',
-    thumbnail: 'https://img.gamemonetize.com/1ht0hl9ixhm5v0hvxk9mxt4b5mzcxqo/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/1ht0hl9ixhm5v0hvxk9mxt4b5mzcxqo/',
+    thumbnail: 'https://img.gamemonetize.com/wt1tfo8ol71fabn4cvsojilamtozjfqg/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/wt1tfo8ol71fabn4cvsojilamtozjfqg/',
     category: 'puzzle',
     description: 'Pop all the bubbles!',
     reward: 15
   },
   {
-    id: 'tetris',
-    title: 'Block Puzzle',
-    thumbnail: 'https://img.gamemonetize.com/xhm5v0hvxk9mxt4b5mzcxqo1ht0hl9i/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/xhm5v0hvxk9mxt4b5mzcxqo1ht0hl9i/',
-    category: 'puzzle',
-    description: 'Classic block puzzle game!',
+    id: 'stickman-rush',
+    title: 'Stickman Rush',
+    thumbnail: 'https://img.gamemonetize.com/34nwkjqmsl1gc36sefoqb52hxd2570ub/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/34nwkjqmsl1gc36sefoqb52hxd2570ub/',
+    category: 'action',
+    description: 'Fast-paced stickman running!',
+    reward: 20
+  },
+  {
+    id: 'drift-boss',
+    title: 'Drift Boss',
+    thumbnail: 'https://img.gamemonetize.com/e9gkn4lv0e8zq3bqmthxl1r8wxwlxjmt/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/e9gkn4lv0e8zq3bqmthxl1r8wxwlxjmt/',
+    category: 'racing',
+    description: 'Master the art of drifting!',
+    reward: 25
+  },
+  {
+    id: 'penalty-shooters-2',
+    title: 'Penalty Shooters 2',
+    thumbnail: 'https://img.gamemonetize.com/whmq2zgp2xc1kk1oe0j9e9hdh4nk6p7q/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/whmq2zgp2xc1kk1oe0j9e9hdh4nk6p7q/',
+    category: 'sports',
+    description: 'Score penalty kicks!',
+    reward: 20
+  },
+  {
+    id: 'stack-colors',
+    title: 'Stack Colors',
+    thumbnail: 'https://img.gamemonetize.com/0oho3xpfcx3d7mhjl5snt2j4h5t9k0sj/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/0oho3xpfcx3d7mhjl5snt2j4h5t9k0sj/',
+    category: 'casual',
+    description: 'Stack and run with colors!',
     reward: 15
   },
   {
-    id: 'candy-crush',
-    title: 'Candy Match 3',
-    thumbnail: 'https://img.gamemonetize.com/v0hvxk9mxt4b5mzcxqo1ht0hl9ixhm5/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/v0hvxk9mxt4b5mzcxqo1ht0hl9ixhm5/',
+    id: 'helix-jump',
+    title: 'Helix Jump',
+    thumbnail: 'https://img.gamemonetize.com/1c17r1z8rmtxn1l8tqv7g7p7c9d8b5l8/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/1c17r1z8rmtxn1l8tqv7g7p7c9d8b5l8/',
     category: 'casual',
-    description: 'Match candies and score!',
-    reward: 10
+    description: 'Bounce through the helix tower!',
+    reward: 15
   },
   {
-    id: 'flappy-bird',
-    title: 'Flappy Bird',
-    thumbnail: 'https://img.gamemonetize.com/mxt4b5mzcxqo1ht0hl9ixhm5v0hvxk9/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/mxt4b5mzcxqo1ht0hl9ixhm5v0hvxk9/',
-    category: 'casual',
-    description: 'Tap to fly and avoid pipes!',
-    reward: 10
+    id: 'chess',
+    title: 'Chess',
+    thumbnail: 'https://img.gamemonetize.com/3r7xngjq2vlbcb8r0m8r0xc9l8f0b8r0/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/3r7xngjq2vlbcb8r0m8r0xc9l8f0b8r0/',
+    category: 'puzzle',
+    description: 'Classic chess game!',
+    reward: 20
   },
   {
-    id: 'fruit-ninja',
-    title: 'Fruit Ninja',
-    thumbnail: 'https://img.gamemonetize.com/5mzcxqo1ht0hl9ixhm5v0hvxk9mxt4b/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/5mzcxqo1ht0hl9ixhm5v0hvxk9mxt4b/',
-    category: 'casual',
-    description: 'Slice fruits like a ninja!',
-    reward: 10
+    id: 'gun-master',
+    title: 'Gun Master',
+    thumbnail: 'https://img.gamemonetize.com/2u9g9gxpwz5lgw6e9qch5z8f5e8p9g7e/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/2u9g9gxpwz5lgw6e9qch5z8f5e8p9g7e/',
+    category: 'action',
+    description: 'Aim and shoot targets!',
+    reward: 25
   },
   {
-    id: 'drift-hunters',
-    title: 'Drift Hunters',
-    thumbnail: 'https://img.gamemonetize.com/qo1ht0hl9ixhm5v0hvxk9mxt4b5mzcx/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.com/qo1ht0hl9ixhm5v0hvxk9mxt4b5mzcx/',
+    id: 'parking-fury-3d',
+    title: 'Parking Fury 3D',
+    thumbnail: 'https://img.gamemonetize.com/qhm1n7z2x3c4v5b6n8m9q0w1e2r3t4y5/512x512.jpg',
+    embedUrl: 'https://html5.gamemonetize.co/qhm1n7z2x3c4v5b6n8m9q0w1e2r3t4y5/',
     category: 'racing',
-    description: 'Master the art of drifting!',
-    reward: 30
+    description: 'Park cars in tight spots!',
+    reward: 20
   }
 ];
 
