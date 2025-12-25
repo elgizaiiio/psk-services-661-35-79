@@ -3,127 +3,157 @@ export interface ExternalGame {
   title: string;
   thumbnail: string;
   embedUrl: string;
-  category: 'action' | 'racing' | 'puzzle' | 'sports' | 'casual';
+  category: 'action' | 'racing' | 'puzzle' | 'sports' | 'casual' | 'adventure' | 'simulation';
   description: string;
   reward: number;
 }
 
 export const externalGames: ExternalGame[] = [
+  // ألعاب أكشن
   {
-    id: 'subway-surfers',
-    title: 'Subway Surfers',
-    thumbnail: 'https://img.gamemonetize.com/12b8whsjuoo362g7nvr31fxzbs19jnrl/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/12b8whsjuoo362g7nvr31fxzbs19jnrl/',
+    id: 'gta-simulator',
+    title: 'GTA Simulator',
+    thumbnail: 'https://www.onlinegames.io/media/posts/416/responsive/GTA-Simulator-xs.jpg',
+    embedUrl: 'https://www.onlinegames.io/games/2023/unity2/gta-simulator/index.html',
     category: 'action',
-    description: 'Run, dodge trains and collect coins!',
-    reward: 25
-  },
-  {
-    id: 'moto-x3m',
-    title: 'Moto X3M',
-    thumbnail: 'https://img.gamemonetize.com/dpjd4cafq7knxvebtsvl23isv9o0d3vq/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/dpjd4cafq7knxvebtsvl23isv9o0d3vq/',
-    category: 'racing',
-    description: 'Extreme motorcycle stunts!',
+    description: 'استكشف المدينة مثل GTA!',
     reward: 30
   },
   {
-    id: 'basketball-stars',
-    title: 'Basketball Stars',
-    thumbnail: 'https://img.gamemonetize.com/rqh4acdr5ufucw4pfeazjxq0qaftgnv8/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/rqh4acdr5ufucw4pfeazjxq0qaftgnv8/',
-    category: 'sports',
-    description: 'Become a basketball legend!',
-    reward: 20
-  },
-  {
-    id: 'bubble-shooter',
-    title: 'Bubble Shooter',
-    thumbnail: 'https://img.gamemonetize.com/wt1tfo8ol71fabn4cvsojilamtozjfqg/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/wt1tfo8ol71fabn4cvsojilamtozjfqg/',
-    category: 'puzzle',
-    description: 'Pop all the bubbles!',
-    reward: 15
-  },
-  {
-    id: 'stickman-rush',
-    title: 'Stickman Rush',
-    thumbnail: 'https://img.gamemonetize.com/34nwkjqmsl1gc36sefoqb52hxd2570ub/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/34nwkjqmsl1gc36sefoqb52hxd2570ub/',
+    id: 'cs-online',
+    title: 'CS Online',
+    thumbnail: 'https://www.onlinegames.io/media/posts/434/responsive/CS-Online-xs.jpg',
+    embedUrl: 'https://www.onlinegames.io/games/2023/unity2/cs-online/index.html',
     category: 'action',
-    description: 'Fast-paced stickman running!',
-    reward: 20
+    description: 'لعبة إطلاق نار متعددة اللاعبين!',
+    reward: 35
   },
   {
-    id: 'drift-boss',
-    title: 'Drift Boss',
-    thumbnail: 'https://img.gamemonetize.com/e9gkn4lv0e8zq3bqmthxl1r8wxwlxjmt/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/e9gkn4lv0e8zq3bqmthxl1r8wxwlxjmt/',
+    id: 'masked-special-forces',
+    title: 'Masked Special Forces',
+    thumbnail: 'https://www.onlinegames.io/media/posts/310/responsive/Masked-Special-Forces-FPS-xs.jpg',
+    embedUrl: 'https://www.onlinegames.io/games/2022/unity2/masked-special-forces/index.html',
+    category: 'action',
+    description: 'معارك FPS مع تخصيص كامل!',
+    reward: 30
+  },
+  {
+    id: 'stickman-gta-city',
+    title: 'Stickman GTA City',
+    thumbnail: 'https://www.onlinegames.io/media/posts/900/responsive/stickman-gta-city-free-xs.jpg',
+    embedUrl: 'https://cloud.onlinegames.io/games/2024/unity3/stickman-gta-city/index-og.html',
+    category: 'action',
+    description: 'GTA بأسلوب Stickman!',
+    reward: 25
+  },
+  
+  // ألعاب سباقات
+  {
+    id: 'drift-king',
+    title: 'Drift King',
+    thumbnail: 'https://www.onlinegames.io/media/posts/729/responsive/Drift-King-xs.jpg',
+    embedUrl: 'https://www.onlinegames.io/games/2024/unity/drift-king/index.html',
     category: 'racing',
-    description: 'Master the art of drifting!',
+    description: 'ملك الدريفت مع 10 سيارات!',
     reward: 25
   },
   {
-    id: 'penalty-shooters-2',
-    title: 'Penalty Shooters 2',
-    thumbnail: 'https://img.gamemonetize.com/whmq2zgp2xc1kk1oe0j9e9hdh4nk6p7q/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/whmq2zgp2xc1kk1oe0j9e9hdh4nk6p7q/',
-    category: 'sports',
-    description: 'Score penalty kicks!',
-    reward: 20
+    id: 'drift-hunters-pro',
+    title: 'Drift Hunters Pro',
+    thumbnail: 'https://www.onlinegames.io/media/posts/397/responsive/Drift-Hunters-Pro-xs.jpg',
+    embedUrl: 'https://www.onlinegames.io/games/2023/unity/drift-hunters-pro/index.html',
+    category: 'racing',
+    description: 'سباقات دريفت 3D احترافية!',
+    reward: 30
   },
   {
-    id: 'stack-colors',
-    title: 'Stack Colors',
-    thumbnail: 'https://img.gamemonetize.com/0oho3xpfcx3d7mhjl5snt2j4h5t9k0sj/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/0oho3xpfcx3d7mhjl5snt2j4h5t9k0sj/',
-    category: 'casual',
-    description: 'Stack and run with colors!',
-    reward: 15
-  },
-  {
-    id: 'helix-jump',
-    title: 'Helix Jump',
-    thumbnail: 'https://img.gamemonetize.com/1c17r1z8rmtxn1l8tqv7g7p7c9d8b5l8/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/1c17r1z8rmtxn1l8tqv7g7p7c9d8b5l8/',
-    category: 'casual',
-    description: 'Bounce through the helix tower!',
-    reward: 15
-  },
-  {
-    id: 'chess',
-    title: 'Chess',
-    thumbnail: 'https://img.gamemonetize.com/3r7xngjq2vlbcb8r0m8r0xc9l8f0b8r0/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/3r7xngjq2vlbcb8r0m8r0xc9l8f0b8r0/',
-    category: 'puzzle',
-    description: 'Classic chess game!',
-    reward: 20
-  },
-  {
-    id: 'gun-master',
-    title: 'Gun Master',
-    thumbnail: 'https://img.gamemonetize.com/2u9g9gxpwz5lgw6e9qch5z8f5e8p9g7e/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/2u9g9gxpwz5lgw6e9qch5z8f5e8p9g7e/',
-    category: 'action',
-    description: 'Aim and shoot targets!',
+    id: 'madalin-stunt-cars',
+    title: 'Madalin Stunt Cars Pro',
+    thumbnail: 'https://www.onlinegames.io/media/posts/401/responsive/Madalin-Stunt-Cars-Pro-Game-xs.jpg',
+    embedUrl: 'https://www.onlinegames.io/games/2023/unity/madalin-stunt-cars-pro/index.html',
+    category: 'racing',
+    description: 'سيارات فاخرة وحركات جنونية!',
     reward: 25
   },
   {
-    id: 'parking-fury-3d',
-    title: 'Parking Fury 3D',
-    thumbnail: 'https://img.gamemonetize.com/qhm1n7z2x3c4v5b6n8m9q0w1e2r3t4y5/512x512.jpg',
-    embedUrl: 'https://html5.gamemonetize.co/qhm1n7z2x3c4v5b6n8m9q0w1e2r3t4y5/',
+    id: 'highway-traffic',
+    title: 'Highway Traffic',
+    thumbnail: 'https://www.onlinegames.io/media/posts/32/responsive/Highway-Traffic-2-xs.jpg',
+    embedUrl: 'https://www.onlinegames.io/games/2022/unity/highway-traffic/index.html',
     category: 'racing',
-    description: 'Park cars in tight spots!',
+    description: 'تجنب السيارات على الطريق السريع!',
+    reward: 20
+  },
+  {
+    id: 'burnout-city',
+    title: 'Burnout City',
+    thumbnail: 'https://www.onlinegames.io/media/posts/861/responsive/burnoutcity-xs.jpg',
+    embedUrl: 'https://cloud.onlinegames.io/games/2024/unity/burnout-city/index-og.html',
+    category: 'racing',
+    description: 'مدينة الليل والدريفت!',
+    reward: 25
+  },
+  
+  // ألعاب مغامرة
+  {
+    id: 'cubecraft-survival',
+    title: 'CubeCraft Survival',
+    thumbnail: 'https://www.onlinegames.io/media/posts/1113/responsive/cubecraft-survival-xs.webp',
+    embedUrl: 'https://cloud.onlinegames.io/games/2025/unity4/cubecraft-survival/index-og.html',
+    category: 'adventure',
+    description: 'مثل Minecraft - بناء واستكشاف!',
+    reward: 30
+  },
+  
+  // ألعاب محاكاة
+  {
+    id: 'real-flight-simulator',
+    title: 'Real Flight Simulator',
+    thumbnail: 'https://www.onlinegames.io/media/posts/342/responsive/Real-Flight-Simulator-2-xs.jpg',
+    embedUrl: 'https://cloud.onlinegames.io/games/2023/unity2/real-flight-simulator/index.html',
+    category: 'simulation',
+    description: 'قيادة طائرات واقعية!',
+    reward: 20
+  },
+  
+  // ألعاب رياضة
+  {
+    id: 'basket-hoop',
+    title: 'Basket Hoop',
+    thumbnail: 'https://www.onlinegames.io/media/posts/843/responsive/Basket-Hoop-xs.jpg',
+    embedUrl: 'https://cloud.onlinegames.io/games/2024/construct/311/basket-hoop/index-og.html',
+    category: 'sports',
+    description: 'كرة سلة بسيطة وممتعة!',
+    reward: 15
+  },
+  
+  // ألعاب عادية
+  {
+    id: 'stickman-parkour',
+    title: 'Stickman Parkour',
+    thumbnail: 'https://www.onlinegames.io/media/posts/871/responsive/stickman-parkour-OG-xs.jpg',
+    embedUrl: 'https://cloud.onlinegames.io/games/2024/construct/219/stickman-parkour/index-og.html',
+    category: 'casual',
+    description: 'باركور مع Stickman!',
+    reward: 15
+  },
+  {
+    id: 'get-on-top',
+    title: 'Get On Top',
+    thumbnail: 'https://www.onlinegames.io/media/posts/697/responsive/Get-on-Top-xs.jpg',
+    embedUrl: 'https://www.onlinegames.io/games/2024/code/6/get-on-top/index.html',
+    category: 'casual',
+    description: 'لاعبين 2 - مصارعة مضحكة!',
     reward: 20
   }
 ];
 
 export const categories = [
   { id: 'all', label: 'الكل', emoji: '🎮' },
-  { id: 'action', label: 'أكشن', emoji: '🏃' },
+  { id: 'action', label: 'أكشن', emoji: '🔫' },
   { id: 'racing', label: 'سباقات', emoji: '🚗' },
-  { id: 'puzzle', label: 'ألغاز', emoji: '🧩' },
+  { id: 'adventure', label: 'مغامرة', emoji: '⚔️' },
   { id: 'sports', label: 'رياضة', emoji: '⚽' },
-  { id: 'casual', label: 'عادية', emoji: '🎯' }
+  { id: 'casual', label: 'عادية', emoji: '🎯' },
+  { id: 'simulation', label: 'محاكاة', emoji: '✈️' }
 ];
