@@ -98,16 +98,16 @@ const Characters = () => {
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <button 
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/')}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
             >
               <ArrowRight className={`w-4 h-4 ${isRTL ? '' : 'rotate-180'}`} />
-              رجوع
+              Back
             </button>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
                 <Users className="w-6 h-6 text-primary" />
-                الشخصيات
+                Characters
               </h1>
             </div>
           </div>
@@ -115,19 +115,19 @@ const Characters = () => {
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-2">
             <Card className="p-3 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20 text-center">
-              <p className="text-xs text-muted-foreground">الرصيد</p>
+              <p className="text-xs text-muted-foreground">Balance</p>
               <p className="text-lg font-bold text-primary">{tokenBalance.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">VIRAL</p>
             </Card>
             <Card className="p-3 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20 text-center">
-              <p className="text-xs text-muted-foreground">مملوكة</p>
+              <p className="text-xs text-muted-foreground">Owned</p>
               <p className="text-lg font-bold text-green-400">{userCharacters.length}</p>
-              <p className="text-xs text-muted-foreground">شخصية</p>
+              <p className="text-xs text-muted-foreground">Characters</p>
             </Card>
             <Card className="p-3 bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/20 text-center">
-              <p className="text-xs text-muted-foreground">نشطة</p>
+              <p className="text-xs text-muted-foreground">Active</p>
               <p className="text-lg font-bold text-yellow-400 truncate text-sm">
-                {activeCharacter?.character?.name || 'لا يوجد'}
+                {activeCharacter?.character?.name || 'None'}
               </p>
             </Card>
           </div>
@@ -147,16 +147,16 @@ const Characters = () => {
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-lg text-foreground">{activeCharacter.character?.name}</h3>
-                  <Badge className="bg-primary text-primary-foreground">نشط</Badge>
+                  <Badge className="bg-primary text-primary-foreground">Active</Badge>
                 </div>
                 <div className="flex flex-wrap gap-2 mt-2 text-xs">
                   <span className="text-green-400 flex items-center gap-1">
                     <Zap className="w-3 h-3" />
-                    {activeCharacter.character?.mining_speed_multiplier}x سرعة
+                    {activeCharacter.character?.mining_speed_multiplier}x Speed
                   </span>
                   <span className="text-blue-400 flex items-center gap-1">
                     <Sparkles className="w-3 h-3" />
-                    +{activeCharacter.character?.boost_percentage}% تعزيز
+                    +{activeCharacter.character?.boost_percentage}% Boost
                   </span>
                 </div>
               </div>
@@ -170,16 +170,16 @@ const Characters = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-4 h-auto p-1 bg-muted/30">
             <TabsTrigger value="all" className="text-xs py-2">
-              الكل ({characters.length})
+              All ({characters.length})
             </TabsTrigger>
             <TabsTrigger value="owned" className="text-xs py-2">
-              مملوكة ({userCharacters.length})
+              Owned ({userCharacters.length})
             </TabsTrigger>
             <TabsTrigger value="professional" className="text-xs py-2 text-blue-400">
-              محترف ({tierCounts.professional})
+              Pro ({tierCounts.professional})
             </TabsTrigger>
             <TabsTrigger value="legendary" className="text-xs py-2 text-yellow-400">
-              أسطوري ({tierCounts.legendary})
+              Legend ({tierCounts.legendary})
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -189,11 +189,11 @@ const Characters = () => {
       <div className="px-4 py-2">
         <div className="flex flex-wrap gap-2 justify-center">
           {[
-            { tier: 'beginner', label: 'مبتدئ', color: 'bg-slate-500' },
-            { tier: 'professional', label: 'محترف', color: 'bg-blue-500' },
-            { tier: 'expert', label: 'خبير', color: 'bg-purple-500' },
-            { tier: 'master', label: 'ماستر', color: 'bg-orange-500' },
-            { tier: 'legendary', label: 'أسطوري', color: 'bg-yellow-500' },
+            { tier: 'beginner', label: 'Beginner', color: 'bg-slate-500' },
+            { tier: 'professional', label: 'Pro', color: 'bg-blue-500' },
+            { tier: 'expert', label: 'Expert', color: 'bg-purple-500' },
+            { tier: 'master', label: 'Master', color: 'bg-orange-500' },
+            { tier: 'legendary', label: 'Legend', color: 'bg-yellow-500' },
           ].map(({ tier, label, color }) => (
             <button
               key={tier}
@@ -218,7 +218,7 @@ const Characters = () => {
         ) : filteredCharacters.length === 0 ? (
           <Card className="p-8 text-center">
             <Crown className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">لا توجد شخصيات في هذه الفئة</p>
+            <p className="text-muted-foreground">No characters in this category</p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -250,24 +250,24 @@ const Characters = () => {
         <Card className="p-4 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border-indigo-500/20">
           <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-indigo-400" />
-            كيف تعمل الشخصيات؟
+            How Characters Work
           </h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-start gap-2">
               <span className="text-green-400">•</span>
-              كل شخصية تمنحك مضاعف سرعة تعدين مختلف
+              Each character gives you a different mining speed multiplier
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-400">•</span>
-              الشخصيات الأعلى مستوى تعطي تعزيزات أكبر
+              Higher tier characters provide bigger boosts
             </li>
             <li className="flex items-start gap-2">
               <span className="text-purple-400">•</span>
-              يمكنك امتلاك عدة شخصيات وتفعيل واحدة فقط
+              You can own multiple characters but only activate one
             </li>
             <li className="flex items-start gap-2">
               <span className="text-yellow-400">•</span>
-              الشخصيات الأسطورية تمنح مكافآت جاكبوت إضافية
+              Legendary characters give extra jackpot bonuses
             </li>
           </ul>
         </Card>
