@@ -42,7 +42,7 @@ const tokenPackages: TokenPackage[] = [
     name: 'Starter',
     tokens: 500,
     bonusTokens: 0,
-    price: 0.5,
+    price: 0.8,
     icon: <Coins className="w-6 h-6" />,
     gradient: 'from-blue-400 to-cyan-500'
   },
@@ -51,7 +51,7 @@ const tokenPackages: TokenPackage[] = [
     name: 'Basic',
     tokens: 1200,
     bonusTokens: 100,
-    price: 1,
+    price: 1.5,
     icon: <Zap className="w-6 h-6" />,
     gradient: 'from-green-400 to-emerald-500'
   },
@@ -60,7 +60,7 @@ const tokenPackages: TokenPackage[] = [
     name: 'Popular',
     tokens: 3000,
     bonusTokens: 500,
-    price: 2,
+    price: 3.5,
     popular: true,
     discount: 15,
     icon: <Star className="w-6 h-6" />,
@@ -71,7 +71,7 @@ const tokenPackages: TokenPackage[] = [
     name: 'Premium',
     tokens: 8000,
     bonusTokens: 2000,
-    price: 5,
+    price: 8,
     discount: 20,
     icon: <Flame className="w-6 h-6" />,
     gradient: 'from-orange-400 to-red-500'
@@ -81,7 +81,7 @@ const tokenPackages: TokenPackage[] = [
     name: 'Elite',
     tokens: 20000,
     bonusTokens: 6000,
-    price: 10,
+    price: 15,
     bestValue: true,
     discount: 30,
     icon: <Crown className="w-6 h-6" />,
@@ -92,7 +92,7 @@ const tokenPackages: TokenPackage[] = [
     name: 'Whale',
     tokens: 50000,
     bonusTokens: 20000,
-    price: 20,
+    price: 30,
     discount: 40,
     icon: <Sparkles className="w-6 h-6" />,
     gradient: 'from-indigo-400 to-purple-600'
