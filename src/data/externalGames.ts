@@ -1,3 +1,25 @@
+// Game thumbnail imports
+import game2048 from '@/assets/games/2048.png';
+import gameHextris from '@/assets/games/hextris.png';
+import gameChess from '@/assets/games/chess.png';
+import gamePacman from '@/assets/games/pacman.png';
+import gameClumsyBird from '@/assets/games/clumsy-bird.png';
+import gameAsteroids from '@/assets/games/asteroids.png';
+import gameHexgl from '@/assets/games/hexgl.png';
+import gamePool from '@/assets/games/pool.png';
+import gameDeadValley from '@/assets/games/dead-valley.png';
+import gameUnderrun from '@/assets/games/underrun.png';
+import gameFireNIce from '@/assets/games/fire-n-ice.png';
+import gameTower from '@/assets/games/tower.png';
+import gameMissile from '@/assets/games/missile.png';
+import gameNsShaft from '@/assets/games/ns-shaft.png';
+import gameEightQueens from '@/assets/games/eight-queens.png';
+import gameTwistyPolyhedra from '@/assets/games/twisty-polyhedra.png';
+import gameMahJongg from '@/assets/games/mah-jongg.png';
+import gameTapTapTap from '@/assets/games/tap-tap-tap.png';
+import gameParticleClicker from '@/assets/games/particle-clicker.png';
+import game3dCity from '@/assets/games/3d-city.png';
+
 export interface ExternalGame {
   id: string;
   title: string;
@@ -13,7 +35,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: '2048',
     title: '2048',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: game2048,
     embedUrl: 'https://fosiper.com/games/2048/',
     category: 'puzzle',
     description: 'اجمع الأرقام للوصول إلى 2048!',
@@ -22,7 +44,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'hextris',
     title: 'Hextris',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameHextris,
     embedUrl: 'https://fosiper.com/games/hextris/',
     category: 'puzzle',
     description: 'تتريس سداسي سريع ومسبب للإدمان!',
@@ -31,7 +53,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'eight-queens',
     title: 'Eight Queens',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameEightQueens,
     embedUrl: 'https://fosiper.com/games/eight-queens/',
     category: 'puzzle',
     description: 'ضع 8 ملكات على الشطرنج!',
@@ -40,7 +62,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'twisty-polyhedra',
     title: 'Twisty Polyhedra',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameTwistyPolyhedra,
     embedUrl: 'https://fosiper.com/games/twisty-polyhedra/',
     category: 'puzzle',
     description: 'مكعب روبيك ثلاثي الأبعاد!',
@@ -51,7 +73,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'pacman',
     title: 'Pacman',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gamePacman,
     embedUrl: 'https://fosiper.com/games/pacman/',
     category: 'arcade',
     description: 'باكمان الكلاسيكي!',
@@ -60,7 +82,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'clumsy-bird',
     title: 'Clumsy Bird',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameClumsyBird,
     embedUrl: 'https://fosiper.com/games/clumsy-bird/',
     category: 'arcade',
     description: 'طائر أخرق - مثل Flappy Bird!',
@@ -69,7 +91,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'asteroids',
     title: 'Asteroids',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameAsteroids,
     embedUrl: 'https://fosiper.com/games/asteroids/',
     category: 'arcade',
     description: 'دمر الكويكبات في الفضاء!',
@@ -78,7 +100,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'ns-shaft',
     title: 'NS-Shaft',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameNsShaft,
     embedUrl: 'https://fosiper.com/games/ns-shaft/',
     category: 'arcade',
     description: 'اقفز على المنصات واهبط!',
@@ -87,7 +109,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'missile-game',
     title: 'Missile Game',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameMissile,
     embedUrl: 'https://fosiper.com/games/missile-game/',
     category: 'arcade',
     description: 'تفادي العقبات بالصاروخ!',
@@ -96,7 +118,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'tower',
     title: 'Tower Game',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameTower,
     embedUrl: 'https://fosiper.com/games/tower/',
     category: 'arcade',
     description: 'ابني أعلى برج ممكن!',
@@ -107,7 +129,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'hexgl',
     title: 'HexGL',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameHexgl,
     embedUrl: 'https://fosiper.com/games/hexgl/',
     category: 'racing',
     description: 'سباق فضائي 3D مذهل!',
@@ -118,7 +140,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'chess',
     title: 'Chess',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameChess,
     embedUrl: 'https://fosiper.com/games/chess/',
     category: 'strategy',
     description: 'لعبة الشطرنج الكلاسيكية!',
@@ -127,7 +149,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'mah-jongg',
     title: 'Mah-jongg',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameMahJongg,
     embedUrl: 'https://fosiper.com/games/mah-jongg/',
     category: 'strategy',
     description: 'لعبة ماهجونج الصينية!',
@@ -138,7 +160,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'pool',
     title: 'Pool Game',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gamePool,
     embedUrl: 'https://fosiper.com/games/pool/',
     category: 'sports',
     description: 'بلياردو كلاسيكي!',
@@ -149,7 +171,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'dead-valley',
     title: 'Dead Valley',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameDeadValley,
     embedUrl: 'https://fosiper.com/games/dead-valley/',
     category: 'action',
     description: 'اهرب من الزومبي!',
@@ -158,7 +180,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'underrun',
     title: 'Underrun',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameUnderrun,
     embedUrl: 'https://fosiper.com/games/underrun/',
     category: 'action',
     description: 'إطلاق نار من منظور علوي!',
@@ -167,7 +189,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'fire-n-ice',
     title: 'Fire n Ice',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameFireNIce,
     embedUrl: 'https://fosiper.com/games/fire-n-ice/',
     category: 'action',
     description: 'مغامرة النار والجليد!',
@@ -178,7 +200,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'tap-tap-tap',
     title: 'Tap Tap Tap',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameTapTapTap,
     embedUrl: 'https://fosiper.com/games/tap-tap-tap/',
     category: 'casual',
     description: 'انقر بأسرع ما يمكن!',
@@ -187,7 +209,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: 'particle-clicker',
     title: 'Particle Clicker',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: gameParticleClicker,
     embedUrl: 'https://fosiper.com/games/particle-clicker/',
     category: 'casual',
     description: 'اكتشف فيزياء الجسيمات!',
@@ -196,7 +218,7 @@ export const externalGames: ExternalGame[] = [
   {
     id: '3d-city',
     title: '3D City',
-    thumbnail: '/lovable-uploads/5964f950-36a7-430c-a887-4eea91ad4973.png',
+    thumbnail: game3dCity,
     embedUrl: 'https://fosiper.com/games/3d.city/',
     category: 'casual',
     description: 'ابني مدينتك ثلاثية الأبعاد!',
