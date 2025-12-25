@@ -53,6 +53,8 @@ import SpinWheel from "./pages/SpinWheel";
 import CoinFlip from "./pages/CoinFlip";
 import DiceGame from "./pages/DiceGame";
 import MemoryGame from "./pages/MemoryGame";
+import Arcade from "./pages/Arcade";
+import ExternalGame from "./pages/ExternalGame";
 import SplashScreen from "./components/SplashScreen";
 
 
@@ -165,6 +167,8 @@ const App = () => (
                       <Route path="/coin-flip" element={<CoinFlip />} />
                       <Route path="/dice-game" element={<DiceGame />} />
                       <Route path="/memory-game" element={<MemoryGame />} />
+                      <Route path="/arcade" element={<Arcade />} />
+                      <Route path="/arcade/game/:gameId" element={<ExternalGame />} />
                     </Routes>
                     <BottomNavigation />
                   </div>
