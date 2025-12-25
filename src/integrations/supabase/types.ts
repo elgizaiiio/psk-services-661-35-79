@@ -1060,11 +1060,13 @@ export type Database = {
           description: string | null
           description_ar: string | null
           description_ru: string | null
+          evolution_costs: Json
           extra_coins: number
           id: string
           image_url: string | null
           is_active: boolean
           jackpot_chance_bonus: number
+          max_evolution_stages: number
           mining_speed_multiplier: number
           name: string
           name_ar: string
@@ -1080,11 +1082,13 @@ export type Database = {
           description?: string | null
           description_ar?: string | null
           description_ru?: string | null
+          evolution_costs?: Json
           extra_coins?: number
           id?: string
           image_url?: string | null
           is_active?: boolean
           jackpot_chance_bonus?: number
+          max_evolution_stages?: number
           mining_speed_multiplier?: number
           name: string
           name_ar: string
@@ -1100,11 +1104,13 @@ export type Database = {
           description?: string | null
           description_ar?: string | null
           description_ru?: string | null
+          evolution_costs?: Json
           extra_coins?: number
           id?: string
           image_url?: string | null
           is_active?: boolean
           jackpot_chance_bonus?: number
+          max_evolution_stages?: number
           mining_speed_multiplier?: number
           name?: string
           name_ar?: string
@@ -1312,6 +1318,7 @@ export type Database = {
       user_characters: {
         Row: {
           character_id: string
+          evolution_stage: number
           experience: number
           id: string
           is_active: boolean
@@ -1321,6 +1328,7 @@ export type Database = {
         }
         Insert: {
           character_id: string
+          evolution_stage?: number
           experience?: number
           id?: string
           is_active?: boolean
@@ -1330,6 +1338,7 @@ export type Database = {
         }
         Update: {
           character_id?: string
+          evolution_stage?: number
           experience?: number
           id?: string
           is_active?: boolean
