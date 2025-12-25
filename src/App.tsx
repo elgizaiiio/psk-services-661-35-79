@@ -48,6 +48,7 @@ import Achievements from "./pages/Achievements";
 import VIPSubscription from "./pages/VIPSubscription";
 import TokenStore from "./pages/TokenStore";
 import DailyTasks from "./pages/DailyTasks";
+import MiniGames from "./pages/MiniGames";
 import SplashScreen from "./components/SplashScreen";
 
 
@@ -155,6 +156,7 @@ const App = () => (
                       <Route path="/vip" element={<VIPSubscription />} />
                       <Route path="/token-store" element={<TokenStore />} />
                       <Route path="/daily-tasks" element={<DailyTasks />} />
+                      <Route path="/mini-games" element={<MiniGames />} />
                     </Routes>
                     <BottomNavigation />
                   </div>
