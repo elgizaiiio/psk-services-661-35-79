@@ -49,6 +49,10 @@ import VIPSubscription from "./pages/VIPSubscription";
 import TokenStore from "./pages/TokenStore";
 import DailyTasks from "./pages/DailyTasks";
 import MiniGames from "./pages/MiniGames";
+import SpinWheel from "./pages/SpinWheel";
+import CoinFlip from "./pages/CoinFlip";
+import DiceGame from "./pages/DiceGame";
+import MemoryGame from "./pages/MemoryGame";
 import SplashScreen from "./components/SplashScreen";
 
 
@@ -157,6 +161,10 @@ const App = () => (
                       <Route path="/token-store" element={<TokenStore />} />
                       <Route path="/daily-tasks" element={<DailyTasks />} />
                       <Route path="/mini-games" element={<MiniGames />} />
+                      <Route path="/spin-wheel" element={<SpinWheel />} />
+                      <Route path="/coin-flip" element={<CoinFlip />} />
+                      <Route path="/dice-game" element={<DiceGame />} />
+                      <Route path="/memory-game" element={<MemoryGame />} />
                     </Routes>
                     <BottomNavigation />
                   </div>

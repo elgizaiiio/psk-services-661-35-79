@@ -7,6 +7,38 @@ const MiniGames: React.FC = () => {
 
   const games = [
     {
+      id: 'spin-wheel',
+      title: 'عجلة الحظ',
+      description: 'دوّر واربح جوائز!',
+      path: '/spin-wheel',
+      reward: '1,000+',
+      emoji: '🎡'
+    },
+    {
+      id: 'coin-flip',
+      title: 'قلب العملة',
+      description: 'ضاعف رصيدك!',
+      path: '/coin-flip',
+      reward: '2x',
+      emoji: '🪙'
+    },
+    {
+      id: 'dice',
+      title: 'لعبة النرد',
+      description: 'خمّن واربح 5x!',
+      path: '/dice-game',
+      reward: '5x',
+      emoji: '🎲'
+    },
+    {
+      id: 'memory',
+      title: 'لعبة الذاكرة',
+      description: 'اختبر ذاكرتك!',
+      path: '/memory-game',
+      reward: '150+',
+      emoji: '🧠'
+    },
+    {
       id: 'slots',
       title: 'Slots',
       description: 'Spin & win coins!',
@@ -15,7 +47,7 @@ const MiniGames: React.FC = () => {
       emoji: '🎰'
     },
     {
-      id: 'runner',
+      id: '2048',
       title: '2048 Game',
       description: 'Classic puzzle game',
       path: '/game',
@@ -25,7 +57,7 @@ const MiniGames: React.FC = () => {
     {
       id: 'challenges',
       title: 'Challenges',
-      description: 'Complete daily challenges',
+      description: 'Complete challenges',
       path: '/challenges',
       reward: '2,000+',
       emoji: '🏆'
