@@ -272,18 +272,33 @@ const VIPSubscription = () => {
 
         {/* VIP Benefits Quick View */}
         <div className="grid grid-cols-3 gap-3 mb-8">
-          <div className="bg-muted/50 rounded-xl p-3 text-center">
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/mining')}
+            className="bg-muted/50 rounded-xl p-3 text-center cursor-pointer hover:bg-muted transition-colors"
+          >
             <Rocket className="w-6 h-6 text-primary mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">Fast Mining</p>
-          </div>
-          <div className="bg-muted/50 rounded-xl p-3 text-center">
+          </motion.div>
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate('/daily-tasks')}
+            className="bg-muted/50 rounded-xl p-3 text-center cursor-pointer hover:bg-muted transition-colors"
+          >
             <Gift className="w-6 h-6 text-primary mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">Daily Rewards</p>
-          </div>
-          <div className="bg-muted/50 rounded-xl p-3 text-center">
+          </motion.div>
+          <motion.div 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => toast.info('VIP Support available 24/7 via Telegram @VIRALSupport')}
+            className="bg-muted/50 rounded-xl p-3 text-center cursor-pointer hover:bg-muted transition-colors"
+          >
             <Shield className="w-6 h-6 text-primary mx-auto mb-1" />
             <p className="text-xs text-muted-foreground">Priority Support</p>
-          </div>
+          </motion.div>
         </div>
 
         {/* Plans */}
