@@ -2,12 +2,14 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { MiningCharacter, UserCharacter } from '@/types/mining';
 import { toast } from 'sonner';
+import { useDirectTonPayment } from './useDirectTonPayment';
 
 export const useMiningCharacters = (userId: string | undefined) => {
   const [characters, setCharacters] = useState<MiningCharacter[]>([]);
   const [userCharacters, setUserCharacters] = useState<UserCharacter[]>([]);
   const [activeCharacter, setActiveCharacter] = useState<UserCharacter | null>(null);
   const [loading, setLoading] = useState(true);
+  const { sendDirectPayment, isProcessing, isWalletConnected } = useDirectTonPayment();
 
   const fetchCharacters = useCallback(async () => {
     try {
@@ -15,7 +17,7 @@ export const useMiningCharacters = (userId: string | undefined) => {
         .from('mining_characters')
         .select('*')
         .eq('is_active', true)
-        .order('price_tokens', { ascending: true });
+        .order('price_ton', { ascending: true });
 
       if (error) throw error;
       
@@ -80,7 +82,7 @@ export const useMiningCharacters = (userId: string | undefined) => {
         return false;
       }
 
-      // For free characters (beginner), just add directly
+      // For free characters, just add directly
       if (character.price_ton === 0 && character.price_tokens === 0) {
         const { error } = await supabase
           .from('user_characters')
@@ -96,6 +98,37 @@ export const useMiningCharacters = (userId: string | undefined) => {
         toast.success('Character acquired!');
         await fetchUserCharacters();
         return true;
+      }
+
+      if (paymentMethod === 'ton') {
+        if (!isWalletConnected) {
+          toast.error('Please connect your TON wallet first');
+          return false;
+        }
+
+        const success = await sendDirectPayment({
+          amount: character.price_ton,
+          description: `Purchase character: ${character.name}`,
+          productType: 'mining_upgrade',
+          productId: characterId
+        });
+
+        if (success) {
+          const { error } = await supabase
+            .from('user_characters')
+            .insert({
+              user_id: userId,
+              character_id: characterId,
+              is_active: userCharacters.length === 0,
+              evolution_stage: 1
+            });
+
+          if (error) throw error;
+          
+          await fetchUserCharacters();
+          return true;
+        }
+        return false;
       }
 
       if (paymentMethod === 'tokens') {
@@ -139,8 +172,6 @@ export const useMiningCharacters = (userId: string | undefined) => {
         return true;
       }
 
-      // TON payment would need wallet integration
-      toast.info('TON payment coming soon');
       return false;
     } catch (error) {
       console.error('Error purchasing character:', error);
@@ -149,7 +180,15 @@ export const useMiningCharacters = (userId: string | undefined) => {
     }
   };
 
-  const evolveCharacter = async (userCharacterId: string) => {
+  // Calculate TON cost for evolution based on stage
+  const getEvolutionTonCost = (character: MiningCharacter, currentStage: number): number => {
+    // Base evolution costs in TON (derived from token costs)
+    const baseTokenCost = character.evolution_costs[currentStage - 1] || 0;
+    // Convert tokens to TON (roughly 1000 tokens = 0.1 TON)
+    return Number((baseTokenCost / 10000).toFixed(2));
+  };
+
+  const evolveCharacter = async (userCharacterId: string, paymentMethod: 'ton' | 'tokens' = 'tokens') => {
     if (!userId) return false;
 
     const userChar = userCharacters.find(uc => uc.id === userCharacterId);
@@ -166,15 +205,46 @@ export const useMiningCharacters = (userId: string | undefined) => {
       return false;
     }
 
-    // Get cost for next evolution (0-indexed, so currentStage - 1 gives current cost)
-    const nextEvolutionCost = evolutionCosts[currentStage - 1];
-    if (!nextEvolutionCost) {
+    // Get cost for next evolution
+    const nextEvolutionTokenCost = evolutionCosts[currentStage - 1];
+    const nextEvolutionTonCost = getEvolutionTonCost(character, currentStage);
+    
+    if (!nextEvolutionTokenCost) {
       toast.error('Evolution cost not found');
       return false;
     }
 
     try {
-      // Check token balance
+      if (paymentMethod === 'ton') {
+        if (!isWalletConnected) {
+          toast.error('Please connect your TON wallet first');
+          return false;
+        }
+
+        const success = await sendDirectPayment({
+          amount: nextEvolutionTonCost,
+          description: `Evolve ${character.name} to stage ${currentStage + 1}`,
+          productType: 'mining_upgrade',
+          productId: userCharacterId,
+          upgradeType: 'power'
+        });
+
+        if (success) {
+          const { error: evolveError } = await supabase
+            .from('user_characters')
+            .update({ evolution_stage: currentStage + 1 })
+            .eq('id', userCharacterId);
+
+          if (evolveError) throw evolveError;
+
+          toast.success(`Character evolved to stage ${currentStage + 1}!`);
+          await fetchUserCharacters();
+          return true;
+        }
+        return false;
+      }
+
+      // Token payment
       const { data: userData, error: userError } = await supabase
         .from('bolt_users')
         .select('token_balance')
@@ -183,8 +253,8 @@ export const useMiningCharacters = (userId: string | undefined) => {
 
       if (userError) throw userError;
 
-      if ((userData?.token_balance || 0) < nextEvolutionCost) {
-        toast.error(`Not enough BOLT! Need ${nextEvolutionCost} BOLT`);
+      if ((userData?.token_balance || 0) < nextEvolutionTokenCost) {
+        toast.error(`Not enough BOLT! Need ${nextEvolutionTokenCost} BOLT`);
         return false;
       }
 
@@ -192,7 +262,7 @@ export const useMiningCharacters = (userId: string | undefined) => {
       const { error: updateError } = await supabase
         .from('bolt_users')
         .update({ 
-          token_balance: (userData?.token_balance || 0) - nextEvolutionCost 
+          token_balance: (userData?.token_balance || 0) - nextEvolutionTokenCost 
         })
         .eq('id', userId);
 
@@ -258,9 +328,12 @@ export const useMiningCharacters = (userId: string | undefined) => {
     userCharacters,
     activeCharacter,
     loading,
+    isProcessing,
+    isWalletConnected,
     purchaseCharacter,
     activateCharacter,
     evolveCharacter,
+    getEvolutionTonCost,
     refetch: () => Promise.all([fetchCharacters(), fetchUserCharacters()])
   };
 };
