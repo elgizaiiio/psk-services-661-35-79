@@ -109,16 +109,16 @@ const Achievements = () => {
         <div className="px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <button 
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/')}
               className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
             >
               <ArrowRight className={`w-4 h-4 ${isRTL ? '' : 'rotate-180'}`} />
-              رجوع
+              Back
             </button>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
                 <Trophy className="w-6 h-6 text-yellow-500" />
-                الإنجازات
+                Achievements
               </h1>
             </div>
           </div>
@@ -126,16 +126,16 @@ const Achievements = () => {
           {/* Stats Row */}
           <div className="grid grid-cols-3 gap-2">
             <Card className="p-3 bg-gradient-to-br from-yellow-500/10 to-orange-500/5 border-yellow-500/20 text-center">
-              <p className="text-xs text-muted-foreground">مكتملة</p>
+              <p className="text-xs text-muted-foreground">Completed</p>
               <p className="text-lg font-bold text-yellow-400">{unlockedCount}/{achievements.length}</p>
             </Card>
             <Card className="p-3 bg-gradient-to-br from-green-500/10 to-emerald-500/5 border-green-500/20 text-center">
-              <p className="text-xs text-muted-foreground">مكتسبة</p>
+              <p className="text-xs text-muted-foreground">Earned</p>
               <p className="text-lg font-bold text-green-400">{totalTokensEarned.toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">VIRAL</p>
             </Card>
             <Card className="p-3 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border-blue-500/20 text-center">
-              <p className="text-xs text-muted-foreground">متبقية</p>
+              <p className="text-xs text-muted-foreground">Remaining</p>
               <p className="text-lg font-bold text-blue-400">{(totalPossibleTokens - totalTokensEarned).toLocaleString()}</p>
               <p className="text-xs text-muted-foreground">VIRAL</p>
             </Card>
@@ -147,7 +147,7 @@ const Achievements = () => {
       <div className="px-4 py-3">
         <Card className="p-4 bg-gradient-to-r from-yellow-500/10 via-orange-500/10 to-red-500/10 border-yellow-500/20">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-foreground">التقدم الكلي</span>
+            <span className="text-sm font-medium text-foreground">Total Progress</span>
             <span className="text-sm font-bold text-yellow-400">
               {Math.round((unlockedCount / achievements.length) * 100)}%
             </span>
@@ -157,7 +157,7 @@ const Achievements = () => {
             className="h-3 bg-yellow-900/30"
           />
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            {achievements.length - unlockedCount} إنجازات متبقية للفتح
+            {achievements.length - unlockedCount} achievements left to unlock
           </p>
         </Card>
       </div>
@@ -167,16 +167,16 @@ const Achievements = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-4 h-auto p-1 bg-muted/30">
             <TabsTrigger value="all" className="text-xs py-2">
-              الكل ({achievements.length})
+              All ({achievements.length})
             </TabsTrigger>
             <TabsTrigger value="unlocked" className="text-xs py-2 text-green-400">
-              مكتملة ({unlockedCount})
+              Done ({unlockedCount})
             </TabsTrigger>
             <TabsTrigger value="locked" className="text-xs py-2 text-gray-400">
-              قيد التنفيذ ({achievements.length - unlockedCount})
+              In Progress ({achievements.length - unlockedCount})
             </TabsTrigger>
             <TabsTrigger value="mining" className="text-xs py-2 text-orange-400">
-              تعدين
+              Mining
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -202,7 +202,7 @@ const Achievements = () => {
                 } ${categoryColors[category]}`}
               >
                 {categoryIcons[category]}
-                <span>{labels.ar}</span>
+                <span>{labels.en}</span>
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                   {completed}/{count}
                 </Badge>
@@ -221,7 +221,7 @@ const Achievements = () => {
         ) : filteredAchievements.length === 0 ? (
           <Card className="p-8 text-center">
             <Trophy className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <p className="text-muted-foreground">لا توجد إنجازات في هذه الفئة</p>
+            <p className="text-muted-foreground">No achievements in this category</p>
           </Card>
         ) : (
           <div className="space-y-3">
@@ -266,12 +266,12 @@ const Achievements = () => {
                               {isUnlocked ? (
                                 <Badge className="bg-green-500/20 text-green-400 border-green-500/30">
                                   <Unlock className="w-3 h-3 mr-1" />
-                                  مكتمل
+                                  Done
                                 </Badge>
                               ) : (
                                 <Badge variant="outline" className="text-gray-400 border-gray-500/30">
                                   <Lock className="w-3 h-3 mr-1" />
-                                  قيد التنفيذ
+                                  In Progress
                                 </Badge>
                               )}
                             </div>
@@ -284,7 +284,7 @@ const Achievements = () => {
                             {!isUnlocked && (
                               <div className="mb-2">
                                 <div className="flex justify-between text-xs mb-1">
-                                  <span className="text-muted-foreground">التقدم</span>
+                                  <span className="text-muted-foreground">Progress</span>
                                   <span className="text-foreground font-medium">
                                     {currentValue}/{achievement.target_value}
                                   </span>
@@ -299,14 +299,14 @@ const Achievements = () => {
                             }`}>
                               <Gift className="w-4 h-4" />
                               <span className="text-sm font-medium">
-                                {isUnlocked ? 'تم الحصول على' : 'المكافأة:'} {achievement.reward_tokens.toLocaleString()} VIRAL
+                                {isUnlocked ? 'Earned:' : 'Reward:'} {achievement.reward_tokens.toLocaleString()} VIRAL
                               </span>
                             </div>
 
                             {/* Unlocked Date */}
                             {isUnlocked && userAchievement?.unlocked_at && (
                               <p className="text-xs text-muted-foreground mt-2">
-                                تم الفتح في: {new Date(userAchievement.unlocked_at).toLocaleDateString('ar-EG')}
+                                Unlocked: {new Date(userAchievement.unlocked_at).toLocaleDateString('en-US')}
                               </p>
                             )}
                           </div>
@@ -326,24 +326,24 @@ const Achievements = () => {
         <Card className="p-4 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border-indigo-500/20">
           <h3 className="font-bold text-foreground mb-3 flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-indigo-400" />
-            كيف تكسب الإنجازات؟
+            How to Earn Achievements?
           </h3>
           <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-start gap-2">
               <span className="text-orange-400">⛏️</span>
-              أكمل جلسات التعدين لفتح إنجازات التعدين
+              Complete mining sessions to unlock mining achievements
             </li>
             <li className="flex items-start gap-2">
               <span className="text-purple-400">🎭</span>
-              اشترِ شخصيات جديدة لفتح إنجازات الشخصيات
+              Purchase new characters to unlock character achievements
             </li>
             <li className="flex items-start gap-2">
               <span className="text-blue-400">🎯</span>
-              أكمل التحديات اليومية والأسبوعية
+              Complete daily and weekly challenges
             </li>
             <li className="flex items-start gap-2">
               <span className="text-green-400">🦋</span>
-              ادعُ أصدقاءك لفتح إنجازات اجتماعية
+              Invite friends to unlock social achievements
             </li>
           </ul>
         </Card>
