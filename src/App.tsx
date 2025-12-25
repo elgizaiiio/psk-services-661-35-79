@@ -17,7 +17,6 @@ import SplashScreen from "./components/SplashScreen";
 const ServerStore = lazy(() => import("./pages/ServerStore"));
 const UpgradeCenter = lazy(() => import("./pages/UpgradeCenter"));
 const Tasks = lazy(() => import("./pages/Tasks"));
-const Game = lazy(() => import("./pages/Game"));
 const Games = lazy(() => import("./pages/Games"));
 const Apps = lazy(() => import("./pages/Apps"));
 const Skins = lazy(() => import("./pages/Skins"));
@@ -37,7 +36,6 @@ const AiSubscription = lazy(() => import("./pages/AiSubscription"));
 const MiningServers = lazy(() => import("./pages/MiningServers"));
 const Events = lazy(() => import("./pages/Events"));
 const AiImageStore = lazy(() => import("./pages/AiImageStore"));
-const Game2048Store = lazy(() => import("./pages/Game2048Store"));
 const Giveaways = lazy(() => import("./pages/Giveaways"));
 const CreateTask = lazy(() => import("./pages/CreateTask"));
 const Admin = lazy(() => import("./pages/Admin"));
@@ -52,11 +50,6 @@ const TokenStore = lazy(() => import("./pages/TokenStore"));
 const DailyTasks = lazy(() => import("./pages/DailyTasks"));
 const MiniGames = lazy(() => import("./pages/MiniGames"));
 const SpinWheel = lazy(() => import("./pages/SpinWheel"));
-const CoinFlip = lazy(() => import("./pages/CoinFlip"));
-const DiceGame = lazy(() => import("./pages/DiceGame"));
-const MemoryGame = lazy(() => import("./pages/MemoryGame"));
-const Arcade = lazy(() => import("./pages/Arcade"));
-const ExternalGame = lazy(() => import("./pages/ExternalGame"));
 
 // Loading component
 const PageLoader = () => (
@@ -140,7 +133,6 @@ const App = () => (
                         <Route path="/runner-game" element={<RunnerGamePage />} />
                       <Route path="/ai-generator" element={<AiGenerator />} />
                       <Route path="/profile" element={<Profile />} />
-                      <Route path="/game" element={<Game />} />
                       <Route path="/skins" element={<Skins />} />
                       <Route path="/leaderboard" element={<Leaderboard />} />
                       <Route path="/tasks" element={<Tasks />} />
@@ -156,7 +148,6 @@ const App = () => (
                       <Route path="/mining-servers" element={<MiningServers />} />
                       <Route path="/events" element={<Events />} />
                       <Route path="/ai-image-store" element={<AiImageStore />} />
-                      <Route path="/game-2048-store" element={<Game2048Store />} />
                       <Route path="/giveaways" element={<Giveaways />} />
                       <Route path="/admin" element={<Admin />} />
                       <Route path="/create-task" element={<CreateTask />} />
@@ -171,11 +162,6 @@ const App = () => (
                       <Route path="/daily-tasks" element={<DailyTasks />} />
                       <Route path="/mini-games" element={<MiniGames />} />
                       <Route path="/spin-wheel" element={<SpinWheel />} />
-                      <Route path="/coin-flip" element={<CoinFlip />} />
-                      <Route path="/dice-game" element={<DiceGame />} />
-                      <Route path="/memory-game" element={<MemoryGame />} />
-                      <Route path="/arcade" element={<Arcade />} />
-                        <Route path="/arcade/game/:gameId" element={<ExternalGame />} />
                       </Routes>
                     </Suspense>
                     <BottomNavigation />
