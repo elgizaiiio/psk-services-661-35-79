@@ -11,14 +11,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Users, Crown, Zap, Sparkles, Loader2, Gift } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
-// Character images mapping
-import shadowRunnerImg from '@/assets/characters/shadow-runner.png';
-import boltStarterImg from '@/assets/characters/bolt-starter.png';
-import thunderDragonImg from '@/assets/characters/thunder-dragon.png';
-import infinityPhoenixImg from '@/assets/characters/infinity-phoenix.png';
-import diamondEmperorImg from '@/assets/characters/diamond-emperor.png';
-import cyberNinjaImg from '@/assets/characters/cyber-ninja.png';
-import crystalMageImg from '@/assets/characters/crystal-mage.png';
+// Anime 3D Character images mapping
+import shadowRunnerImg from '@/assets/characters/shadow-runner-3d.png';
+import boltStarterImg from '@/assets/characters/bolt-starter-3d.png';
+import thunderDragonImg from '@/assets/characters/thunder-dragon-3d.png';
+import infinityPhoenixImg from '@/assets/characters/infinity-phoenix-3d.png';
+import diamondEmperorImg from '@/assets/characters/diamond-emperor-3d.png';
+import cyberNinjaImg from '@/assets/characters/cyber-ninja-3d.png';
+import crystalMageImg from '@/assets/characters/crystal-mage-3d.png';
 
 const characterImages: Record<string, string> = {
   'Shadow Runner': shadowRunnerImg,

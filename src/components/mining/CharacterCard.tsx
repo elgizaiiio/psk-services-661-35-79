@@ -9,14 +9,14 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { Zap, Clock, Coins, Target, Check, Crown, Sparkles, ArrowUp, Wallet, Box, Image } from 'lucide-react';
 import { Character3DViewer } from './Character3DViewer';
 
-// Character images mapping
-import shadowRunnerImg from '@/assets/characters/shadow-runner.png';
-import boltStarterImg from '@/assets/characters/bolt-starter.png';
-import thunderDragonImg from '@/assets/characters/thunder-dragon.png';
-import infinityPhoenixImg from '@/assets/characters/infinity-phoenix.png';
-import diamondEmperorImg from '@/assets/characters/diamond-emperor.png';
-import cyberNinjaImg from '@/assets/characters/cyber-ninja.png';
-import crystalMageImg from '@/assets/characters/crystal-mage.png';
+// Anime 3D Character images mapping
+import shadowRunnerImg from '@/assets/characters/shadow-runner-3d.png';
+import boltStarterImg from '@/assets/characters/bolt-starter-3d.png';
+import thunderDragonImg from '@/assets/characters/thunder-dragon-3d.png';
+import infinityPhoenixImg from '@/assets/characters/infinity-phoenix-3d.png';
+import diamondEmperorImg from '@/assets/characters/diamond-emperor-3d.png';
+import cyberNinjaImg from '@/assets/characters/cyber-ninja-3d.png';
+import crystalMageImg from '@/assets/characters/crystal-mage-3d.png';
 
 const characterImages: Record<string, string> = {
   'Shadow Runner': shadowRunnerImg,
@@ -28,7 +28,7 @@ const characterImages: Record<string, string> = {
   'Crystal Mage': crystalMageImg,
 };
 
-// 3D model mapping for characters
+// 3D model mapping for characters (kept for future use)
 const character3DModels: Record<string, string> = {
   'Bolt Starter': '/models/characters/fox.glb',
   'Shadow Runner': '/models/characters/cesium-man.glb',
