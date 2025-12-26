@@ -1,9 +1,12 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Zap, Clock, Coins, Target, Crown, Sparkles, ArrowLeft } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Zap, Clock, Coins, Target, Crown, Sparkles, ArrowLeft, RotateCcw, X, Maximize2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { Character3DViewer } from "@/components/mining/Character3DViewer";
 
 // Anime 3D Character images
 import shadowRunnerImg from '@/assets/characters/shadow-runner-3d.png';
@@ -13,6 +16,17 @@ import infinityPhoenixImg from '@/assets/characters/infinity-phoenix-3d.png';
 import diamondEmperorImg from '@/assets/characters/diamond-emperor-3d.png';
 import cyberNinjaImg from '@/assets/characters/cyber-ninja-3d.png';
 import crystalMageImg from '@/assets/characters/crystal-mage-3d.png';
+
+// Map characters to available 3D models
+const character3DModels: Record<string, string> = {
+  'Bolt Starter': '/models/characters/fox.glb',
+  'Shadow Runner': '/models/characters/cesium-man.glb',
+  'Crystal Mage': '/models/characters/crystal.glb',
+  'Cyber Ninja': '/models/characters/cyber.glb',
+  'Thunder Dragon': '/models/characters/brainstem.glb',
+  'Infinity Phoenix': '/models/characters/fox.glb',
+  'Diamond Emperor': '/models/characters/cesium-man.glb',
+};
 
 const characters = [
   {
@@ -141,6 +155,7 @@ const tierGlowColors: Record<string, string> = {
 
 const CharactersPreview = () => {
   const navigate = useNavigate();
+  const [selected3DCharacter, setSelected3DCharacter] = useState<typeof characters[0] | null>(null);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-4 pb-24">
@@ -229,7 +244,8 @@ const CharactersPreview = () => {
                 <motion.div
                   whileHover={{ scale: 1.1, rotateY: 10 }}
                   transition={{ type: 'spring', stiffness: 300 }}
-                  className="relative inline-block"
+                  className="relative inline-block cursor-pointer group"
+                  onClick={() => setSelected3DCharacter(character)}
                 >
                   <motion.div
                     className="absolute inset-0 rounded-2xl blur-xl"
@@ -244,6 +260,14 @@ const CharactersPreview = () => {
                     alt={character.name}
                     className="w-28 h-28 mx-auto rounded-2xl object-cover shadow-xl border-2 border-primary/30 relative z-10"
                   />
+                  
+                  {/* 3D View Button Overlay */}
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity z-20">
+                    <div className="flex flex-col items-center text-white">
+                      <Maximize2 className="w-6 h-6 mb-1" />
+                      <span className="text-xs font-medium">View 3D</span>
+                    </div>
+                  </div>
                 </motion.div>
 
                 <h3 className="font-bold text-lg text-foreground mt-3">
@@ -253,6 +277,17 @@ const CharactersPreview = () => {
                 <Badge className={`${tierColors[character.tier]} text-white mt-2`}>
                   {character.tier.toUpperCase()}
                 </Badge>
+                
+                {/* Quick 3D View Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 text-xs"
+                  onClick={() => setSelected3DCharacter(character)}
+                >
+                  <RotateCcw className="w-3 h-3 mr-1" />
+                  عرض ثلاثي الأبعاد
+                </Button>
               </div>
 
               {/* Stats */}
@@ -343,6 +378,88 @@ const CharactersPreview = () => {
           Start Mining Now
         </Button>
       </motion.div>
+
+      {/* 3D Character Viewer Modal */}
+      <AnimatePresence>
+        {selected3DCharacter && (
+          <Dialog open={!!selected3DCharacter} onOpenChange={() => setSelected3DCharacter(null)}>
+            <DialogContent className="sm:max-w-lg p-0 overflow-hidden bg-gradient-to-br from-background via-background to-primary/10 border-2 border-primary/30">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="p-4"
+              >
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                      <Sparkles className="w-5 h-5 text-primary" />
+                      {selected3DCharacter.name}
+                    </h2>
+                    <p className="text-sm text-muted-foreground">{selected3DCharacter.nameAr}</p>
+                  </div>
+                  <Badge className={`${tierColors[selected3DCharacter.tier]} text-white`}>
+                    {selected3DCharacter.tier.toUpperCase()}
+                  </Badge>
+                </div>
+
+                {/* 3D Viewer */}
+                <div className="relative rounded-xl overflow-hidden border border-primary/20">
+                  <Character3DViewer
+                    modelPath={character3DModels[selected3DCharacter.name]}
+                    height={350}
+                    autoRotate={true}
+                    interactive={true}
+                    glowColor={tierGlowColors[selected3DCharacter.tier]}
+                  />
+                </div>
+
+                {/* Stats in Modal */}
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div className="flex items-center gap-2 p-2 bg-background/50 rounded-lg">
+                    <Zap className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Speed</p>
+                      <p className="font-bold text-foreground">{selected3DCharacter.speed}x</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 bg-background/50 rounded-lg">
+                    <Clock className="w-4 h-4 text-primary" />
+                    <div>
+                      <p className="text-xs text-muted-foreground">Boost</p>
+                      <p className="font-bold text-foreground">+{selected3DCharacter.boost}%</p>
+                    </div>
+                  </div>
+                  {selected3DCharacter.extraCoins > 0 && (
+                    <div className="flex items-center gap-2 p-2 bg-background/50 rounded-lg">
+                      <Coins className="w-4 h-4 text-primary" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Extra Coins</p>
+                        <p className="font-bold text-foreground">+{selected3DCharacter.extraCoins}</p>
+                      </div>
+                    </div>
+                  )}
+                  {selected3DCharacter.jackpotBonus > 0 && (
+                    <div className="flex items-center gap-2 p-2 bg-background/50 rounded-lg">
+                      <Target className="w-4 h-4 text-primary" />
+                      <div>
+                        <p className="text-xs text-muted-foreground">Jackpot</p>
+                        <p className="font-bold text-foreground">+{selected3DCharacter.jackpotBonus}%</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Interaction Hint */}
+                <p className="text-center text-xs text-muted-foreground mt-4">
+                  👆 اسحب لتدوير النموذج ثلاثي الأبعاد
+                </p>
+              </motion.div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
