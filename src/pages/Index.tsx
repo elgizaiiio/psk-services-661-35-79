@@ -10,6 +10,7 @@ import { useAchievementNotifications } from '@/hooks/useAchievementNotifications
 import { useDailyTasksNotification } from '@/hooks/useDailyTasksNotification';
 import AchievementUnlockNotification from '@/components/achievements/AchievementUnlockNotification';
 import DailyTasksNotification from '@/components/notifications/DailyTasksNotification';
+import { HeroCharacterDisplay } from '@/components/mining/HeroCharacterDisplay';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -101,75 +102,77 @@ const Index = () => {
           <meta name="description" content="Mine BOLT tokens" />
         </Helmet>
 
-        <div className="max-w-md mx-auto px-5 pt-8">
+        <div className="max-w-md mx-auto px-4 pt-4">
           
           {/* Header */}
-          <div className="flex justify-between items-center mb-8">
-            <p className="text-lg font-semibold text-foreground">
-              {telegramUser?.first_name || 'Miner'}
-            </p>
-            {!isConnected ? (
-              <button
-                onClick={handleConnectWallet}
-                disabled={isConnecting}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
-              >
-                {isConnecting ? "..." : "Connect"}
-              </button>
-            ) : (
-              <div className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
-                Connected
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <p className="text-base font-semibold text-foreground">
+                {telegramUser?.first_name || 'Miner'}
+              </p>
+              <p className="text-xs text-muted-foreground">Mining Power: {miningPower}x</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-right">
+                <p className="text-lg font-bold text-foreground">{balance.toLocaleString()}</p>
+                <p className="text-xs text-primary font-medium">BOLT</p>
               </div>
-            )}
+              {!isConnected ? (
+                <button
+                  onClick={handleConnectWallet}
+                  disabled={isConnecting}
+                  className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium"
+                >
+                  {isConnecting ? "..." : "Connect"}
+                </button>
+              ) : (
+                <div className="px-2 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-medium">
+                  Connected
+                </div>
+              )}
+            </div>
           </div>
 
-          {/* Balance */}
-          <Card className="p-6 mb-6 text-center bg-card border-border">
-            <p className="text-xs text-muted-foreground uppercase mb-2">Your Balance</p>
-            <p className="text-5xl font-bold text-foreground mb-1">
-              {balance.toLocaleString()}
-            </p>
-            <p className="text-primary font-medium">BOLT</p>
-            <p className="text-xs text-muted-foreground mt-3">Mining Power: {miningPower}x</p>
-          </Card>
+          {/* Hero 3D Character Display - Like Free Fire/PUBG */}
+          <HeroCharacterDisplay className="mb-4" compact={false} />
 
           {/* Mining */}
-          <div className="mb-8">
+          <div className="mb-4">
             {isMining && miningProgress ? (
-              <Card className="p-5 bg-card border-primary/30">
-                <div className="flex justify-between items-center mb-4">
-                  <p className="font-medium text-foreground">Mining...</p>
-                  <p className="text-xl font-bold text-primary">{progress}%</p>
+              <Card className="p-4 bg-card border-primary/30">
+                <div className="flex justify-between items-center mb-2">
+                  <p className="font-medium text-sm text-foreground">Mining...</p>
+                  <p className="text-lg font-bold text-primary">{progress}%</p>
                 </div>
-                <div className="h-2 bg-muted rounded-full overflow-hidden mb-3">
+                <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-2">
                   <div 
-                    className="h-full bg-primary rounded-full"
+                    className="h-full bg-primary rounded-full transition-all"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
-                <p className="text-center text-sm text-primary font-medium">
+                <p className="text-center text-xs text-primary font-medium">
                   +{miningProgress.tokensMinedSoFar.toFixed(2)} BOLT
                 </p>
               </Card>
             ) : (
               <Button 
                 onClick={handleStartMining}
-                className="w-full h-14 bg-primary text-primary-foreground text-base font-semibold rounded-xl"
+                className="w-full h-12 bg-primary text-primary-foreground text-sm font-semibold rounded-xl"
               >
                 Start Mining
               </Button>
             )}
           </div>
 
-          {/* Simple Menu */}
-          <div className="grid grid-cols-2 gap-3">
+          {/* Quick Menu */}
+          <div className="grid grid-cols-3 gap-2">
             {menuItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="p-4 rounded-xl bg-card border border-border text-left hover:border-primary/30 transition-colors"
+                className="p-3 rounded-xl bg-card border border-border text-center hover:border-primary/30 transition-colors"
               >
-                <p className="font-medium text-foreground text-sm">{item.label}</p>
+                <p className="font-medium text-foreground text-xs">{item.label}</p>
               </button>
             ))}
           </div>
