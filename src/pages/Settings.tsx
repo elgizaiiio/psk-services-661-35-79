@@ -119,7 +119,7 @@ const Settings = () => {
   };
 
   const handleShare = async () => {
-    const botUsername = 'YOUR_BOT_USERNAME'; // Replace with your actual bot username
+    const botUsername = 'Vlralbot';
     const shareUrl = `https://t.me/${botUsername}`;
     const shareText = 'Join me on Bolt Mining and start earning BOLT tokens! 🚀';
     
@@ -149,7 +149,7 @@ const Settings = () => {
   };
 
   const handleOpenBot = () => {
-    const botUsername = 'YOUR_BOT_USERNAME'; // Replace with your actual bot username
+    const botUsername = 'Vlralbot';
     const tg = (window as any).Telegram?.WebApp;
     
     if (tg?.openTelegramLink) {
