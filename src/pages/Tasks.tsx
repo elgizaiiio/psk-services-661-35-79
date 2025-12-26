@@ -266,14 +266,6 @@ const Tasks = () => {
                 <Rocket className="w-4 h-4" /> Complete & Earn BOLT
               </p>
             </div>
-            <motion.div
-              animate={{ rotate: [0, 10, -10, 0] }}
-              transition={{ repeat: Infinity, duration: 3 }}
-            >
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-purple-500 flex items-center justify-center shadow-lg shadow-primary/30">
-                <Trophy className="w-7 h-7 text-white" />
-              </div>
-            </motion.div>
           </div>
         </motion.div>
 
