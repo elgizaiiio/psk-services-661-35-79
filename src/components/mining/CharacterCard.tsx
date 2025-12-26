@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -24,6 +25,15 @@ const characterImages: Record<string, string> = {
   'Diamond Emperor': diamondEmperorImg,
   'Cyber Ninja': cyberNinjaImg,
   'Crystal Mage': crystalMageImg,
+};
+
+// Tier glow colors for animations
+const tierGlowColors: Record<string, string> = {
+  beginner: 'rgba(100, 116, 139, 0.4)',
+  professional: 'rgba(59, 130, 246, 0.4)',
+  expert: 'rgba(168, 85, 247, 0.4)',
+  master: 'rgba(249, 115, 22, 0.4)',
+  legendary: 'rgba(234, 179, 8, 0.5)',
 };
 
 interface CharacterCardProps {
@@ -106,61 +116,163 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
     }
   };
 
+  const glowColor = tierGlowColors[character.tier];
+
   return (
-    <Card className={`p-4 bg-gradient-to-br ${tierGradients[character.tier]} border-2 ${isActive ? 'border-primary' : 'border-border/50'} relative overflow-hidden`}>
-      {isActive && (
-        <div className="absolute top-2 left-2">
-          <Badge className="bg-primary text-primary-foreground">
-            <Check className="w-3 h-3 mr-1" />
-            Active
-          </Badge>
-        </div>
-      )}
-      
-      {character.tier === 'legendary' && (
-        <Crown className="absolute top-2 right-2 w-5 h-5 text-yellow-500" />
-      )}
-
-      <div className="text-center mb-4 mt-4">
-        {characterImages[character.name] ? (
-          <img 
-            src={characterImages[character.name]} 
-            alt={getName()} 
-            className="w-24 h-24 mx-auto rounded-2xl mb-2 object-cover shadow-lg border-2 border-primary/30"
-          />
-        ) : character.image_url?.startsWith('http') ? (
-          <img 
-            src={character.image_url} 
-            alt={getName()} 
-            className="w-24 h-24 mx-auto rounded-2xl mb-2 object-cover shadow-lg border-2 border-primary/30"
-          />
-        ) : (
-          <div className="text-5xl mb-2">{character.image_url}</div>
+    <motion.div
+      whileHover={{ 
+        scale: 1.02,
+        y: -4,
+      }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+    >
+      <Card 
+        className={`p-4 bg-gradient-to-br ${tierGradients[character.tier]} border-2 ${isActive ? 'border-primary' : 'border-border/50'} relative overflow-hidden transition-shadow duration-300`}
+        style={{
+          boxShadow: isActive ? `0 0 20px ${glowColor}, 0 0 40px ${glowColor}` : 'none',
+        }}
+      >
+        {/* Animated background particles for legendary */}
+        {character.tier === 'legendary' && (
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute w-1 h-1 bg-yellow-400 rounded-full"
+                initial={{ 
+                  x: Math.random() * 100 + '%', 
+                  y: '100%',
+                  opacity: 0 
+                }}
+                animate={{ 
+                  y: '-20%',
+                  opacity: [0, 1, 0],
+                }}
+                transition={{
+                  duration: 2 + Math.random() * 2,
+                  repeat: Infinity,
+                  delay: Math.random() * 2,
+                  ease: "easeOut"
+                }}
+              />
+            ))}
+          </div>
         )}
-        <h3 className="font-bold text-lg text-foreground">{getName()}</h3>
-        <Badge className={`${tierColors[character.tier]} text-white mt-1`}>
-          {character.tier.toUpperCase()}
-        </Badge>
-        {isOwned && (
-          <div className="mt-2">
-            <Badge variant="outline" className="text-xs">
-              <Sparkles className="w-3 h-3 mr-1" />
-              Stage {currentStage}/{maxStages}
+
+        {isActive && (
+          <motion.div 
+            className="absolute top-2 left-2"
+            initial={{ scale: 0, rotate: -180 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 500, damping: 15 }}
+          >
+            <Badge className="bg-primary text-primary-foreground">
+              <Check className="w-3 h-3 mr-1" />
+              Active
             </Badge>
-          </div>
+          </motion.div>
         )}
-      </div>
+        
+        {character.tier === 'legendary' && (
+          <motion.div
+            animate={{ 
+              rotate: [0, 10, -10, 0],
+              scale: [1, 1.1, 1]
+            }}
+            transition={{ 
+              duration: 2, 
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
+            <Crown className="absolute top-2 right-2 w-5 h-5 text-yellow-500" />
+          </motion.div>
+        )}
 
-      {/* Evolution Progress */}
-      {isOwned && (
-        <div className="mb-4">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1">
-            <span>Evolution</span>
-            <span>{currentStage}/{maxStages}</span>
-          </div>
-          <Progress value={evolutionProgress} className="h-2" />
+        <div className="text-center mb-4 mt-4">
+          {characterImages[character.name] ? (
+            <motion.div
+              whileHover={{ 
+                scale: 1.1,
+                rotateY: 10,
+              }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="relative inline-block"
+            >
+              <motion.div
+                className="absolute inset-0 rounded-2xl"
+                animate={isActive ? {
+                  boxShadow: [
+                    `0 0 10px ${glowColor}`,
+                    `0 0 20px ${glowColor}`,
+                    `0 0 10px ${glowColor}`,
+                  ]
+                } : {}}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+              <img 
+                src={characterImages[character.name]} 
+                alt={getName()} 
+                className="w-24 h-24 mx-auto rounded-2xl mb-2 object-cover shadow-lg border-2 border-primary/30 relative z-10"
+              />
+            </motion.div>
+          ) : character.image_url?.startsWith('http') ? (
+            <motion.img 
+              src={character.image_url} 
+              alt={getName()} 
+              className="w-24 h-24 mx-auto rounded-2xl mb-2 object-cover shadow-lg border-2 border-primary/30"
+              whileHover={{ scale: 1.1 }}
+            />
+          ) : (
+            <motion.div 
+              className="text-5xl mb-2"
+              whileHover={{ scale: 1.2, rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 0.3 }}
+            >
+              {character.image_url}
+            </motion.div>
+          )}
+          <motion.h3 
+            className="font-bold text-lg text-foreground"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+          >
+            {getName()}
+          </motion.h3>
+          <Badge className={`${tierColors[character.tier]} text-white mt-1`}>
+            {character.tier.toUpperCase()}
+          </Badge>
+          {isOwned && (
+            <motion.div 
+              className="mt-2"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", delay: 0.1 }}
+            >
+              <Badge variant="outline" className="text-xs">
+                <Sparkles className="w-3 h-3 mr-1" />
+                Stage {currentStage}/{maxStages}
+              </Badge>
+            </motion.div>
+          )}
         </div>
-      )}
+
+        {/* Evolution Progress */}
+        {isOwned && (
+          <motion.div 
+            className="mb-4"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <div className="flex justify-between text-xs text-muted-foreground mb-1">
+              <span>Evolution</span>
+              <span>{currentStage}/{maxStages}</span>
+            </div>
+            <Progress value={evolutionProgress} className="h-2" />
+          </motion.div>
+        )}
 
       <div className="space-y-2 mb-4">
         <div className="flex items-center justify-between text-sm">
@@ -320,20 +432,26 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
         </div>
       )}
 
-      {/* Evolution costs preview for unowned characters */}
-      {!isOwned && character.evolution_costs.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-border/30">
-          <p className="text-xs text-muted-foreground text-center mb-1">Evolution Costs (TON):</p>
-          <div className="flex flex-wrap gap-1 justify-center">
-            {character.evolution_costs.map((cost, idx) => (
-              <Badge key={idx} variant="outline" className="text-xs">
-                {(cost / 10000).toFixed(2)} TON
-              </Badge>
-            ))}
-          </div>
-        </div>
-      )}
-    </Card>
+        {/* Evolution costs preview for unowned characters */}
+        {!isOwned && character.evolution_costs.length > 0 && (
+          <motion.div 
+            className="mt-3 pt-3 border-t border-border/30"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            <p className="text-xs text-muted-foreground text-center mb-1">Evolution Costs (TON):</p>
+            <div className="flex flex-wrap gap-1 justify-center">
+              {character.evolution_costs.map((cost, idx) => (
+                <Badge key={idx} variant="outline" className="text-xs">
+                  {(cost / 10000).toFixed(2)} TON
+                </Badge>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </Card>
+    </motion.div>
   );
 };
 
