@@ -4,9 +4,10 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { Zap, Clock, Coins, Target, Crown, Sparkles, ArrowLeft, RotateCcw, X, Maximize2 } from "lucide-react";
+import { Zap, Clock, Coins, Target, Crown, Sparkles, ArrowLeft, RotateCcw, Maximize2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Character3DViewer } from "@/components/mining/Character3DViewer";
+import { HeroCharacterDisplay } from "@/components/mining/HeroCharacterDisplay";
 
 // Anime 3D Character images
 import shadowRunnerImg from '@/assets/characters/shadow-runner-3d.png';
@@ -158,9 +159,9 @@ const CharactersPreview = () => {
   const [selected3DCharacter, setSelected3DCharacter] = useState<typeof characters[0] | null>(null);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 p-4 pb-24">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 pb-24">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 p-4 pb-2">
         <Button
           variant="ghost"
           size="icon"
@@ -170,188 +171,78 @@ const CharactersPreview = () => {
           <ArrowLeft className="w-5 h-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" />
-            Mining Characters
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Anime 3D Characters Collection
-          </p>
+          <h1 className="text-xl font-bold text-foreground">Mining Characters</h1>
+          <p className="text-xs text-muted-foreground">Anime 3D Collection</p>
         </div>
       </div>
 
-      {/* Characters Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      {/* Hero 3D Character Display - Shows immediately like Free Fire/PUBG */}
+      <div className="px-4 mb-4">
+        <HeroCharacterDisplay compact={false} />
+      </div>
+
+      {/* Section Title */}
+      <div className="px-4 mb-3">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-primary" />
+          All Characters
+        </h2>
+      </div>
+
+      {/* Characters Grid - Compact cards */}
+      <div className="grid grid-cols-2 gap-3 px-4">
         {characters.map((character, index) => (
           <motion.div
             key={character.name}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            whileHover={{ scale: 1.02, y: -4 }}
+            transition={{ delay: index * 0.05 }}
           >
             <Card
-              className={`p-4 bg-gradient-to-br ${tierGradients[character.tier]} border-2 border-border/50 relative overflow-hidden`}
+              className={`p-3 bg-gradient-to-br ${tierGradients[character.tier]} border border-border/50 relative overflow-hidden cursor-pointer`}
               style={{
-                boxShadow: `0 0 30px ${tierGlowColors[character.tier]}`,
+                boxShadow: `0 0 20px ${tierGlowColors[character.tier]}`,
               }}
+              onClick={() => setSelected3DCharacter(character)}
             >
-              {/* Legendary particles */}
+              {/* Legendary crown */}
               {character.tier === 'legendary' && (
-                <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                  {[...Array(8)].map((_, i) => (
-                    <motion.div
-                      key={i}
-                      className="absolute w-1 h-1 bg-yellow-400 rounded-full"
-                      initial={{
-                        x: Math.random() * 100 + '%',
-                        y: '100%',
-                        opacity: 0,
-                      }}
-                      animate={{
-                        y: '-20%',
-                        opacity: [0, 1, 0],
-                      }}
-                      transition={{
-                        duration: 2 + Math.random() * 2,
-                        repeat: Infinity,
-                        delay: Math.random() * 2,
-                        ease: 'easeOut',
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-
-              {character.tier === 'legendary' && (
-                <motion.div
-                  animate={{
-                    rotate: [0, 10, -10, 0],
-                    scale: [1, 1.1, 1],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                >
-                  <Crown className="absolute top-2 right-2 w-6 h-6 text-yellow-500" />
-                </motion.div>
+                <Crown className="absolute top-1 right-1 w-4 h-4 text-yellow-500" />
               )}
 
               {/* Character Image */}
-              <div className="text-center mb-4">
-                <motion.div
-                  whileHover={{ scale: 1.1, rotateY: 10 }}
-                  transition={{ type: 'spring', stiffness: 300 }}
-                  className="relative inline-block cursor-pointer group"
-                  onClick={() => setSelected3DCharacter(character)}
-                >
-                  <motion.div
-                    className="absolute inset-0 rounded-2xl blur-xl"
-                    style={{ background: tierGlowColors[character.tier] }}
-                    animate={{
-                      opacity: [0.5, 0.8, 0.5],
-                    }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  />
-                  <img
-                    src={character.image}
-                    alt={character.name}
-                    className="w-28 h-28 mx-auto rounded-2xl object-cover shadow-xl border-2 border-primary/30 relative z-10"
-                  />
-                  
-                  {/* 3D View Button Overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                    <div className="flex flex-col items-center text-white">
-                      <Maximize2 className="w-6 h-6 mb-1" />
-                      <span className="text-xs font-medium">View 3D</span>
-                    </div>
-                  </div>
-                </motion.div>
-
-                <h3 className="font-bold text-lg text-foreground mt-3">
+              <div className="text-center">
+                <img
+                  src={character.image}
+                  alt={character.name}
+                  className="w-16 h-16 mx-auto rounded-xl object-cover border border-primary/30"
+                />
+                <h3 className="font-bold text-sm text-foreground mt-2 truncate">
                   {character.name}
                 </h3>
-                <p className="text-sm text-muted-foreground">{character.nameAr}</p>
-                <Badge className={`${tierColors[character.tier]} text-white mt-2`}>
+                <Badge className={`${tierColors[character.tier]} text-white text-[10px] mt-1`}>
                   {character.tier.toUpperCase()}
                 </Badge>
-                
-                {/* Quick 3D View Button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 text-xs"
-                  onClick={() => setSelected3DCharacter(character)}
-                >
-                  <RotateCcw className="w-3 h-3 mr-1" />
-                  عرض ثلاثي الأبعاد
-                </Button>
               </div>
 
-              {/* Stats */}
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <Zap className="w-4 h-4" />
-                    Speed
-                  </span>
-                  <span className="font-bold text-foreground">
-                    {character.speed}x
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-sm">
-                  <span className="flex items-center gap-1 text-muted-foreground">
-                    <Clock className="w-4 h-4" />
-                    Boost
-                  </span>
-                  <span className="font-bold text-foreground">
-                    +{character.boost}% / {character.boostDuration}min
-                  </span>
-                </div>
-
-                {character.extraCoins > 0 && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <Coins className="w-4 h-4" />
-                      Extra Coins
-                    </span>
-                    <span className="font-bold text-foreground">
-                      +{character.extraCoins}
-                    </span>
-                  </div>
-                )}
-
-                {character.jackpotBonus > 0 && (
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <Target className="w-4 h-4" />
-                      Jackpot Bonus
-                    </span>
-                    <span className="font-bold text-foreground">
-                      +{character.jackpotBonus}%
-                    </span>
-                  </div>
-                )}
+              {/* Quick Stats */}
+              <div className="flex justify-center gap-3 mt-2 text-[10px]">
+                <span className="flex items-center gap-0.5 text-muted-foreground">
+                  <Zap className="w-3 h-3" />
+                  {character.speed}x
+                </span>
+                <span className="flex items-center gap-0.5 text-muted-foreground">
+                  <Sparkles className="w-3 h-3" />
+                  +{character.boost}%
+                </span>
               </div>
 
               {/* Price */}
-              <div className="text-center">
+              <div className="text-center mt-2">
                 {character.isFree ? (
-                  <Badge className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-1">
-                    🎁 FREE
-                  </Badge>
+                  <span className="text-[10px] font-bold text-green-400">FREE</span>
                 ) : (
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="text-primary border-primary">
-                      {character.priceTon} TON
-                    </Badge>
-                    <Badge variant="outline">
-                      {character.priceTokens.toLocaleString()} BOLT
-                    </Badge>
-                  </div>
+                  <span className="text-[10px] font-medium text-primary">{character.priceTon} TON</span>
                 )}
               </div>
             </Card>
@@ -361,20 +252,15 @@ const CharactersPreview = () => {
 
       {/* CTA */}
       <motion.div
-        className="mt-8 text-center"
+        className="mt-6 text-center px-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 0.8 }}
+        transition={{ delay: 0.5 }}
       >
-        <p className="text-muted-foreground mb-4">
-          Join the Mining Platform to collect these characters!
-        </p>
         <Button
-          size="lg"
-          className="bg-gradient-to-r from-primary to-cyan-500 hover:from-primary/90 hover:to-cyan-500/90"
+          className="w-full bg-gradient-to-r from-primary to-cyan-500"
           onClick={() => navigate('/')}
         >
-          <Sparkles className="w-5 h-5 mr-2" />
           Start Mining Now
         </Button>
       </motion.div>
