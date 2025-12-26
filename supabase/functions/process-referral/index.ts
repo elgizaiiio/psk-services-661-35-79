@@ -30,46 +30,17 @@ Deno.serve(async (req) => {
     const { telegram_id, telegram_username, first_name, last_name, photo_url, referral_param, initData } = await req.json() as ReferralRequest
 
     console.log(`🔗 Processing referral for Telegram ID: ${telegram_id}, param: ${referral_param}`)
-
-    // Log the attempt
-    const attemptData = {
-      telegram_id,
-      referral_param,
-      metadata: {
-        telegram_username,
-        first_name,
-        last_name,
-        photo_url,
-        initData,
-        timestamp: new Date().toISOString()
-      }
-    }
-
-    const { data: attempt } = await supabase
-      .from('referral_attempts')
-      .insert(attemptData)
-      .select()
-      .single()
-
-    console.log(`📝 Logged referral attempt: ${attempt?.id}`)
+    console.log(`📊 Init data:`, JSON.stringify(initData))
 
     // Check if user already exists
     const { data: existingUser } = await supabase
-      .from('viral_users')
+      .from('bolt_users')
       .select('id')
       .eq('telegram_id', telegram_id)
       .single()
 
     if (existingUser) {
       console.log(`👤 User already exists: ${existingUser.id}`)
-      await supabase
-        .from('referral_attempts')
-        .update({ 
-          error_message: 'User already exists',
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', attempt.id)
-
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -80,32 +51,78 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create new user first
+    // Find referrer using multiple strategies
+    let referrer = null
+    
+    // Strategy 1: Try telegram_id match (most common for Telegram referrals)
+    if (!referrer && referral_param && !isNaN(Number(referral_param))) {
+      const { data } = await supabase
+        .from('bolt_users')
+        .select('id, telegram_username, telegram_id')
+        .eq('telegram_id', parseInt(referral_param))
+        .single()
+      
+      if (data) {
+        referrer = data
+        console.log(`🎯 Found referrer by telegram_id: ${referrer.telegram_id}`)
+      }
+    }
+
+    // Strategy 2: Try exact username match
+    if (!referrer && referral_param) {
+      const { data } = await supabase
+        .from('bolt_users')
+        .select('id, telegram_username, telegram_id')
+        .eq('telegram_username', referral_param)
+        .single()
+      
+      if (data) {
+        referrer = data
+        console.log(`🎯 Found referrer by username: ${referrer.telegram_username}`)
+      }
+    }
+
+    // Strategy 3: Case-insensitive username search
+    if (!referrer && referral_param) {
+      const { data } = await supabase
+        .from('bolt_users')
+        .select('id, telegram_username, telegram_id')
+        .ilike('telegram_username', referral_param)
+        .single()
+      
+      if (data) {
+        referrer = data
+        console.log(`🎯 Found referrer by case-insensitive search: ${referrer.telegram_username}`)
+      }
+    }
+
+    // Create new user with referrer info
+    const newUserData: any = {
+      telegram_id,
+      telegram_username,
+      first_name,
+      last_name,
+      photo_url,
+      token_balance: 0,
+      mining_power: 2,
+      mining_duration_hours: 4,
+      total_referrals: 0,
+      referral_bonus: 0
+    }
+
+    // Set referred_by if referrer found
+    if (referrer) {
+      newUserData.referred_by = referrer.id
+    }
+
     const { data: newUser, error: userError } = await supabase
-      .from('viral_users')
-      .insert({
-        telegram_id,
-        telegram_username,
-        first_name,
-        last_name,
-        photo_url,
-        token_balance: 0,
-        mining_power_multiplier: 1,
-        mining_duration_hours: 4
-      })
+      .from('bolt_users')
+      .insert(newUserData)
       .select()
       .single()
 
     if (userError) {
       console.error('❌ Error creating user:', userError)
-      await supabase
-        .from('referral_attempts')
-        .update({ 
-          error_message: `User creation failed: ${userError.message}`,
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', attempt.id)
-
       return new Response(
         JSON.stringify({ success: false, error: userError.message }),
         { 
@@ -117,79 +134,12 @@ Deno.serve(async (req) => {
 
     console.log(`✅ New user created: ${newUser.id}`)
 
-    // Find referrer using multiple strategies
-    let referrer = null
-    
-    // Strategy 1: Try exact username match
-    if (referral_param) {
-      const { data } = await supabase
-        .from('viral_users')
-        .select('id, telegram_username, telegram_id')
-        .eq('telegram_username', referral_param)
-        .single()
-      
-      if (data) {
-        referrer = data
-        console.log(`🎯 Found referrer by username: ${referrer.telegram_username}`)
-      }
-    }
-
-    // Strategy 2: Try telegram_id match
-    if (!referrer && referral_param && !isNaN(Number(referral_param))) {
-      const { data } = await supabase
-        .from('viral_users')
-        .select('id, telegram_username, telegram_id')
-        .eq('telegram_id', parseInt(referral_param))
-        .single()
-      
-      if (data) {
-        referrer = data
-        console.log(`🎯 Found referrer by telegram_id: ${referrer.telegram_id}`)
-      }
-    }
-
-    // Strategy 3: Case-insensitive username search
-    if (!referrer && referral_param) {
-      const { data } = await supabase
-        .from('viral_users')
-        .select('id, telegram_username, telegram_id')
-        .ilike('telegram_username', referral_param)
-        .single()
-      
-      if (data) {
-        referrer = data
-        console.log(`🎯 Found referrer by case-insensitive search: ${referrer.telegram_username}`)
-      }
-    }
-
     if (!referrer) {
       console.log(`❌ Referrer not found for param: ${referral_param}`)
-      
-      // Add to pending queue for later processing
-      await supabase
-        .from('pending_referrals')
-        .insert({
-          telegram_id,
-          telegram_username,
-          first_name,
-          last_name,
-          photo_url,
-          referral_param,
-          status: 'pending'
-        })
-
-      await supabase
-        .from('referral_attempts')
-        .update({ 
-          error_message: 'Referrer not found - added to pending queue',
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', attempt.id)
-
       return new Response(
         JSON.stringify({ 
-          success: false, 
-          message: 'Referrer not found, added to pending queue',
+          success: true, 
+          message: 'User created but referrer not found',
           user_id: newUser.id
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -198,7 +148,7 @@ Deno.serve(async (req) => {
 
     // Check if referral already exists
     const { data: existingReferral } = await supabase
-      .from('referrals')
+      .from('bolt_referrals')
       .select('id')
       .eq('referrer_id', referrer.id)
       .eq('referred_id', newUser.id)
@@ -206,16 +156,6 @@ Deno.serve(async (req) => {
 
     if (existingReferral) {
       console.log(`⚠️ Referral already exists: ${existingReferral.id}`)
-      await supabase
-        .from('referral_attempts')
-        .update({ 
-          referrer_found: true,
-          referrer_id: referrer.id,
-          error_message: 'Referral already exists',
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', attempt.id)
-
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -226,30 +166,22 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Create the referral
+    // Create the referral record
+    const REFERRAL_BONUS = 100
+
     const { data: newReferral, error: referralError } = await supabase
-      .from('referrals')
+      .from('bolt_referrals')
       .insert({
         referrer_id: referrer.id,
         referred_id: newUser.id,
         status: 'active',
-        commission_rate: 10
+        bonus_earned: REFERRAL_BONUS
       })
       .select()
       .single()
 
     if (referralError) {
       console.error('❌ Error creating referral:', referralError)
-      await supabase
-        .from('referral_attempts')
-        .update({ 
-          referrer_found: true,
-          referrer_id: referrer.id,
-          error_message: `Referral creation failed: ${referralError.message}`,
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', attempt.id)
-
       return new Response(
         JSON.stringify({ success: false, error: referralError.message }),
         { 
@@ -261,43 +193,39 @@ Deno.serve(async (req) => {
 
     console.log(`🎉 Referral created successfully: ${newReferral.id}`)
 
-    // Update the attempt record
-    await supabase
-      .from('referral_attempts')
-      .update({ 
-        referrer_found: true,
-        referrer_id: referrer.id,
-        success: true,
-        processed_at: new Date().toISOString()
-      })
-      .eq('id', attempt.id)
-
-    // Give referrer bonus
+    // Give referrer bonus - update token_balance, total_referrals, and referral_bonus
     const { data: currentReferrer } = await supabase
-      .from('viral_users')
-      .select('token_balance')
+      .from('bolt_users')
+      .select('token_balance, total_referrals, referral_bonus')
       .eq('id', referrer.id)
       .single()
 
     if (currentReferrer) {
-      await supabase
-        .from('viral_users')
+      const { error: updateError } = await supabase
+        .from('bolt_users')
         .update({
-          token_balance: currentReferrer.token_balance + 100
+          token_balance: (currentReferrer.token_balance || 0) + REFERRAL_BONUS,
+          total_referrals: (currentReferrer.total_referrals || 0) + 1,
+          referral_bonus: (currentReferrer.referral_bonus || 0) + REFERRAL_BONUS,
+          updated_at: new Date().toISOString()
         })
         .eq('id', referrer.id)
       
-      console.log(`💰 Bonus of 100 tokens given to referrer: ${referrer.id}`)
+      if (updateError) {
+        console.error('❌ Error updating referrer:', updateError)
+      } else {
+        console.log(`💰 Bonus of ${REFERRAL_BONUS} tokens given to referrer: ${referrer.id}`)
+      }
     }
 
-    // Create notification for referrer
+    // Create social notification
     await supabase
-      .from('notifications')
+      .from('bolt_social_notifications')
       .insert({
         user_id: referrer.id,
-        title: '🎉 إحالة جديدة!',
-        message: `لقد حصلت على 100 رمز مقابل إحالة ${first_name || telegram_username || 'مستخدم جديد'}`,
-        type: 'success'
+        username: first_name || telegram_username || 'New User',
+        action_type: 'referral',
+        amount: REFERRAL_BONUS
       })
 
     return new Response(
@@ -306,7 +234,7 @@ Deno.serve(async (req) => {
         message: 'Referral processed successfully',
         user_id: newUser.id,
         referrer_id: referrer.id,
-        bonus_given: 100
+        bonus_given: REFERRAL_BONUS
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
