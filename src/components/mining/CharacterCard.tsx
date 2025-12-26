@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { MiningCharacter, UserCharacter } from '@/types/mining';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Zap, Clock, Coins, Target, Check, Crown, Sparkles, ArrowUp, Wallet } from 'lucide-react';
+import { Zap, Clock, Coins, Target, Check, Crown, Sparkles, ArrowUp, Wallet, Box, Image } from 'lucide-react';
+import { Character3DViewer } from './Character3DViewer';
 
 // Character images mapping
 import shadowRunnerImg from '@/assets/characters/shadow-runner.png';
@@ -25,6 +26,17 @@ const characterImages: Record<string, string> = {
   'Diamond Emperor': diamondEmperorImg,
   'Cyber Ninja': cyberNinjaImg,
   'Crystal Mage': crystalMageImg,
+};
+
+// 3D model mapping for characters
+const character3DModels: Record<string, string> = {
+  'Bolt Starter': '/models/characters/fox.glb',
+  'Shadow Runner': '/models/characters/cesium-man.glb',
+  'Crystal Mage': '/models/characters/crystal.glb',
+  'Cyber Ninja': '/models/characters/cyber.glb',
+  'Thunder Dragon': '/models/characters/brainstem.glb',
+  'Infinity Phoenix': '/models/characters/fox.glb',
+  'Diamond Emperor': '/models/characters/cesium-man.glb',
 };
 
 // Tier glow colors for animations
@@ -76,6 +88,9 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
   const { language } = useLanguage();
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [showEvolveOptions, setShowEvolveOptions] = useState(false);
+  const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
+  
+  const has3DModel = !!character3DModels[character.name];
   
   const getName = () => {
     if (language === 'ru') return character.name_ru;
@@ -190,8 +205,38 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
           </motion.div>
         )}
 
+        {/* 3D/2D Toggle Button */}
+        {has3DModel && (
+          <div className="absolute top-2 right-8 z-20">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-7 h-7 bg-background/50 backdrop-blur-sm hover:bg-background/70"
+              onClick={() => setViewMode(viewMode === '2d' ? '3d' : '2d')}
+            >
+              {viewMode === '2d' ? <Box className="w-4 h-4" /> : <Image className="w-4 h-4" />}
+            </Button>
+          </div>
+        )}
+
         <div className="text-center mb-4 mt-4">
-          {characterImages[character.name] ? (
+          {viewMode === '3d' && has3DModel ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="mx-auto mb-2"
+            >
+              <Character3DViewer
+                modelPath={character3DModels[character.name]}
+                height={120}
+                autoRotate={true}
+                interactive={true}
+                glowColor={tierGlowColors[character.tier]}
+                className="border-2 border-primary/30"
+              />
+            </motion.div>
+          ) : characterImages[character.name] ? (
             <motion.div
               whileHover={{ 
                 scale: 1.1,
