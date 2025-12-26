@@ -119,21 +119,43 @@ const Settings = () => {
   };
 
   const handleShare = async () => {
-    const shareData = {
-      title: 'Bolt Mining',
-      text: 'Join me on Bolt Mining and start earning BOLT tokens!',
-      url: window.location.origin
-    };
+    const botUsername = 'YOUR_BOT_USERNAME'; // Replace with your actual bot username
+    const shareUrl = `https://t.me/${botUsername}`;
+    const shareText = 'Join me on Bolt Mining and start earning BOLT tokens! 🚀';
     
-    if (navigator.share) {
+    // Check if running inside Telegram WebApp
+    const tg = (window as any).Telegram?.WebApp;
+    
+    if (tg?.openTelegramLink) {
+      // Use Telegram's share functionality
+      const telegramShareUrl = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+      tg.openTelegramLink(telegramShareUrl);
+    } else if (navigator.share) {
       try {
-        await navigator.share(shareData);
+        await navigator.share({
+          title: 'Bolt Mining',
+          text: shareText,
+          url: shareUrl
+        });
       } catch (err) {
         // User cancelled or error
+        await navigator.clipboard.writeText(shareUrl);
+        toast.success('Link copied to clipboard!');
       }
     } else {
-      await navigator.clipboard.writeText(window.location.origin);
+      await navigator.clipboard.writeText(shareUrl);
       toast.success('Link copied to clipboard!');
+    }
+  };
+
+  const handleOpenBot = () => {
+    const botUsername = 'YOUR_BOT_USERNAME'; // Replace with your actual bot username
+    const tg = (window as any).Telegram?.WebApp;
+    
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink(`https://t.me/${botUsername}`);
+    } else {
+      window.open(`https://t.me/${botUsername}`, '_blank');
     }
   };
 
@@ -447,6 +469,27 @@ const Settings = () => {
               <div className="text-left">
                 <span className="font-medium text-foreground">Help & Support</span>
                 <p className="text-xs text-muted-foreground">Get help or report issues</p>
+              </div>
+            </div>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
+
+          {/* Bot Link */}
+          <button 
+            onClick={handleOpenBot}
+            className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors border-b border-border/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                <img 
+                  src="/lovable-uploads/bb2ce9b7-afd0-4e2c-8447-351c0ae1f27d.png" 
+                  alt="Bot" 
+                  className="w-5 h-5"
+                />
+              </div>
+              <div className="text-left">
+                <span className="font-medium text-foreground">Telegram Bot</span>
+                <p className="text-xs text-muted-foreground">Open our Telegram bot</p>
               </div>
             </div>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
