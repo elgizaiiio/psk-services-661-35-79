@@ -1,20 +1,21 @@
 import React, { useMemo, useState } from "react";
 import { Helmet } from "react-helmet-async";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useBoltMining } from "@/hooks/useBoltMining";
 import { useBoltReferrals } from "@/hooks/useBoltReferrals";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Copy, Check, Users, Gift, TrendingUp, Share2 } from "lucide-react";
+import { Copy, Check, Users, Gift, TrendingUp, Share2, ChevronRight, Sparkles } from "lucide-react";
 
 const Invite: React.FC = () => {
   const { user: tgUser } = useTelegramAuth();
-  const { user: boltUser, loading: miningLoading } = useBoltMining(tgUser);
-  const { referrals, stats, loading: friendsLoading } = useBoltReferrals(boltUser?.id);
+  const { user: boltUser, loading: miningLoading, refreshUser } = useBoltMining(tgUser);
+  const { referrals, stats, loading: friendsLoading, refreshReferrals } = useBoltReferrals(boltUser?.id);
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  const [showBonusDetails, setShowBonusDetails] = useState(false);
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
 
   const referralCode = useMemo(() => {
@@ -140,20 +141,93 @@ const Invite: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* Bonus Info */}
+          {/* Bonus Info - Now Clickable */}
           <motion.div 
             variants={itemVariants}
-            className="p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 mb-6"
+            className="rounded-2xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 mb-6 overflow-hidden cursor-pointer"
+            onClick={() => setShowBonusDetails(!showBonusDetails)}
+            whileTap={{ scale: 0.98 }}
           >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                <Gift className="w-5 h-5 text-primary" />
+            <div className="p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground">Referral Bonus</p>
+                  <p className="text-sm text-muted-foreground">Tap to see details</p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-foreground">Referral Bonus</p>
-                <p className="text-sm text-muted-foreground">Get 10% of your friends earnings</p>
-              </div>
+              <motion.div
+                animate={{ rotate: showBonusDetails ? 90 : 0 }}
+                transition={{ duration: 0.2 }}
+              >
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </motion.div>
             </div>
+            
+            <AnimatePresence>
+              {showBonusDetails && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: "auto", opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="border-t border-primary/20"
+                >
+                  <div className="p-4 space-y-4">
+                    {/* Current Bonus Stats */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="p-3 rounded-xl bg-background/50">
+                        <p className="text-xs text-muted-foreground mb-1">Your Referral Bonus</p>
+                        <p className="text-xl font-bold text-primary">{boltUser?.referral_bonus || 0} BOLT</p>
+                      </div>
+                      <div className="p-3 rounded-xl bg-background/50">
+                        <p className="text-xs text-muted-foreground mb-1">Total Referrals</p>
+                        <p className="text-xl font-bold text-foreground">{boltUser?.total_referrals || 0}</p>
+                      </div>
+                    </div>
+                    
+                    {/* Bonus Tiers */}
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-foreground flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-primary" />
+                        Referral Rewards
+                      </p>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center p-2 rounded-lg bg-background/30">
+                          <span className="text-muted-foreground">Per Friend</span>
+                          <span className="text-primary font-medium">+100 BOLT</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 rounded-lg bg-background/30">
+                          <span className="text-muted-foreground">5 Friends Bonus</span>
+                          <span className="text-primary font-medium">+500 BOLT</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 rounded-lg bg-background/30">
+                          <span className="text-muted-foreground">10 Friends Bonus</span>
+                          <span className="text-primary font-medium">+1,500 BOLT</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Refresh Button */}
+                    <Button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        refreshReferrals();
+                        refreshUser?.();
+                        toast({ title: "Refreshed!", description: "Referral data updated" });
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                    >
+                      Refresh Data
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* Friends List */}
