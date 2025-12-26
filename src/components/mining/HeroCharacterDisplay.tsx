@@ -1,65 +1,105 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Sparkles, Zap, Star } from 'lucide-react';
-import { Character3DViewer } from './Character3DViewer';
+import { ChevronLeft, ChevronRight, Sparkles, Zap, Star, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Character data with 3D models
+// Import new character images
+import cyberWarrior from '@/assets/characters/cyber-warrior-3d.png';
+import fireDragon from '@/assets/characters/fire-dragon-3d.png';
+import iceSorceress from '@/assets/characters/ice-sorceress-3d.png';
+import goldenKnight from '@/assets/characters/golden-knight-3d.png';
+import shadowAssassin from '@/assets/characters/shadow-assassin-3d.png';
+import thunderSamurai from '@/assets/characters/thunder-samurai-3d.png';
+import cosmicPhoenix from '@/assets/characters/cosmic-phoenix-3d.png';
+
+// Character data with new images
 const characters = [
   {
     id: 1,
-    name: 'Bolt Starter',
+    name: 'Cyber Warrior',
+    nameAr: 'المحارب السايبر',
     tier: 'common',
-    model: '/models/characters/fox.glb',
-    stats: { speed: 1.0, boost: 5, coins: 10 },
-    glowColor: 'rgba(156, 163, 175, 0.5)',
+    image: cyberWarrior,
+    stats: { speed: 1.0, boost: 10, coins: 15 },
+    glowColor: 'rgba(59, 130, 246, 0.6)',
+    borderColor: 'border-blue-500/50',
   },
   {
     id: 2,
-    name: 'Shadow Runner',
+    name: 'Fire Dragon',
+    nameAr: 'تنين النار',
     tier: 'rare',
-    model: '/models/characters/cesium-man.glb',
-    stats: { speed: 1.5, boost: 15, coins: 25 },
-    glowColor: 'rgba(59, 130, 246, 0.5)',
+    image: fireDragon,
+    stats: { speed: 1.5, boost: 20, coins: 30 },
+    glowColor: 'rgba(239, 68, 68, 0.6)',
+    borderColor: 'border-red-500/50',
   },
   {
     id: 3,
-    name: 'Crystal Mage',
-    tier: 'epic',
-    model: '/models/characters/crystal.glb',
-    stats: { speed: 2.0, boost: 25, coins: 50 },
-    glowColor: 'rgba(168, 85, 247, 0.5)',
+    name: 'Ice Sorceress',
+    nameAr: 'ساحرة الجليد',
+    tier: 'rare',
+    image: iceSorceress,
+    stats: { speed: 1.8, boost: 25, coins: 40 },
+    glowColor: 'rgba(147, 197, 253, 0.6)',
+    borderColor: 'border-cyan-400/50',
   },
   {
     id: 4,
-    name: 'Cyber Ninja',
+    name: 'Shadow Assassin',
+    nameAr: 'قاتل الظلال',
     tier: 'epic',
-    model: '/models/characters/cyber.glb',
-    stats: { speed: 2.5, boost: 30, coins: 75 },
-    glowColor: 'rgba(236, 72, 153, 0.5)',
+    image: shadowAssassin,
+    stats: { speed: 2.2, boost: 35, coins: 60 },
+    glowColor: 'rgba(168, 85, 247, 0.6)',
+    borderColor: 'border-purple-500/50',
   },
   {
     id: 5,
-    name: 'Thunder Dragon',
+    name: 'Thunder Samurai',
+    nameAr: 'ساموراي الرعد',
+    tier: 'epic',
+    image: thunderSamurai,
+    stats: { speed: 2.5, boost: 40, coins: 80 },
+    glowColor: 'rgba(59, 130, 246, 0.6)',
+    borderColor: 'border-blue-400/50',
+  },
+  {
+    id: 6,
+    name: 'Golden Knight',
+    nameAr: 'الفارس الذهبي',
     tier: 'legendary',
-    model: '/models/characters/brainstem.glb',
-    stats: { speed: 3.0, boost: 40, coins: 100 },
-    glowColor: 'rgba(245, 158, 11, 0.5)',
+    image: goldenKnight,
+    stats: { speed: 3.0, boost: 50, coins: 100 },
+    glowColor: 'rgba(245, 158, 11, 0.6)',
+    borderColor: 'border-yellow-500/50',
+  },
+  {
+    id: 7,
+    name: 'Cosmic Phoenix',
+    nameAr: 'طائر الفينيق الكوني',
+    tier: 'mythic',
+    image: cosmicPhoenix,
+    stats: { speed: 4.0, boost: 75, coins: 150 },
+    glowColor: 'rgba(236, 72, 153, 0.6)',
+    borderColor: 'border-pink-500/50',
   },
 ];
 
 const tierColors: Record<string, string> = {
-  common: 'from-gray-400 to-gray-600',
-  rare: 'from-blue-400 to-blue-600',
+  common: 'from-blue-400 to-blue-600',
+  rare: 'from-red-400 to-orange-600',
   epic: 'from-purple-400 to-pink-600',
-  legendary: 'from-yellow-400 to-orange-600',
+  legendary: 'from-yellow-400 to-amber-600',
+  mythic: 'from-pink-400 via-purple-500 to-indigo-600',
 };
 
 const tierBadgeColors: Record<string, string> = {
-  common: 'bg-gray-500/20 text-gray-300 border-gray-500/30',
-  rare: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+  common: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+  rare: 'bg-red-500/20 text-red-300 border-red-500/30',
   epic: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
   legendary: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
+  mythic: 'bg-pink-500/20 text-pink-300 border-pink-500/30',
 };
 
 interface HeroCharacterDisplayProps {
@@ -153,7 +193,7 @@ export const HeroCharacterDisplay: React.FC<HeroCharacterDisplayProps> = ({
         </h2>
       </motion.div>
 
-      {/* 3D Character Display */}
+      {/* Character Display */}
       <div className="relative">
         {/* Navigation arrows */}
         <Button
@@ -176,23 +216,57 @@ export const HeroCharacterDisplay: React.FC<HeroCharacterDisplayProps> = ({
           <ChevronRight className="w-5 h-5" />
         </Button>
 
-        {/* 3D Viewer */}
+        {/* Character Image with Animations */}
         <AnimatePresence mode="wait">
           <motion.div
             key={currentCharacter.id}
-            initial={{ opacity: 0, scale: 0.9, rotateY: -30 }}
-            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-            exit={{ opacity: 0, scale: 0.9, rotateY: 30 }}
+            initial={{ opacity: 0, scale: 0.8, x: 50 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.8, x: -50 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="mx-8"
+            className="mx-8 flex justify-center"
           >
-            <Character3DViewer
-              modelPath={currentCharacter.model}
-              autoRotate={true}
-              height={compact ? 180 : 280}
-              interactive={true}
-              glowColor={currentCharacter.glowColor}
-            />
+            <div className="relative">
+              {/* Glow ring behind character */}
+              <motion.div 
+                className="absolute inset-0 rounded-full blur-2xl opacity-60"
+                style={{ background: currentCharacter.glowColor }}
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  opacity: [0.4, 0.7, 0.4]
+                }}
+                transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+              />
+              
+              {/* Character Image */}
+              <motion.img
+                src={currentCharacter.image}
+                alt={currentCharacter.name}
+                className={`relative z-10 object-contain drop-shadow-2xl ${compact ? 'h-48' : 'h-72'}`}
+                style={{ 
+                  filter: `drop-shadow(0 0 30px ${currentCharacter.glowColor})`,
+                }}
+                animate={{ 
+                  y: [0, -8, 0],
+                }}
+                transition={{ 
+                  duration: 3, 
+                  repeat: Infinity, 
+                  ease: 'easeInOut' 
+                }}
+              />
+
+              {/* Mythic crown indicator */}
+              {currentCharacter.tier === 'mythic' && (
+                <motion.div
+                  className="absolute -top-4 left-1/2 -translate-x-1/2"
+                  animate={{ y: [0, -3, 0], rotate: [0, 5, 0, -5, 0] }}
+                  transition={{ duration: 2, repeat: Infinity }}
+                >
+                  <Crown className="w-8 h-8 text-pink-400 drop-shadow-lg" />
+                </motion.div>
+              )}
+            </div>
           </motion.div>
         </AnimatePresence>
 
