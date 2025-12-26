@@ -106,7 +106,7 @@ const Index = () => {
           {/* Header */}
           <div className="flex justify-between items-center mb-8">
             <p className="text-lg font-semibold text-foreground">
-              Hi, {telegramUser?.first_name || 'Miner'} 👋
+              {telegramUser?.first_name || 'Miner'}
             </p>
             {!isConnected ? (
               <button
