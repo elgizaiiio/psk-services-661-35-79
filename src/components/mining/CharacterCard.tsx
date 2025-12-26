@@ -7,6 +7,25 @@ import { MiningCharacter, UserCharacter } from '@/types/mining';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Zap, Clock, Coins, Target, Check, Crown, Sparkles, ArrowUp, Wallet } from 'lucide-react';
 
+// Character images mapping
+import shadowRunnerImg from '@/assets/characters/shadow-runner.png';
+import boltStarterImg from '@/assets/characters/bolt-starter.png';
+import thunderDragonImg from '@/assets/characters/thunder-dragon.png';
+import infinityPhoenixImg from '@/assets/characters/infinity-phoenix.png';
+import diamondEmperorImg from '@/assets/characters/diamond-emperor.png';
+import cyberNinjaImg from '@/assets/characters/cyber-ninja.png';
+import crystalMageImg from '@/assets/characters/crystal-mage.png';
+
+const characterImages: Record<string, string> = {
+  'Shadow Runner': shadowRunnerImg,
+  'Bolt Starter': boltStarterImg,
+  'Thunder Dragon': thunderDragonImg,
+  'Infinity Phoenix': infinityPhoenixImg,
+  'Diamond Emperor': diamondEmperorImg,
+  'Cyber Ninja': cyberNinjaImg,
+  'Crystal Mage': crystalMageImg,
+};
+
 interface CharacterCardProps {
   character: MiningCharacter;
   userCharacter?: UserCharacter;
@@ -103,11 +122,17 @@ export const CharacterCard: React.FC<CharacterCardProps> = ({
       )}
 
       <div className="text-center mb-4 mt-4">
-        {character.image_url?.startsWith('http') ? (
+        {characterImages[character.name] ? (
+          <img 
+            src={characterImages[character.name]} 
+            alt={getName()} 
+            className="w-24 h-24 mx-auto rounded-2xl mb-2 object-cover shadow-lg border-2 border-primary/30"
+          />
+        ) : character.image_url?.startsWith('http') ? (
           <img 
             src={character.image_url} 
             alt={getName()} 
-            className="w-16 h-16 mx-auto rounded-full mb-2"
+            className="w-24 h-24 mx-auto rounded-2xl mb-2 object-cover shadow-lg border-2 border-primary/30"
           />
         ) : (
           <div className="text-5xl mb-2">{character.image_url}</div>

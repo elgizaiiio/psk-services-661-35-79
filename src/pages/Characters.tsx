@@ -11,6 +11,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { ArrowRight, Users, Crown, Zap, Sparkles, Loader2, Gift } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+// Character images mapping
+import shadowRunnerImg from '@/assets/characters/shadow-runner.png';
+import boltStarterImg from '@/assets/characters/bolt-starter.png';
+import thunderDragonImg from '@/assets/characters/thunder-dragon.png';
+import infinityPhoenixImg from '@/assets/characters/infinity-phoenix.png';
+import diamondEmperorImg from '@/assets/characters/diamond-emperor.png';
+import cyberNinjaImg from '@/assets/characters/cyber-ninja.png';
+import crystalMageImg from '@/assets/characters/crystal-mage.png';
+
+const characterImages: Record<string, string> = {
+  'Shadow Runner': shadowRunnerImg,
+  'Bolt Starter': boltStarterImg,
+  'Thunder Dragon': thunderDragonImg,
+  'Infinity Phoenix': infinityPhoenixImg,
+  'Diamond Emperor': diamondEmperorImg,
+  'Cyber Ninja': cyberNinjaImg,
+  'Crystal Mage': crystalMageImg,
+};
+
 const Characters = () => {
   const navigate = useNavigate();
   const { user } = useTelegramAuth();
@@ -150,7 +169,9 @@ const Characters = () => {
         >
           <Card className="p-4 bg-gradient-to-r from-green-500/20 via-emerald-500/20 to-teal-500/20 border-green-500/30">
             <div className="flex items-center gap-4">
-              <div className="text-5xl">{freeCharacter.image_url}</div>
+              <div className="w-16 h-16 rounded-xl overflow-hidden">
+                <img src={characterImages[freeCharacter.name] || freeCharacter.image_url} alt={freeCharacter.name} className="w-full h-full object-cover" />
+              </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <Gift className="w-5 h-5 text-green-400" />
@@ -174,7 +195,9 @@ const Characters = () => {
         >
           <Card className="p-4 bg-gradient-to-r from-primary/20 via-purple-500/20 to-pink-500/20 border-primary/30">
             <div className="flex items-center gap-4">
-              <div className="text-5xl">{activeCharacter.character?.image_url}</div>
+              <div className="w-16 h-16 rounded-xl overflow-hidden">
+                <img src={characterImages[activeCharacter.character?.name || ''] || activeCharacter.character?.image_url} alt={activeCharacter.character?.name} className="w-full h-full object-cover" />
+              </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">
                   <h3 className="font-bold text-lg text-foreground">{activeCharacter.character?.name}</h3>
