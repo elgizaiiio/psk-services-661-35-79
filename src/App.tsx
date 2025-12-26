@@ -49,8 +49,7 @@ const VIPSubscription = lazy(() => import("./pages/VIPSubscription"));
 const TokenStore = lazy(() => import("./pages/TokenStore"));
 const DailyTasks = lazy(() => import("./pages/DailyTasks"));
 const MiniGames = lazy(() => import("./pages/MiniGames"));
-
-
+const CharactersPreview = lazy(() => import("./pages/CharactersPreview"));
 // Loading component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen bg-background">
@@ -120,54 +119,65 @@ const App = () => (
             <TooltipProvider>
               <Toaster />
               <Sonner />
-              <TelegramWebAppWrapper>
-                <div className="tg-webapp-container min-h-screen bg-background relative">
-                  <div className="pt-6 relative z-10">
-                    <Suspense fallback={<PageLoader />}>
-                      <Routes>
-                        <Route path="/" element={<Index />} />
-                        <Route path="/mining" element={<Mining />} />
-                        <Route path="/apps" element={<Apps />} />
-                        <Route path="/games" element={<Games />} />
-                        <Route path="/runner" element={<Runner />} />
-                        <Route path="/runner-game" element={<RunnerGamePage />} />
-                      <Route path="/ai-generator" element={<AiGenerator />} />
-                      <Route path="/profile" element={<Profile />} />
-                      <Route path="/skins" element={<Skins />} />
-                      <Route path="/leaderboard" element={<Leaderboard />} />
-                      <Route path="/tasks" element={<Tasks />} />
-                      <Route path="/invite" element={<Invite />} />
-                      <Route path="/wallet" element={<Wallet />} />
-                      <Route path="/server-store" element={<ServerStore />} />
-                      <Route path="/upgrade-center" element={<UpgradeCenter />} />
-                      <Route path="/premium-packages" element={<PremiumPackages />} />
-                      <Route path="/elite-addons" element={<EliteAddOns />} />
-                      <Route path="/upgrade-matrix" element={<UpgradeMatrix />} />
-                      <Route path="/legendary-servers" element={<LegendaryServers />} />
-                      <Route path="/ai-subscription" element={<AiSubscription />} />
-                      <Route path="/mining-servers" element={<MiningServers />} />
-                      <Route path="/events" element={<Events />} />
-                      <Route path="/ai-image-store" element={<AiImageStore />} />
-                      <Route path="/giveaways" element={<Giveaways />} />
-                      <Route path="/admin" element={<Admin />} />
-                      <Route path="/create-task" element={<CreateTask />} />
-                      <Route path="/chat-ai" element={<ChatAI />} />
-                      <Route path="/slots" element={<Slots />} />
-                      <Route path="/settings" element={<Settings />} />
-                      <Route path="/challenges" element={<Challenges />} />
-                      <Route path="/characters" element={<Characters />} />
-                      <Route path="/achievements" element={<Achievements />} />
-                      <Route path="/vip" element={<VIPSubscription />} />
-                      <Route path="/token-store" element={<TokenStore />} />
-                      <Route path="/daily-tasks" element={<DailyTasks />} />
-                      <Route path="/mini-games" element={<MiniGames />} />
-                      
-                      </Routes>
-                    </Suspense>
-                    <BottomNavigation />
-                  </div>
-                </div>
-              </TelegramWebAppWrapper>
+              <Routes>
+                {/* Public route - no auth required */}
+                <Route path="/characters-preview" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <CharactersPreview />
+                  </Suspense>
+                } />
+                
+                {/* Protected routes - require Telegram auth */}
+                <Route path="/*" element={
+                  <TelegramWebAppWrapper>
+                    <div className="tg-webapp-container min-h-screen bg-background relative">
+                      <div className="pt-6 relative z-10">
+                        <Suspense fallback={<PageLoader />}>
+                          <Routes>
+                            <Route path="/" element={<Index />} />
+                            <Route path="/mining" element={<Mining />} />
+                            <Route path="/apps" element={<Apps />} />
+                            <Route path="/games" element={<Games />} />
+                            <Route path="/runner" element={<Runner />} />
+                            <Route path="/runner-game" element={<RunnerGamePage />} />
+                            <Route path="/ai-generator" element={<AiGenerator />} />
+                            <Route path="/profile" element={<Profile />} />
+                            <Route path="/skins" element={<Skins />} />
+                            <Route path="/leaderboard" element={<Leaderboard />} />
+                            <Route path="/tasks" element={<Tasks />} />
+                            <Route path="/invite" element={<Invite />} />
+                            <Route path="/wallet" element={<Wallet />} />
+                            <Route path="/server-store" element={<ServerStore />} />
+                            <Route path="/upgrade-center" element={<UpgradeCenter />} />
+                            <Route path="/premium-packages" element={<PremiumPackages />} />
+                            <Route path="/elite-addons" element={<EliteAddOns />} />
+                            <Route path="/upgrade-matrix" element={<UpgradeMatrix />} />
+                            <Route path="/legendary-servers" element={<LegendaryServers />} />
+                            <Route path="/ai-subscription" element={<AiSubscription />} />
+                            <Route path="/mining-servers" element={<MiningServers />} />
+                            <Route path="/events" element={<Events />} />
+                            <Route path="/ai-image-store" element={<AiImageStore />} />
+                            <Route path="/giveaways" element={<Giveaways />} />
+                            <Route path="/admin" element={<Admin />} />
+                            <Route path="/create-task" element={<CreateTask />} />
+                            <Route path="/chat-ai" element={<ChatAI />} />
+                            <Route path="/slots" element={<Slots />} />
+                            <Route path="/settings" element={<Settings />} />
+                            <Route path="/challenges" element={<Challenges />} />
+                            <Route path="/characters" element={<Characters />} />
+                            <Route path="/achievements" element={<Achievements />} />
+                            <Route path="/vip" element={<VIPSubscription />} />
+                            <Route path="/token-store" element={<TokenStore />} />
+                            <Route path="/daily-tasks" element={<DailyTasks />} />
+                            <Route path="/mini-games" element={<MiniGames />} />
+                          </Routes>
+                        </Suspense>
+                        <BottomNavigation />
+                      </div>
+                    </div>
+                  </TelegramWebAppWrapper>
+                } />
+              </Routes>
             </TooltipProvider>
           </LanguageProvider>
         </TelegramTonConnectProvider>
