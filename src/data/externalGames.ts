@@ -19,18 +19,30 @@ import gameMahJongg from '@/assets/games/mah-jongg.png';
 import gameTapTapTap from '@/assets/games/tap-tap-tap.png';
 import gameParticleClicker from '@/assets/games/particle-clicker.png';
 import game3dCity from '@/assets/games/3d-city.png';
+import gameSurvevIo from '@/assets/games/survev-io.png';
 
 export interface ExternalGame {
   id: string;
   title: string;
   thumbnail: string;
   embedUrl: string;
-  category: 'action' | 'racing' | 'puzzle' | 'sports' | 'casual' | 'arcade' | 'strategy';
+  category: 'action' | 'racing' | 'puzzle' | 'sports' | 'casual' | 'arcade' | 'strategy' | 'battle-royale';
   description: string;
   reward: number;
 }
 
 export const externalGames: ExternalGame[] = [
+  // ألعاب باتل رويال
+  {
+    id: 'survev-io',
+    title: 'Survev.io Battle Royale',
+    thumbnail: gameSurvevIo,
+    embedUrl: 'https://survev.io',
+    category: 'battle-royale',
+    description: 'باتل رويال 2D - كن آخر الناجين من 50 لاعب!',
+    reward: 50
+  },
+  
   // ألعاب ألغاز
   {
     id: '2048',
@@ -228,6 +240,7 @@ export const externalGames: ExternalGame[] = [
 
 export const categories = [
   { id: 'all', label: 'الكل', emoji: '🎮' },
+  { id: 'battle-royale', label: 'باتل رويال', emoji: '🎯' },
   { id: 'arcade', label: 'أركيد', emoji: '👾' },
   { id: 'puzzle', label: 'ألغاز', emoji: '🧩' },
   { id: 'action', label: 'أكشن', emoji: '🔫' },
