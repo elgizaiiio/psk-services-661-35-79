@@ -50,6 +50,7 @@ const TokenStore = lazy(() => import("./pages/TokenStore"));
 const DailyTasks = lazy(() => import("./pages/DailyTasks"));
 const MiniGames = lazy(() => import("./pages/MiniGames"));
 const CharactersPreview = lazy(() => import("./pages/CharactersPreview"));
+const CandyCrush = lazy(() => import("./pages/CandyCrush"));
 // Loading component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen bg-background">
@@ -170,6 +171,7 @@ const App = () => (
                             <Route path="/token-store" element={<TokenStore />} />
                             <Route path="/daily-tasks" element={<DailyTasks />} />
                             <Route path="/mini-games" element={<MiniGames />} />
+                            <Route path="/candy-crush" element={<CandyCrush />} />
                           </Routes>
                         </Suspense>
                         <BottomNavigation />
