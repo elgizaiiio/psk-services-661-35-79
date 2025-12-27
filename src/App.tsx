@@ -51,6 +51,8 @@ const DailyTasks = lazy(() => import("./pages/DailyTasks"));
 const MiniGames = lazy(() => import("./pages/MiniGames"));
 const CharactersPreview = lazy(() => import("./pages/CharactersPreview"));
 const CandyCrush = lazy(() => import("./pages/CandyCrush"));
+const Arcade = lazy(() => import("./pages/Arcade"));
+const ExternalGame = lazy(() => import("./pages/ExternalGame"));
 // Loading component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen bg-background">
@@ -172,6 +174,8 @@ const App = () => (
                             <Route path="/daily-tasks" element={<DailyTasks />} />
                             <Route path="/mini-games" element={<MiniGames />} />
                             <Route path="/candy-crush" element={<CandyCrush />} />
+                            <Route path="/arcade" element={<Arcade />} />
+                            <Route path="/arcade/:gameId" element={<ExternalGame />} />
                           </Routes>
                         </Suspense>
                         <BottomNavigation />
