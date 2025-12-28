@@ -19,7 +19,6 @@ const UpgradeCenter = lazy(() => import("./pages/UpgradeCenter"));
 const Tasks = lazy(() => import("./pages/Tasks"));
 const Apps = lazy(() => import("./pages/Apps"));
 const Skins = lazy(() => import("./pages/Skins"));
-const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const AiGenerator = lazy(() => import("./pages/AiGenerator"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Wallet = lazy(() => import("./pages/Wallet"));
@@ -40,12 +39,10 @@ const ChatAI = lazy(() => import("./pages/ChatAI"));
 const Slots = lazy(() => import("./pages/Slots"));
 const Settings = lazy(() => import("./pages/Settings"));
 const Challenges = lazy(() => import("./pages/Challenges"));
-const Characters = lazy(() => import("./pages/Characters"));
 const Achievements = lazy(() => import("./pages/Achievements"));
 const VIPSubscription = lazy(() => import("./pages/VIPSubscription"));
 const TokenStore = lazy(() => import("./pages/TokenStore"));
 const DailyTasks = lazy(() => import("./pages/DailyTasks"));
-const CharactersPreview = lazy(() => import("./pages/CharactersPreview"));
 const KrunkerGame = lazy(() => import("./pages/KrunkerGame"));
 
 // Loading component
@@ -118,14 +115,7 @@ const App = () => (
               <Toaster />
               <Sonner />
               <Routes>
-                {/* Public route - no auth required */}
-                <Route path="/characters-preview" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <CharactersPreview />
-                  </Suspense>
-                } />
-                
-                {/* Protected routes - require Telegram auth */}
+                {/* All routes with Telegram auth */}
                 <Route path="/*" element={
                   <TelegramWebAppWrapper>
                     <div className="tg-webapp-container min-h-screen bg-background relative">
@@ -138,7 +128,6 @@ const App = () => (
                             <Route path="/ai-generator" element={<AiGenerator />} />
                             <Route path="/profile" element={<Profile />} />
                             <Route path="/skins" element={<Skins />} />
-                            <Route path="/leaderboard" element={<Leaderboard />} />
                             <Route path="/tasks" element={<Tasks />} />
                             <Route path="/invite" element={<Invite />} />
                             <Route path="/wallet" element={<Wallet />} />
@@ -159,7 +148,6 @@ const App = () => (
                             <Route path="/slots" element={<Slots />} />
                             <Route path="/settings" element={<Settings />} />
                             <Route path="/challenges" element={<Challenges />} />
-                            <Route path="/characters" element={<Characters />} />
                             <Route path="/achievements" element={<Achievements />} />
                             <Route path="/vip" element={<VIPSubscription />} />
                             <Route path="/token-store" element={<TokenStore />} />

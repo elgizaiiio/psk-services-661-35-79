@@ -23,7 +23,7 @@ import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
 import { useTasks } from "@/hooks/useTasks";
-import { useLeaderboard } from "@/hooks/useLeaderboard";
+
 import { formatDistanceToNow } from "date-fns";
 
 
@@ -31,17 +31,8 @@ const Profile: React.FC = () => {
   const { user: tgUser } = useTelegramAuth();
   const { user: vmUser, activeMiningSession, loading: miningLoading } = useViralMining(tgUser);
   const { completedTasks, loading: tasksLoading } = useTasks();
-  const { getUserRank } = useLeaderboard();
-  const [userRank, setUserRank] = React.useState<number | null>(null);
   const navigate = useNavigate();
-
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
-
-  React.useEffect(() => {
-    if (vmUser) {
-      getUserRank(vmUser.id).then(setUserRank);
-    }
-  }, [vmUser, getUserRank]);
 
   const totalTasksCompleted = completedTasks.length;
   const totalPointsFromTasks = completedTasks.reduce((sum, task) => sum + task.points_earned, 0);
@@ -49,7 +40,7 @@ const Profile: React.FC = () => {
   const stats = [
     {
       label: "Current Balance",
-      value: `${vmUser?.token_balance?.toFixed(4) || '0.0000'} VIRAL`,
+      value: `${vmUser?.token_balance?.toFixed(4) || '0.0000'} BOLT`,
       icon: Coins,
       color: "text-primary"
     },
@@ -66,8 +57,8 @@ const Profile: React.FC = () => {
       color: "text-blue-500"
     },
     {
-      label: "Rank",
-      value: userRank ? `#${userRank}` : 'Loading...',
+      label: "Servers",
+      value: '-',
       icon: Trophy,
       color: "text-purple-500"
     },
@@ -96,11 +87,11 @@ const Profile: React.FC = () => {
     },
     {
       label: "Tokens per Hour",
-      value: `${activeMiningSession.tokens_per_hour} VIRAL`,
+      value: `${activeMiningSession.tokens_per_hour} BOLT`,
     },
     {
       label: "Total Expected",
-      value: `${(activeMiningSession.tokens_per_hour * activeMiningSession.mining_power_multiplier * vmUser?.mining_duration_hours || 0).toFixed(4)} VIRAL`,
+      value: `${(activeMiningSession.tokens_per_hour * activeMiningSession.mining_power_multiplier * vmUser?.mining_duration_hours || 0).toFixed(4)} BOLT`,
     }
   ] : [];
 
@@ -108,7 +99,7 @@ const Profile: React.FC = () => {
     "@context": "https://schema.org",
     "@type": "WebPage",
     name: "Profile",
-    description: "View your VIRAL mining profile, stats, and achievements.",
+    description: "View your BOLT mining profile, stats, and achievements.",
     url: currentUrl,
   };
 
@@ -173,11 +164,6 @@ const Profile: React.FC = () => {
                     <Badge variant="secondary" className="text-xs">
                       ID: {tgUser?.id}
                     </Badge>
-                    {userRank && (
-                      <Badge variant="outline" className="text-xs">
-                        Rank #{userRank}
-                      </Badge>
-                    )}
                   </div>
                 </div>
               </div>
