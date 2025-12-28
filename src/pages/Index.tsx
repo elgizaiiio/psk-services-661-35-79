@@ -7,8 +7,9 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
-import { Server, Zap, ChevronRight, Wallet, Loader2, Play } from 'lucide-react';
+import { Server, ChevronRight, Wallet, Loader2, Play } from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
+import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -94,9 +95,7 @@ const Index = () => {
             <FadeUp>
               <motion.div className="p-4 rounded-xl bg-card border border-border" whileTap={{ scale: 0.98 }}>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Zap className="w-4 h-4 text-primary" />
-                  </div>
+                  <BoltIcon size={32} />
                   <span className="text-xs text-muted-foreground">BOLT</span>
                 </div>
                 <p className="text-xl font-semibold text-foreground"><AnimatedNumber value={boltBalance} decimals={0} duration={0.8} /></p>
@@ -107,9 +106,7 @@ const Index = () => {
             <FadeUp>
               <motion.div className="p-4 rounded-xl bg-card border border-border" whileTap={{ scale: 0.98 }}>
                 <div className="flex items-center gap-2 mb-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-primary text-sm font-bold">$</span>
-                  </div>
+                  <UsdtIcon size={32} />
                   <span className="text-xs text-muted-foreground">USDT</span>
                 </div>
                 <p className="text-xl font-semibold text-foreground"><AnimatedNumber value={usdtBalance} decimals={2} duration={0.8} /></p>

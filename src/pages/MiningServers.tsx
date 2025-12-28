@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useUserServers } from '@/hooks/useUserServers';
-import { Server, Zap, Check, Loader2, ArrowLeft, Package } from 'lucide-react';
+import { Server, Check, Loader2, ArrowLeft, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
 import { useNavigate } from 'react-router-dom';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber } from '@/components/ui/motion-wrapper';
+import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
 
 type MiningServer = { id: string; name: string; hashRate: string; hashRateNum: number; boltPerDay: number; usdtPerDay: number; price: number; tier: 'Basic' | 'Pro' | 'Elite'; };
 
@@ -65,7 +66,7 @@ const MiningServers = () => {
             <FadeUp>
               <div className="p-4 rounded-xl bg-card border border-border flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><Zap className="w-5 h-5 text-primary" /></div>
+                  <BoltIcon size={40} />
                   <div><p className="text-sm font-medium text-foreground">{telegramUser?.first_name}</p><p className="text-xs text-muted-foreground">{ownedServers.length} servers</p></div>
                 </div>
                 <p className="font-bold text-primary"><AnimatedNumber value={user.token_balance} decimals={0} duration={0.8} /> BOLT</p>
@@ -84,7 +85,7 @@ const MiningServers = () => {
                 <FadeUp key={server.id}>
                   <motion.div className={`p-4 rounded-xl border ${owned ? 'bg-primary/5 border-primary/20' : stock.soldOut ? 'bg-muted/50 border-border opacity-60' : 'bg-card border-border'}`} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
                     <div className="flex items-center gap-2 mb-3"><Server className="w-4 h-4 text-primary" /><span className="text-sm font-medium text-foreground">{server.name}</span></div>
-                    <div className="space-y-1 mb-3"><p className="text-xs text-muted-foreground">{server.hashRate}</p><p className="text-xs text-primary">+{server.boltPerDay} BOLT/day</p><p className="text-xs text-muted-foreground">+${server.usdtPerDay} USDT/day</p></div>
+                    <div className="space-y-1 mb-3"><p className="text-xs text-muted-foreground">{server.hashRate}</p><p className="text-xs text-primary flex items-center gap-1"><BoltIcon size={12} />+{server.boltPerDay}/day</p><p className="text-xs text-muted-foreground flex items-center gap-1"><UsdtIcon size={12} />+${server.usdtPerDay}/day</p></div>
                     
                     {/* Stock indicator */}
                     <div className="mb-3">
@@ -109,7 +110,7 @@ const MiningServers = () => {
                     ) : stock.soldOut ? (
                       <div className="flex items-center justify-center gap-1 py-2 rounded-lg bg-muted text-muted-foreground text-sm font-medium">Sold Out</div>
                     ) : (
-                      <Button onClick={() => handlePurchase(server)} className="w-full h-9 text-sm" disabled={processing}>{processing ? <Loader2 className="w-4 h-4 animate-spin" /> : `${server.price} TON`}</Button>
+                      <Button onClick={() => handlePurchase(server)} className="w-full h-9 text-sm flex items-center gap-1" disabled={processing}>{processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <><TonIcon size={16} />{server.price} TON</>}</Button>
                     )}
                   </motion.div>
                 </FadeUp>
