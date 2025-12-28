@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useUserServers } from '@/hooks/useUserServers';
-import { Server, Zap, Check, Loader2, ArrowLeft } from 'lucide-react';
+import { Server, Zap, Check, Loader2, ArrowLeft, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +17,7 @@ const MiningServers = () => {
   const navigate = useNavigate();
   const { user: telegramUser } = useTelegramAuth();
   const { user } = useViralMining(telegramUser);
-  const { servers: ownedServers, purchaseServer } = useUserServers(user?.id || null);
+  const { servers: ownedServers, purchaseServer, getStock, refetchInventory } = useUserServers(user?.id || null);
   const [processingServer, setProcessingServer] = useState<string | null>(null);
   const { sendDirectPayment, isProcessing } = useDirectTonPayment();
 
@@ -32,9 +32,16 @@ const MiningServers = () => {
 
   const handlePurchase = async (server: MiningServer) => {
     if (!user?.id) { toast.error('Please login first'); return; }
+    
+    const stock = getStock(server.id);
+    if (stock.soldOut) { toast.error('This server is sold out!'); return; }
+    
     setProcessingServer(server.id);
     const success = await sendDirectPayment({ amount: server.price, description: `Server - ${server.name}`, productType: 'server_hosting', productId: server.id, serverName: server.name });
-    if (success) { await purchaseServer(server.tier, server.name, server.hashRate, server.boltPerDay, server.usdtPerDay); toast.success('Server purchased!'); }
+    if (success) { 
+      await purchaseServer(server.id, server.tier, server.name, server.hashRate, server.boltPerDay, server.usdtPerDay); 
+      toast.success('Server purchased!'); 
+    }
     setProcessingServer(null);
   };
 
@@ -70,13 +77,37 @@ const MiningServers = () => {
             {servers.map((server) => {
               const owned = isOwned(server.id);
               const processing = isProcessing && processingServer === server.id;
+              const stock = getStock(server.id);
+              const stockPercent = stock.total > 0 ? ((stock.total - stock.remaining) / stock.total) * 100 : 0;
+              
               return (
                 <FadeUp key={server.id}>
-                  <motion.div className={`p-4 rounded-xl border ${owned ? 'bg-primary/5 border-primary/20' : 'bg-card border-border'}`} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
+                  <motion.div className={`p-4 rounded-xl border ${owned ? 'bg-primary/5 border-primary/20' : stock.soldOut ? 'bg-muted/50 border-border opacity-60' : 'bg-card border-border'}`} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
                     <div className="flex items-center gap-2 mb-3"><Server className="w-4 h-4 text-primary" /><span className="text-sm font-medium text-foreground">{server.name}</span></div>
                     <div className="space-y-1 mb-3"><p className="text-xs text-muted-foreground">{server.hashRate}</p><p className="text-xs text-primary">+{server.boltPerDay} BOLT/day</p><p className="text-xs text-muted-foreground">+${server.usdtPerDay} USDT/day</p></div>
+                    
+                    {/* Stock indicator */}
+                    <div className="mb-3">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-muted-foreground flex items-center gap-1"><Package className="w-3 h-3" />Stock</span>
+                        <span className={stock.soldOut ? 'text-destructive font-medium' : stock.remaining < 20 ? 'text-orange-500 font-medium' : 'text-muted-foreground'}>
+                          {stock.soldOut ? 'Sold Out' : `${stock.remaining}/${stock.total}`}
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <motion.div 
+                          className={`h-full ${stock.soldOut ? 'bg-destructive' : stockPercent > 80 ? 'bg-orange-500' : 'bg-primary'}`}
+                          initial={{ width: 0 }}
+                          animate={{ width: `${stockPercent}%` }}
+                          transition={{ duration: 0.5 }}
+                        />
+                      </div>
+                    </div>
+                    
                     {owned ? (
                       <motion.div className="flex items-center justify-center gap-1 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium" initial={{ scale: 0.9 }} animate={{ scale: 1 }}><Check className="w-4 h-4" />Owned</motion.div>
+                    ) : stock.soldOut ? (
+                      <div className="flex items-center justify-center gap-1 py-2 rounded-lg bg-muted text-muted-foreground text-sm font-medium">Sold Out</div>
                     ) : (
                       <Button onClick={() => handlePurchase(server)} className="w-full h-9 text-sm" disabled={processing}>{processing ? <Loader2 className="w-4 h-4 animate-spin" /> : `${server.price} TON`}</Button>
                     )}

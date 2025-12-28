@@ -1124,6 +1124,33 @@ export type Database = {
         }
         Relationships: []
       }
+      server_inventory: {
+        Row: {
+          created_at: string | null
+          id: string
+          server_id: string
+          server_name: string
+          sold_count: number | null
+          total_stock: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          server_id: string
+          server_name: string
+          sold_count?: number | null
+          total_stock: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          server_id?: string
+          server_name?: string
+          sold_count?: number | null
+          total_stock?: number
+        }
+        Relationships: []
+      }
       server_purchases: {
         Row: {
           activated_at: string | null
