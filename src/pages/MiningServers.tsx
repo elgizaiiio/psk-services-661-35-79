@@ -22,12 +22,12 @@ const MiningServers = () => {
   const { sendDirectPayment, isProcessing } = useDirectTonPayment();
 
   const servers: MiningServer[] = [
-    { id: 'basic-1', name: 'Starter', hashRate: '2.5 TH/s', hashRateNum: 2.5, boltPerDay: 5, usdtPerDay: 0.01, price: 0.5, tier: 'Basic' },
-    { id: 'basic-2', name: 'Basic', hashRate: '5.0 TH/s', hashRateNum: 5, boltPerDay: 10, usdtPerDay: 0.02, price: 1.0, tier: 'Basic' },
-    { id: 'pro-1', name: 'Pro', hashRate: '8.0 TH/s', hashRateNum: 8, boltPerDay: 15, usdtPerDay: 0.03, price: 2.0, tier: 'Pro' },
-    { id: 'pro-2', name: 'Advanced', hashRate: '12.0 TH/s', hashRateNum: 12, boltPerDay: 25, usdtPerDay: 0.05, price: 3.5, tier: 'Pro' },
-    { id: 'elite-1', name: 'Elite', hashRate: '20.0 TH/s', hashRateNum: 20, boltPerDay: 40, usdtPerDay: 0.08, price: 6.0, tier: 'Elite' },
-    { id: 'elite-2', name: 'Ultra', hashRate: '35.0 TH/s', hashRateNum: 35, boltPerDay: 70, usdtPerDay: 0.14, price: 10.0, tier: 'Elite' },
+    { id: 'basic-1', name: 'Starter', hashRate: '2.5 TH/s', hashRateNum: 2.5, boltPerDay: 15, usdtPerDay: 0.05, price: 0.5, tier: 'Basic' },
+    { id: 'basic-2', name: 'Basic', hashRate: '5.0 TH/s', hashRateNum: 5, boltPerDay: 30, usdtPerDay: 0.10, price: 1.0, tier: 'Basic' },
+    { id: 'pro-1', name: 'Pro', hashRate: '8.0 TH/s', hashRateNum: 8, boltPerDay: 50, usdtPerDay: 0.18, price: 2.0, tier: 'Pro' },
+    { id: 'pro-2', name: 'Advanced', hashRate: '12.0 TH/s', hashRateNum: 12, boltPerDay: 80, usdtPerDay: 0.28, price: 3.5, tier: 'Pro' },
+    { id: 'elite-1', name: 'Elite', hashRate: '20.0 TH/s', hashRateNum: 20, boltPerDay: 120, usdtPerDay: 0.45, price: 6.0, tier: 'Elite' },
+    { id: 'elite-2', name: 'Ultra', hashRate: '35.0 TH/s', hashRateNum: 35, boltPerDay: 200, usdtPerDay: 0.80, price: 10.0, tier: 'Elite' },
   ];
 
   const handlePurchase = async (server: MiningServer) => {
@@ -48,7 +48,7 @@ const MiningServers = () => {
   const isOwned = (serverId: string) => ownedServers.some(s => s.server_name === servers.find(srv => srv.id === serverId)?.name);
 
   return (
-    <PageWrapper className="min-h-screen bg-background pb-28">
+    <PageWrapper className="min-h-screen bg-background pb-40">
       <Helmet><title>Mining Servers</title></Helmet>
       <div className="max-w-md mx-auto px-5 pt-8">
         <StaggerContainer className="space-y-6">
