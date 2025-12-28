@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Home, Gamepad2, ListTodo, Wallet, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
-import { motion } from 'framer-motion';
 
 const BottomNavigation = () => {
   const location = useLocation();
@@ -23,63 +22,34 @@ const BottomNavigation = () => {
     navigate(path);
   };
 
-  const hideNavigationPaths = ['/runner-game', '/chat-ai'];
+  const hideNavigationPaths = ['/runner-game', '/chat-ai', '/krunker'];
   
   if (hideNavigationPaths.includes(location.pathname)) {
     return null;
   }
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50">
-      {/* Gradient blur background */}
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/95 to-transparent -top-4 pointer-events-none" />
-      
-      <div className="relative bg-card/80 backdrop-blur-xl border-t border-border/30 mx-3 mb-3 rounded-2xl shadow-2xl shadow-black/20">
-        <div className="flex items-center justify-around py-2 px-1 max-w-md mx-auto">
-          {navItems.map((item, index) => {
+    <div className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4">
+      <div className="bg-card border border-border rounded-2xl max-w-md mx-auto">
+        <div className="flex items-center justify-around py-2">
+          {navItems.map((item) => {
             const isActive = item.path === location.pathname;
             const Icon = item.icon;
             
             return (
-              <motion.button
+              <button
                 key={item.label}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.05 }}
                 onClick={() => handleNavigation(item.path)}
                 className={cn(
-                  "relative flex flex-col items-center gap-0.5 py-2 px-3 rounded-xl transition-all duration-300",
-                  "min-w-[52px] outline-none",
+                  "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors",
                   isActive 
                     ? "text-primary" 
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                {isActive && (
-                  <motion.div
-                    layoutId="activeNavTab"
-                    className="absolute inset-0 bg-primary/15 rounded-xl border border-primary/20"
-                    transition={{ type: "spring", bounce: 0.25, duration: 0.5 }}
-                  />
-                )}
-                
-                <div className="relative z-10">
-                  <Icon 
-                    className={cn(
-                      "w-5 h-5 transition-all duration-300",
-                      isActive && "drop-shadow-[0_0_10px_hsl(var(--primary))]"
-                    )} 
-                    strokeWidth={isActive ? 2.5 : 2} 
-                  />
-                </div>
-                
-                <span className={cn(
-                  "text-[10px] font-medium relative z-10 transition-all duration-300",
-                  isActive && "font-bold"
-                )}>
-                  {item.label}
-                </span>
-              </motion.button>
+                <Icon className="w-5 h-5" strokeWidth={isActive ? 2.5 : 2} />
+                <span className="text-[10px] font-medium">{item.label}</span>
+              </button>
             );
           })}
         </div>
