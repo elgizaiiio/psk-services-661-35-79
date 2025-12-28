@@ -14,8 +14,16 @@ export interface UserServer {
   last_claim_at: string | null;
 }
 
+export interface ServerInventory {
+  server_id: string;
+  server_name: string;
+  total_stock: number;
+  sold_count: number;
+}
+
 export const useUserServers = (userId: string | null) => {
   const [servers, setServers] = useState<UserServer[]>([]);
+  const [inventory, setInventory] = useState<ServerInventory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -44,7 +52,28 @@ export const useUserServers = (userId: string | null) => {
     }
   }, [userId]);
 
+  const fetchInventory = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('server_inventory')
+        .select('server_id, server_name, total_stock, sold_count');
+
+      if (error) throw error;
+      setInventory(data || []);
+    } catch (err: any) {
+      console.error('Error fetching inventory:', err);
+    }
+  }, []);
+
+  const getStock = useCallback((serverId: string) => {
+    const inv = inventory.find(i => i.server_id === serverId);
+    if (!inv) return { remaining: 999, total: 999, soldOut: false };
+    const remaining = inv.total_stock - inv.sold_count;
+    return { remaining, total: inv.total_stock, soldOut: remaining <= 0 };
+  }, [inventory]);
+
   const purchaseServer = useCallback(async (
+    serverId: string,
     serverTier: string,
     serverName: string,
     hashRate: string,
@@ -53,6 +82,11 @@ export const useUserServers = (userId: string | null) => {
   ) => {
     if (!userId) throw new Error('User not found');
 
+    // Check stock first
+    const stock = getStock(serverId);
+    if (stock.soldOut) throw new Error('Server sold out');
+
+    // Insert user server
     const { data, error } = await supabase
       .from('user_servers')
       .insert({
@@ -67,9 +101,20 @@ export const useUserServers = (userId: string | null) => {
       .single();
 
     if (error) throw error;
+
+    // Increment sold count
+    const inv = inventory.find(i => i.server_id === serverId);
+    if (inv) {
+      await supabase
+        .from('server_inventory')
+        .update({ sold_count: inv.sold_count + 1 })
+        .eq('server_id', serverId);
+    }
+
     await fetchServers();
+    await fetchInventory();
     return data;
-  }, [userId, fetchServers]);
+  }, [userId, fetchServers, fetchInventory, getStock, inventory]);
 
   const getTotalStats = useCallback(() => {
     const totalBoltPerDay = servers.reduce((sum, s) => sum + s.daily_bolt_yield, 0);
@@ -89,14 +134,18 @@ export const useUserServers = (userId: string | null) => {
 
   useEffect(() => {
     fetchServers();
-  }, [fetchServers]);
+    fetchInventory();
+  }, [fetchServers, fetchInventory]);
 
   return {
     servers,
+    inventory,
     loading,
     error,
     purchaseServer,
     getTotalStats,
+    getStock,
     refetch: fetchServers,
+    refetchInventory: fetchInventory,
   };
 };
