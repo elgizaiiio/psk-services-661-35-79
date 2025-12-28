@@ -11,11 +11,11 @@ const BottomNavigation = () => {
   const { hapticFeedback } = useTelegramAuth();
 
   const navItems = [
-    { icon: Home, label: 'الرئيسية', path: '/' },
-    { icon: Gamepad2, label: 'اللعبة', path: '/game' },
-    { icon: ListTodo, label: 'المهام', path: '/tasks' },
-    { icon: Wallet, label: 'المحفظة', path: '/wallet' },
-    { icon: Users, label: 'دعوة', path: '/invite' },
+    { icon: Home, label: 'Home', path: '/' },
+    { icon: Gamepad2, label: 'Game', path: '/game' },
+    { icon: ListTodo, label: 'Tasks', path: '/tasks' },
+    { icon: Wallet, label: 'Wallet', path: '/wallet' },
+    { icon: Users, label: 'Invite', path: '/invite' },
   ];
 
   const handleNavigation = (path: string) => {
