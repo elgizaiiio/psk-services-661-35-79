@@ -33,7 +33,7 @@ const Invite: React.FC = () => {
   const isLoading = friendsLoading || miningLoading;
 
   return (
-    <PageWrapper className="min-h-screen bg-background pb-32">
+    <PageWrapper className="min-h-screen bg-background pb-44">
       <Helmet><title>Invite Friends</title></Helmet>
       <div className="max-w-md mx-auto px-5 pt-8">
         <StaggerContainer className="space-y-6">
