@@ -1211,8 +1211,12 @@ export type Database = {
           created_at: string
           description: string | null
           destination_address: string
+          eth_tx_hash: string | null
           id: string
           metadata: Json | null
+          nowpayments_id: string | null
+          payment_currency: string | null
+          payment_method: string
           product_id: string | null
           product_type: string
           status: string
@@ -1227,8 +1231,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           destination_address: string
+          eth_tx_hash?: string | null
           id?: string
           metadata?: Json | null
+          nowpayments_id?: string | null
+          payment_currency?: string | null
+          payment_method?: string
           product_id?: string | null
           product_type?: string
           status?: string
@@ -1243,8 +1251,12 @@ export type Database = {
           created_at?: string
           description?: string | null
           destination_address?: string
+          eth_tx_hash?: string | null
           id?: string
           metadata?: Json | null
+          nowpayments_id?: string | null
+          payment_currency?: string | null
+          payment_method?: string
           product_id?: string | null
           product_type?: string
           status?: string
