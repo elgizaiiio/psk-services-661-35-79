@@ -1,25 +1,20 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useUserServers } from '@/hooks/useUserServers';
-import { Server, Zap, Check } from 'lucide-react';
+import { Server, Zap, Check, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
+import { useNavigate } from 'react-router-dom';
+import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber } from '@/components/ui/motion-wrapper';
 
-type MiningServer = {
-  id: string;
-  name: string;
-  hashRate: string;
-  hashRateNum: number;
-  boltPerDay: number;
-  usdtPerDay: number;
-  price: number;
-  tier: 'Basic' | 'Pro' | 'Elite';
-};
+type MiningServer = { id: string; name: string; hashRate: string; hashRateNum: number; boltPerDay: number; usdtPerDay: number; price: number; tier: 'Basic' | 'Pro' | 'Elite'; };
 
 const MiningServers = () => {
+  const navigate = useNavigate();
   const { user: telegramUser } = useTelegramAuth();
   const { user } = useViralMining(telegramUser);
   const { servers: ownedServers, purchaseServer } = useUserServers(user?.id || null);
@@ -36,114 +31,63 @@ const MiningServers = () => {
   ];
 
   const handlePurchase = async (server: MiningServer) => {
-    if (!user?.id) {
-      toast.error('Please login first');
-      return;
-    }
-
+    if (!user?.id) { toast.error('Please login first'); return; }
     setProcessingServer(server.id);
-    
-    const success = await sendDirectPayment({
-      amount: server.price,
-      description: `Server - ${server.name}`,
-      productType: 'server_hosting',
-      productId: server.id,
-      serverName: server.name
-    });
-
-    if (success) {
-      await purchaseServer(
-        server.tier,
-        server.name,
-        server.hashRate,
-        server.boltPerDay,
-        server.usdtPerDay
-      );
-      toast.success('Server purchased!');
-    }
-    
+    const success = await sendDirectPayment({ amount: server.price, description: `Server - ${server.name}`, productType: 'server_hosting', productId: server.id, serverName: server.name });
+    if (success) { await purchaseServer(server.tier, server.name, server.hashRate, server.boltPerDay, server.usdtPerDay); toast.success('Server purchased!'); }
     setProcessingServer(null);
   };
 
-  const isOwned = (serverId: string) => {
-    return ownedServers.some(s => s.server_name === servers.find(srv => srv.id === serverId)?.name);
-  };
+  const isOwned = (serverId: string) => ownedServers.some(s => s.server_name === servers.find(srv => srv.id === serverId)?.name);
 
   return (
-    <div className="min-h-screen bg-background pb-28">
-      <Helmet>
-        <title>Mining Servers</title>
-        <meta name="description" content="Buy mining servers" />
-      </Helmet>
-
-      <div className="max-w-md mx-auto px-5 pt-8 space-y-6">
-        
-        {/* Header */}
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">Mining Servers</h1>
-          <p className="text-sm text-muted-foreground">Buy servers to earn BOLT & USDT daily</p>
-        </div>
-
-        {/* Balance */}
-        {user && (
-          <div className="p-4 rounded-xl bg-card border border-border flex items-center justify-between">
+    <PageWrapper className="min-h-screen bg-background pb-28">
+      <Helmet><title>Mining Servers</title></Helmet>
+      <div className="max-w-md mx-auto px-5 pt-8">
+        <StaggerContainer className="space-y-6">
+          <FadeUp>
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">{telegramUser?.first_name}</p>
-                <p className="text-xs text-muted-foreground">{ownedServers.length} servers owned</p>
-              </div>
+              <motion.button onClick={() => navigate(-1)} whileTap={{ scale: 0.9 }} className="w-10 h-10 bg-card border border-border rounded-xl flex items-center justify-center">
+                <ArrowLeft className="w-5 h-5 text-foreground" />
+              </motion.button>
+              <div><h1 className="text-xl font-semibold text-foreground">Mining Servers</h1><p className="text-sm text-muted-foreground">Buy servers to earn daily</p></div>
             </div>
-            <p className="font-bold text-primary">{user.token_balance.toFixed(0)} BOLT</p>
-          </div>
-        )}
+          </FadeUp>
 
-        {/* Servers Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {servers.map((server) => {
-            const owned = isOwned(server.id);
-            const processing = isProcessing && processingServer === server.id;
-            
-            return (
-              <div 
-                key={server.id} 
-                className={`p-4 rounded-xl border ${
-                  owned ? 'bg-primary/5 border-primary/20' : 'bg-card border-border'
-                }`}
-              >
-                <div className="flex items-center gap-2 mb-3">
-                  <Server className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium text-foreground">{server.name}</span>
+          {user && (
+            <FadeUp>
+              <div className="p-4 rounded-xl bg-card border border-border flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center"><Zap className="w-5 h-5 text-primary" /></div>
+                  <div><p className="text-sm font-medium text-foreground">{telegramUser?.first_name}</p><p className="text-xs text-muted-foreground">{ownedServers.length} servers</p></div>
                 </div>
-                
-                <div className="space-y-1 mb-3">
-                  <p className="text-xs text-muted-foreground">{server.hashRate}</p>
-                  <p className="text-xs text-primary">+{server.boltPerDay} BOLT/day</p>
-                  <p className="text-xs text-green-500">+${server.usdtPerDay} USDT/day</p>
-                </div>
-
-                {owned ? (
-                  <div className="flex items-center justify-center gap-1 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium">
-                    <Check className="w-4 h-4" />
-                    Owned
-                  </div>
-                ) : (
-                  <Button 
-                    onClick={() => handlePurchase(server)}
-                    className="w-full h-9 text-sm"
-                    disabled={processing}
-                  >
-                    {processing ? '...' : `${server.price} TON`}
-                  </Button>
-                )}
+                <p className="font-bold text-primary"><AnimatedNumber value={user.token_balance} decimals={0} duration={0.8} /> BOLT</p>
               </div>
-            );
-          })}
-        </div>
+            </FadeUp>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            {servers.map((server) => {
+              const owned = isOwned(server.id);
+              const processing = isProcessing && processingServer === server.id;
+              return (
+                <FadeUp key={server.id}>
+                  <motion.div className={`p-4 rounded-xl border ${owned ? 'bg-primary/5 border-primary/20' : 'bg-card border-border'}`} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
+                    <div className="flex items-center gap-2 mb-3"><Server className="w-4 h-4 text-primary" /><span className="text-sm font-medium text-foreground">{server.name}</span></div>
+                    <div className="space-y-1 mb-3"><p className="text-xs text-muted-foreground">{server.hashRate}</p><p className="text-xs text-primary">+{server.boltPerDay} BOLT/day</p><p className="text-xs text-muted-foreground">+${server.usdtPerDay} USDT/day</p></div>
+                    {owned ? (
+                      <motion.div className="flex items-center justify-center gap-1 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium" initial={{ scale: 0.9 }} animate={{ scale: 1 }}><Check className="w-4 h-4" />Owned</motion.div>
+                    ) : (
+                      <Button onClick={() => handlePurchase(server)} className="w-full h-9 text-sm" disabled={processing}>{processing ? <Loader2 className="w-4 h-4 animate-spin" /> : `${server.price} TON`}</Button>
+                    )}
+                  </motion.div>
+                </FadeUp>
+              );
+            })}
+          </div>
+        </StaggerContainer>
       </div>
-    </div>
+    </PageWrapper>
   );
 };
 
