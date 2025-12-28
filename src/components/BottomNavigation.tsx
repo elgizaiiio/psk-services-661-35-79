@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Home, Bot, ListTodo, Trophy, Users } from 'lucide-react';
+import { Home, Gamepad2, ListTodo, Trophy, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { motion } from 'framer-motion';
@@ -12,7 +12,7 @@ const BottomNavigation = () => {
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
-    { icon: Bot, label: 'AI', path: '/apps' },
+    { icon: Gamepad2, label: 'Game', path: '/game' },
     { icon: ListTodo, label: 'Tasks', path: '/tasks' },
     { icon: Trophy, label: 'Rank', path: '/leaderboard' },
     { icon: Users, label: 'Invite', path: '/invite' },
