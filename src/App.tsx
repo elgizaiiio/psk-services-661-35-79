@@ -55,6 +55,7 @@ const Arcade = lazy(() => import("./pages/Arcade"));
 const ExternalGame = lazy(() => import("./pages/ExternalGame"));
 const GameArterArcade = lazy(() => import("./pages/GameArterArcade"));
 const GameArterGame = lazy(() => import("./pages/GameArterGame"));
+const TestGames = lazy(() => import("./pages/TestGames"));
 // Loading component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen bg-background">
@@ -180,6 +181,7 @@ const App = () => (
                             <Route path="/arcade/:gameId" element={<ExternalGame />} />
                             <Route path="/gamearter" element={<GameArterArcade />} />
                             <Route path="/gamearter/:gameId" element={<GameArterGame />} />
+                            <Route path="/test" element={<TestGames />} />
                           </Routes>
                         </Suspense>
                         <BottomNavigation />
