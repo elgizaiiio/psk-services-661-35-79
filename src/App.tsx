@@ -53,6 +53,8 @@ const CharactersPreview = lazy(() => import("./pages/CharactersPreview"));
 const CandyCrush = lazy(() => import("./pages/CandyCrush"));
 const Arcade = lazy(() => import("./pages/Arcade"));
 const ExternalGame = lazy(() => import("./pages/ExternalGame"));
+const GameArterArcade = lazy(() => import("./pages/GameArterArcade"));
+const GameArterGame = lazy(() => import("./pages/GameArterGame"));
 // Loading component
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-screen bg-background">
@@ -176,6 +178,8 @@ const App = () => (
                             <Route path="/candy-crush" element={<CandyCrush />} />
                             <Route path="/arcade" element={<Arcade />} />
                             <Route path="/arcade/:gameId" element={<ExternalGame />} />
+                            <Route path="/gamearter" element={<GameArterArcade />} />
+                            <Route path="/gamearter/:gameId" element={<GameArterGame />} />
                           </Routes>
                         </Suspense>
                         <BottomNavigation />
