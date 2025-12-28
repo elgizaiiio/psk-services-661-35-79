@@ -3,9 +3,10 @@ import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
-import { Eye, EyeOff, Zap, Loader2, Wallet as WalletIcon } from "lucide-react";
+import { Eye, EyeOff, Loader2, Wallet as WalletIcon } from "lucide-react";
 import { TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
 import { PageWrapper, StaggerContainer, FadeUp, ScaleIn, AnimatedNumber } from '@/components/ui/motion-wrapper';
+import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
 
 const Wallet: React.FC = () => {
   const { user: tgUser, isLoading: authLoading } = useTelegramAuth();
@@ -98,17 +99,15 @@ const Wallet: React.FC = () => {
           <FadeUp><p className="text-sm font-medium text-muted-foreground px-1">Assets</p></FadeUp>
 
           {[
-            { icon: Zap, name: 'BOLT', balance: boltBalance, value: 0 },
-            { icon: null, name: 'TON', balance: 0, value: 0, img: 'https://api.voxelplay.app/assets/images/currency/ton.png' },
-            { icon: null, name: 'USDT', balance: usdtBalance, value: usdtBalance, img: 'https://www.joinhu4.io/checkout/_next/static/media/usdt.6d35925e.svg' },
+            { name: 'BOLT', balance: boltBalance, value: 0, icon: <BoltIcon size={40} /> },
+            { name: 'TON', balance: 0, value: 0, icon: <TonIcon size={40} /> },
+            { name: 'USDT', balance: usdtBalance, value: usdtBalance, icon: <UsdtIcon size={40} /> },
           ].map((asset) => (
             <FadeUp key={asset.name}>
               <motion.div className="p-4 rounded-xl bg-card border border-border" whileTap={{ scale: 0.98 }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center overflow-hidden">
-                      {asset.icon ? <asset.icon className="w-5 h-5 text-primary" /> : <img src={asset.img} alt={asset.name} className="w-full h-full object-cover" />}
-                    </div>
+                    {asset.icon}
                     <div>
                       <p className="font-medium text-foreground">{asset.name}</p>
                       <p className="text-xs text-muted-foreground">{showBalance ? asset.balance.toFixed(2) : '••••'}</p>
