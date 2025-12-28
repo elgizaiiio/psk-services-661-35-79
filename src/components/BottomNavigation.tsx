@@ -24,6 +24,11 @@ const BottomNavigation = () => {
   };
 
   const hideNavigationPaths = ['/runner-game', '/chat-ai', '/krunker', '/game'];
+  
+  // Don't render navigation on hidden paths
+  if (hideNavigationPaths.includes(location.pathname)) {
+    return null;
+  }
 
   const activeIndex = navItems.findIndex(item => item.path === location.pathname);
 
