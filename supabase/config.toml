@@ -1,1 +1,7 @@
 project_id = "pxerqticmmpurwmumhyw"
+
+[functions.nowpayments-create]
+verify_jwt = false
+
+[functions.nowpayments-webhook]
+verify_jwt = false
