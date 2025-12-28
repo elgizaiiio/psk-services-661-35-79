@@ -130,6 +130,7 @@ const Game: React.FC = () => {
   const [score, setScore] = useState(0);
   const [best, setBest] = useState(0);
   const [running, setRunning] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [undoAvailable, setUndoAvailable] = useState(false);
   const prevBoard = useRef<Board | null>(null);
   const prevScore = useRef<number>(0);
@@ -171,6 +172,7 @@ const Game: React.FC = () => {
       setScore(0);
       setBoard(initBoard());
       setRunning(true);
+      setIsFullscreen(true);
       setUndoAvailable(false);
     } catch (e: any) {
       toast.error(e.message || "Insufficient energy");
@@ -179,6 +181,7 @@ const Game: React.FC = () => {
 
   const finishGame = async () => {
     setRunning(false);
+    setIsFullscreen(false);
     setBest(b => Math.max(b, score));
     try {
       const response = await callApi("submit_score", { telegram_id: player?.telegram_id, score });
@@ -298,6 +301,66 @@ const Game: React.FC = () => {
 
   const energyPct = player ? (player.energy / player.max_energy) * 100 : 0;
 
+  if (isFullscreen && running) {
+    return (
+      <main className="fixed inset-0 z-50 bg-background flex flex-col">
+        <Helmet>
+          <title>2048 TON Game – Playing</title>
+        </Helmet>
+        
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="space-y-1">
+            <div className="text-xs text-muted-foreground">Score</div>
+            <div className="text-2xl font-bold text-primary">{score}</div>
+          </div>
+          <Button size="sm" variant="destructive" onClick={finishGame}>
+            Exit
+          </Button>
+          <div className="space-y-1 text-right">
+            <div className="text-xs text-muted-foreground">Best</div>
+            <div className="text-2xl font-bold">{best}</div>
+          </div>
+        </div>
+
+        {/* Game Board */}
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div
+            className={cn(
+              "grid grid-cols-4 gap-2 p-3 rounded-xl bg-muted w-full max-w-sm aspect-square",
+              skinClass,
+              "touch-none overscroll-none"
+            )}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
+            {board.flatMap((row, r) => row.map((val, c) => (
+              <div
+                key={`${r}-${c}`}
+                className={cn(
+                  "aspect-square rounded-lg flex items-center justify-center text-xl font-bold select-none",
+                  val === 0 ? "bg-background text-muted-foreground" : "bg-primary/10 text-primary"
+                )}
+              >
+                {val || ""}
+              </div>
+            )))}
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="p-4 border-t border-border">
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-sm text-muted-foreground">Swipe to move</span>
+            <Button size="sm" variant="outline" disabled={!undoAvailable} onClick={undoMove}>Undo</Button>
+            <Button size="sm" variant="outline" onClick={buyUndoBooster}>Buy Undo</Button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="max-w-md mx-auto p-4 pb-24 space-y-4">
       <Helmet>
@@ -375,18 +438,8 @@ const Game: React.FC = () => {
           )))}
         </div>
 
-        {running ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm text-muted-foreground mr-auto">Swipe on the board to move</span>
-            <Button size="sm" variant="outline" disabled={!undoAvailable} onClick={undoMove}>Undo</Button>
-            <Button size="sm" variant="outline" onClick={buyUndoBooster}>Buy Undo (TON)</Button>
-          </div>
-        ) : (
-          <div className="text-center text-sm text-muted-foreground">Click "Start Game" to play</div>
-        )}
+        <div className="text-center text-sm text-muted-foreground">Click "Start Game" to play</div>
       </Card>
-
-
     </main>
   );
 };

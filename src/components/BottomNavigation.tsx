@@ -23,11 +23,7 @@ const BottomNavigation = () => {
     navigate(path);
   };
 
-  const hideNavigationPaths = ['/runner-game', '/chat-ai', '/krunker'];
-  
-  if (hideNavigationPaths.includes(location.pathname)) {
-    return null;
-  }
+  const hideNavigationPaths = ['/runner-game', '/chat-ai', '/krunker', '/game'];
 
   const activeIndex = navItems.findIndex(item => item.path === location.pathname);
 
