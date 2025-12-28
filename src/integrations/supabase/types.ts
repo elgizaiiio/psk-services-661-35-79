@@ -598,6 +598,7 @@ export type Database = {
           token_balance: number
           total_referrals: number
           updated_at: string
+          usdt_balance: number
         }
         Insert: {
           created_at?: string
@@ -614,6 +615,7 @@ export type Database = {
           token_balance?: number
           total_referrals?: number
           updated_at?: string
+          usdt_balance?: number
         }
         Update: {
           created_at?: string
@@ -630,6 +632,7 @@ export type Database = {
           token_balance?: number
           total_referrals?: number
           updated_at?: string
+          usdt_balance?: number
         }
         Relationships: [
           {
@@ -1392,6 +1395,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_servers: {
+        Row: {
+          daily_bolt_yield: number
+          daily_usdt_yield: number
+          hash_rate: string
+          id: string
+          is_active: boolean
+          last_claim_at: string | null
+          purchased_at: string
+          server_name: string
+          server_tier: string
+          user_id: string
+        }
+        Insert: {
+          daily_bolt_yield?: number
+          daily_usdt_yield?: number
+          hash_rate: string
+          id?: string
+          is_active?: boolean
+          last_claim_at?: string | null
+          purchased_at?: string
+          server_name: string
+          server_tier?: string
+          user_id: string
+        }
+        Update: {
+          daily_bolt_yield?: number
+          daily_usdt_yield?: number
+          hash_rate?: string
+          id?: string
+          is_active?: boolean
+          last_claim_at?: string | null
+          purchased_at?: string
+          server_name?: string
+          server_tier?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_servers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_upgrades: {
         Row: {

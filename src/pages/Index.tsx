@@ -8,9 +8,10 @@ import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useAchievementNotifications } from '@/hooks/useAchievementNotifications';
 import { useDailyTasksNotification } from '@/hooks/useDailyTasksNotification';
+import { useUserServers } from '@/hooks/useUserServers';
 import AchievementUnlockNotification from '@/components/achievements/AchievementUnlockNotification';
 import DailyTasksNotification from '@/components/notifications/DailyTasksNotification';
-import { HeroCharacterDisplay } from '@/components/mining/HeroCharacterDisplay';
+import { Server, Zap, DollarSign, TrendingUp, Wallet, Settings, Gift, Target } from 'lucide-react';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -36,6 +37,9 @@ const Index = () => {
     dismissNotification: dismissDailyNotification,
     markAsViewed: markDailyAsViewed 
   } = useDailyTasksNotification(user?.id || null);
+  
+  const { servers, getTotalStats } = useUserServers(user?.id || null);
+  const stats = getTotalStats();
 
   const handleStartMining = async () => {
     hapticFeedback.impact('medium');
@@ -68,18 +72,16 @@ const Index = () => {
     );
   }
 
-  const balance = user?.token_balance || 0;
-  const miningPower = user?.mining_power || 1;
+  const boltBalance = user?.token_balance || 0;
+  const usdtBalance = (user as any)?.usdt_balance || 0;
   const isMining = activeMiningSession && new Date() < new Date(activeMiningSession.end_time);
   const progress = miningProgress ? Math.round(miningProgress.progress * 100) : 0;
 
   const menuItems = [
-    { label: 'Daily Tasks', path: '/daily-tasks' },
-    { label: 'Mini Games', path: '/mini-games' },
-    { label: 'Leaderboard', path: '/leaderboard' },
-    { label: 'Upgrades', path: '/upgrade-center' },
-    { label: 'VIP', path: '/vip' },
-    { label: 'Settings', path: '/settings' },
+    { label: 'Daily Tasks', path: '/daily-tasks', icon: Target },
+    { label: 'Upgrades', path: '/upgrade-center', icon: TrendingUp },
+    { label: 'VIP', path: '/vip', icon: Gift },
+    { label: 'Settings', path: '/settings', icon: Settings },
   ];
 
   return (
@@ -98,84 +100,173 @@ const Index = () => {
       
       <main className="min-h-screen bg-background pb-24">
         <Helmet>
-          <title>Bolt</title>
-          <meta name="description" content="Mine BOLT tokens" />
+          <title>Bolt Mining</title>
+          <meta name="description" content="Mine BOLT & USDT tokens with servers" />
         </Helmet>
 
-        <div className="max-w-md mx-auto px-4 pt-4">
+        <div className="max-w-md mx-auto px-4 pt-4 space-y-4">
           
-          {/* Header */}
-          <div className="flex justify-between items-center mb-4">
+          {/* Header with balances */}
+          <div className="flex justify-between items-start">
             <div>
-              <p className="text-base font-semibold text-foreground">
+              <p className="text-lg font-bold text-foreground">
                 {telegramUser?.first_name || 'Miner'}
               </p>
-              <p className="text-xs text-muted-foreground">Mining Power: {miningPower}x</p>
+              <p className="text-xs text-muted-foreground">Welcome back!</p>
             </div>
-            <div className="flex items-center gap-3">
-              <div className="text-right">
-                <p className="text-lg font-bold text-foreground">{balance.toLocaleString()}</p>
-                <p className="text-xs text-primary font-medium">BOLT</p>
-              </div>
-              {!isConnected ? (
-                <button
-                  onClick={handleConnectWallet}
-                  disabled={isConnecting}
-                  className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium"
-                >
-                  {isConnecting ? "..." : "Connect"}
-                </button>
-              ) : (
-                <div className="px-2 py-1 rounded-lg bg-primary/10 text-primary text-[10px] font-medium">
-                  Connected
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Hero 3D Character Display - Like Free Fire/PUBG */}
-          <HeroCharacterDisplay className="mb-4" compact={false} />
-
-          {/* Mining */}
-          <div className="mb-4">
-            {isMining && miningProgress ? (
-              <Card className="p-4 bg-card border-primary/30">
-                <div className="flex justify-between items-center mb-2">
-                  <p className="font-medium text-sm text-foreground">Mining...</p>
-                  <p className="text-lg font-bold text-primary">{progress}%</p>
-                </div>
-                <div className="h-1.5 bg-muted rounded-full overflow-hidden mb-2">
-                  <div 
-                    className="h-full bg-primary rounded-full transition-all"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-                <p className="text-center text-xs text-primary font-medium">
-                  +{miningProgress.tokensMinedSoFar.toFixed(2)} BOLT
-                </p>
-              </Card>
-            ) : (
-              <Button 
-                onClick={handleStartMining}
-                className="w-full h-12 bg-primary text-primary-foreground text-sm font-semibold rounded-xl"
+            {!isConnected ? (
+              <Button
+                onClick={handleConnectWallet}
+                disabled={isConnecting}
+                size="sm"
+                className="bg-primary text-primary-foreground"
               >
-                Start Mining
+                {isConnecting ? "..." : "Connect Wallet"}
               </Button>
+            ) : (
+              <div className="px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-medium">
+                ✓ Connected
+              </div>
             )}
           </div>
 
+          {/* Balances Cards */}
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Zap className="w-5 h-5 text-primary" />
+                <span className="text-xs text-muted-foreground">BOLT</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{boltBalance.toLocaleString()}</p>
+              {stats.totalBoltPerDay > 0 && (
+                <p className="text-xs text-primary mt-1">+{stats.totalBoltPerDay}/day</p>
+              )}
+            </Card>
+            
+            <Card className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+              <div className="flex items-center gap-2 mb-2">
+                <DollarSign className="w-5 h-5 text-green-500" />
+                <span className="text-xs text-muted-foreground">USDT</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground">{usdtBalance.toFixed(4)}</p>
+              {stats.totalUsdtPerDay > 0 && (
+                <p className="text-xs text-green-500 mt-1">+${stats.totalUsdtPerDay.toFixed(4)}/day</p>
+              )}
+            </Card>
+          </div>
+
+          {/* My Servers Summary */}
+          <Card className="p-4 border-border">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Server className="w-5 h-5 text-primary" />
+                <span className="font-semibold text-foreground">My Servers</span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/mining-servers')}
+                className="text-xs"
+              >
+                Buy More
+              </Button>
+            </div>
+            
+            {stats.totalServers > 0 ? (
+              <div className="grid grid-cols-3 gap-3">
+                <div className="text-center p-2 rounded-lg bg-muted/50">
+                  <p className="text-xl font-bold text-foreground">{stats.totalServers}</p>
+                  <p className="text-[10px] text-muted-foreground">Servers</p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-muted/50">
+                  <p className="text-xl font-bold text-foreground">{stats.totalHashRate}</p>
+                  <p className="text-[10px] text-muted-foreground">TH/s</p>
+                </div>
+                <div className="text-center p-2 rounded-lg bg-muted/50">
+                  <p className="text-xl font-bold text-primary">{stats.totalBoltPerDay}</p>
+                  <p className="text-[10px] text-muted-foreground">BOLT/day</p>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted-foreground mb-2">No servers yet</p>
+                <Button 
+                  onClick={() => navigate('/mining-servers')}
+                  className="bg-primary text-primary-foreground"
+                >
+                  Buy Your First Server
+                </Button>
+              </div>
+            )}
+          </Card>
+
+          {/* Mining Button / Progress */}
+          {stats.totalServers > 0 && (
+            <div>
+              {isMining && miningProgress ? (
+                <Card className="p-4 bg-card border-primary/30">
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="font-medium text-sm text-foreground">Mining Active</p>
+                    <p className="text-lg font-bold text-primary">{progress}%</p>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden mb-3">
+                    <div 
+                      className="h-full bg-gradient-to-r from-primary to-primary/70 rounded-full transition-all"
+                      style={{ width: `${progress}%` }}
+                    />
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-primary font-medium">+{miningProgress.tokensMinedSoFar.toFixed(2)} BOLT</span>
+                    <span className="text-green-500 font-medium">+${(miningProgress.tokensMinedSoFar * 0.002).toFixed(4)} USDT</span>
+                  </div>
+                </Card>
+              ) : (
+                <Button 
+                  onClick={handleStartMining}
+                  className="w-full h-14 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground text-base font-bold rounded-xl shadow-lg shadow-primary/25"
+                >
+                  <Zap className="w-5 h-5 mr-2" />
+                  Start Mining
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* Quick Menu */}
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-4 gap-2">
             {menuItems.map((item) => (
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="p-3 rounded-xl bg-card border border-border text-center hover:border-primary/30 transition-colors"
+                className="p-3 rounded-xl bg-card border border-border text-center hover:border-primary/30 transition-colors flex flex-col items-center gap-1"
               >
-                <p className="font-medium text-foreground text-xs">{item.label}</p>
+                <item.icon className="w-5 h-5 text-primary" />
+                <p className="font-medium text-foreground text-[10px]">{item.label}</p>
               </button>
             ))}
           </div>
+
+          {/* Wallet Quick Access */}
+          <Card 
+            className="p-4 border-border cursor-pointer hover:border-primary/30 transition-colors"
+            onClick={() => navigate('/wallet')}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Wallet className="w-5 h-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">My Wallet</p>
+                  <p className="text-xs text-muted-foreground">Manage your assets</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-sm font-bold text-foreground">${usdtBalance.toFixed(2)}</p>
+                <p className="text-xs text-muted-foreground">Total Value</p>
+              </div>
+            </div>
+          </Card>
 
         </div>
       </main>
