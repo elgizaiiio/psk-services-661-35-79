@@ -135,7 +135,7 @@ export const DailyStreakWidget = ({ userId, onStreakClaimed }: DailyStreakWidget
       }));
       setCanClaim(false);
 
-      toast.success(`🔥 Day ${newStreak} Streak! +${reward} VIRAL tokens!`);
+      toast.success(`🔥 Day ${newStreak} Streak! +${reward} BOLT tokens!`);
       onStreakClaimed?.(reward);
     } catch (error) {
       console.error('Error claiming streak:', error);
@@ -223,7 +223,7 @@ export const DailyStreakWidget = ({ userId, onStreakClaimed }: DailyStreakWidget
           <div className="flex items-center justify-between mb-3 text-sm">
             <div className="flex items-center gap-2">
               <Gift className="w-4 h-4 text-yellow-400" />
-              <span>Next: <span className="text-yellow-400 font-bold">+{nextReward} VIRAL</span></span>
+              <span>Next: <span className="text-yellow-400 font-bold">+{nextReward} BOLT</span></span>
             </div>
             {streak.max > 0 && (
               <span className="text-muted-foreground text-xs">Best: {streak.max} days</span>

@@ -61,7 +61,7 @@ const MiningAnimation: React.FC<MiningAnimationProps> = ({
             <div className="text-2xl font-bold text-primary mb-1">
               {tokensMinedSoFar.toFixed(6)}
             </div>
-            <div className="text-xs text-muted-foreground">VIRAL Mined</div>
+            <div className="text-xs text-muted-foreground">BOLT Mined</div>
           </div>
           <div className="text-center p-4 rounded-xl bg-gradient-to-br from-secondary/15 to-secondary/5 border border-secondary/20">
             <div className="text-2xl font-bold text-secondary mb-1">
@@ -91,7 +91,7 @@ const MiningAnimation: React.FC<MiningAnimationProps> = ({
 
       <div className="text-center">
         <h3 className="text-lg font-semibold text-muted-foreground mb-2">Ready to Mine</h3>
-        <p className="text-sm text-muted-foreground">Click to start mining and earn VIRAL</p>
+        <p className="text-sm text-muted-foreground">Click to start mining and earn BOLT</p>
       </div>
     </div>
   );

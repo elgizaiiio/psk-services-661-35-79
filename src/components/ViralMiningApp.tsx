@@ -66,7 +66,7 @@ const ViralMiningApp = () => {
               <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
             </div>
             <div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Loading Viral Mining</h3>
+              <h3 className="text-lg font-bold text-foreground mb-2">Loading Bolt Mining</h3>
               <p className="text-sm text-muted-foreground">Please wait...</p>
             </div>
           </div>

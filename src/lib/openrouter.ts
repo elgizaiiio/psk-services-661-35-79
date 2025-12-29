@@ -16,7 +16,7 @@ export async function sendChatMessage(messages: ChatMessage[]): Promise<string> 
         "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
         "HTTP-Referer": window.location.href,
-        "X-Title": "Viral Mining Chat"
+        "X-Title": "Bolt Chat"
       },
       body: JSON.stringify({
         model: "openai/gpt-oss-20b:free",

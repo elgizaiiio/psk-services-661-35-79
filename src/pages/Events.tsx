@@ -42,8 +42,8 @@ const Events: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Events | VIRAL Events & Contests</title>
-        <meta name="description" content="Participate in the latest events and contests and win valuable prizes from VIRAL and TON" />
+        <title>Events | Bolt Events & Contests</title>
+        <meta name="description" content="Participate in the latest events and contests and win valuable prizes from BOLT and TON" />
         <link rel="canonical" href="/events" />
       </Helmet>
 
@@ -76,7 +76,7 @@ const Events: React.FC = () => {
                       <div className="flex items-center gap-3 text-xs text-muted-foreground mb-3">
                         <div className="flex items-center gap-1">
                           <Users className="w-3 h-3" />
-                          <span>VIRAL Community</span>
+                          <span>Bolt Community</span>
                         </div>
                         <span>•</span>
                         <div className="flex items-center gap-1">

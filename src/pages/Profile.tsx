@@ -119,10 +119,10 @@ const Profile: React.FC = () => {
   return (
     <>
       <Helmet>
-        <title>Profile | Your VIRAL Mining Stats</title>
-        <meta name="description" content="View your VIRAL mining profile, stats, and achievements." />
-        <meta property="og:title" content="Profile | Your VIRAL Mining Stats" />
-        <meta property="og:description" content="View your VIRAL mining profile, stats, and achievements." />
+        <title>Profile | Your BOLT Mining Stats</title>
+        <meta name="description" content="View your BOLT mining profile, stats, and achievements." />
+        <meta property="og:title" content="Profile | Your BOLT Mining Stats" />
+        <meta property="og:description" content="View your BOLT mining profile, stats, and achievements." />
         <meta property="og:url" content={currentUrl} />
         <link rel="canonical" href={currentUrl} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
@@ -227,7 +227,7 @@ const Profile: React.FC = () => {
                       </Badge>
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Your mining session is currently running and generating VIRAL tokens.
+                      Your mining session is currently running and generating BOLT tokens.
                     </p>
                   </div>
                 </div>

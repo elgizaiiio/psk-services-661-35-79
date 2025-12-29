@@ -43,7 +43,7 @@ const MiningServerLanding = () => {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
-    name: 'VIRAL Mining',
+    name: 'Bolt Mining',
     url: `${window.location.origin}/`,
     potentialAction: {
       '@type': 'SearchAction',
@@ -55,8 +55,8 @@ const MiningServerLanding = () => {
   return (
     <div className="min-h-screen text-foreground">
       <Helmet>
-        <title>VIRAL Mining | Start and Reward Yourself</title>
-        <meta name="description" content="Start VIRAL mining now using brand primary colors. Upgrade power and duration, achieve goals and get rewards." />
+        <title>Bolt Mining | Start and Reward Yourself</title>
+        <meta name="description" content="Start BOLT mining now using brand primary colors. Upgrade power and duration, achieve goals and get rewards." />
         <link rel="canonical" href={`${window.location.origin}/`} />
         <script type="application/ld+json">{JSON.stringify(jsonLd)}</script>
       </Helmet>

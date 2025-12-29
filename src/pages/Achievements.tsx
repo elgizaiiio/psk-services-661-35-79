@@ -130,12 +130,12 @@ const Achievements = () => {
             <Card className="p-3 bg-gradient-to-br from-green-500/10 to-emerald-500/5 border-green-500/20 text-center">
               <p className="text-xs text-muted-foreground">Earned</p>
               <p className="text-lg font-bold text-green-400">{totalTokensEarned.toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">VIRAL</p>
+              <p className="text-xs text-muted-foreground">BOLT</p>
             </Card>
             <Card className="p-3 bg-gradient-to-br from-blue-500/10 to-cyan-500/5 border-blue-500/20 text-center">
               <p className="text-xs text-muted-foreground">Remaining</p>
               <p className="text-lg font-bold text-blue-400">{(totalPossibleTokens - totalTokensEarned).toLocaleString()}</p>
-              <p className="text-xs text-muted-foreground">VIRAL</p>
+              <p className="text-xs text-muted-foreground">BOLT</p>
             </Card>
           </div>
         </div>
@@ -297,7 +297,7 @@ const Achievements = () => {
                             }`}>
                               <Gift className="w-4 h-4" />
                               <span className="text-sm font-medium">
-                                {isUnlocked ? 'Earned:' : 'Reward:'} {achievement.reward_tokens.toLocaleString()} VIRAL
+                                {isUnlocked ? 'Earned:' : 'Reward:'} {achievement.reward_tokens.toLocaleString()} BOLT
                               </span>
                             </div>
 

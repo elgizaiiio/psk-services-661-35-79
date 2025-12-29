@@ -49,10 +49,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onComplete, isComplete
             <div className="flex items-center gap-1 text-xs text-white/90">
               <img 
                 src="/lovable-uploads/bb2ce9b7-afd0-4e2c-8447-351c0ae1f27d.png" 
-                alt="Viral Icon" 
+                alt="Bolt Icon" 
                 className="w-3 h-3"
               />
-              +{task.points} viral
+              +{task.points} BOLT
             </div>
           </div>
           

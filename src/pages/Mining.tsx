@@ -124,8 +124,8 @@ const MiningInner = () => {
   return (
     <>
       <Helmet>
-        <title>VIRAL Mining | Cryptocurrency Mining</title>
-        <meta name="description" content="Start mining VIRAL cryptocurrency through Telegram app" />
+        <title>Bolt Mining | Cryptocurrency Mining</title>
+        <meta name="description" content="Start mining BOLT cryptocurrency through Telegram app" />
       </Helmet>
 
       <main className="safe-area pb-16">
@@ -153,7 +153,7 @@ const MiningInner = () => {
             <div className="text-3xl font-bold text-primary mb-2">
               {user?.token_balance?.toFixed(4) || '0.0000'}
             </div>
-            <div className="text-sm text-muted-foreground font-medium">VIRAL Tokens</div>
+            <div className="text-sm text-muted-foreground font-medium">BOLT Tokens</div>
           </Card>
 
           {/* Start Mining Button */}
