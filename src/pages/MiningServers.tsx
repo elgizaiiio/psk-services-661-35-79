@@ -8,21 +8,21 @@ import { useUserServers } from '@/hooks/useUserServers';
 import { useTonPrice } from '@/hooks/useTonPrice';
 import { Server, Check, Loader2, ArrowLeft, Package } from 'lucide-react';
 import { toast } from 'sonner';
-import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
 import { useNavigate } from 'react-router-dom';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber } from '@/components/ui/motion-wrapper';
 import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
+import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
 
 type MiningServer = { id: string; name: string; hashRate: string; hashRateNum: number; boltPerDay: number; usdtPerDay: number; price: number; tier: 'Basic' | 'Pro' | 'Elite'; };
 
 const MiningServers = () => {
   const navigate = useNavigate();
   const { user: telegramUser, isLoading: isTelegramLoading } = useTelegramAuth();
-  const { user, loading: isMiningUserLoading, error: miningUserError } = useViralMining(telegramUser);
+  const { user, loading: isMiningUserLoading } = useViralMining(telegramUser);
   const { servers: ownedServers, purchaseServer, getStock } = useUserServers(user?.id || null);
-  const [processingServer, setProcessingServer] = useState<string | null>(null);
-  const { sendDirectPayment, isProcessing, isWalletConnected } = useDirectTonPayment();
-  const { formatUsd } = useTonPrice();
+  const [selectedServer, setSelectedServer] = useState<MiningServer | null>(null);
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const { formatUsd, price: tonPrice, tonToUsd } = useTonPrice();
 
   // Allow usage both in Telegram and browser
   const isReady = !isTelegramLoading && !isMiningUserLoading;
@@ -36,45 +36,37 @@ const MiningServers = () => {
     { id: 'elite-2', name: 'Ultra', hashRate: '35.0 TH/s', hashRateNum: 35, boltPerDay: 200, usdtPerDay: 0.80, price: 10.0, tier: 'Elite' },
   ];
 
-  const handlePurchase = async (server: MiningServer) => {
-    // Wait for loading to finish
+  const handleBuyClick = (server: MiningServer) => {
     if (!isReady) {
       toast.error('Loading… please wait.');
       return;
     }
 
-    // Check wallet connection first
-    if (!isWalletConnected) {
-      toast.error('Please connect your TON wallet first');
-      return;
-    }
-
-    // Check stock
     const stock = getStock(server.id);
     if (stock.soldOut) {
       toast.error('This server is sold out!');
       return;
     }
-    
-    setProcessingServer(server.id);
 
-    const success = await sendDirectPayment({
-      amount: server.price,
-      description: `Server - ${server.name}`,
-      productType: 'server_hosting',
-      productId: server.id,
-      serverName: server.name,
-      userId: user?.id || null,
-    });
+    setSelectedServer(server);
+    setIsPaymentOpen(true);
+  };
 
-    if (success && user?.id) {
-      await purchaseServer(server.id, server.tier, server.name, server.hashRate, server.boltPerDay, server.usdtPerDay);
+  const handlePaymentSuccess = async () => {
+    if (selectedServer && user?.id) {
+      await purchaseServer(
+        selectedServer.id, 
+        selectedServer.tier, 
+        selectedServer.name, 
+        selectedServer.hashRate, 
+        selectedServer.boltPerDay, 
+        selectedServer.usdtPerDay
+      );
       toast.success('Server purchased! 🎉');
-    } else if (success) {
+    } else {
       toast.success('Payment sent! Your server will be activated soon.');
     }
-
-    setProcessingServer(null);
+    setSelectedServer(null);
   };
 
   const handleBack = () => {
@@ -116,9 +108,9 @@ const MiningServers = () => {
           <div className="grid grid-cols-2 gap-3">
             {servers.map((server) => {
               const owned = isOwned(server.id);
-              const processing = isProcessing && processingServer === server.id;
               const stock = getStock(server.id);
               const stockPercent = stock.total > 0 ? ((stock.total - stock.remaining) / stock.total) * 100 : 0;
+              const priceUsd = tonToUsd(server.price);
               
               return (
                 <FadeUp key={server.id}>
@@ -161,8 +153,8 @@ const MiningServers = () => {
                     ) : stock.soldOut ? (
                       <div className="flex items-center justify-center gap-1 py-2 rounded-lg bg-muted text-muted-foreground text-sm font-medium">Sold Out</div>
                     ) : (
-                      <Button onClick={() => handlePurchase(server)} className="w-full h-9 text-sm" disabled={processing}>
-                        {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Buy Now'}
+                      <Button onClick={() => handleBuyClick(server)} className="w-full h-9 text-sm">
+                        Buy Now
                       </Button>
                     )}
                   </motion.div>
@@ -172,6 +164,22 @@ const MiningServers = () => {
           </div>
         </StaggerContainer>
       </div>
+
+      {/* Payment Modal with all payment methods */}
+      {selectedServer && (
+        <UnifiedPaymentModal
+          isOpen={isPaymentOpen}
+          onClose={() => {
+            setIsPaymentOpen(false);
+            setSelectedServer(null);
+          }}
+          amount={tonToUsd(selectedServer.price)}
+          description={`Server - ${selectedServer.name}`}
+          productType="server_hosting"
+          productId={selectedServer.id}
+          onSuccess={handlePaymentSuccess}
+        />
+      )}
     </PageWrapper>
   );
 };
