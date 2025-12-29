@@ -24,6 +24,9 @@ const MiningServers = () => {
   const { sendDirectPayment, isProcessing, isWalletConnected } = useDirectTonPayment();
   const { formatUsd } = useTonPrice();
 
+  // Allow usage both in Telegram and browser
+  const isReady = !isTelegramLoading && !isMiningUserLoading;
+
   const servers: MiningServer[] = [
     { id: 'basic-1', name: 'Starter', hashRate: '2.5 TH/s', hashRateNum: 2.5, boltPerDay: 15, usdtPerDay: 0.05, price: 0.5, tier: 'Basic' },
     { id: 'basic-2', name: 'Basic', hashRate: '5.0 TH/s', hashRateNum: 5, boltPerDay: 30, usdtPerDay: 0.10, price: 1.0, tier: 'Basic' },
@@ -34,36 +37,25 @@ const MiningServers = () => {
   ];
 
   const handlePurchase = async (server: MiningServer) => {
-    if (isTelegramLoading || isMiningUserLoading) {
-      toast.error('Loading your account… please wait.');
+    // Wait for loading to finish
+    if (!isReady) {
+      toast.error('Loading… please wait.');
       return;
     }
 
-    if (miningUserError) {
-      toast.error('Could not load your account. Please refresh and try again.');
-      return;
-    }
-
-    if (!telegramUser) {
-      toast.error('Please open the app in Telegram to use Mining Servers.');
-      return;
-    }
-
-    if (!user?.id) {
-      toast.error('Account not ready yet. Please try again in a moment.');
-      return;
-    }
-
+    // Check wallet connection first
     if (!isWalletConnected) {
       toast.error('Please connect your TON wallet first');
       return;
     }
 
+    // Check stock
     const stock = getStock(server.id);
     if (stock.soldOut) {
       toast.error('This server is sold out!');
       return;
     }
+    
     setProcessingServer(server.id);
 
     const success = await sendDirectPayment({
@@ -72,11 +64,14 @@ const MiningServers = () => {
       productType: 'server_hosting',
       productId: server.id,
       serverName: server.name,
+      userId: user?.id || null,
     });
 
-    if (success) {
+    if (success && user?.id) {
       await purchaseServer(server.id, server.tier, server.name, server.hashRate, server.boltPerDay, server.usdtPerDay);
-      toast.success('Server purchased!');
+      toast.success('Server purchased! 🎉');
+    } else if (success) {
+      toast.success('Payment sent! Your server will be activated soon.');
     }
 
     setProcessingServer(null);
