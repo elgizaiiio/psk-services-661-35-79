@@ -157,7 +157,7 @@ export const LevelProgressCard = ({ userId, tokenBalance, onLevelReward }: Level
       setLastClaimedLevel(pendingReward.level);
       setShowLevelUpModal(false);
       
-      toast.success(`🎉 تم الحصول على ${pendingReward.reward.spins} سبينات مجانية + ${pendingReward.reward.tokens} VIRAL!`);
+      toast.success(`🎉 Got ${pendingReward.reward.spins} free spins + ${pendingReward.reward.tokens} BOLT!`);
       
       if (onLevelReward) {
         onLevelReward(pendingReward.reward.spins, pendingReward.reward.tokens);
@@ -229,7 +229,7 @@ export const LevelProgressCard = ({ userId, tokenBalance, onLevelReward }: Level
                 </div>
                 <Progress value={progressPercent} className="h-3 bg-indigo-900/30" />
                 <p className="text-xs text-center mt-1 text-muted-foreground">
-                  Mine {Math.ceil(xpNeeded * 10)} more VIRAL to level up!
+                  Mine {Math.ceil(xpNeeded * 10)} more BOLT to level up!
                 </p>
               </div>
             )}
@@ -239,11 +239,11 @@ export const LevelProgressCard = ({ userId, tokenBalance, onLevelReward }: Level
               <div className="mb-3 p-2 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg border border-yellow-500/20">
                 <div className="flex items-center gap-2 mb-1">
                   <Gift className="w-4 h-4 text-yellow-400" />
-                  <span className="text-xs font-semibold text-yellow-400">مكافآت المستوى التالي:</span>
+                  <span className="text-xs font-semibold text-yellow-400">Next Level Rewards:</span>
                 </div>
                 <div className="flex gap-3 text-xs">
-                  <span className="text-green-400">🎰 {nextRank.reward.spins} سبينات</span>
-                  <span className="text-blue-400">💎 {nextRank.reward.tokens} VIRAL</span>
+                  <span className="text-green-400">🎰 {nextRank.reward.spins} spins</span>
+                  <span className="text-blue-400">💎 {nextRank.reward.tokens} BOLT</span>
                 </div>
               </div>
             )}
@@ -423,7 +423,7 @@ export const LevelProgressCard = ({ userId, tokenBalance, onLevelReward }: Level
                         <p className="text-2xl font-bold text-blue-400">
                           {RANKS.reduce((sum, r) => sum + r.reward.tokens, 0).toLocaleString()}
                         </p>
-                        <p className="text-xs text-muted-foreground">💎 VIRAL</p>
+                        <p className="text-xs text-muted-foreground">💎 BOLT</p>
                       </div>
                     </div>
                   </div>
@@ -467,7 +467,7 @@ export const LevelProgressCard = ({ userId, tokenBalance, onLevelReward }: Level
                   <div className="text-center">
                     <div className="text-3xl mb-1">💎</div>
                     <p className="text-lg font-bold text-blue-400">+{pendingReward.reward.tokens}</p>
-                    <p className="text-xs text-muted-foreground">VIRAL</p>
+                    <p className="text-xs text-muted-foreground">BOLT</p>
                   </div>
                 </div>
               </div>

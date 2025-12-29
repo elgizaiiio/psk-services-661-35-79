@@ -105,7 +105,7 @@ const DailyTasksNotification = ({
                   <div className="bg-green-500/20 rounded-xl p-3 text-center">
                     <Gift className="w-5 h-5 text-green-400 mx-auto mb-1" />
                     <p className="text-2xl font-bold text-white">{totalRewards.toLocaleString()}</p>
-                    <p className="text-xs text-green-300">VIRAL to Earn</p>
+                    <p className="text-xs text-green-300">BOLT to Earn</p>
                   </div>
                 </motion.div>
 

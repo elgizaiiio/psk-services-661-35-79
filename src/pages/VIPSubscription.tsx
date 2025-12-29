@@ -47,7 +47,7 @@ const vipPlans: VIPPlan[] = [
     duration: 30,
     features: [
       '20% Faster Mining',
-      '100 VIRAL Daily Bonus',
+      '100 BOLT Daily Bonus',
       '1.2x Referral Multiplier',
       'Silver VIP Badge',
       'Priority Support'
@@ -66,7 +66,7 @@ const vipPlans: VIPPlan[] = [
     duration: 30,
     features: [
       '50% Faster Mining',
-      '300 VIRAL Daily Bonus',
+      '300 BOLT Daily Bonus',
       '1.5x Referral Multiplier',
       'Gold VIP Badge',
       'High Priority Support',
@@ -87,7 +87,7 @@ const vipPlans: VIPPlan[] = [
     duration: 30,
     features: [
       '100% Faster Mining',
-      '700 VIRAL Daily Bonus',
+      '700 BOLT Daily Bonus',
       '2x Referral Multiplier',
       'Platinum VIP Badge',
       'Exclusive VIP Support',
@@ -226,7 +226,7 @@ const VIPSubscription = () => {
   return (
     <main className="min-h-screen bg-background pb-24">
       <Helmet>
-        <title>VIP Subscription | VIRAL</title>
+        <title>VIP Subscription | Bolt</title>
         <meta name="description" content="Subscribe to VIP and get exclusive benefits" />
       </Helmet>
 
@@ -293,7 +293,7 @@ const VIPSubscription = () => {
           <motion.div 
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => toast.info('VIP Support available 24/7 via Telegram @VIRALSupport')}
+            onClick={() => toast.info('VIP Support available 24/7 via Telegram @BoltSupport')}
             className="bg-muted/50 rounded-xl p-3 text-center cursor-pointer hover:bg-muted transition-colors"
           >
             <Shield className="w-6 h-6 text-primary mx-auto mb-1" />

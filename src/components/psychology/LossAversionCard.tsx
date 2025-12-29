@@ -73,7 +73,7 @@ export const LossAversionCard = ({
         <div className="relative z-10">
           <div className="flex items-center gap-2 mb-3">
             <TrendingDown className="w-5 h-5 text-red-400" />
-            <h3 className="font-bold text-lg text-red-400">You're Losing VIRAL!</h3>
+            <h3 className="font-bold text-lg text-red-400">You're Losing BOLT!</h3>
           </div>
 
           <p className="text-sm text-muted-foreground mb-4">
@@ -85,17 +85,17 @@ export const LossAversionCard = ({
             <div className="text-center p-2 bg-red-500/20 rounded-lg">
               <p className="text-xs text-muted-foreground">Daily Loss</p>
               <p className="text-lg font-bold text-red-400">-{lostEarnings.daily}</p>
-              <p className="text-xs text-muted-foreground">VIRAL</p>
+              <p className="text-xs text-muted-foreground">BOLT</p>
             </div>
             <div className="text-center p-2 bg-red-500/30 rounded-lg">
               <p className="text-xs text-muted-foreground">Weekly Loss</p>
               <p className="text-lg font-bold text-red-400">-{lostEarnings.weekly}</p>
-              <p className="text-xs text-muted-foreground">VIRAL</p>
+              <p className="text-xs text-muted-foreground">BOLT</p>
             </div>
             <div className="text-center p-2 bg-red-500/40 rounded-lg">
               <p className="text-xs text-muted-foreground">Monthly Loss</p>
               <p className="text-lg font-bold text-red-400">-{lostEarnings.monthly}</p>
-              <p className="text-xs text-muted-foreground">VIRAL</p>
+              <p className="text-xs text-muted-foreground">BOLT</p>
             </div>
           </div>
 
@@ -165,7 +165,7 @@ export const LossAversionCard = ({
                 animate={{ opacity: [1, 0.5, 1] }}
                 transition={{ repeat: Infinity, duration: 1 }}
               >
-                ⚠️ Every hour without upgrade = lost VIRAL
+                ⚠️ Every hour without upgrade = lost BOLT
               </motion.span>
             </Badge>
           </div>

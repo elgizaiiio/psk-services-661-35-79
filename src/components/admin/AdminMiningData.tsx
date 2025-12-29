@@ -54,7 +54,7 @@ const AdminMiningData: React.FC<AdminMiningDataProps> = ({ miningSessions }) => 
                     User: {session.user_id.slice(0, 8)} • Power: ×{session.mining_power_multiplier} • Rate: {session.tokens_per_hour}/h
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Tokens Mined: <span className="font-mono font-medium">{session.total_tokens_mined.toFixed(4)} VIRAL</span>
+                    Tokens Mined: <span className="font-mono font-medium">{session.total_tokens_mined.toFixed(4)} BOLT</span>
                   </div>
                 </div>
                 <div className="text-right text-xs text-muted-foreground">

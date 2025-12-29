@@ -125,7 +125,7 @@ export const PsychologyUpgradeCenter = ({
                 <p className="text-2xl font-bold text-blue-400">
                   {userData?.token_balance?.toFixed(0) || 0}
                 </p>
-                <p className="text-xs text-muted-foreground">Total VIRAL</p>
+                <p className="text-xs text-muted-foreground">Total BOLT</p>
               </div>
               <div className="text-center p-3 bg-black/20 rounded-lg">
                 <p className="text-2xl font-bold text-green-400">

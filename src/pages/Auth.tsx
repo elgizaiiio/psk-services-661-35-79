@@ -11,8 +11,8 @@ import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 
 // Validation schemas
-const emailSchema = z.string().email('البريد الإلكتروني غير صالح');
-const passwordSchema = z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل');
+const emailSchema = z.string().email('Invalid email address');
+const passwordSchema = z.string().min(6, 'Password must be at least 6 characters');
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -62,12 +62,12 @@ const Auth = () => {
 
     if (error) {
       if (error.message.includes('Invalid login credentials')) {
-        toast.error('بيانات الدخول غير صحيحة');
+        toast.error('Invalid login credentials');
       } else {
         toast.error(error.message);
       }
     } else {
-      toast.success('تم تسجيل الدخول بنجاح');
+      toast.success('Logged in successfully');
       navigate('/');
     }
   };
@@ -82,12 +82,12 @@ const Auth = () => {
 
     if (error) {
       if (error.message.includes('already registered')) {
-        toast.error('هذا البريد مسجل بالفعل');
+        toast.error('This email is already registered');
       } else {
         toast.error(error.message);
       }
     } else {
-      toast.success('تم إنشاء الحساب بنجاح!');
+      toast.success('Account created successfully!');
       navigate('/');
     }
   };
@@ -97,7 +97,7 @@ const Auth = () => {
     try {
       emailSchema.parse(email);
     } catch {
-      toast.error('البريد الإلكتروني غير صالح');
+      toast.error('Invalid email address');
       return;
     }
 
@@ -108,7 +108,7 @@ const Auth = () => {
     if (error) {
       toast.error(error.message);
     } else {
-      toast.success('تم إرسال رابط إعادة تعيين كلمة المرور');
+      toast.success('Password reset link sent');
       setShowReset(false);
     }
   };
@@ -122,30 +122,27 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
         {/* Logo & Title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
-            <span className="text-4xl font-bold text-primary">V</span>
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">VIRAL Mining</h1>
-          <p className="text-muted-foreground text-sm mt-2">ابدأ رحلة التعدين الآن</p>
+          <h1 className="text-3xl font-bold text-primary">Bolt</h1>
+          <p className="text-muted-foreground text-sm mt-2">Start your mining journey</p>
         </div>
 
         <Card className="border-0 bg-card/50 backdrop-blur-sm shadow-xl">
           {showReset ? (
             <>
               <CardHeader className="text-center pb-2">
-                <CardTitle className="text-lg">إعادة تعيين كلمة المرور</CardTitle>
+                <CardTitle className="text-lg">Reset Password</CardTitle>
                 <CardDescription>
-                  أدخل بريدك الإلكتروني لإرسال رابط إعادة التعيين
+                  Enter your email to receive a reset link
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-4">
                 <form onSubmit={handleResetPassword} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="reset-email">البريد الإلكتروني</Label>
+                    <Label htmlFor="reset-email">Email</Label>
                     <Input
                       id="reset-email"
                       type="email"
@@ -153,12 +150,11 @@ const Auth = () => {
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="h-12 text-base"
-                      dir="ltr"
                     />
                   </div>
                   <Button type="submit" className="w-full h-12 text-base" disabled={isSubmitting}>
-                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
-                    إرسال الرابط
+                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    Send Link
                   </Button>
                   <Button
                     type="button"
@@ -166,7 +162,7 @@ const Auth = () => {
                     className="w-full"
                     onClick={() => setShowReset(false)}
                   >
-                    رجوع
+                    Back
                   </Button>
                 </form>
               </CardContent>
@@ -174,19 +170,19 @@ const Auth = () => {
           ) : (
             <>
               <CardHeader className="text-center pb-2">
-                <CardTitle className="text-lg">مرحباً بك</CardTitle>
+                <CardTitle className="text-lg">Welcome</CardTitle>
               </CardHeader>
               <CardContent className="pt-2">
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'signup')}>
                   <TabsList className="grid w-full grid-cols-2 mb-6 h-12">
-                    <TabsTrigger value="login" className="text-base">دخول</TabsTrigger>
-                    <TabsTrigger value="signup" className="text-base">حساب جديد</TabsTrigger>
+                    <TabsTrigger value="login" className="text-base">Login</TabsTrigger>
+                    <TabsTrigger value="signup" className="text-base">Sign Up</TabsTrigger>
                   </TabsList>
 
                   <TabsContent value="login" className="space-y-4">
                     <form onSubmit={handleSignIn} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="login-email">البريد الإلكتروني</Label>
+                        <Label htmlFor="login-email">Email</Label>
                         <Input
                           id="login-email"
                           type="email"
@@ -194,11 +190,10 @@ const Auth = () => {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           className="h-12 text-base"
-                          dir="ltr"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="login-password">كلمة المرور</Label>
+                        <Label htmlFor="login-password">Password</Label>
                         <Input
                           id="login-password"
                           type="password"
@@ -206,22 +201,21 @@ const Auth = () => {
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           className="h-12 text-base"
-                          dir="ltr"
                         />
                       </div>
-                      <div className="text-left">
+                      <div className="text-right">
                         <Button
                           type="button"
                           variant="link"
                           className="px-0 text-sm text-muted-foreground"
                           onClick={() => setShowReset(true)}
                         >
-                          نسيت كلمة المرور؟
+                          Forgot password?
                         </Button>
                       </div>
                       <Button type="submit" className="w-full h-12 text-base" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
-                        تسجيل الدخول
+                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                        Login
                       </Button>
                     </form>
                   </TabsContent>
@@ -229,18 +223,18 @@ const Auth = () => {
                   <TabsContent value="signup" className="space-y-4">
                     <form onSubmit={handleSignUp} className="space-y-4">
                       <div className="space-y-2">
-                        <Label htmlFor="name">الاسم</Label>
+                        <Label htmlFor="name">Name</Label>
                         <Input
                           id="name"
                           type="text"
-                          placeholder="اسمك"
+                          placeholder="Your name"
                           value={name}
                           onChange={(e) => setName(e.target.value)}
                           className="h-12 text-base"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-email">البريد الإلكتروني</Label>
+                        <Label htmlFor="signup-email">Email</Label>
                         <Input
                           id="signup-email"
                           type="email"
@@ -248,24 +242,22 @@ const Auth = () => {
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
                           className="h-12 text-base"
-                          dir="ltr"
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="signup-password">كلمة المرور</Label>
+                        <Label htmlFor="signup-password">Password</Label>
                         <Input
                           id="signup-password"
                           type="password"
-                          placeholder="6 أحرف على الأقل"
+                          placeholder="At least 6 characters"
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           className="h-12 text-base"
-                          dir="ltr"
                         />
                       </div>
                       <Button type="submit" className="w-full h-12 text-base" disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
-                        إنشاء حساب
+                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                        Create Account
                       </Button>
                     </form>
                   </TabsContent>
@@ -274,14 +266,14 @@ const Auth = () => {
                 {/* Telegram info */}
                 <div className="mt-6 pt-4 border-t border-border/50">
                   <p className="text-xs text-center text-muted-foreground">
-                    للدخول السريع استخدم{' '}
+                    For quick login use{' '}
                     <a 
-                      href="https://t.me/ViralMiningBot" 
+                      href="https://t.me/Vlralbot" 
                       target="_blank" 
                       rel="noopener noreferrer"
                       className="text-primary hover:underline font-medium"
                     >
-                      تليجرام
+                      Telegram
                     </a>
                   </p>
                 </div>

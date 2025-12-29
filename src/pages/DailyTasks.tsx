@@ -116,7 +116,7 @@ const DailyTasks = () => {
     }
     const result = await completeTask(taskId);
     if (result.success) {
-      toast.success(`🎉 +${result.reward} VIRAL!`);
+      toast.success(`🎉 +${result.reward} BOLT!`);
     } else {
       toast.error(result.error || 'Failed to complete task');
     }
@@ -124,7 +124,7 @@ const DailyTasks = () => {
   const progress = totalCount > 0 ? completedCount / totalCount * 100 : 0;
   return <main className="min-h-screen bg-background pb-24 relative">
       <Helmet>
-        <title>Daily Tasks | VIRAL</title>
+        <title>Daily Tasks | Bolt</title>
         <meta name="description" content="Complete daily tasks and earn rewards" />
       </Helmet>
 
@@ -156,7 +156,7 @@ const DailyTasks = () => {
                 <Crown className="w-20 h-20 text-white mx-auto mb-4" />
               </motion.div>
               <h2 className="text-3xl font-bold text-white mb-2">All Tasks Done!</h2>
-              <p className="text-white/80">You're a VIRAL Champion! 🏆</p>
+              <p className="text-white/80">You're a BOLT Champion! 🏆</p>
             </motion.div>
           </motion.div>}
       </AnimatePresence>
@@ -410,12 +410,12 @@ const DailyTasks = () => {
                   repeat: Infinity,
                   duration: 1.5
                 }} className="flex items-center gap-1 justify-end">
-                        <img src="/lovable-uploads/bb2ce9b7-afd0-4e2c-8447-351c0ae1f27d.png" alt="VIRAL" className="w-4 h-4" />
+                        <img src="/lovable-uploads/bb2ce9b7-afd0-4e2c-8447-351c0ae1f27d.png" alt="BOLT" className="w-4 h-4" />
                         <span className={`font-bold ${task.is_completed ? 'text-green-500' : 'text-primary'}`}>
                           +{task.reward_tokens}
                         </span>
                       </motion.div>
-                      <p className="text-xs text-muted-foreground">VIRAL</p>
+                      <p className="text-xs text-muted-foreground">BOLT</p>
                     </div>
                   </div>
 
