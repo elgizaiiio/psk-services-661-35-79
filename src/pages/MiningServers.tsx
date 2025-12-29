@@ -70,8 +70,17 @@ const MiningServers = () => {
   };
 
   const handleBack = () => {
-    if (window.history.length > 1) {
+    const idx = typeof window !== 'undefined' ? (window.history.state?.idx as number | undefined) : undefined;
+    const canGoBack = typeof idx === 'number' ? idx > 0 : window.history.length > 1;
+
+    if (canGoBack) {
       navigate(-1);
+      return;
+    }
+
+    const tg = window.Telegram?.WebApp;
+    if (tg?.close) {
+      tg.close();
     } else {
       navigate('/');
     }
