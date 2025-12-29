@@ -22,8 +22,8 @@ export const useAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user: telegramUser, isLoading: isTelegramLoading, webApp } = useTelegramAuth();
 
-  // Check if running in Telegram Mini App
-  const isTelegramApp = !!webApp;
+  // Check if running in Telegram Mini App (must have a real Telegram user)
+  const isTelegramApp = !!webApp && !!telegramUser?.id;
 
   // Handle Telegram auth
   useEffect(() => {

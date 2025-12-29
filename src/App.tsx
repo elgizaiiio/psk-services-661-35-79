@@ -71,8 +71,8 @@ function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
   
   useReferralHandler();
 
-  // Check if running in Telegram Mini App
-  const isTelegramApp = !!webApp;
+  // Check if running in Telegram Mini App (must have a real Telegram user)
+  const isTelegramApp = !!webApp && !!telegramUser?.id;
 
   // Check Supabase auth for browser users
   useEffect(() => {
