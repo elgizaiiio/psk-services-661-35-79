@@ -212,14 +212,17 @@ export const useTelegramAuth = () => {
     if (webApp?.BackButton) {
       const handleBackButton = () => {
         const idx = typeof window !== 'undefined' ? (window.history.state?.idx as number | undefined) : undefined;
-        const canGoBack = typeof idx === 'number' ? idx > 0 : window.history.length > 1;
 
-        if (canGoBack) {
+        // Only rely on the React Router history index (idx). In embedded previews / WebViews,
+        // window.history.length can be > 1 even when there is no in-app route to go back to.
+        const canGoBackInApp = typeof idx === 'number' && idx > 0;
+
+        if (canGoBackInApp) {
           navigate(-1);
           return;
         }
 
-        // If there's no in-app history, close the Telegram mini app
+        // If there's no in-app history, close the Telegram mini app (if available), otherwise go home.
         if (webApp?.close) {
           webApp.close();
         } else {
