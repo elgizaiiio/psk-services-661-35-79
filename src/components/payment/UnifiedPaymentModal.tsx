@@ -12,7 +12,7 @@ interface UnifiedPaymentModalProps {
   onClose: () => void;
   amount: number;
   description: string;
-  productType: 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting';
+  productType: 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting' | 'mining_upgrade' | 'token_purchase';
   productId?: string;
   credits?: number;
   onSuccess?: () => void;

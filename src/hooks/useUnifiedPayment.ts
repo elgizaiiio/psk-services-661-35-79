@@ -1,16 +1,18 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useTonPayment, TonPaymentParams } from './useTonPayment';
-import { useDirectTonPayment, DirectPaymentParams } from './useDirectTonPayment';
-import { useMetaMaskPayment, MetaMaskPaymentParams } from './useMetaMaskPayment';
-import { useNowPayments, NowPaymentsParams } from './useNowPayments';
+import { useTonPayment } from './useTonPayment';
+import { useDirectTonPayment } from './useDirectTonPayment';
+import { useMetaMaskPayment } from './useMetaMaskPayment';
+import { useNowPayments } from './useNowPayments';
 
 export type PaymentMethod = 'ton_connect' | 'ton_manual' | 'metamask' | 'nowpayments';
+
+export type ProductType = 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting' | 'mining_upgrade' | 'token_purchase';
 
 export interface UnifiedPaymentParams {
   amount: number;
   description: string;
-  productType: 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting';
+  productType: ProductType;
   productId?: string;
   credits?: number;
   serverName?: string;
@@ -94,52 +96,48 @@ export const useUnifiedPayment = () => {
     try {
       switch (selectedMethod) {
         case 'ton_connect': {
-          const tonParams: DirectPaymentParams = {
+          return await directTonPayment.sendDirectPayment({
             amount: params.amount,
             description: params.description,
             productType: params.productType,
             productId: params.productId,
             credits: params.credits,
-          };
-          return await directTonPayment.sendDirectPayment(tonParams);
+          });
         }
 
         case 'ton_manual': {
-          const manualParams: TonPaymentParams = {
+          const result = await tonPayment.createPayment({
             amount: params.amount,
             description: params.description,
             productType: params.productType,
             productId: params.productId,
             credits: params.credits,
             serverName: params.serverName,
-          };
-          const result = await tonPayment.createPayment(manualParams);
+          });
           return result !== null;
         }
 
         case 'metamask': {
           // Convert USD to ETH (rough estimate - you should use a price API)
-          const ethAmount = params.amount / 3500; // Approximate ETH price
-          const metaMaskParams: MetaMaskPaymentParams = {
+          const ethAmount = params.amount / 3500;
+          return await metaMaskPayment.sendPayment({
             amount: ethAmount,
             description: params.description,
             productType: params.productType,
             productId: params.productId,
             credits: params.credits,
-          };
-          return await metaMaskPayment.sendPayment(metaMaskParams);
+          });
         }
 
         case 'nowpayments': {
-          const nowParams: NowPaymentsParams = {
+          const result = await nowPayments.createPayment({
             amount: params.amount,
             currency: selectedCurrency as 'BTC' | 'ETH' | 'USDT' | 'LTC' | 'DOGE' | 'TRX' | 'SOL',
             description: params.description,
             productType: params.productType,
             productId: params.productId,
             credits: params.credits,
-          };
-          const result = await nowPayments.createPayment(nowParams);
+          });
           return result.success;
         }
 
