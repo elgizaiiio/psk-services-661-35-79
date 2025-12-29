@@ -84,7 +84,7 @@ export const useAuth = () => {
     return () => subscription.unsubscribe();
   }, [isTelegramApp]);
 
-  const signUp = useCallback(async (email: string, password: string, firstName?: string, lastName?: string) => {
+  const signUp = useCallback(async (email: string, password: string, name?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
     const { data, error } = await supabase.auth.signUp({
@@ -93,8 +93,7 @@ export const useAuth = () => {
       options: {
         emailRedirectTo: redirectUrl,
         data: {
-          first_name: firstName,
-          last_name: lastName,
+          first_name: name,
         },
       },
     });
