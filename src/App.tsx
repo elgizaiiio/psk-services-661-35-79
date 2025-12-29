@@ -64,10 +64,45 @@ const queryClient = new QueryClient({
 });
 
 function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
-  const { webApp } = useTelegramAuth();
+  const { webApp, user: telegramUser, isLoading: isTelegramLoading } = useTelegramAuth();
   const [showSplash, setShowSplash] = React.useState(true);
+  const [isCheckingAuth, setIsCheckingAuth] = React.useState(true);
+  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
   
   useReferralHandler();
+
+  // Check if running in Telegram Mini App
+  const isTelegramApp = !!webApp;
+
+  // Check Supabase auth for browser users
+  useEffect(() => {
+    if (isTelegramApp) {
+      // Telegram users are authenticated via Telegram
+      setIsAuthenticated(true);
+      setIsCheckingAuth(false);
+      return;
+    }
+
+    // For browser users, check Supabase session
+    const checkAuth = async () => {
+      const { data: { session } } = await import('@/integrations/supabase/client')
+        .then(m => m.supabase.auth.getSession());
+      
+      setIsAuthenticated(!!session);
+      setIsCheckingAuth(false);
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    import('@/integrations/supabase/client').then(m => {
+      const { data: { subscription } } = m.supabase.auth.onAuthStateChange((event, session) => {
+        setIsAuthenticated(!!session);
+      });
+
+      return () => subscription.unsubscribe();
+    });
+  }, [isTelegramApp]);
 
   useEffect(() => {
     if (webApp) {
@@ -101,6 +136,21 @@ function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
 
   if (showSplash) {
     return <SplashScreen onComplete={() => setShowSplash(false)} />;
+  }
+
+  // Show loader while checking auth
+  if (isCheckingAuth || isTelegramLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  // Redirect browser users to auth page if not authenticated
+  if (!isTelegramApp && !isAuthenticated) {
+    window.location.href = '/auth';
+    return null;
   }
 
   return <>{children}</>;
