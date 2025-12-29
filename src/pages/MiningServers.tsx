@@ -17,12 +17,12 @@ type MiningServer = { id: string; name: string; hashRate: string; hashRateNum: n
 
 const MiningServers = () => {
   const navigate = useNavigate();
-  const { user: telegramUser } = useTelegramAuth();
-  const { user } = useViralMining(telegramUser);
-  const { servers: ownedServers, purchaseServer, getStock, refetchInventory } = useUserServers(user?.id || null);
+  const { user: telegramUser, isLoading: isTelegramLoading } = useTelegramAuth();
+  const { user, loading: isMiningUserLoading, error: miningUserError } = useViralMining(telegramUser);
+  const { servers: ownedServers, purchaseServer, getStock } = useUserServers(user?.id || null);
   const [processingServer, setProcessingServer] = useState<string | null>(null);
   const { sendDirectPayment, isProcessing, isWalletConnected } = useDirectTonPayment();
-  const { formatUsd, isLoading: isPriceLoading } = useTonPrice();
+  const { formatUsd } = useTonPrice();
 
   const servers: MiningServer[] = [
     { id: 'basic-1', name: 'Starter', hashRate: '2.5 TH/s', hashRateNum: 2.5, boltPerDay: 15, usdtPerDay: 0.05, price: 0.5, tier: 'Basic' },
@@ -34,18 +34,51 @@ const MiningServers = () => {
   ];
 
   const handlePurchase = async (server: MiningServer) => {
-    if (!user?.id) { toast.error('Please login first'); return; }
-    if (!isWalletConnected) { toast.error('Please connect your TON wallet first'); return; }
-    
-    const stock = getStock(server.id);
-    if (stock.soldOut) { toast.error('This server is sold out!'); return; }
-    
-    setProcessingServer(server.id);
-    const success = await sendDirectPayment({ amount: server.price, description: `Server - ${server.name}`, productType: 'server_hosting', productId: server.id, serverName: server.name });
-    if (success) { 
-      await purchaseServer(server.id, server.tier, server.name, server.hashRate, server.boltPerDay, server.usdtPerDay); 
-      toast.success('Server purchased!'); 
+    if (isTelegramLoading || isMiningUserLoading) {
+      toast.error('Loading your account… please wait.');
+      return;
     }
+
+    if (miningUserError) {
+      toast.error('Could not load your account. Please refresh and try again.');
+      return;
+    }
+
+    if (!telegramUser) {
+      toast.error('Please open the app in Telegram to use Mining Servers.');
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error('Account not ready yet. Please try again in a moment.');
+      return;
+    }
+
+    if (!isWalletConnected) {
+      toast.error('Please connect your TON wallet first');
+      return;
+    }
+
+    const stock = getStock(server.id);
+    if (stock.soldOut) {
+      toast.error('This server is sold out!');
+      return;
+    }
+    setProcessingServer(server.id);
+
+    const success = await sendDirectPayment({
+      amount: server.price,
+      description: `Server - ${server.name}`,
+      productType: 'server_hosting',
+      productId: server.id,
+      serverName: server.name,
+    });
+
+    if (success) {
+      await purchaseServer(server.id, server.tier, server.name, server.hashRate, server.boltPerDay, server.usdtPerDay);
+      toast.success('Server purchased!');
+    }
+
     setProcessingServer(null);
   };
 
