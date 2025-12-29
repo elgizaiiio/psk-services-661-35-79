@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Mail, Lock, User, Loader2, ArrowLeft, Sparkles } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 
 // Validation schemas
@@ -21,8 +21,7 @@ const Auth = () => {
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [name, setName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showReset, setShowReset] = useState(false);
 
@@ -78,7 +77,7 @@ const Auth = () => {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    const { error } = await signUp(email, password, firstName, lastName);
+    const { error } = await signUp(email, password, name);
     setIsSubmitting(false);
 
     if (error) {
@@ -123,187 +122,149 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
+    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+      <div className="w-full max-w-sm">
+        {/* Logo & Title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/80 mb-4">
-            <Sparkles className="w-8 h-8 text-primary-foreground" />
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
+            <span className="text-4xl font-bold text-primary">V</span>
           </div>
           <h1 className="text-2xl font-bold text-foreground">VIRAL Mining</h1>
-          <p className="text-muted-foreground mt-1">ابدأ رحلة التعدين الآن</p>
+          <p className="text-muted-foreground text-sm mt-2">ابدأ رحلة التعدين الآن</p>
         </div>
 
-        <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+        <Card className="border-0 bg-card/50 backdrop-blur-sm shadow-xl">
           {showReset ? (
             <>
-              <CardHeader>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowReset(false)}
-                  className="w-fit -ml-2 mb-2"
-                >
-                  <ArrowLeft className="w-4 h-4 ml-1" />
-                  رجوع
-                </Button>
-                <CardTitle>إعادة تعيين كلمة المرور</CardTitle>
+              <CardHeader className="text-center pb-2">
+                <CardTitle className="text-lg">إعادة تعيين كلمة المرور</CardTitle>
                 <CardDescription>
-                  أدخل بريدك الإلكتروني وسنرسل لك رابط إعادة التعيين
+                  أدخل بريدك الإلكتروني لإرسال رابط إعادة التعيين
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-4">
                 <form onSubmit={handleResetPassword} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="reset-email">البريد الإلكتروني</Label>
-                    <div className="relative">
-                      <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                      <Input
-                        id="reset-email"
-                        type="email"
-                        placeholder="example@email.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="pr-10"
-                        dir="ltr"
-                      />
-                    </div>
+                    <Input
+                      id="reset-email"
+                      type="email"
+                      placeholder="example@email.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-12 text-base"
+                      dir="ltr"
+                    />
                   </div>
-                  <Button type="submit" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                    ) : null}
-                    إرسال رابط إعادة التعيين
+                  <Button type="submit" className="w-full h-12 text-base" disabled={isSubmitting}>
+                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
+                    إرسال الرابط
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => setShowReset(false)}
+                  >
+                    رجوع
                   </Button>
                 </form>
               </CardContent>
             </>
           ) : (
             <>
-              <CardHeader className="pb-4">
-                <CardTitle className="text-center">مرحباً بك</CardTitle>
-                <CardDescription className="text-center">
-                  سجل دخولك أو أنشئ حساب جديد
-                </CardDescription>
+              <CardHeader className="text-center pb-2">
+                <CardTitle className="text-lg">مرحباً بك</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-2">
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'login' | 'signup')}>
-                  <TabsList className="grid w-full grid-cols-2 mb-6">
-                    <TabsTrigger value="login">تسجيل الدخول</TabsTrigger>
-                    <TabsTrigger value="signup">حساب جديد</TabsTrigger>
+                  <TabsList className="grid w-full grid-cols-2 mb-6 h-12">
+                    <TabsTrigger value="login" className="text-base">دخول</TabsTrigger>
+                    <TabsTrigger value="signup" className="text-base">حساب جديد</TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="login">
+                  <TabsContent value="login" className="space-y-4">
                     <form onSubmit={handleSignIn} className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="login-email">البريد الإلكتروني</Label>
-                        <div className="relative">
-                          <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="login-email"
-                            type="email"
-                            placeholder="example@email.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="pr-10"
-                            dir="ltr"
-                          />
-                        </div>
+                        <Input
+                          id="login-email"
+                          type="email"
+                          placeholder="example@email.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="h-12 text-base"
+                          dir="ltr"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="login-password">كلمة المرور</Label>
-                        <div className="relative">
-                          <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="login-password"
-                            type="password"
-                            placeholder="••••••••"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="pr-10"
-                            dir="ltr"
-                          />
-                        </div>
+                        <Input
+                          id="login-password"
+                          type="password"
+                          placeholder="••••••••"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="h-12 text-base"
+                          dir="ltr"
+                        />
                       </div>
-                      <Button
-                        type="button"
-                        variant="link"
-                        className="px-0 text-sm"
-                        onClick={() => setShowReset(true)}
-                      >
-                        نسيت كلمة المرور؟
-                      </Button>
-                      <Button type="submit" className="w-full" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                        ) : null}
+                      <div className="text-left">
+                        <Button
+                          type="button"
+                          variant="link"
+                          className="px-0 text-sm text-muted-foreground"
+                          onClick={() => setShowReset(true)}
+                        >
+                          نسيت كلمة المرور؟
+                        </Button>
+                      </div>
+                      <Button type="submit" className="w-full h-12 text-base" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
                         تسجيل الدخول
                       </Button>
                     </form>
                   </TabsContent>
 
-                  <TabsContent value="signup">
+                  <TabsContent value="signup" className="space-y-4">
                     <form onSubmit={handleSignUp} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label htmlFor="first-name">الاسم الأول</Label>
-                          <div className="relative">
-                            <User className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                            <Input
-                              id="first-name"
-                              type="text"
-                              placeholder="الاسم"
-                              value={firstName}
-                              onChange={(e) => setFirstName(e.target.value)}
-                              className="pr-10"
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="last-name">اسم العائلة</Label>
-                          <Input
-                            id="last-name"
-                            type="text"
-                            placeholder="العائلة"
-                            value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
-                          />
-                        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="name">الاسم</Label>
+                        <Input
+                          id="name"
+                          type="text"
+                          placeholder="اسمك"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          className="h-12 text-base"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="signup-email">البريد الإلكتروني</Label>
-                        <div className="relative">
-                          <Mail className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="signup-email"
-                            type="email"
-                            placeholder="example@email.com"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="pr-10"
-                            dir="ltr"
-                          />
-                        </div>
+                        <Input
+                          id="signup-email"
+                          type="email"
+                          placeholder="example@email.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="h-12 text-base"
+                          dir="ltr"
+                        />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="signup-password">كلمة المرور</Label>
-                        <div className="relative">
-                          <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                          <Input
-                            id="signup-password"
-                            type="password"
-                            placeholder="6 أحرف على الأقل"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="pr-10"
-                            dir="ltr"
-                          />
-                        </div>
+                        <Input
+                          id="signup-password"
+                          type="password"
+                          placeholder="6 أحرف على الأقل"
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="h-12 text-base"
+                          dir="ltr"
+                        />
                       </div>
-                      <Button type="submit" className="w-full" disabled={isSubmitting}>
-                        {isSubmitting ? (
-                          <Loader2 className="w-4 h-4 animate-spin ml-2" />
-                        ) : null}
+                      <Button type="submit" className="w-full h-12 text-base" disabled={isSubmitting}>
+                        {isSubmitting && <Loader2 className="w-4 h-4 animate-spin ml-2" />}
                         إنشاء حساب
                       </Button>
                     </form>
@@ -311,16 +272,16 @@ const Auth = () => {
                 </Tabs>
 
                 {/* Telegram info */}
-                <div className="mt-6 pt-4 border-t border-border">
-                  <p className="text-sm text-center text-muted-foreground">
-                    للوصول السريع، افتح التطبيق من خلال{' '}
+                <div className="mt-6 pt-4 border-t border-border/50">
+                  <p className="text-xs text-center text-muted-foreground">
+                    للدخول السريع استخدم{' '}
                     <a 
                       href="https://t.me/ViralMiningBot" 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-primary hover:underline"
+                      className="text-primary hover:underline font-medium"
                     >
-                      تليجرام بوت
+                      تليجرام
                     </a>
                   </p>
                 </div>
