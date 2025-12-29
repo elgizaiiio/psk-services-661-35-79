@@ -211,10 +211,18 @@ export const useTelegramAuth = () => {
   useEffect(() => {
     if (webApp?.BackButton) {
       const handleBackButton = () => {
-        if (window.history.length > 1) {
+        const idx = typeof window !== 'undefined' ? (window.history.state?.idx as number | undefined) : undefined;
+        const canGoBack = typeof idx === 'number' ? idx > 0 : window.history.length > 1;
+
+        if (canGoBack) {
           navigate(-1);
+          return;
+        }
+
+        // If there's no in-app history, close the Telegram mini app
+        if (webApp?.close) {
+          webApp.close();
         } else {
-          // Default action when no history
           navigate('/');
         }
       };

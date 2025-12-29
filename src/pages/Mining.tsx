@@ -132,9 +132,14 @@ const MiningInner = () => {
         <div className="max-w-sm mx-auto px-6 py-8 space-y-6">
           
           {/* Back Button */}
-          <button 
-            onClick={() => navigate('/')}
+          <button
+            onClick={() => {
+              const tg = window.Telegram?.WebApp;
+              if (tg?.close) tg.close();
+              else navigate('/');
+            }}
             className="w-10 h-10 bg-card border border-border rounded-xl flex items-center justify-center hover:bg-muted transition-colors"
+            aria-label="Exit"
           >
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
