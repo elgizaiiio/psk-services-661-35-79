@@ -71,9 +71,12 @@ const MiningServers = () => {
 
   const handleBack = () => {
     const idx = typeof window !== 'undefined' ? (window.history.state?.idx as number | undefined) : undefined;
-    const canGoBack = typeof idx === 'number' ? idx > 0 : window.history.length > 1;
 
-    if (canGoBack) {
+    // Only rely on the React Router history index (idx). In embedded previews, window.history.length
+    // can be > 1 even when there is no in-app route to go back to.
+    const canGoBackInApp = typeof idx === 'number' && idx > 0;
+
+    if (canGoBackInApp) {
       navigate(-1);
       return;
     }
@@ -90,7 +93,11 @@ const MiningServers = () => {
 
   return (
     <PageWrapper className="min-h-screen bg-background pb-40">
-      <Helmet><title>Mining Servers | Bolt</title></Helmet>
+      <Helmet>
+        <title>Mining Servers | Bolt</title>
+        <meta name="description" content="Buy mining servers to earn daily rewards in BOLT and USDT." />
+        <link rel="canonical" href="/mining-servers" />
+      </Helmet>
       <div className="max-w-md mx-auto px-5 pt-8">
         <StaggerContainer className="space-y-6">
           <FadeUp>
