@@ -56,8 +56,8 @@ serve(async (req) => {
         order_id: orderId,
         order_description: description,
         ipn_callback_url: `${Deno.env.get('SUPABASE_URL')}/functions/v1/nowpayments-webhook`,
-        success_url: 'https://t.me/your_bot', // Replace with your bot
-        cancel_url: 'https://t.me/your_bot',
+        success_url: 'https://t.me/ViralMiningBot',
+        cancel_url: 'https://t.me/ViralMiningBot',
       }),
     });
 

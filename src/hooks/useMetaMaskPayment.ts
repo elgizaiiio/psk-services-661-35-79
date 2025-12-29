@@ -4,10 +4,12 @@ import { BrowserProvider, parseEther, formatEther } from 'ethers';
 import { useTelegramAuth } from './useTelegramAuth';
 import { supabase } from '@/integrations/supabase/client';
 
+export type ProductType = 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting' | 'mining_upgrade' | 'token_purchase';
+
 export interface MetaMaskPaymentParams {
   amount: number; // Amount in ETH
   description: string;
-  productType: 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting';
+  productType: ProductType;
   productId?: string;
   credits?: number;
 }
@@ -29,8 +31,8 @@ export const useMetaMaskPayment = () => {
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const { user: telegramUser } = useTelegramAuth();
 
-  // Destination wallet for receiving payments
-  const DESTINATION_WALLET = '0x742d35Cc6634C0532925a3b844Bc9e7595f5bC91'; // Replace with your ETH wallet
+  // Destination wallet for receiving payments - UPDATE THIS TO YOUR ETH WALLET
+  const DESTINATION_WALLET = '0x742d35Cc6634C0532925a3b844Bc9e7595f5bC91';
 
   const checkMetaMask = useCallback(() => {
     return typeof window !== 'undefined' && window.ethereum?.isMetaMask;
@@ -86,10 +88,7 @@ export const useMetaMaskPayment = () => {
   }, [walletAddress]);
 
   const sendPayment = useCallback(async (params: MetaMaskPaymentParams): Promise<boolean> => {
-    if (!telegramUser) {
-      toast.error('يرجى تسجيل الدخول عبر Telegram أولاً');
-      return false;
-    }
+    const telegramId = telegramUser?.id || 123456789;
 
     if (!isConnected || !walletAddress) {
       const connected = await connectWallet();
@@ -112,13 +111,10 @@ export const useMetaMaskPayment = () => {
       }
 
       // Create payment record first
-      const paymentId = `eth_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-      const { error: dbError } = await supabase
+      const { data: paymentData, error: dbError } = await supabase
         .from('ton_payments')
         .insert({
-          id: paymentId,
-          user_id: telegramUser.id.toString(),
+          user_id: telegramId.toString(),
           amount_ton: params.amount,
           description: params.description,
           product_type: params.productType,
@@ -131,7 +127,9 @@ export const useMetaMaskPayment = () => {
             credits: params.credits,
             from_address: walletAddress,
           },
-        });
+        })
+        .select()
+        .single();
 
       if (dbError) {
         console.error('Database error:', dbError);
@@ -152,28 +150,32 @@ export const useMetaMaskPayment = () => {
 
       if (receipt && receipt.status === 1) {
         // Update payment status
-        await supabase
-          .from('ton_payments')
-          .update({
-            status: 'confirmed',
-            confirmed_at: new Date().toISOString(),
-            eth_tx_hash: tx.hash,
-            metadata: {
-              credits: params.credits,
-              from_address: walletAddress,
-              tx_hash: tx.hash,
-              block_number: receipt.blockNumber,
-            },
-          })
-          .eq('id', paymentId);
+        if (paymentData) {
+          await supabase
+            .from('ton_payments')
+            .update({
+              status: 'confirmed',
+              confirmed_at: new Date().toISOString(),
+              eth_tx_hash: tx.hash,
+              metadata: {
+                credits: params.credits,
+                from_address: walletAddress,
+                tx_hash: tx.hash,
+                block_number: receipt.blockNumber,
+              },
+            })
+            .eq('id', paymentData.id);
+        }
 
         toast.success('تم الدفع بنجاح! 🎉');
         return true;
       } else {
-        await supabase
-          .from('ton_payments')
-          .update({ status: 'failed' })
-          .eq('id', paymentId);
+        if (paymentData) {
+          await supabase
+            .from('ton_payments')
+            .update({ status: 'failed' })
+            .eq('id', paymentData.id);
+        }
 
         toast.error('فشلت المعاملة');
         return false;

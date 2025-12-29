@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface TonPaymentParams {
   amount: number;
   description: string;
-  productType: 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting';
+  productType: 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting' | 'mining_upgrade' | 'token_purchase';
   productId?: string;
   credits?: number;
   serverName?: string;
@@ -19,55 +19,62 @@ export interface PaymentResult {
   status: 'pending' | 'confirmed' | 'failed';
 }
 
+// Wallet address for receiving TON payments
+const TON_DESTINATION_ADDRESS = 'UQB3zld6sleav5U7Rga1JmpHJccaczHzCuTRNK4QM5i001Vm';
+
 export const useTonPayment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const { user: telegramUser } = useTelegramAuth();
 
   const createPayment = async (params: TonPaymentParams): Promise<PaymentResult | null> => {
-    if (!telegramUser) {
-      toast.error('Please authenticate with Telegram first');
-      return null;
-    }
+    const telegramId = telegramUser?.id || 123456789; // Dev fallback
 
     setIsProcessing(true);
     
     try {
-      const paymentId = `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      const destinationAddress = 'UQB3zld6sleav5U7Rga1JmpHJccaczHzCuTRNK4QM5i001Vm';
-      
-      const paymentData = {
-        id: paymentId,
-        user_id: telegramUser.id.toString(),
-        amount_ton: params.amount,
-        description: params.description,
-        product_type: params.productType,
-        product_id: params.productId,
-        status: 'pending',
-        destination_address: destinationAddress,
-        metadata: {
-          credits: params.credits,
-          server_name: params.serverName,
-          telegram_user_id: telegramUser.id,
-          telegram_username: telegramUser.username,
-          telegram_first_name: telegramUser.first_name
-        }
-      };
+      // Create payment record in Supabase
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('ton_payments')
+        .insert({
+          user_id: telegramId.toString(),
+          amount_ton: params.amount,
+          description: params.description,
+          product_type: params.productType,
+          product_id: params.productId,
+          status: 'pending',
+          destination_address: TON_DESTINATION_ADDRESS,
+          payment_method: 'ton',
+          payment_currency: 'TON',
+          metadata: {
+            credits: params.credits,
+            server_name: params.serverName,
+            telegram_user_id: telegramId,
+            telegram_username: telegramUser?.username,
+            telegram_first_name: telegramUser?.first_name
+          }
+        })
+        .select()
+        .single();
 
-      localStorage.setItem(`ton_payment_${paymentId}`, JSON.stringify(paymentData));
+      if (paymentError) {
+        console.error('Payment creation error:', paymentError);
+        toast.error('فشل إنشاء الدفع');
+        return null;
+      }
 
       const result: PaymentResult = {
         paymentId: paymentData.id,
-        destinationAddress: paymentData.destination_address,
-        amount: paymentData.amount_ton,
-        status: paymentData.status as 'pending'
+        destinationAddress: TON_DESTINATION_ADDRESS,
+        amount: params.amount,
+        status: 'pending'
       };
 
-      toast.success('Payment created! Please send TON to complete your purchase.');
+      toast.success('تم إنشاء الدفع! أرسل TON لإكمال عملية الشراء.');
       return result;
 
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error('Failed to create payment');
+      toast.error('فشل إنشاء الدفع');
       return null;
     } finally {
       setIsProcessing(false);
@@ -76,45 +83,45 @@ export const useTonPayment = () => {
 
   const verifyPayment = async (paymentId: string): Promise<boolean> => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const paymentData = localStorage.getItem(`ton_payment_${paymentId}`);
-      if (!paymentData) {
-        toast.error('Payment not found');
+      const { data: payment, error } = await supabase
+        .from('ton_payments')
+        .select('*')
+        .eq('id', paymentId)
+        .single();
+
+      if (error || !payment) {
+        toast.error('لم يتم العثور على الدفع');
         return false;
       }
 
-      const payment = JSON.parse(paymentData);
-      
-      const isConfirmed = Math.random() > 0.2;
-      
-      if (isConfirmed) {
-        payment.status = 'confirmed';
-        payment.confirmed_at = new Date().toISOString();
-        localStorage.setItem(`ton_payment_${paymentId}`, JSON.stringify(payment));
-        
-        toast.success('Payment confirmed! 🎉');
+      if (payment.status === 'confirmed') {
+        toast.success('تم تأكيد الدفع! 🎉');
         return true;
       } else {
-        toast.info('Payment not found yet. Please wait and try again.');
+        toast.info('الدفع قيد الانتظار. يرجى المحاولة مرة أخرى.');
         return false;
       }
       
     } catch (error) {
       console.error('Payment verification error:', error);
-      toast.error('Verification failed');
+      toast.error('فشل التحقق');
       return false;
     }
   };
 
   const checkPaymentStatus = async (paymentId: string) => {
     try {
-      const paymentData = localStorage.getItem(`ton_payment_${paymentId}`);
-      if (!paymentData) {
+      const { data: payment, error } = await supabase
+        .from('ton_payments')
+        .select('status, confirmed_at')
+        .eq('id', paymentId)
+        .single();
+
+      if (error) {
+        console.error('Payment status error:', error);
         return null;
       }
 
-      const payment = JSON.parse(paymentData);
       return {
         status: payment.status,
         confirmed_at: payment.confirmed_at
@@ -129,6 +136,7 @@ export const useTonPayment = () => {
     createPayment,
     verifyPayment,
     checkPaymentStatus,
-    isProcessing
+    isProcessing,
+    destinationAddress: TON_DESTINATION_ADDRESS
   };
 };
