@@ -89,7 +89,7 @@ export const useUnifiedPayment = () => {
 
   const processPayment = useCallback(async (params: UnifiedPaymentParams): Promise<boolean> => {
     if (!selectedMethod) {
-      toast.error('يرجى اختيار طريقة الدفع');
+      toast.error('Please select a payment method');
       return false;
     }
 
@@ -142,12 +142,12 @@ export const useUnifiedPayment = () => {
         }
 
         default:
-          toast.error('طريقة دفع غير معروفة');
+          toast.error('Unknown payment method');
           return false;
       }
     } catch (error) {
       console.error('Payment error:', error);
-      toast.error('فشل الدفع');
+      toast.error('Payment failed');
       return false;
     }
   }, [selectedMethod, selectedCurrency, tonPayment, directTonPayment, metaMaskPayment, nowPayments]);
