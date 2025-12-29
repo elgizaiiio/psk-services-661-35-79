@@ -188,22 +188,12 @@ export const useTelegramAuth = () => {
         
         setIsLoading(false);
       } else {
-        console.log('❌ No Telegram WebApp found - running in development mode');
+        console.log('❌ No Telegram WebApp found - running in browser mode');
         console.log('🛠️ User Agent:', navigator.userAgent);
         console.log('🌍 Location:', window.location.href);
         
-        // For development, use mock data
-        const mockUser = {
-          id: 123456789,
-          first_name: "Test",
-          last_name: "User",
-          username: "testuser",
-          photo_url: "https://via.placeholder.com/150",
-          language_code: "en"
-        };
-        
-        console.log('🧪 Using mock user for development:', mockUser);
-        setUser(mockUser);
+        // In browser mode, don't set mock user - let email auth handle it
+        setUser(null);
         setIsLoading(false);
       }
     };
