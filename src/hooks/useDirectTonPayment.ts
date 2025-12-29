@@ -27,7 +27,7 @@ export const useDirectTonPayment = () => {
 
   const sendDirectPayment = async (params: DirectPaymentParams): Promise<boolean> => {
     if (!wallet?.account) {
-      toast.error('يرجى ربط محفظة TON أولاً');
+      toast.error('Please connect your TON wallet first');
       return false;
     }
 
@@ -38,7 +38,7 @@ export const useDirectTonPayment = () => {
       const amountNano = Math.floor(params.amount * 1e9);
 
       if (amountNano <= 0) {
-        throw new Error('مبلغ الدفع غير صالح');
+        throw new Error('Invalid payment amount');
       }
 
       // Create payment record in database first
@@ -104,21 +104,21 @@ export const useDirectTonPayment = () => {
           activateSubscription();
         }
         
-        toast.success('تم الدفع بنجاح! 🎉');
+        toast.success('Payment successful! 🎉');
         return true;
       } else {
-        throw new Error('فشلت المعاملة - لم يتم إرجاع نتيجة');
+        throw new Error('Transaction failed - no result returned');
       }
 
     } catch (error: any) {
       console.error('Payment error:', error);
       
       if (error.message?.includes('User declined') || error.message?.includes('cancelled')) {
-        toast.error('تم إلغاء المعاملة');
+        toast.error('Transaction cancelled');
       } else if (error.message?.includes('Insufficient funds')) {
-        toast.error('رصيد المحفظة غير كافٍ');
+        toast.error('Insufficient wallet balance');
       } else {
-        toast.error('فشل الدفع. تحقق من اتصال المحفظة وحاول مرة أخرى.');
+        toast.error('Payment failed. Check wallet connection and try again.');
       }
       return false;
     } finally {
