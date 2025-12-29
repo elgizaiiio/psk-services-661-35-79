@@ -76,7 +76,7 @@ const MiningServerLanding = () => {
                 <Badge className="bg-primary/15 text-primary border border-primary/30">New Version</Badge>
                 <h1 className="text-4xl md:text-5xl lg:text-6xl font-orbitron font-extrabold leading-tight">
                   Start Your Journey in
-                  <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">VIRAL Mining</span>
+                  <span className="block bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">Bolt Mining</span>
                 </h1>
                 <p className="text-muted-foreground text-lg md:text-xl">
                   A completely new interface with the site's primary theme. Control mining, upgrade your abilities, and start earning rewards easily.
@@ -151,8 +151,8 @@ const MiningServerLanding = () => {
         <section className="py-16">
           <div className="container max-w-6xl">
             <div className="text-center mb-10">
-              <h2 className="text-3xl md:text-4xl font-orbitron font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                Why VIRAL Mining?
+            <h2 className="text-3xl md:text-4xl font-orbitron font-extrabold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Why Bolt Mining?
               </h2>
               <p className="text-muted-foreground mt-2">Essential features with modern and fast experience</p>
             </div>

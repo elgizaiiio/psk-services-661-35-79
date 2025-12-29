@@ -17,10 +17,12 @@ import {
   Globe,
   Cpu,
   HardDrive,
-  Wifi
+  Wifi,
+  ArrowLeft
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
+import { useTonPrice } from '@/hooks/useTonPrice';
 import { toast } from 'sonner';
 
 const serverPackages = [
@@ -112,9 +114,23 @@ const features = [
 const ServerStoreInner: React.FC = () => {
   const navigate = useNavigate();
   const [selectedServer, setSelectedServer] = useState<number | null>(null);
-  const { sendDirectPayment, isProcessing } = useDirectTonPayment();
+  const { sendDirectPayment, isProcessing, isWalletConnected } = useDirectTonPayment();
+  const { formatUsd } = useTonPrice();
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
 
   const handlePurchase = async (pkg: typeof serverPackages[0]) => {
+    if (!isWalletConnected) {
+      toast.error('Please connect your TON wallet first');
+      return;
+    }
+    
     setSelectedServer(pkg.id);
     
     const success = await sendDirectPayment({
@@ -143,6 +159,15 @@ const ServerStoreInner: React.FC = () => {
 
       <main className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 pb-24">
         <div className="max-w-md mx-auto px-4 py-6">
+          
+          {/* Back Button */}
+          <button 
+            onClick={handleBack}
+            className="mb-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Back</span>
+          </button>
           
           {/* Hero Header */}
           <header className="text-center mb-8">
@@ -212,8 +237,9 @@ const ServerStoreInner: React.FC = () => {
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-2xl font-bold text-primary mb-1">{pkg.price}</div>
-                          <Badge className="bg-primary/10 text-primary border-primary/20" variant="outline">
+                          <div className="text-2xl font-bold text-primary mb-1">{formatUsd(pkg.priceValue)}</div>
+                          <div className="text-sm text-muted-foreground">{pkg.price}</div>
+                          <Badge className="bg-primary/10 text-primary border-primary/20 mt-1" variant="outline">
                             /month
                           </Badge>
                         </div>

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useUserServers } from '@/hooks/useUserServers';
+import { useTonPrice } from '@/hooks/useTonPrice';
 import { Server, Check, Loader2, ArrowLeft, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
@@ -20,7 +21,8 @@ const MiningServers = () => {
   const { user } = useViralMining(telegramUser);
   const { servers: ownedServers, purchaseServer, getStock, refetchInventory } = useUserServers(user?.id || null);
   const [processingServer, setProcessingServer] = useState<string | null>(null);
-  const { sendDirectPayment, isProcessing } = useDirectTonPayment();
+  const { sendDirectPayment, isProcessing, isWalletConnected } = useDirectTonPayment();
+  const { formatUsd, isLoading: isPriceLoading } = useTonPrice();
 
   const servers: MiningServer[] = [
     { id: 'basic-1', name: 'Starter', hashRate: '2.5 TH/s', hashRateNum: 2.5, boltPerDay: 15, usdtPerDay: 0.05, price: 0.5, tier: 'Basic' },
@@ -33,6 +35,7 @@ const MiningServers = () => {
 
   const handlePurchase = async (server: MiningServer) => {
     if (!user?.id) { toast.error('Please login first'); return; }
+    if (!isWalletConnected) { toast.error('Please connect your TON wallet first'); return; }
     
     const stock = getStock(server.id);
     if (stock.soldOut) { toast.error('This server is sold out!'); return; }
@@ -46,16 +49,24 @@ const MiningServers = () => {
     setProcessingServer(null);
   };
 
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate('/');
+    }
+  };
+
   const isOwned = (serverId: string) => ownedServers.some(s => s.server_name === servers.find(srv => srv.id === serverId)?.name);
 
   return (
     <PageWrapper className="min-h-screen bg-background pb-40">
-      <Helmet><title>Mining Servers</title></Helmet>
+      <Helmet><title>Mining Servers | Bolt</title></Helmet>
       <div className="max-w-md mx-auto px-5 pt-8">
         <StaggerContainer className="space-y-6">
           <FadeUp>
             <div className="flex items-center gap-3">
-              <motion.button onClick={() => navigate(-1)} whileTap={{ scale: 0.9 }} className="w-10 h-10 bg-card border border-border rounded-xl flex items-center justify-center">
+              <motion.button onClick={handleBack} whileTap={{ scale: 0.9 }} className="w-10 h-10 bg-card border border-border rounded-xl flex items-center justify-center">
                 <ArrowLeft className="w-5 h-5 text-foreground" />
               </motion.button>
               <div><h1 className="text-xl font-semibold text-foreground">Mining Servers</h1><p className="text-sm text-muted-foreground">Buy servers to earn daily</p></div>
@@ -85,7 +96,19 @@ const MiningServers = () => {
                 <FadeUp key={server.id}>
                   <motion.div className={`p-4 rounded-xl border ${owned ? 'bg-primary/5 border-primary/20' : stock.soldOut ? 'bg-muted/50 border-border opacity-60' : 'bg-card border-border'}`} whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}>
                     <div className="flex items-center gap-2 mb-3"><Server className="w-4 h-4 text-primary" /><span className="text-sm font-medium text-foreground">{server.name}</span></div>
-                    <div className="space-y-1 mb-3"><p className="text-xs text-muted-foreground">{server.hashRate}</p><p className="text-xs text-primary flex items-center gap-1"><BoltIcon size={12} />+{server.boltPerDay}/day</p><p className="text-xs text-muted-foreground flex items-center gap-1"><UsdtIcon size={12} />+${server.usdtPerDay}/day</p></div>
+                    <div className="space-y-1 mb-3">
+                      <p className="text-xs text-muted-foreground">{server.hashRate}</p>
+                      <p className="text-xs text-primary flex items-center gap-1"><BoltIcon size={12} />+{server.boltPerDay}/day</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1"><UsdtIcon size={12} />+${server.usdtPerDay}/day</p>
+                    </div>
+                    
+                    {/* Price display */}
+                    <div className="mb-3 p-2 rounded-lg bg-muted/30">
+                      <p className="text-lg font-bold text-primary">{formatUsd(server.price)}</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <TonIcon size={12} />{server.price} TON
+                      </p>
+                    </div>
                     
                     {/* Stock indicator */}
                     <div className="mb-3">
@@ -110,7 +133,9 @@ const MiningServers = () => {
                     ) : stock.soldOut ? (
                       <div className="flex items-center justify-center gap-1 py-2 rounded-lg bg-muted text-muted-foreground text-sm font-medium">Sold Out</div>
                     ) : (
-                      <Button onClick={() => handlePurchase(server)} className="w-full h-9 text-sm flex items-center gap-1" disabled={processing}>{processing ? <Loader2 className="w-4 h-4 animate-spin" /> : <><TonIcon size={16} />{server.price} TON</>}</Button>
+                      <Button onClick={() => handlePurchase(server)} className="w-full h-9 text-sm" disabled={processing}>
+                        {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Buy Now'}
+                      </Button>
                     )}
                   </motion.div>
                 </FadeUp>
