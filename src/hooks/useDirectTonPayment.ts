@@ -13,6 +13,7 @@ export interface DirectPaymentParams {
   credits?: number;
   serverName?: string;
   upgradeType?: 'power' | 'duration';
+  userId?: string | null;
 }
 
 // Wallet address for receiving TON payments
@@ -31,7 +32,11 @@ export const useDirectTonPayment = () => {
       return false;
     }
 
-    const telegramId = telegramUser?.id || 123456789;
+    // Use provided userId, telegram ID, or wallet address as fallback
+    const userId = params.userId 
+      || telegramUser?.id?.toString() 
+      || wallet.account.address.slice(0, 32);
+    
     setIsProcessing(true);
     
     try {
@@ -45,7 +50,7 @@ export const useDirectTonPayment = () => {
       const { data: paymentData, error: paymentError } = await supabase
         .from('ton_payments')
         .insert({
-          user_id: telegramId.toString(),
+          user_id: userId,
           amount_ton: params.amount,
           description: params.description,
           product_type: params.productType,
@@ -58,7 +63,8 @@ export const useDirectTonPayment = () => {
           metadata: {
             credits: params.credits,
             server_name: params.serverName,
-            upgrade_type: params.upgradeType
+            upgrade_type: params.upgradeType,
+            has_bolt_user: !!params.userId
           }
         })
         .select()
