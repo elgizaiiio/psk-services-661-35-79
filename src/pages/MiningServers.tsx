@@ -28,12 +28,12 @@ const MiningServers = () => {
   const isReady = !isTelegramLoading && !isMiningUserLoading;
 
   const servers: MiningServer[] = [
-    { id: 'basic-1', name: 'Starter', hashRate: '2.5 TH/s', hashRateNum: 2.5, boltPerDay: 15, usdtPerDay: 0.05, price: 0.5, tier: 'Basic' },
-    { id: 'basic-2', name: 'Basic', hashRate: '5.0 TH/s', hashRateNum: 5, boltPerDay: 30, usdtPerDay: 0.10, price: 1.0, tier: 'Basic' },
-    { id: 'pro-1', name: 'Pro', hashRate: '8.0 TH/s', hashRateNum: 8, boltPerDay: 50, usdtPerDay: 0.18, price: 2.0, tier: 'Pro' },
-    { id: 'pro-2', name: 'Advanced', hashRate: '12.0 TH/s', hashRateNum: 12, boltPerDay: 80, usdtPerDay: 0.28, price: 3.5, tier: 'Pro' },
-    { id: 'elite-1', name: 'Elite', hashRate: '20.0 TH/s', hashRateNum: 20, boltPerDay: 120, usdtPerDay: 0.45, price: 6.0, tier: 'Elite' },
-    { id: 'elite-2', name: 'Ultra', hashRate: '35.0 TH/s', hashRateNum: 35, boltPerDay: 200, usdtPerDay: 0.80, price: 10.0, tier: 'Elite' },
+    { id: 'basic-1', name: 'Starter', hashRate: '2.5 TH/s', hashRateNum: 2.5, boltPerDay: 15, usdtPerDay: 0.05, price: 1.5, tier: 'Basic' },
+    { id: 'basic-2', name: 'Basic', hashRate: '5.0 TH/s', hashRateNum: 5, boltPerDay: 30, usdtPerDay: 0.10, price: 2.5, tier: 'Basic' },
+    { id: 'pro-1', name: 'Pro', hashRate: '8.0 TH/s', hashRateNum: 8, boltPerDay: 50, usdtPerDay: 0.18, price: 4.0, tier: 'Pro' },
+    { id: 'pro-2', name: 'Advanced', hashRate: '12.0 TH/s', hashRateNum: 12, boltPerDay: 80, usdtPerDay: 0.28, price: 6.5, tier: 'Pro' },
+    { id: 'elite-1', name: 'Elite', hashRate: '20.0 TH/s', hashRateNum: 20, boltPerDay: 120, usdtPerDay: 0.45, price: 10.0, tier: 'Elite' },
+    { id: 'elite-2', name: 'Ultra', hashRate: '35.0 TH/s', hashRateNum: 35, boltPerDay: 200, usdtPerDay: 0.80, price: 18.0, tier: 'Elite' },
   ];
 
   const handleBuyClick = (server: MiningServer) => {
