@@ -97,7 +97,7 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center flex items-center justify-center gap-2">
             <Wallet className="w-5 h-5 text-primary" />
-            اختر طريقة الدفع
+            Select Payment Method
           </DialogTitle>
         </DialogHeader>
 
@@ -125,8 +125,8 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
                     <div className="flex items-center gap-3">
                       <span className="text-2xl">{method.icon}</span>
                       <div>
-                        <p className="font-semibold">{method.nameAr}</p>
-                        <p className="text-xs text-muted-foreground">{method.descriptionAr}</p>
+                        <p className="font-semibold">{method.name}</p>
+                        <p className="text-xs text-muted-foreground">{method.description}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -156,9 +156,9 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
           {step === 'currency' && selectedMethodInfo?.currencies && (
             <div className="space-y-2">
               <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
-                ← رجوع
+                ← Back
               </Button>
-              <p className="text-sm text-muted-foreground mb-3">اختر العملة:</p>
+              <p className="text-sm text-muted-foreground mb-3">Select Currency:</p>
               <div className="grid grid-cols-3 gap-2">
                 {selectedMethodInfo.currencies.map((currency) => (
                   <Card
@@ -180,27 +180,27 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
           {step === 'confirm' && (
             <div className="space-y-4">
               <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
-                ← رجوع
+                ← Back
               </Button>
 
               <Card className="p-4 bg-secondary/30">
                 <div className="flex items-center gap-3 mb-4">
                   <span className="text-3xl">{selectedMethodInfo?.icon}</span>
                   <div>
-                    <p className="font-semibold">{selectedMethodInfo?.nameAr}</p>
+                    <p className="font-semibold">{selectedMethodInfo?.name}</p>
                     <Badge variant="outline">{selectedCurrency}</Badge>
                   </div>
                 </div>
 
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">المبلغ:</span>
+                    <span className="text-muted-foreground">Amount:</span>
                     <span className="font-bold">${amount}</span>
                   </div>
                   {credits && (
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">الرصيد:</span>
-                      <span className="font-bold">{credits} نقطة</span>
+                      <span className="text-muted-foreground">Credits:</span>
+                      <span className="font-bold">{credits} points</span>
                     </div>
                   )}
                 </div>
@@ -213,7 +213,7 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
                     <div className="flex items-center gap-2 text-green-500">
                       <Check className="w-4 h-4" />
                       <span className="text-sm">
-                        متصل: {metaMaskWallet.address?.slice(0, 8)}...{metaMaskWallet.address?.slice(-6)}
+                        Connected: {metaMaskWallet.address?.slice(0, 8)}...{metaMaskWallet.address?.slice(-6)}
                       </span>
                     </div>
                   ) : (
@@ -224,7 +224,7 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
                       className="w-full"
                     >
                       <span className="mr-2">🦊</span>
-                      الاتصال بـ MetaMask
+                      Connect MetaMask
                     </Button>
                   )}
                 </div>
@@ -239,12 +239,12 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
                 {isProcessing ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    جاري المعالجة...
+                    Processing...
                   </>
                 ) : (
                   <>
                     {selectedMethod === 'nowpayments' && <ExternalLink className="w-4 h-4 mr-2" />}
-                    تأكيد الدفع
+                    Confirm Payment
                   </>
                 )}
               </Button>
