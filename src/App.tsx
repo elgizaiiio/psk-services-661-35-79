@@ -44,6 +44,7 @@ const VIPSubscription = lazy(() => import("./pages/VIPSubscription"));
 const TokenStore = lazy(() => import("./pages/TokenStore"));
 const DailyTasks = lazy(() => import("./pages/DailyTasks"));
 const KrunkerGame = lazy(() => import("./pages/KrunkerGame"));
+const Auth = lazy(() => import("./pages/Auth"));
 
 // Loading component
 const PageLoader = () => (
@@ -115,6 +116,12 @@ const App = () => (
               <Toaster />
               <Sonner />
               <Routes>
+                {/* Auth page - outside Telegram wrapper */}
+                <Route path="/auth" element={
+                  <Suspense fallback={<PageLoader />}>
+                    <Auth />
+                  </Suspense>
+                } />
                 {/* All routes with Telegram auth */}
                 <Route path="/*" element={
                   <TelegramWebAppWrapper>
