@@ -45,7 +45,10 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
   } | null>(null);
 
   const initializeUser = useCallback(async () => {
-    if (!telegramUser) return;
+    if (!telegramUser) {
+      setLoading(false);
+      return;
+    }
 
     try {
       setLoading(true);
