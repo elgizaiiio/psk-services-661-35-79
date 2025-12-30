@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useUserServers } from '@/hooks/useUserServers';
-import { Server, Check, Zap, TrendingUp } from 'lucide-react';
+import { Server, Check, Cpu, Activity } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, FadeUp, StaggerContainer } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon, TonIcon } from '@/components/ui/currency-icons';
@@ -19,34 +19,18 @@ type MiningServer = {
   usdtPerDay: number;
   priceTon: number;
   tier: 'Basic' | 'Pro' | 'Elite';
+  color: string;
+  glow: string;
 };
 
 const servers: MiningServer[] = [
-  { id: 'basic-1', name: 'Starter', hashRate: '5 TH/s', boltPerDay: 50, usdtPerDay: 0.15, priceTon: 1.5, tier: 'Basic' },
-  { id: 'basic-2', name: 'Basic', hashRate: '10 TH/s', boltPerDay: 100, usdtPerDay: 0.30, priceTon: 2.5, tier: 'Basic' },
-  { id: 'pro-1', name: 'Pro', hashRate: '18 TH/s', boltPerDay: 180, usdtPerDay: 0.55, priceTon: 4.0, tier: 'Pro' },
-  { id: 'pro-2', name: 'Advanced', hashRate: '30 TH/s', boltPerDay: 300, usdtPerDay: 0.90, priceTon: 6.5, tier: 'Pro' },
-  { id: 'elite-1', name: 'Elite', hashRate: '50 TH/s', boltPerDay: 500, usdtPerDay: 1.50, priceTon: 10.0, tier: 'Elite' },
-  { id: 'elite-2', name: 'Ultra', hashRate: '100 TH/s', boltPerDay: 1000, usdtPerDay: 3.00, priceTon: 18.0, tier: 'Elite' },
+  { id: 'basic-1', name: 'Starter', hashRate: '5 TH/s', boltPerDay: 50, usdtPerDay: 0.15, priceTon: 1.5, tier: 'Basic', color: '#3B82F6', glow: 'shadow-blue-500/30' },
+  { id: 'basic-2', name: 'Basic', hashRate: '10 TH/s', boltPerDay: 100, usdtPerDay: 0.30, priceTon: 2.5, tier: 'Basic', color: '#06B6D4', glow: 'shadow-cyan-500/30' },
+  { id: 'pro-1', name: 'Pro', hashRate: '18 TH/s', boltPerDay: 180, usdtPerDay: 0.55, priceTon: 4.0, tier: 'Pro', color: '#8B5CF6', glow: 'shadow-violet-500/30' },
+  { id: 'pro-2', name: 'Advanced', hashRate: '30 TH/s', boltPerDay: 300, usdtPerDay: 0.90, priceTon: 6.5, tier: 'Pro', color: '#EC4899', glow: 'shadow-pink-500/30' },
+  { id: 'elite-1', name: 'Elite', hashRate: '50 TH/s', boltPerDay: 500, usdtPerDay: 1.50, priceTon: 10.0, tier: 'Elite', color: '#F59E0B', glow: 'shadow-amber-500/30' },
+  { id: 'elite-2', name: 'Ultra', hashRate: '100 TH/s', boltPerDay: 1000, usdtPerDay: 3.00, priceTon: 18.0, tier: 'Elite', color: '#EF4444', glow: 'shadow-red-500/30' },
 ];
-
-const getTierColor = (tier: string) => {
-  switch (tier) {
-    case 'Basic': return 'from-blue-500/20 to-cyan-500/20 border-blue-500/30';
-    case 'Pro': return 'from-purple-500/20 to-pink-500/20 border-purple-500/30';
-    case 'Elite': return 'from-amber-500/20 to-orange-500/20 border-amber-500/30';
-    default: return 'from-muted/20 to-muted/10 border-border';
-  }
-};
-
-const getTierBadgeColor = (tier: string) => {
-  switch (tier) {
-    case 'Basic': return 'bg-blue-500/20 text-blue-400';
-    case 'Pro': return 'bg-purple-500/20 text-purple-400';
-    case 'Elite': return 'bg-amber-500/20 text-amber-400';
-    default: return 'bg-muted text-muted-foreground';
-  }
-};
 
 const MiningServers = () => {
   const { user: telegramUser, isLoading: isTelegramLoading } = useTelegramAuth();
@@ -96,20 +80,23 @@ const MiningServers = () => {
   };
 
   return (
-    <PageWrapper className="min-h-screen bg-background pb-32">
+    <PageWrapper className="min-h-screen bg-gradient-to-b from-background via-background to-black/50 pb-32">
       <Helmet>
         <title>Mining Servers</title>
         <meta name="description" content="Buy mining servers to earn daily rewards." />
       </Helmet>
 
-      <div className="max-w-md mx-auto px-4 pt-8">
-        <StaggerContainer className="space-y-6">
+      <div className="max-w-md mx-auto px-4 pt-6">
+        <StaggerContainer className="space-y-5">
           {/* Header */}
           <FadeUp>
-            <div className="text-center mb-2">
-              <h1 className="text-2xl font-bold text-foreground">Mining Servers</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Purchase servers to earn passive income
+            <div className="text-center py-4">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/50 mb-4 shadow-lg shadow-primary/30">
+                <Cpu className="w-8 h-8 text-primary-foreground" />
+              </div>
+              <h1 className="text-3xl font-black text-foreground tracking-tight">Mining Servers</h1>
+              <p className="text-muted-foreground mt-2">
+                Passive income, 24/7 mining
               </p>
             </div>
           </FadeUp>
@@ -117,99 +104,145 @@ const MiningServers = () => {
           {/* Stats Card */}
           {totalStats.servers > 0 && (
             <FadeUp>
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+              <motion.div 
+                className="p-5 rounded-3xl bg-gradient-to-r from-primary/20 via-primary/10 to-transparent border border-primary/30 shadow-xl shadow-primary/10"
+                initial={{ scale: 0.95 }}
+                animate={{ scale: 1 }}
+              >
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Server className="w-5 h-5 text-primary" />
-                    <span className="font-medium text-foreground">{totalStats.servers} Servers</span>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/20 flex items-center justify-center">
+                      <Activity className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-foreground">{totalStats.servers}</p>
+                      <p className="text-xs text-muted-foreground">Active Servers</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-muted-foreground">Daily Earnings</p>
-                    <p className="text-sm font-semibold text-primary">+{totalStats.boltPerDay} BOLT • +${totalStats.usdtPerDay.toFixed(2)}</p>
+                  <div className="text-right space-y-1">
+                    <div className="flex items-center gap-1 justify-end">
+                      <BoltIcon size={14} />
+                      <span className="text-sm font-bold text-primary">+{totalStats.boltPerDay}/day</span>
+                    </div>
+                    <div className="flex items-center gap-1 justify-end">
+                      <UsdtIcon size={14} />
+                      <span className="text-sm font-bold text-emerald-400">+${totalStats.usdtPerDay.toFixed(2)}/day</span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </FadeUp>
           )}
 
-          {/* Server List */}
-          <div className="space-y-3">
-            {servers.map((server) => {
+          {/* Server Grid */}
+          <div className="grid grid-cols-1 gap-4">
+            {servers.map((server, index) => {
               const owned = isOwned(server.id);
               const stock = getStock(server.id);
 
               return (
                 <FadeUp key={server.id}>
                   <motion.div
-                    className={`p-4 rounded-2xl bg-gradient-to-r ${getTierColor(server.tier)} border backdrop-blur-sm transition-all ${
-                      owned ? 'opacity-70' : stock.soldOut ? 'opacity-40' : ''
+                    className={`relative overflow-hidden rounded-3xl border transition-all duration-300 ${server.glow} ${
+                      owned 
+                        ? 'border-primary/50 bg-primary/5' 
+                        : stock.soldOut 
+                        ? 'border-border/50 bg-muted/20 opacity-60' 
+                        : 'border-white/10 bg-gradient-to-br from-white/5 to-transparent hover:border-white/20 shadow-2xl'
                     }`}
+                    whileHover={!owned && !stock.soldOut ? { scale: 1.02, y: -4 } : undefined}
                     whileTap={!owned && !stock.soldOut ? { scale: 0.98 } : undefined}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
                   >
-                    {/* Top Row */}
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-background/50 flex items-center justify-center">
-                          <Server className="w-6 h-6 text-foreground" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-bold text-foreground">{server.name}</h3>
-                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${getTierBadgeColor(server.tier)}`}>
-                              {server.tier}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 mt-0.5">
-                            <Zap className="w-3 h-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">{server.hashRate}</span>
-                          </div>
-                        </div>
-                      </div>
+                    {/* Color accent bar */}
+                    <div 
+                      className="absolute top-0 left-0 right-0 h-1"
+                      style={{ background: `linear-gradient(90deg, ${server.color}, transparent)` }}
+                    />
 
-                      {/* Price */}
-                      <div className="text-right">
-                        <div className="flex items-center gap-1 justify-end">
-                          <TonIcon size={16} />
-                          <span className="font-bold text-foreground">{server.priceTon}</span>
+                    <div className="p-5">
+                      <div className="flex items-start justify-between">
+                        {/* Left - Server Info */}
+                        <div className="flex items-start gap-4">
+                          {/* Server Icon */}
+                          <div 
+                            className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
+                            style={{ 
+                              background: `linear-gradient(135deg, ${server.color}30, ${server.color}10)`,
+                              boxShadow: `0 0 30px ${server.color}20`
+                            }}
+                          >
+                            <Server className="w-7 h-7" style={{ color: server.color }} />
+                          </div>
+
+                          {/* Server Details */}
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-lg font-bold text-foreground">{server.name}</h3>
+                              <span 
+                                className="text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider"
+                                style={{ 
+                                  background: `${server.color}20`,
+                                  color: server.color
+                                }}
+                              >
+                                {server.tier}
+                              </span>
+                            </div>
+                            
+                            <p className="text-sm text-muted-foreground font-medium">{server.hashRate}</p>
+
+                            {/* Rewards */}
+                            <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-primary/10">
+                                <BoltIcon size={12} />
+                                <span className="text-xs font-bold text-primary">+{server.boltPerDay}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5 px-2 py-1 rounded-lg bg-emerald-500/10">
+                                <UsdtIcon size={12} />
+                                <span className="text-xs font-bold text-emerald-400">+${server.usdtPerDay.toFixed(2)}</span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <span className="text-[10px] text-muted-foreground">TON</span>
+
+                        {/* Right - Price & Action */}
+                        <div className="flex flex-col items-end gap-3">
+                          <div className="text-right">
+                            <div className="flex items-center gap-1.5">
+                              <TonIcon size={20} />
+                              <span className="text-2xl font-black text-foreground">{server.priceTon}</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">TON</span>
+                          </div>
+
+                          {owned ? (
+                            <div className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-primary/20 text-primary text-sm font-bold">
+                              <Check className="w-4 h-4" />
+                              Owned
+                            </div>
+                          ) : stock.soldOut ? (
+                            <div className="px-4 py-2 rounded-xl bg-muted/50 text-muted-foreground text-sm font-medium">
+                              Sold Out
+                            </div>
+                          ) : (
+                            <Button 
+                              onClick={() => handleBuyClick(server)} 
+                              size="sm"
+                              className="font-bold shadow-lg"
+                              style={{ 
+                                background: `linear-gradient(135deg, ${server.color}, ${server.color}CC)`,
+                                boxShadow: `0 4px 20px ${server.color}40`
+                              }}
+                            >
+                              Buy Now
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
-
-                    {/* Rewards Row */}
-                    <div className="flex items-center gap-4 mb-3 py-2 px-3 rounded-xl bg-background/30">
-                      <div className="flex items-center gap-1.5">
-                        <TrendingUp className="w-3 h-3 text-primary" />
-                        <span className="text-xs text-muted-foreground">Daily:</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <BoltIcon size={14} />
-                        <span className="text-xs font-medium text-foreground">+{server.boltPerDay}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <UsdtIcon size={14} />
-                        <span className="text-xs font-medium text-foreground">+${server.usdtPerDay.toFixed(2)}</span>
-                      </div>
-                    </div>
-
-                    {/* Action Button */}
-                    {owned ? (
-                      <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/20 text-primary text-sm font-medium">
-                        <Check className="w-4 h-4" />
-                        Owned
-                      </div>
-                    ) : stock.soldOut ? (
-                      <div className="py-2.5 text-center rounded-xl bg-muted/50 text-muted-foreground text-sm font-medium">
-                        Sold Out
-                      </div>
-                    ) : (
-                      <Button 
-                        onClick={() => handleBuyClick(server)} 
-                        className="w-full h-10 font-semibold"
-                      >
-                        Buy Server
-                      </Button>
-                    )}
                   </motion.div>
                 </FadeUp>
               );
@@ -218,7 +251,7 @@ const MiningServers = () => {
         </StaggerContainer>
       </div>
 
-      {/* Payment Modal - Using priceTon directly */}
+      {/* Payment Modal */}
       {selectedServer && (
         <UnifiedPaymentModal
           isOpen={isPaymentOpen}
