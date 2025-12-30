@@ -187,7 +187,7 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
           >
             <span className="font-medium text-foreground">Telegram Stars</span>
             <span className="font-bold text-yellow-500">
-              {starsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : `${starsAmount} ⭐`}
+              {starsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : `${starsAmount} Stars`}
             </span>
           </button>
 

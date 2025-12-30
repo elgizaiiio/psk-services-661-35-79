@@ -55,9 +55,17 @@ const MiningInner = () => {
   };
 
   const handleStartMining = async () => {
+    if (!user) {
+      toast.error('Please wait for user data to load');
+      return;
+    }
     hapticFeedback.impact('medium');
-    await startMining();
-    toast.success('Mining started successfully!');
+    try {
+      await startMining();
+      toast.success('Mining started successfully!');
+    } catch (err) {
+      toast.error('Failed to start mining');
+    }
   };
 
   const handleUpgradeClick = async (type: 'power' | 'duration') => {
