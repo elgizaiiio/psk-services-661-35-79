@@ -252,11 +252,7 @@ const MiningServers = () => {
                             <Button 
                               onClick={() => handleBuyClick(server)} 
                               size="sm"
-                              className="font-bold shadow-lg"
-                              style={{ 
-                                background: `linear-gradient(135deg, ${server.color}, ${server.color}CC)`,
-                                boxShadow: `0 4px 20px ${server.color}40`
-                              }}
+                              className="font-bold shadow-lg bg-white text-black hover:bg-white/90"
                             >
                               {server.priceTon === 0 ? 'Claim Free' : 'Buy Now'}
                             </Button>
