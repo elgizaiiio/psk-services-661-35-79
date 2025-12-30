@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useDirectTonPayment } from './useDirectTonPayment';
 
-export type PaymentMethod = 'ton_connect';
+export type PaymentMethod = 'ton_connect' | 'stars';
 
 export type ProductType = 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting' | 'mining_upgrade' | 'token_purchase';
 
@@ -26,6 +26,15 @@ export interface PaymentMethodInfo {
   currencies?: string[];
 }
 
+// Stars price configuration
+export const STAR_PRICE_USD = 0.02;
+export const TON_TO_USD = 6; // Approximate
+
+export const calculateStarsFromTon = (tonAmount: number): number => {
+  const usdAmount = tonAmount * TON_TO_USD;
+  return Math.ceil(usdAmount / STAR_PRICE_USD);
+};
+
 export const useUnifiedPayment = () => {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>('ton_connect');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('TON');
@@ -44,6 +53,16 @@ export const useUnifiedPayment = () => {
       descriptionAr: 'ادفع بمحفظة TON (Tonkeeper، إلخ)',
       available: true,
       currencies: ['TON'],
+    },
+    {
+      id: 'stars',
+      name: 'Telegram Stars',
+      nameAr: 'نجوم تليجرام',
+      icon: '⭐',
+      description: 'Pay with Telegram Stars',
+      descriptionAr: 'ادفع بنجوم تليجرام',
+      available: true,
+      currencies: ['STARS'],
     },
   ];
 
@@ -73,5 +92,6 @@ export const useUnifiedPayment = () => {
     processPayment,
     isWalletConnected: directTonPayment.isWalletConnected,
     destinationAddress: directTonPayment.destinationAddress,
+    calculateStarsFromTon,
   };
 };
