@@ -42,8 +42,8 @@ const Invite: React.FC = () => {
           <FadeUp><h1 className="text-xl font-semibold text-foreground">Invite Friends</h1><p className="text-sm text-muted-foreground">Earn BOLT for every friend who joins</p></FadeUp>
 
           <div className="grid grid-cols-2 gap-4">
-            <FadeUp><motion.div className="p-4 rounded-xl bg-card border border-border" whileHover={{ y: -2 }}><p className="text-xs text-muted-foreground mb-1">Friends</p><p className="text-2xl font-bold text-foreground"><AnimatedNumber value={stats.total_referrals} duration={0.8} /></p></motion.div></FadeUp>
-            <FadeUp><motion.div className="p-4 rounded-xl bg-card border border-border" whileHover={{ y: -2 }}><p className="text-xs text-muted-foreground mb-1">Earned</p><p className="text-2xl font-bold text-primary"><AnimatedNumber value={stats.total_bonus} decimals={0} duration={0.8} /></p></motion.div></FadeUp>
+            <FadeUp><motion.div className="p-4 rounded-xl bg-card border border-border" whileHover={{ y: -2 }}><p className="text-xs text-muted-foreground mb-1">Friends</p><p className="text-2xl font-bold text-foreground"><AnimatedNumber value={boltUser?.total_referrals || 0} duration={0.8} /></p></motion.div></FadeUp>
+            <FadeUp><motion.div className="p-4 rounded-xl bg-card border border-border" whileHover={{ y: -2 }}><p className="text-xs text-muted-foreground mb-1">Earned</p><p className="text-2xl font-bold text-primary"><AnimatedNumber value={boltUser?.referral_bonus || 0} decimals={0} duration={0.8} /></p></motion.div></FadeUp>
           </div>
 
           <FadeUp>

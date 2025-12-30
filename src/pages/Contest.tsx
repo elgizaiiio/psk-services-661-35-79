@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { CountdownTimer } from '@/components/contest/CountdownTimer';
 import { Leaderboard } from '@/components/contest/Leaderboard';
 import { useContestLeaderboard } from '@/hooks/useContestLeaderboard';
@@ -35,7 +34,7 @@ const Contest = () => {
   };
 
   const handleShare = () => {
-    const text = `🏆 Join the BOLT Referral Championship!\n\n💰 Prize Pool: $10,000 in TON\n🥇 1st Place: $3,000\n🥈 2nd Place: $2,000\n🥉 3rd Place: $1,500\n\nJoin now and compete for amazing prizes!`;
+    const text = `🏆 Join the BOLT Referral Championship!\n\n💰 Prize Pool: $10,000 in TON\n\nJoin now and compete!`;
     const webApp = (window as any).Telegram?.WebApp;
     
     if (webApp?.openTelegramLink) {
@@ -48,22 +47,20 @@ const Contest = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
       </div>
     );
   }
 
   if (!contest) {
     return (
-      <div className="min-h-screen bg-background p-4">
-        <div className="max-w-lg mx-auto text-center py-20">
-          <Trophy className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-          <h1 className="text-2xl font-bold mb-2">No Active Contest</h1>
-          <p className="text-muted-foreground mb-6">Check back later for upcoming contests!</p>
-          <Link to="/invite">
-            <Button>Back to Invite</Button>
-          </Link>
-        </div>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
+        <Trophy className="w-12 h-12 text-muted-foreground mb-4" />
+        <h1 className="text-lg font-semibold mb-2">No Active Contest</h1>
+        <p className="text-sm text-muted-foreground mb-6">Check back later</p>
+        <Link to="/invite">
+          <Button variant="outline" size="sm">Back</Button>
+        </Link>
       </div>
     );
   }
@@ -73,149 +70,125 @@ const Contest = () => {
   return (
     <>
       <Helmet>
-        <title>Referral Contest - $10,000 Prize Pool</title>
+        <title>Referral Contest</title>
       </Helmet>
 
-      <div className="min-h-screen bg-background pb-24">
+      <div className="min-h-screen bg-background pb-32">
         {/* Header */}
-        <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-          <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
-            <div className="flex-1">
-              <h1 className="font-bold">{contest.name}</h1>
+        <div className="px-4 pt-6 pb-4">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-lg font-semibold text-foreground">{contest.name}</h1>
               <p className="text-xs text-muted-foreground">Top 10 Winners</p>
             </div>
-            <Trophy className="w-6 h-6 text-primary" />
-          </div>
-        </div>
-
-        <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
-          {/* Prize Pool & Countdown */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center"
-          >
-            <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-4">
-              <Gift className="w-5 h-5 text-primary" />
-              <span className="font-bold text-primary">$10,000 in TON</span>
+            <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full">
+              <Gift className="w-4 h-4 text-primary" />
+              <span className="text-sm font-semibold text-primary">$10,000</span>
             </div>
-            
-            <h2 className="text-lg font-medium text-muted-foreground mb-4">Time Remaining</h2>
+          </div>
+
+          {/* Countdown */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6"
+          >
             <CountdownTimer endDate={contest.end_date} />
           </motion.div>
 
           {/* Your Stats */}
           {userRank && (
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
+              className="grid grid-cols-3 gap-3 mb-6"
             >
-              <Card className="p-4 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-                <h3 className="font-medium text-center mb-3">Your Stats</h3>
-                <div className="grid grid-cols-3 gap-4 text-center">
-                  <div>
-                    <p className="text-2xl font-bold text-primary">
-                      {userRank.rank > 0 ? `#${userRank.rank}` : '-'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Rank</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{userRank.referral_count}</p>
-                    <p className="text-xs text-muted-foreground">Referrals</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-green-500">
-                      {userRank.prize_usd ? `$${userRank.prize_usd}` : '-'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Prize</p>
-                  </div>
-                </div>
-              </Card>
+              <div className="bg-card border border-border rounded-xl p-3 text-center">
+                <p className="text-xl font-bold text-primary">
+                  {userRank.rank > 0 ? `#${userRank.rank}` : '-'}
+                </p>
+                <p className="text-xs text-muted-foreground">Rank</p>
+              </div>
+              <div className="bg-card border border-border rounded-xl p-3 text-center">
+                <p className="text-xl font-bold text-foreground">{userRank.referral_count}</p>
+                <p className="text-xs text-muted-foreground">Referrals</p>
+              </div>
+              <div className="bg-card border border-border rounded-xl p-3 text-center">
+                <p className="text-xl font-bold text-green-500">
+                  {userRank.prize_usd ? `$${userRank.prize_usd}` : '-'}
+                </p>
+                <p className="text-xs text-muted-foreground">Prize</p>
+              </div>
             </motion.div>
           )}
 
-          {/* Prize Breakdown */}
+          {/* Prizes */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
+            className="mb-6"
           >
-            <Card className="p-4">
-              <h3 className="font-medium mb-3 flex items-center gap-2">
-                <Gift className="w-4 h-4 text-primary" />
-                Prize Breakdown
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {prizes.slice(0, 10).map((prize: any) => (
-                  <div
-                    key={prize.rank}
-                    className={`flex items-center justify-between p-2 rounded-lg ${
-                      prize.rank <= 3 ? 'bg-primary/10' : 'bg-muted/50'
-                    }`}
-                  >
-                    <span className="font-medium">
-                      {prize.rank === 1 && '🥇'}
-                      {prize.rank === 2 && '🥈'}
-                      {prize.rank === 3 && '🥉'}
-                      {prize.rank > 3 && `#${prize.rank}`}
-                    </span>
-                    <span className="font-bold text-primary">${prize.prize_usd}</span>
-                  </div>
-                ))}
-              </div>
-            </Card>
+            <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <Trophy className="w-4 h-4 text-primary" />
+              Prizes
+            </h3>
+            <div className="grid grid-cols-5 gap-2">
+              {prizes.slice(0, 10).map((prize: any) => (
+                <div
+                  key={prize.rank}
+                  className={`p-2 rounded-lg text-center ${
+                    prize.rank <= 3 ? 'bg-primary/10 border border-primary/20' : 'bg-card border border-border'
+                  }`}
+                >
+                  <p className="text-xs mb-1">
+                    {prize.rank === 1 && '🥇'}
+                    {prize.rank === 2 && '🥈'}
+                    {prize.rank === 3 && '🥉'}
+                    {prize.rank > 3 && `#${prize.rank}`}
+                  </p>
+                  <p className="text-xs font-semibold text-primary">${prize.prize_usd}</p>
+                </div>
+              ))}
+            </div>
           </motion.div>
 
           {/* Leaderboard */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            <Card className="p-4">
-              <h3 className="font-medium mb-3 flex items-center gap-2">
-                <Users className="w-4 h-4 text-primary" />
-                Live Leaderboard
-              </h3>
+            <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
+              <Users className="w-4 h-4 text-primary" />
+              Leaderboard
+            </h3>
+            <div className="bg-card border border-border rounded-xl overflow-hidden">
               <Leaderboard
                 entries={leaderboard}
                 prizes={prizes}
                 currentUserId={userData?.id}
               />
-            </Card>
+            </div>
           </motion.div>
+        </div>
 
-          {/* Share Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="space-y-3"
-          >
-            <Button onClick={handleShare} className="w-full gap-2" size="lg">
-              <Share2 className="w-5 h-5" />
-              Invite Friends
+        {/* Bottom Actions */}
+        <div className="fixed bottom-20 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t border-border">
+          <div className="max-w-lg mx-auto flex gap-3">
+            <Button onClick={handleShare} className="flex-1 h-11 rounded-xl gap-2">
+              <Share2 className="w-4 h-4" />
+              Share
             </Button>
             <Button
               onClick={handleCopy}
               variant="outline"
-              className="w-full gap-2"
-              size="lg"
+              className="h-11 w-11 p-0 rounded-xl"
             >
-              {copied ? (
-                <>
-                  <Check className="w-5 h-5" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-5 h-5" />
-                  Copy Link
-                </>
-              )}
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             </Button>
-          </motion.div>
+          </div>
         </div>
       </div>
     </>
