@@ -11,3 +11,12 @@ verify_jwt = false
 
 [functions.check-subscription]
 verify_jwt = false
+
+[functions.start-mining-session]
+verify_jwt = false
+
+[functions.get-mining-status]
+verify_jwt = false
+
+[functions.complete-mining-session]
+verify_jwt = false

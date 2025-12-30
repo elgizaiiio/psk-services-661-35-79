@@ -3,6 +3,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { TelegramUser, ViralUser, MiningSession } from '@/types/telegram';
 import { logger } from '@/lib/logger';
 
+// Helper to extract error message from various error types
+const getErrorMessage = (err: unknown): string => {
+  if (err instanceof Error) return err.message;
+  if (typeof err === 'object' && err !== null) {
+    const e = err as Record<string, unknown>;
+    if (e.message) return String(e.message);
+    if (e.error) return String(e.error);
+    if (e.details) return String(e.details);
+  }
+  return 'An unexpected error occurred';
+};
+
 export const useViralMining = (telegramUser: TelegramUser | null) => {
   const [user, setUser] = useState<ViralUser | null>(null);
   const [activeMiningSession, setActiveMiningSession] = useState<MiningSession | null>(null);
@@ -16,6 +28,10 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     isComplete: boolean;
   } | null>(null);
 
+  const getInitData = useCallback(() => {
+    return window.Telegram?.WebApp?.initData || '';
+  }, []);
+
   const initializeUser = useCallback(async () => {
     if (!telegramUser) {
       setLoading(false);
@@ -24,11 +40,12 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
 
     try {
       setLoading(true);
+      setError(null);
       
-      // Get Telegram initData for secure authentication
-      const initData = window.Telegram?.WebApp?.initData || '';
+      const initData = getInitData();
       
-      const { data: syncResult, error: syncError } = await supabase.functions.invoke('sync-telegram-user', {
+      // Use backend function for secure user sync and status check
+      const { data: result, error: syncError } = await supabase.functions.invoke('get-mining-status', {
         body: { telegramUser },
         headers: {
           'x-telegram-init-data': initData
@@ -37,132 +54,122 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
 
       if (syncError) {
         logger.error('Error syncing user', syncError);
-        throw syncError;
+        throw new Error(getErrorMessage(syncError));
       }
 
-      if (syncResult?.user) {
-        setUser(syncResult.user as ViralUser);
-        logger.info('User synced successfully', { message: syncResult.message });
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+
+      if (result?.user) {
+        setUser(result.user as ViralUser);
+        logger.info('User synced successfully');
         
-        // Check if this is a new user
-        if (syncResult.message === 'User profile created') {
-          const welcomeKey = `bolt_welcome_shown_${syncResult.user.id}`;
+        // Check if this is a new user (no session, low balance)
+        if (!result.session && Number(result.user.token_balance) === 0) {
+          const welcomeKey = `bolt_welcome_shown_${result.user.id}`;
           if (!localStorage.getItem(welcomeKey)) {
             setIsNewUser(true);
             localStorage.setItem(welcomeKey, 'true');
           }
         }
-      }
 
-      await checkActiveMiningSession();
+        if (result.session) {
+          setActiveMiningSession(result.session as MiningSession);
+        } else {
+          setActiveMiningSession(null);
+        }
+
+        // Handle auto-completed session
+        if (result.completedSession) {
+          logger.info('Session auto-completed', result.completedSession);
+        }
+      }
       
-    } catch (err: any) {
+    } catch (err) {
+      const errorMessage = getErrorMessage(err);
       logger.error('Error initializing user', err);
-      setError(err.message);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
-  }, [telegramUser]);
-
-  const checkActiveMiningSession = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      const { data: session, error } = await supabase
-        .from('bolt_mining_sessions' as any)
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) {
-        throw error;
-      }
-
-      if (session) {
-        const sessionData = session as unknown as MiningSession;
-        const now = new Date();
-        const endTime = new Date(sessionData.end_time);
-        
-        if (now < endTime) {
-          setActiveMiningSession(sessionData);
-        } else {
-          await completeMiningSession(sessionData.id);
-        }
-      }
-    } catch (err: any) {
-      logger.error('Error checking mining session', err);
-    }
-  }, [user]);
+  }, [telegramUser, getInitData]);
 
   const startMining = useCallback(async () => {
-    if (!user) {
-      setError('Please wait for user to load');
+    if (!telegramUser) {
+      setError('Please open the app from Telegram');
       return;
     }
 
     try {
-      const durationHours = user.mining_duration_hours || 4;
-      const miningPower = user.mining_power || 2;
-      
-      const now = new Date();
-      const endTime = new Date(now.getTime() + durationHours * 60 * 60 * 1000);
+      setError(null);
+      const initData = getInitData();
 
-      const { data: session, error } = await supabase
-        .from('bolt_mining_sessions')
-        .insert({
-          user_id: user.id,
-          start_time: now.toISOString(),
-          end_time: endTime.toISOString(),
-          tokens_per_hour: 1.0,
-          mining_power: miningPower,
-        })
-        .select()
-        .single();
+      const { data: result, error: startError } = await supabase.functions.invoke('start-mining-session', {
+        body: { telegramUser },
+        headers: {
+          'x-telegram-init-data': initData
+        }
+      });
 
-      if (error) {
-        logger.error('Error inserting mining session', error);
-        throw error;
+      if (startError) {
+        logger.error('Error starting mining', startError);
+        throw new Error(getErrorMessage(startError));
+      }
+
+      if (result?.error) {
+        throw new Error(result.error);
+      }
+
+      if (result?.session) {
+        setActiveMiningSession(result.session as MiningSession);
+        logger.info('Mining session started', { sessionId: result.session.id });
+      }
+
+      if (result?.user) {
+        setUser(result.user as ViralUser);
       }
       
-      setActiveMiningSession(session as unknown as MiningSession);
-      logger.info('Mining session started', { sessionId: session?.id });
-    } catch (err: any) {
+    } catch (err) {
+      const errorMessage = getErrorMessage(err);
       logger.error('Error starting mining', err);
-      setError(err.message || 'Failed to start mining');
+      setError(errorMessage);
     }
-  }, [user]);
+  }, [telegramUser, getInitData]);
 
   const completeMiningSession = useCallback(async (sessionId: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('complete-mining-session', {
-        body: { sessionId }
+      setError(null);
+      const telegramId = telegramUser?.id?.toString() || '';
+
+      const { data: result, error: completeError } = await supabase.functions.invoke('complete-mining-session', {
+        body: { sessionId },
+        headers: {
+          'x-telegram-id': telegramId
+        }
       });
 
-      if (error) throw error;
+      if (completeError) {
+        logger.error('Error completing session', completeError);
+        throw new Error(getErrorMessage(completeError));
+      }
+
+      if (result?.error) {
+        throw new Error(result.error);
+      }
 
       setActiveMiningSession(null);
-      logger.info('Mining session completed');
+      logger.info('Mining session completed', { totalReward: result?.totalReward });
       
-      if (user) {
-        const { data: updatedUser } = await supabase
-          .from('bolt_users' as any)
-          .select('*')
-          .eq('id', user.id)
-          .single();
-        
-        if (updatedUser) {
-          setUser(updatedUser as unknown as ViralUser);
-        }
-      }
+      // Refresh user data
+      await initializeUser();
       
-    } catch (err: any) {
+    } catch (err) {
+      const errorMessage = getErrorMessage(err);
       logger.error('Error completing mining session', err);
-      setError(err.message);
+      setError(errorMessage);
     }
-  }, [user]);
+  }, [telegramUser, initializeUser]);
 
   const getCurrentMiningProgress = useCallback(() => {
     if (!activeMiningSession) return null;
@@ -191,6 +198,7 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     if (!user) return;
 
     try {
+      setError(null);
       const current = Number(user.mining_power) || 1;
       let nextMultiplier: number;
       if (current < 10) {
@@ -203,13 +211,15 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
         nextMultiplier = Math.min(200, current + 50);
       }
 
-      await supabase
-        .from('bolt_users' as any)
+      const { error: updateError } = await supabase
+        .from('bolt_users')
         .update({ mining_power: nextMultiplier, updated_at: new Date().toISOString() })
         .eq('id', user.id);
 
+      if (updateError) throw updateError;
+
       const { data: updatedUser } = await supabase
-        .from('bolt_users' as any)
+        .from('bolt_users')
         .select('*')
         .eq('id', user.id)
         .single();
@@ -218,9 +228,10 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
         setUser(updatedUser as unknown as ViralUser);
       }
       logger.info('Mining power upgraded', { nextMultiplier });
-    } catch (err: any) {
+    } catch (err) {
+      const errorMessage = getErrorMessage(err);
       logger.error('Error upgrading mining power', err);
-      setError(err.message);
+      setError(errorMessage);
     }
   }, [user]);
 
@@ -228,19 +239,22 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     if (!user) return;
 
     try {
+      setError(null);
       const current = Number(user.mining_duration_hours) || 4;
       let nextDuration: number;
       if (current === 4) nextDuration = 12;
       else if (current === 12) nextDuration = 24;
       else nextDuration = 24;
 
-      await supabase
-        .from('bolt_users' as any)
+      const { error: updateError } = await supabase
+        .from('bolt_users')
         .update({ mining_duration_hours: nextDuration, updated_at: new Date().toISOString() })
         .eq('id', user.id);
 
+      if (updateError) throw updateError;
+
       const { data: updatedUser } = await supabase
-        .from('bolt_users' as any)
+        .from('bolt_users')
         .select('*')
         .eq('id', user.id)
         .single();
@@ -249,21 +263,16 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
         setUser(updatedUser as unknown as ViralUser);
       }
       logger.info('Mining duration upgraded', { nextDuration });
-    } catch (err: any) {
+    } catch (err) {
+      const errorMessage = getErrorMessage(err);
       logger.error('Error upgrading mining duration', err);
-      setError(err.message);
+      setError(errorMessage);
     }
   }, [user]);
 
   useEffect(() => {
     initializeUser();
   }, [initializeUser]);
-
-  useEffect(() => {
-    if (user) {
-      checkActiveMiningSession();
-    }
-  }, [user, checkActiveMiningSession]);
 
   useEffect(() => {
     if (!activeMiningSession) {
