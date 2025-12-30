@@ -210,34 +210,7 @@ export const useTelegramAuth = () => {
     return () => window.removeEventListener('load', onLoad);
   }, []);
 
-  useEffect(() => {
-    if (webApp?.BackButton) {
-      const handleBackButton = () => {
-        const idx = typeof window !== 'undefined' ? (window.history.state?.idx as number | undefined) : undefined;
-        const canGoBackInApp = typeof idx === 'number' && idx > 0;
-
-        if (canGoBackInApp) {
-          navigate(-1);
-          return;
-        }
-
-        if (webApp?.close) {
-          webApp.close();
-        } else {
-          navigate('/');
-        }
-      };
-
-      webApp.BackButton.onClick(handleBackButton);
-      webApp.BackButton.show();
-
-      return () => {
-        if (webApp.BackButton) {
-          webApp.BackButton.hide();
-        }
-      };
-    }
-  }, [webApp, navigate, location.pathname]);
+  // BackButton management removed - handled by useTelegramBackButton hook
 
   const hapticFeedback = {
     impact: (style: 'light' | 'medium' | 'heavy' = 'medium') => {

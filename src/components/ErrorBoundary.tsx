@@ -33,6 +33,18 @@ class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+    // Ignore Telegram WebApp API errors - they shouldn't crash the app
+    const isTelegramError = error.message?.includes('BackButton') || 
+                            error.message?.includes('Telegram') ||
+                            error.message?.includes('WebApp');
+    
+    if (isTelegramError) {
+      logger.warn('Telegram API error caught and ignored', { error: error.message });
+      // Reset error state to allow app to continue
+      this.setState({ hasError: false, error: null, errorInfo: null });
+      return;
+    }
+
     logger.error('Uncaught error in component tree', {
       error: error.message,
       stack: error.stack,
