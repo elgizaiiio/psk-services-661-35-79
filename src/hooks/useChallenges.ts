@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { MiningChallenge, UserChallenge } from '@/types/mining';
 import { toast } from 'sonner';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('Challenges');
+
+interface UserData {
+  token_balance: number;
+}
 
 export const useChallenges = (userId: string | undefined) => {
   const [challenges, setChallenges] = useState<MiningChallenge[]>([]);
@@ -22,7 +29,7 @@ export const useChallenges = (userId: string | undefined) => {
       if (error) throw error;
       setChallenges(data as MiningChallenge[] || []);
     } catch (error) {
-      console.error('Error fetching challenges:', error);
+      logger.error('Error fetching challenges', error);
     }
   }, []);
 
@@ -45,11 +52,11 @@ export const useChallenges = (userId: string | undefined) => {
         challenge: uc.challenge as MiningChallenge
       })) as UserChallenge[]);
     } catch (error) {
-      console.error('Error fetching user challenges:', error);
+      logger.error('Error fetching user challenges', error);
     }
   }, [userId]);
 
-  const joinChallenge = async (challengeId: string) => {
+  const joinChallenge = async (challengeId: string): Promise<boolean> => {
     if (!userId) return false;
 
     try {
@@ -72,13 +79,13 @@ export const useChallenges = (userId: string | undefined) => {
       await fetchUserChallenges();
       return true;
     } catch (error) {
-      console.error('Error joining challenge:', error);
+      logger.error('Error joining challenge', error);
       toast.error('Failed to join challenge');
       return false;
     }
   };
 
-  const updateProgress = async (challengeId: string, value: number) => {
+  const updateProgress = async (challengeId: string, value: number): Promise<boolean> => {
     if (!userId) return false;
 
     try {
@@ -103,17 +110,18 @@ export const useChallenges = (userId: string | undefined) => {
       if (error) throw error;
 
       if (completed && challenge.reward_tokens > 0) {
-        // Award tokens
         const { data: userData } = await supabase
           .from('bolt_users')
           .select('token_balance')
           .eq('id', userId)
           .single();
 
+        const typedUserData = userData as unknown as UserData | null;
+
         await supabase
           .from('bolt_users')
           .update({ 
-            token_balance: (userData?.token_balance || 0) + challenge.reward_tokens 
+            token_balance: (typedUserData?.token_balance || 0) + challenge.reward_tokens 
           })
           .eq('id', userId);
 
@@ -123,7 +131,7 @@ export const useChallenges = (userId: string | undefined) => {
       await fetchUserChallenges();
       return true;
     } catch (error) {
-      console.error('Error updating challenge progress:', error);
+      logger.error('Error updating challenge progress', error);
       return false;
     }
   };

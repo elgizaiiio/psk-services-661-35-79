@@ -2,6 +2,9 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from './useTelegramAuth';
 import { useToast } from '@/hooks/use-toast';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('ReferralHandler');
 
 export const useReferralHandler = () => {
   const { user: tgUser, webApp } = useTelegramAuth();
@@ -12,15 +15,14 @@ export const useReferralHandler = () => {
     const handleReferral = async () => {
       if (!tgUser || isProcessing) return;
 
-      // Enhanced start parameter extraction with better logging
-      let startParam = null;
+      let startParam: string | null = null;
       let paramSource = '';
       
-      // Strategy 1: WebApp initData (most reliable for Telegram)
+      // Strategy 1: WebApp initData
       if (webApp?.initDataUnsafe?.start_param) {
         startParam = webApp.initDataUnsafe.start_param;
         paramSource = 'webApp.initDataUnsafe.start_param';
-        console.log('🔗 Start param from webApp:', startParam);
+        logger.debug('Start param from webApp', startParam);
       }
       
       // Strategy 2: URL query parameters
@@ -33,7 +35,7 @@ export const useReferralHandler = () => {
           if (value) {
             startParam = value;
             paramSource = `URL query: ${param}`;
-            console.log(`🔗 Start param from URL (${param}):`, startParam);
+            logger.debug(`Start param from URL (${param})`, startParam);
             break;
           }
         }
@@ -49,7 +51,7 @@ export const useReferralHandler = () => {
           if (value) {
             startParam = value;
             paramSource = `URL hash: ${param}`;
-            console.log(`🔗 Start param from hash (${param}):`, startParam);
+            logger.debug(`Start param from hash (${param})`, startParam);
             break;
           }
         }
@@ -58,7 +60,6 @@ export const useReferralHandler = () => {
       // Strategy 4: Telegram WebApp launch params
       if (!startParam && webApp?.initData) {
         try {
-          // Parse the init data string for start_param
           const params = new URLSearchParams(webApp.initData);
           const user = params.get('user');
           if (user) {
@@ -66,31 +67,23 @@ export const useReferralHandler = () => {
             if (userData.start_param) {
               startParam = userData.start_param;
               paramSource = 'webApp.initData.user.start_param';
-              console.log('🔗 Start param from initData user:', startParam);
+              logger.debug('Start param from initData user', startParam);
             }
           }
         } catch (e) {
-          console.log('⚠️ Could not parse initData for start_param:', e);
+          logger.warn('Could not parse initData for start_param', e);
         }
       }
 
       if (!startParam) {
-        console.log('❌ No referral parameter found in any source');
-        console.log('🔍 Debug info:', {
-          webApp_available: !!webApp,
-          initDataUnsafe: webApp?.initDataUnsafe,
-          search: window.location.search,
-          hash: window.location.hash,
-          userAgent: navigator.userAgent
-        });
+        logger.debug('No referral parameter found');
         return;
       }
 
-      console.log(`🔗 Referral param detected: "${startParam}" from ${paramSource}`);
+      logger.info(`Referral param detected: "${startParam}" from ${paramSource}`);
       setIsProcessing(true);
 
       try {
-        // Use the new Edge Function for processing
         const { data, error } = await supabase.functions.invoke('process-referral', {
           body: {
             telegram_id: tgUser.id,
@@ -109,16 +102,16 @@ export const useReferralHandler = () => {
         });
 
         if (error) {
-          console.error('❌ Edge function error:', error);
+          logger.error('Edge function error', error);
           toast({
             title: "Processing Error",
-            description: "An error occurred while processing the referral. Will try again later.",
+            description: "An error occurred while processing the referral.",
             variant: "destructive"
           });
           return;
         }
 
-        console.log('📊 Referral processing result:', data);
+        logger.info('Referral processing result', data);
 
         if (data.success) {
           toast({
@@ -126,24 +119,23 @@ export const useReferralHandler = () => {
             description: "Successfully registered via referral link",
           });
         } else {
-          // Handle different failure scenarios
-          if (data.message.includes('already exists')) {
-            console.log('👤 User or referral already exists');
-          } else if (data.message.includes('not found')) {
+          if (data.message?.includes('already exists')) {
+            logger.debug('User or referral already exists');
+          } else if (data.message?.includes('not found')) {
             toast({
-              title: "⏳ الإحالة قيد المعالجة",
-              description: "Referrer not found currently. Referral will be processed when they register.",
+              title: "⏳ Processing",
+              description: "Referrer not found. Referral will be processed when they register.",
             });
           } else {
-            console.log('⚠️ Referral processing issue:', data.message);
+            logger.warn('Referral processing issue', data.message);
           }
         }
 
       } catch (error) {
-        console.error('❌ Error calling referral processing:', error);
+        logger.error('Error calling referral processing', error);
         toast({
           title: "Network Error",
-          description: "Unable to connect to server. Will try again later.",
+          description: "Unable to connect to server.",
           variant: "destructive"
         });
       } finally {

@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('DailyTasks');
 
 interface DailyTask {
   id: string;
@@ -13,6 +16,15 @@ interface DailyTask {
   action_url: string | null;
   icon: string | null;
   is_completed: boolean;
+}
+
+interface TaskCompletion {
+  task_id: string;
+  points_earned: number;
+}
+
+interface UserData {
+  token_balance: number;
 }
 
 export const useDailyTasks = (userId: string | null) => {
@@ -32,7 +44,6 @@ export const useDailyTasks = (userId: string | null) => {
       setLoading(true);
       const today = new Date().toISOString().split('T')[0];
 
-      // Fetch all active daily tasks
       const { data: dailyTasks, error: tasksError } = await supabase
         .from('bolt_daily_tasks')
         .select('*')
@@ -41,7 +52,6 @@ export const useDailyTasks = (userId: string | null) => {
 
       if (tasksError) throw tasksError;
 
-      // Fetch today's completions for this user
       const { data: completions, error: completionsError } = await supabase
         .from('bolt_daily_task_completions')
         .select('task_id, points_earned')
@@ -50,20 +60,21 @@ export const useDailyTasks = (userId: string | null) => {
 
       if (completionsError) throw completionsError;
 
-      const completedTaskIds = new Set(completions?.map(c => c.task_id) || []);
-      const earned = completions?.reduce((sum, c) => sum + c.points_earned, 0) || 0;
+      const typedCompletions = (completions || []) as unknown as TaskCompletion[];
+      const completedTaskIds = new Set(typedCompletions.map(c => c.task_id));
+      const earned = typedCompletions.reduce((sum, c) => sum + c.points_earned, 0);
 
       const tasksWithStatus = (dailyTasks || []).map(task => ({
         ...task,
         is_completed: completedTaskIds.has(task.id)
-      }));
+      })) as DailyTask[];
 
       setTasks(tasksWithStatus);
       setCompletedCount(completedTaskIds.size);
-      setTotalRewards(dailyTasks?.reduce((sum, t) => sum + t.reward_tokens, 0) || 0);
+      setTotalRewards((dailyTasks || []).reduce((sum, t) => sum + (t.reward_tokens || 0), 0));
       setTodayEarned(earned);
     } catch (error) {
-      console.error('Error fetching daily tasks:', error);
+      logger.error('Error fetching daily tasks', error);
     } finally {
       setLoading(false);
     }
@@ -73,7 +84,7 @@ export const useDailyTasks = (userId: string | null) => {
     fetchTasks();
   }, [fetchTasks]);
 
-  const completeTask = useCallback(async (taskId: string) => {
+  const completeTask = useCallback(async (taskId: string): Promise<{ success: boolean; error?: string; reward?: number }> => {
     if (!userId) return { success: false, error: 'Not authenticated' };
 
     const task = tasks.find(t => t.id === taskId);
@@ -84,7 +95,6 @@ export const useDailyTasks = (userId: string | null) => {
     try {
       const today = new Date().toISOString().split('T')[0];
 
-      // Insert completion record
       const { error: insertError } = await supabase
         .from('bolt_daily_task_completions')
         .insert({
@@ -101,7 +111,6 @@ export const useDailyTasks = (userId: string | null) => {
         throw insertError;
       }
 
-      // Update user balance
       const { data: userData, error: userError } = await supabase
         .from('bolt_users')
         .select('token_balance')
@@ -109,18 +118,18 @@ export const useDailyTasks = (userId: string | null) => {
         .maybeSingle();
 
       if (!userError && userData) {
+        const typedUserData = userData as unknown as UserData;
         await supabase
           .from('bolt_users')
-          .update({ token_balance: (userData.token_balance || 0) + task.reward_tokens })
+          .update({ token_balance: (typedUserData.token_balance || 0) + task.reward_tokens })
           .eq('id', userId);
       }
 
-      // Refresh tasks
       await fetchTasks();
 
       return { success: true, reward: task.reward_tokens };
     } catch (error) {
-      console.error('Error completing task:', error);
+      logger.error('Error completing task', error);
       return { success: false, error: 'Failed to complete task' };
     }
   }, [userId, tasks, fetchTasks]);

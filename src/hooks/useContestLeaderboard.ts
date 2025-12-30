@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('ContestLeaderboard');
 
 interface ContestPrize {
   rank: number;
@@ -35,6 +38,18 @@ interface UserRank {
   prize_usd: number | null;
 }
 
+interface BoltUser {
+  id: string;
+  telegram_username: string | null;
+  first_name: string | null;
+  photo_url: string | null;
+}
+
+interface Participant {
+  user_id: string;
+  referral_count: number;
+}
+
 export const useContestLeaderboard = (userId?: string) => {
   const [contest, setContest] = useState<Contest | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -42,51 +57,51 @@ export const useContestLeaderboard = (userId?: string) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchActiveContest = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('referral_contests' as any)
+  const fetchActiveContest = useCallback(async (): Promise<Contest | null> => {
+    const { data, error: fetchError } = await supabase
+      .from('referral_contests')
       .select('*')
       .eq('status', 'active')
       .eq('is_active', true)
       .single();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error fetching contest:', error);
+    if (fetchError && fetchError.code !== 'PGRST116') {
+      logger.error('Error fetching contest', fetchError);
       return null;
     }
 
     return data as unknown as Contest;
   }, []);
 
-  const fetchLeaderboard = useCallback(async (contestId: string) => {
-    // Get all participants with their referral counts
+  const fetchLeaderboard = useCallback(async (contestId: string): Promise<LeaderboardEntry[]> => {
     const { data: participants, error: partError } = await supabase
-      .from('contest_participants' as any)
+      .from('contest_participants')
       .select('user_id, referral_count')
       .eq('contest_id', contestId)
       .order('referral_count', { ascending: false })
       .limit(50);
 
     if (partError) {
-      console.error('Error fetching participants:', partError);
+      logger.error('Error fetching participants', partError);
       return [];
     }
 
     if (!participants || participants.length === 0) return [];
 
-    // Get user details for all participants
-    const userIds = (participants as any[]).map(p => p.user_id);
+    const typedParticipants = participants as unknown as Participant[];
+    const userIds = typedParticipants.map(p => p.user_id);
+    
     const { data: users } = await supabase
-      .from('bolt_users' as any)
+      .from('bolt_users')
       .select('id, telegram_username, first_name, photo_url')
       .in('id', userIds);
 
-    const usersMap: Record<string, any> = {};
-    ((users || []) as any[]).forEach(u => {
+    const usersMap: Record<string, BoltUser> = {};
+    ((users || []) as unknown as BoltUser[]).forEach(u => {
       usersMap[u.id] = u;
     });
 
-    return (participants as any[]).map((p, index) => ({
+    return typedParticipants.map((p, index) => ({
       user_id: p.user_id,
       referral_count: p.referral_count,
       rank: index + 1,
@@ -96,24 +111,27 @@ export const useContestLeaderboard = (userId?: string) => {
     }));
   }, []);
 
-  const calculateUserRank = useCallback(async (contestId: string, userId: string, prizes: ContestPrize[]) => {
-    // Get user's participation
+  const calculateUserRank = useCallback(async (
+    contestId: string, 
+    targetUserId: string, 
+    prizes: ContestPrize[]
+  ): Promise<UserRank> => {
     const { data: userPart } = await supabase
-      .from('contest_participants' as any)
+      .from('contest_participants')
       .select('referral_count')
       .eq('contest_id', contestId)
-      .eq('user_id', userId)
+      .eq('user_id', targetUserId)
       .single();
 
     if (!userPart) {
       return { rank: 0, referral_count: 0, prize_usd: null };
     }
 
-    const userCount = (userPart as any).referral_count;
+    const typedUserPart = userPart as unknown as { referral_count: number };
+    const userCount = typedUserPart.referral_count;
 
-    // Count how many have more referrals
     const { count } = await supabase
-      .from('contest_participants' as any)
+      .from('contest_participants')
       .select('*', { count: 'exact', head: true })
       .eq('contest_id', contestId)
       .gt('referral_count', userCount);
@@ -153,20 +171,19 @@ export const useContestLeaderboard = (userId?: string) => {
         );
         setUserRank(userRankData);
       }
-    } catch (err: any) {
-      console.error('Error loading contest data:', err);
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logger.error('Error loading contest data', err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   }, [userId, fetchActiveContest, fetchLeaderboard, calculateUserRank]);
 
-  // Initial load
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  // Realtime subscription for live updates
   useEffect(() => {
     if (!contest?.id) return;
 
@@ -181,7 +198,6 @@ export const useContestLeaderboard = (userId?: string) => {
           filter: `contest_id=eq.${contest.id}`,
         },
         () => {
-          // Refresh leaderboard on any change
           loadData();
         }
       )

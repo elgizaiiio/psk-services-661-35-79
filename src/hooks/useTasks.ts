@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { BoltTask, BoltCompletedTask, BoltDailyCode, BoltDailyCodeAttempt } from '@/types/bolt';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('Tasks');
 
 export const useTasks = () => {
   const { user: telegramUser } = useTelegramAuth();
@@ -17,17 +20,18 @@ export const useTasks = () => {
 
   const loadTasks = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('bolt_tasks' as any)
+      const { data, error: fetchError } = await supabase
+        .from('bolt_tasks')
         .select('*')
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       setTasks((data || []) as unknown as BoltTask[]);
-    } catch (err: any) {
-      console.error('Error loading tasks:', err);
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logger.error('Error loading tasks', err);
+      setError(errorMessage);
     }
   }, []);
 
@@ -35,31 +39,31 @@ export const useTasks = () => {
     if (!boltUser) return;
 
     try {
-      const { data, error } = await supabase
-        .from('bolt_completed_tasks' as any)
+      const { data, error: fetchError } = await supabase
+        .from('bolt_completed_tasks')
         .select('*')
         .eq('user_id', boltUser.id);
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       setCompletedTasks((data || []) as unknown as BoltCompletedTask[]);
-    } catch (err: any) {
-      console.error('Error loading completed tasks:', err);
+    } catch (err) {
+      logger.error('Error loading completed tasks', err);
     }
   }, [boltUser]);
 
   const loadDailyCodes = useCallback(async () => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
-        .from('bolt_daily_codes' as any)
+      const { data, error: fetchError } = await supabase
+        .from('bolt_daily_codes')
         .select('*')
         .eq('date', today)
         .maybeSingle();
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       setDailyCodes(data as unknown as BoltDailyCode | null);
-    } catch (err: any) {
-      console.error('Error loading daily codes:', err);
+    } catch (err) {
+      logger.error('Error loading daily codes', err);
     }
   }, []);
 
@@ -68,17 +72,17 @@ export const useTasks = () => {
 
     try {
       const today = new Date().toISOString().split('T')[0];
-      const { data, error } = await supabase
-        .from('bolt_daily_code_attempts' as any)
+      const { data, error: fetchError } = await supabase
+        .from('bolt_daily_code_attempts')
         .select('*')
         .eq('user_id', boltUser.id)
         .eq('date', today)
         .maybeSingle();
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       setDailyCodeAttempt(data as unknown as BoltDailyCodeAttempt | null);
-    } catch (err: any) {
-      console.error('Error loading daily code attempt:', err);
+    } catch (err) {
+      logger.error('Error loading daily code attempt', err);
     }
   }, [boltUser]);
 
@@ -87,7 +91,7 @@ export const useTasks = () => {
 
     try {
       const { data: task, error: taskError } = await supabase
-        .from('bolt_tasks' as any)
+        .from('bolt_tasks')
         .select('*')
         .eq('id', taskId)
         .single();
@@ -96,7 +100,7 @@ export const useTasks = () => {
       const taskData = task as unknown as BoltTask;
 
       const { data: existing } = await supabase
-        .from('bolt_completed_tasks' as any)
+        .from('bolt_completed_tasks')
         .select('*')
         .eq('user_id', boltUser.id)
         .eq('task_id', taskId)
@@ -106,18 +110,18 @@ export const useTasks = () => {
         throw new Error('Task already completed');
       }
 
-      const { error } = await supabase
-        .from('bolt_completed_tasks' as any)
+      const { error: insertError } = await supabase
+        .from('bolt_completed_tasks')
         .insert({
           user_id: boltUser.id,
           task_id: taskId,
           points_earned: taskData.points
         });
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       const { error: updateError } = await supabase
-        .from('bolt_users' as any)
+        .from('bolt_users')
         .update({
           token_balance: (Number(boltUser.token_balance) || 0) + taskData.points
         })
@@ -128,8 +132,8 @@ export const useTasks = () => {
       await loadCompletedTasks();
       await loadTasks();
       
-    } catch (err: any) {
-      console.error('Error completing task:', err);
+    } catch (err) {
+      logger.error('Error completing task', err);
       throw err;
     }
   }, [boltUser, loadCompletedTasks, loadTasks]);
@@ -155,8 +159,8 @@ export const useTasks = () => {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      const { data, error } = await supabase
-        .from('bolt_daily_code_attempts' as any)
+      const { data, error: upsertError } = await supabase
+        .from('bolt_daily_code_attempts')
         .upsert({
           user_id: boltUser.id,
           date: today,
@@ -166,10 +170,10 @@ export const useTasks = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (upsertError) throw upsertError;
 
       const { error: updateError } = await supabase
-        .from('bolt_users' as any)
+        .from('bolt_users')
         .update({
           token_balance: (Number(boltUser.token_balance) || 0) + (dailyCodes.points_reward || 500)
         })
@@ -179,8 +183,8 @@ export const useTasks = () => {
 
       setDailyCodeAttempt(data as unknown as BoltDailyCodeAttempt);
       
-    } catch (err: any) {
-      console.error('Error checking daily code:', err);
+    } catch (err) {
+      logger.error('Error checking daily code', err);
       throw err;
     }
   }, [boltUser, dailyCodes]);
