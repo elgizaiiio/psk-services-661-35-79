@@ -44,7 +44,6 @@ const MiningServers = () => {
 
   const handleBuyClick = async (server: MiningServer) => {
     if (!isReady || !user?.id) {
-      toast.error('Loading… please wait.');
       return;
     }
     const stock = getStock(server.id);
