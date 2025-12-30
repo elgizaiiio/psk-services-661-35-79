@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
+import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
 import { callGameApi } from "@/lib/gameApi";
 import { toast } from "sonner";
 
@@ -23,6 +24,7 @@ const Skins: React.FC = () => {
   const { user: tgUser } = useTelegramAuth();
   const [player, setPlayer] = useState<Player | null>(null);
   const [skins, setSkins] = useState<Skin[]>([]);
+  useTelegramBackButton();
 
   const load = useCallback(async () => {
     try {

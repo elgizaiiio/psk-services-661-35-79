@@ -7,6 +7,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
+import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { Server, ChevronRight, Wallet, Loader2, Play } from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
@@ -18,6 +19,7 @@ const Index = () => {
   const { isConnected, isConnecting, connectWallet } = useTelegramTonConnect();
   const { getTotalStats } = useUserServers(user?.id || null);
   const stats = getTotalStats();
+  useTelegramBackButton();
 
   const handleStartMining = async () => {
     hapticFeedback.impact('medium');

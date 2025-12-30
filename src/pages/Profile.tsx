@@ -23,7 +23,7 @@ import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
 import { useTasks } from "@/hooks/useTasks";
-
+import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
 import { formatDistanceToNow } from "date-fns";
 
 
@@ -33,6 +33,7 @@ const Profile: React.FC = () => {
   const { completedTasks, loading: tasksLoading } = useTasks();
   const navigate = useNavigate();
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
+  useTelegramBackButton();
 
   const totalTasksCompleted = completedTasks.length;
   const totalPointsFromTasks = completedTasks.reduce((sum, task) => sum + task.points_earned, 0);

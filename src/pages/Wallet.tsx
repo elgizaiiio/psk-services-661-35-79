@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
+import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
 import { Eye, EyeOff, Loader2, Wallet as WalletIcon } from "lucide-react";
 import { TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
 import { PageWrapper, StaggerContainer, FadeUp, ScaleIn, AnimatedNumber } from '@/components/ui/motion-wrapper';
@@ -14,6 +15,7 @@ const Wallet: React.FC = () => {
   const wallet = useTonWallet();
   const [tonPrice, setTonPrice] = useState<number | null>(null);
   const [showBalance, setShowBalance] = useState(true);
+  useTelegramBackButton();
 
   const boltBalance = user?.token_balance ?? 0;
   const usdtBalance = (user as any)?.usdt_balance ?? 0;
