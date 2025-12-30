@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useAchievements } from "@/hooks/useAchievements";
+import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
-import { ArrowRight, Trophy, Lock, Unlock, Star, Sparkles, Loader2, Gift, Target, Users, Pickaxe } from "lucide-react";
+import { Trophy, Lock, Unlock, Star, Sparkles, Loader2, Gift, Target, Users, Pickaxe } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -33,12 +33,12 @@ const categoryLabels: Record<string, { en: string; ar: string }> = {
 };
 
 const Achievements = () => {
-  const navigate = useNavigate();
   const { user } = useTelegramAuth();
   const { language, isRTL } = useLanguage();
   const [boltUserId, setBoltUserId] = useState<string | undefined>();
   const [activeTab, setActiveTab] = useState("all");
   const [totalTokensEarned, setTotalTokensEarned] = useState(0);
+  useTelegramBackButton();
 
   useEffect(() => {
     const fetchBoltUser = async () => {
@@ -105,20 +105,11 @@ const Achievements = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-2xl border-b border-border/20">
         <div className="px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <button 
-              onClick={() => navigate('/')}
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              <ArrowRight className={`w-4 h-4 ${isRTL ? '' : 'rotate-180'}`} />
-              Back
-            </button>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
-                <Trophy className="w-6 h-6 text-yellow-500" />
-                Achievements
-              </h1>
-            </div>
+          <div className="flex items-center justify-center mb-4">
+            <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
+              <Trophy className="w-6 h-6 text-yellow-500" />
+              Achievements
+            </h1>
           </div>
 
           {/* Stats Row */}

@@ -9,6 +9,7 @@ import { Leaderboard } from '@/components/contest/Leaderboard';
 import { useContestLeaderboard } from '@/hooks/useContestLeaderboard';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
+import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { toast } from 'sonner';
 
 const Contest = () => {
@@ -16,6 +17,7 @@ const Contest = () => {
   const { user: userData } = useBoltMining(tgUser);
   const { contest, leaderboard, userRank, loading } = useContestLeaderboard(userData?.id);
   const [copied, setCopied] = useState(false);
+  useTelegramBackButton();
 
   const referralLink = useMemo(() => {
     if (!tgUser?.id) return '';

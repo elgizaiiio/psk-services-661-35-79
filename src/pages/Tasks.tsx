@@ -3,6 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltTasks } from '@/hooks/useBoltTasks';
+import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Target, Check, ExternalLink, Lock, Loader2 } from 'lucide-react';
 import { SecretCodeDialog } from '@/components/SecretCodeDialog';
@@ -14,6 +15,7 @@ const Tasks = () => {
   const { tasks, completedTasks, loading, completeTask, checkDailyCode, hasDailyCodeCompleted } = useBoltTasks();
   const [showSecretDialog, setShowSecretDialog] = useState(false);
   const [activeTab, setActiveTab] = useState('partners');
+  useTelegramBackButton();
 
   const getAvailableTasks = (category: string) => tasks.filter(task => task.category === category);
   const isTaskCompleted = (taskId: string) => completedTasks.some(ct => ct.task_id === taskId);

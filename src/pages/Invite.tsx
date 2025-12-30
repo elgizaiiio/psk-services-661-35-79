@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useBoltMining } from "@/hooks/useBoltMining";
 import { useBoltReferrals } from "@/hooks/useBoltReferrals";
+import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Copy, Check, Users, Share2, Loader2 } from "lucide-react";
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber } from '@/components/ui/motion-wrapper';
@@ -17,6 +18,7 @@ const Invite: React.FC = () => {
   const { referrals, stats, loading: friendsLoading } = useBoltReferrals(boltUser?.id);
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
+  useTelegramBackButton();
 
   const referralCode = useMemo(() => tgUser?.username || tgUser?.id?.toString() || "guest", [tgUser]);
   const referralLink = useMemo(() => `https://t.me/boltrsbot?start=${encodeURIComponent(referralCode)}`, [referralCode]);
