@@ -15,6 +15,36 @@ interface ReferralRequest {
   initData?: any
 }
 
+const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+
+async function sendTelegramNotification(chatId: number, text: string) {
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.log('TELEGRAM_BOT_TOKEN not configured, skipping notification');
+    return null;
+  }
+  
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+  
+  try {
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: text,
+        parse_mode: 'HTML',
+      }),
+    });
+    
+    const result = await response.json();
+    console.log('Telegram notification sent:', result.ok);
+    return result;
+  } catch (error) {
+    console.error('Error sending Telegram notification:', error);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -58,7 +88,7 @@ Deno.serve(async (req) => {
     if (!referrer && referral_param && !isNaN(Number(referral_param))) {
       const { data } = await supabase
         .from('bolt_users')
-        .select('id, telegram_username, telegram_id')
+        .select('id, telegram_username, telegram_id, first_name')
         .eq('telegram_id', parseInt(referral_param))
         .single()
       
@@ -72,7 +102,7 @@ Deno.serve(async (req) => {
     if (!referrer && referral_param) {
       const { data } = await supabase
         .from('bolt_users')
-        .select('id, telegram_username, telegram_id')
+        .select('id, telegram_username, telegram_id, first_name')
         .eq('telegram_username', referral_param)
         .single()
       
@@ -86,7 +116,7 @@ Deno.serve(async (req) => {
     if (!referrer && referral_param) {
       const { data } = await supabase
         .from('bolt_users')
-        .select('id, telegram_username, telegram_id')
+        .select('id, telegram_username, telegram_id, first_name')
         .ilike('telegram_username', referral_param)
         .single()
       
@@ -201,12 +231,27 @@ Deno.serve(async (req) => {
       .single()
 
     if (currentReferrer) {
+      const newTotalReferrals = (currentReferrer.total_referrals || 0) + 1
+      let totalBonus = REFERRAL_BONUS
+      let milestoneBonus = 0
+
+      // Check for milestone bonuses
+      if (newTotalReferrals === 5) {
+        milestoneBonus = 500
+        totalBonus += milestoneBonus
+        console.log(`🏆 Milestone reached: 5 friends! Adding +500 BOLT bonus`)
+      } else if (newTotalReferrals === 10) {
+        milestoneBonus = 1500
+        totalBonus += milestoneBonus
+        console.log(`🏆 Milestone reached: 10 friends! Adding +1500 BOLT bonus`)
+      }
+
       const { error: updateError } = await supabase
         .from('bolt_users')
         .update({
-          token_balance: (currentReferrer.token_balance || 0) + REFERRAL_BONUS,
-          total_referrals: (currentReferrer.total_referrals || 0) + 1,
-          referral_bonus: (currentReferrer.referral_bonus || 0) + REFERRAL_BONUS,
+          token_balance: (currentReferrer.token_balance || 0) + totalBonus,
+          total_referrals: newTotalReferrals,
+          referral_bonus: (currentReferrer.referral_bonus || 0) + totalBonus,
           updated_at: new Date().toISOString()
         })
         .eq('id', referrer.id)
@@ -214,7 +259,21 @@ Deno.serve(async (req) => {
       if (updateError) {
         console.error('❌ Error updating referrer:', updateError)
       } else {
-        console.log(`💰 Bonus of ${REFERRAL_BONUS} tokens given to referrer: ${referrer.id}`)
+        console.log(`💰 Bonus of ${totalBonus} tokens given to referrer: ${referrer.id}`)
+      }
+
+      // Send Telegram notification to referrer
+      if (referrer.telegram_id) {
+        const newUserName = first_name || telegram_username || 'A new user'
+        let notificationText = `🎉 <b>New Referral!</b>\n\n<b>${newUserName}</b> joined using your link!\n\n💰 You earned: <b>+${REFERRAL_BONUS} BOLT</b>`
+        
+        if (milestoneBonus > 0) {
+          notificationText += `\n\n🏆 <b>Milestone Bonus!</b>\nYou reached ${newTotalReferrals} friends!\n💎 Extra reward: <b>+${milestoneBonus.toLocaleString()} BOLT</b>`
+        }
+        
+        notificationText += `\n\n👥 Total friends: <b>${newTotalReferrals}</b>`
+
+        await sendTelegramNotification(referrer.telegram_id, notificationText)
       }
     }
 
