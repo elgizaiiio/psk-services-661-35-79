@@ -117,16 +117,22 @@ const Spin: React.FC = () => {
     }
 
     if (data) {
-      setNormalTickets(data.tickets_count);
+      setNormalTickets(data.tickets_count || 0);
       setProTickets((data as any).pro_tickets_count || 0);
-      setFreeTicketAvailable(data.free_ticket_date !== today);
+      // Check if free ticket was already claimed today
+      const alreadyClaimedToday = data.free_ticket_date === today;
+      setFreeTicketAvailable(!alreadyClaimedToday);
     } else {
-      await supabase.from('user_spin_tickets').insert({
+      // Create initial record
+      const { error: insertError } = await supabase.from('user_spin_tickets').insert({
         user_id: user.id,
         tickets_count: 0,
         pro_tickets_count: 0,
         free_ticket_date: null,
       });
+      if (insertError) {
+        console.error('Error creating ticket record:', insertError);
+      }
       setNormalTickets(0);
       setProTickets(0);
       setFreeTicketAvailable(true);
@@ -192,13 +198,20 @@ const Spin: React.FC = () => {
 
     const today = new Date().toISOString().split('T')[0];
     
-    await supabase
+    // Use upsert to handle both insert and update cases
+    const { error } = await supabase
       .from('user_spin_tickets')
-      .update({ 
+      .upsert({ 
+        user_id: user.id,
         tickets_count: normalTickets + 1,
         free_ticket_date: today,
-      })
-      .eq('user_id', user.id);
+      }, { onConflict: 'user_id' });
+
+    if (error) {
+      console.error('Error claiming free ticket:', error);
+      toast.error('Failed to claim free ticket');
+      return;
+    }
 
     setNormalTickets(prev => prev + 1);
     setFreeTicketAvailable(false);

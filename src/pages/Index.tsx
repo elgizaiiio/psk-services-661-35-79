@@ -8,7 +8,7 @@ import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
-import { Server, ChevronRight, Loader2, Play, Gift } from 'lucide-react';
+import { Server, ChevronRight, Loader2, Play, Gift, Coins } from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import DailyStreakModal from '@/components/DailyStreakModal';
@@ -162,6 +162,22 @@ const Index = () => {
               )}
             </FadeUp>
           )}
+
+          {/* Buy Bolt Card */}
+          <FadeUp>
+            <motion.button onClick={() => navigate('/buy-bolt')} className="w-full p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Coins className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-foreground">Buy BOLT</p>
+                  <p className="text-xs text-muted-foreground">Get more tokens instantly</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-primary" />
+            </motion.button>
+          </FadeUp>
 
           {/* Lucky Spin Card */}
           <FadeUp>

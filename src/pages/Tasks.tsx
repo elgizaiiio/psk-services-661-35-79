@@ -32,7 +32,7 @@ const isJoinTask = (taskTitle: string, taskUrl?: string | null) => {
 
 const Tasks = () => {
   const { user: tgUser, hapticFeedback } = useTelegramAuth();
-  const { allTasks, completedTasks, loading, completeTask, revokeTaskCompletion } = useBoltTasks();
+  const { allTasks, completedTasks, loading, completeTask, revokeTaskCompletion, refreshTasks } = useBoltTasks();
   const { checkSubscription, isChecking } = useChannelSubscription('boltcomm');
   const [activeTab, setActiveTab] = useState('social');
   const [processingTask, setProcessingTask] = useState<string | null>(null);
@@ -123,6 +123,8 @@ const Tasks = () => {
         if (subscribed) {
           try {
             await completeTask(taskId);
+            // Force immediate refetch to update UI
+            await refreshTasks();
             toast.success('Task completed! Points added');
           } catch {
             toast.error('Failed to complete task');
@@ -143,6 +145,8 @@ const Tasks = () => {
       setTimeout(async () => {
         try {
           await completeTask(taskId);
+          // Force immediate refetch to update UI
+          await refreshTasks();
           toast.success('Task completed! Points added');
         } catch {
           toast.error('Failed to complete task');
