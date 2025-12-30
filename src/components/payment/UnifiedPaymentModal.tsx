@@ -156,103 +156,46 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-[340px] p-0 gap-0 bg-card border-border rounded-2xl overflow-hidden">
-        {/* Header */}
-        <DialogHeader className="p-4 pb-3 border-b border-border">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-base font-semibold text-foreground">
-              Choose Payment
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              onClick={onClose}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+      <DialogContent className="max-w-[320px] p-5 gap-0 bg-card border-border rounded-2xl">
+        <DialogHeader className="mb-4">
+          <DialogTitle className="text-center text-lg font-bold text-foreground">
+            {description}
+          </DialogTitle>
+          <p className="text-center text-2xl font-bold text-primary mt-1">{amount} TON</p>
         </DialogHeader>
 
-        <div className="p-4 space-y-4">
-          {/* Product Info */}
-          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl">
-            <span className="text-sm text-muted-foreground">{description}</span>
-            <span className="text-sm font-semibold text-foreground">{amount} TON</span>
-          </div>
+        <div className="space-y-3">
+          {/* TON Payment */}
+          <button
+            onClick={handleTonPayment}
+            disabled={isProcessing || !isWalletConnected}
+            className="w-full flex items-center justify-between p-4 rounded-xl border border-border bg-background hover:bg-muted/50 transition-colors disabled:opacity-50"
+          >
+            <span className="font-medium text-foreground">TON Wallet</span>
+            <span className="font-bold text-foreground">
+              {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : `${amount} TON`}
+            </span>
+          </button>
 
-          {/* Wallet Warning */}
+          {/* Stars Payment */}
+          <button
+            onClick={handleStarsPayment}
+            disabled={starsLoading}
+            className="w-full flex items-center justify-between p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-colors disabled:opacity-50"
+          >
+            <span className="font-medium text-foreground">Telegram Stars</span>
+            <span className="font-bold text-yellow-500">
+              {starsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : `${starsAmount} ⭐`}
+            </span>
+          </button>
+
           {!isWalletConnected && (
-            <div className="flex items-center gap-2 p-3 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
-              <AlertCircle className="w-4 h-4 text-yellow-500 shrink-0" />
-              <p className="text-xs text-yellow-600">
-                Connect wallet in{' '}
-                <button 
-                  onClick={() => { onClose(); navigate('/wallet'); }}
-                  className="underline font-medium"
-                >
-                  Wallet page
-                </button>
-                {' '}for TON payment
-              </p>
-            </div>
+            <p className="text-xs text-center text-muted-foreground">
+              <button onClick={() => { onClose(); navigate('/wallet'); }} className="text-primary underline">
+                Connect wallet
+              </button>{' '}for TON payment
+            </p>
           )}
-
-          {/* Payment Options */}
-          <div className="space-y-2">
-            {/* TON Payment */}
-            <button
-              onClick={handleTonPayment}
-              disabled={isProcessing || !isWalletConnected}
-              className="w-full flex items-center justify-between p-3 rounded-xl border border-border bg-background hover:bg-muted/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#0098EA] flex items-center justify-center">
-                  <TonIcon size={24} />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium text-foreground">TON Wallet</p>
-                  <p className="text-xs text-muted-foreground">Pay with crypto</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {isProcessing ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                ) : (
-                  <span className="text-sm font-semibold text-foreground">{amount} TON</span>
-                )}
-              </div>
-            </button>
-
-            {/* Stars Payment */}
-            <button
-              onClick={handleStarsPayment}
-              disabled={starsLoading}
-              className="w-full flex items-center justify-between p-3 rounded-xl border border-yellow-500/30 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 hover:from-yellow-500/20 hover:to-orange-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center">
-                  <Star className="w-5 h-5 fill-white text-white" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-medium text-foreground">Telegram Stars</p>
-                  <p className="text-xs text-muted-foreground">Fast & easy</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                {starsLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-                ) : (
-                  <span className="text-sm font-semibold text-yellow-600">{starsAmount} ⭐</span>
-                )}
-              </div>
-            </button>
-          </div>
-
-          {/* Footer */}
-          <p className="text-[10px] text-center text-muted-foreground">
-            Secure payment • Instant delivery
-          </p>
         </div>
       </DialogContent>
     </Dialog>
