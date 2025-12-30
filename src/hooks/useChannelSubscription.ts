@@ -5,7 +5,7 @@ interface UseChannelSubscriptionReturn {
   isSubscribed: boolean;
   isChecking: boolean;
   error: string | null;
-  checkSubscription: (telegramId: number) => Promise<boolean>;
+  checkSubscription: (telegramId: number, channelUsernameOverride?: string) => Promise<boolean>;
 }
 
 export const useChannelSubscription = (channelUsername: string = 'boltcomm'): UseChannelSubscriptionReturn => {
@@ -13,13 +13,14 @@ export const useChannelSubscription = (channelUsername: string = 'boltcomm'): Us
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const checkSubscription = useCallback(async (telegramId: number): Promise<boolean> => {
+  const checkSubscription = useCallback(async (telegramId: number, channelUsernameOverride?: string): Promise<boolean> => {
+    const target = (channelUsernameOverride || channelUsername || '').replace(/^@/, '').trim();
     setIsChecking(true);
     setError(null);
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke('check-subscription', {
-        body: { telegramId, channelUsername }
+        body: { telegramId, channelUsername: target },
       });
 
       if (fnError) {
@@ -32,7 +33,6 @@ export const useChannelSubscription = (channelUsername: string = 'boltcomm'): Us
       const subscribed = data?.isSubscribed || false;
       setIsSubscribed(subscribed);
       return subscribed;
-
     } catch (err) {
       console.error('Error in checkSubscription:', err);
       setError('Network error');
@@ -47,6 +47,7 @@ export const useChannelSubscription = (channelUsername: string = 'boltcomm'): Us
     isSubscribed,
     isChecking,
     error,
-    checkSubscription
+    checkSubscription,
   };
 };
+
