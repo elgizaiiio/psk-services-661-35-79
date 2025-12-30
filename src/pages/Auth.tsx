@@ -1,15 +1,34 @@
 import { Helmet } from "react-helmet-async";
-import { ExternalLink, Smartphone } from "lucide-react";
+import { ExternalLink, Smartphone, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import BoltIcon from "@/components/ui/bolt-icon";
+import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
   const telegramBotUrl = "https://t.me/boltrsbot?start=mining";
+  const navigate = useNavigate();
+
+  // Check for preview mode via URL param
+  const urlParams = new URLSearchParams(window.location.search);
+  const isPreviewMode = urlParams.get('preview') === 'true';
 
   const handleOpenTelegram = () => {
     window.open(telegramBotUrl, "_blank");
   };
+
+  const handlePreviewMode = () => {
+    // Navigate to home with preview flag in localStorage
+    localStorage.setItem('previewMode', 'true');
+    navigate('/');
+  };
+
+  // If already in preview mode, redirect to home
+  if (isPreviewMode) {
+    localStorage.setItem('previewMode', 'true');
+    navigate('/');
+    return null;
+  }
 
   return (
     <>
@@ -47,6 +66,17 @@ const Auth = () => {
               <Smartphone className="w-5 h-5" />
               Open in Telegram
               <ExternalLink className="w-4 h-4" />
+            </Button>
+
+            {/* Preview Mode Button */}
+            <Button
+              onClick={handlePreviewMode}
+              variant="outline"
+              size="lg"
+              className="w-full gap-2"
+            >
+              <Eye className="w-5 h-5" />
+              Preview Mode (Testing)
             </Button>
 
             {/* Instructions */}

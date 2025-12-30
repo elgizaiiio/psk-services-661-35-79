@@ -48,7 +48,6 @@ const Spin: React.FC = () => {
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState<SpinReward | null>(null);
   const [freeSpinAvailable, setFreeSpinAvailable] = useState(false);
-  const [recentWins, setRecentWins] = useState<any[]>([]);
   const spinRef = useRef<HTMLDivElement>(null);
 
   const segmentAngle = 360 / SPIN_REWARDS.length;
@@ -68,22 +67,9 @@ const Spin: React.FC = () => {
     setFreeSpinAvailable(!data?.free_spin_used);
   }, [user?.id]);
 
-  // Load recent wins
-  const loadRecentWins = useCallback(async () => {
-    const { data } = await supabase
-      .from('spin_history')
-      .select('*, bolt_users!inner(first_name, telegram_username)')
-      .neq('reward_type', 'nothing')
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (data) setRecentWins(data);
-  }, []);
-
   useEffect(() => {
     checkFreeSpin();
-    loadRecentWins();
-  }, [checkFreeSpin, loadRecentWins]);
+  }, [checkFreeSpin]);
 
   // Get random reward based on probability
   const getRandomReward = (): SpinReward => {
@@ -131,8 +117,6 @@ const Spin: React.FC = () => {
           expires_at: expiresAt.toISOString(),
         });
       }
-
-      loadRecentWins();
     } catch (error) {
       console.error('Error applying reward:', error);
     }
@@ -333,43 +317,6 @@ const Spin: React.FC = () => {
             </div>
           </FadeUp>
 
-          {/* Recent Wins */}
-          <FadeUp>
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                <Trophy className="w-4 h-4" />
-                Recent Winners
-              </h3>
-              
-              <div className="space-y-2">
-                {recentWins.length > 0 ? recentWins.map((win, index) => (
-                  <motion.div
-                    key={win.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="flex items-center justify-between p-3 rounded-lg bg-card border border-border"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary">
-                        {win.bolt_users?.first_name?.charAt(0) || '?'}
-                      </div>
-                      <span className="text-sm font-medium text-foreground">
-                        {win.bolt_users?.telegram_username 
-                          ? `@${win.bolt_users.telegram_username}`
-                          : win.bolt_users?.first_name || 'Anonymous'}
-                      </span>
-                    </div>
-                    <span className="text-sm font-bold text-primary">
-                      {SPIN_REWARDS.find(r => r.id === win.reward_type)?.label || win.reward_type}
-                    </span>
-                  </motion.div>
-                )) : (
-                  <p className="text-center text-sm text-muted-foreground py-4">No winners yet</p>
-                )}
-              </div>
-            </div>
-          </FadeUp>
         </StaggerContainer>
       </div>
     </PageWrapper>
