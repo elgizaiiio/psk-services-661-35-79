@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import MiningHeader from '@/components/mining/MiningHeader';
 import MiningStatus from '@/components/mining/MiningStatus';
 import MiningUpgrades from '@/components/mining/MiningUpgrades';
+import WelcomeModal from '@/components/WelcomeModal';
 
 const ViralMiningApp = () => {
   const { user: telegramUser, isLoading: authLoading, hapticFeedback } = useTelegramAuth();
@@ -14,6 +15,8 @@ const ViralMiningApp = () => {
     activeMiningSession,
     loading,
     error,
+    isNewUser,
+    dismissWelcome,
     startMining,
     getCurrentMiningProgress,
     clearError
@@ -99,6 +102,13 @@ const ViralMiningApp = () => {
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-md mx-auto space-y-6">
+        {/* Welcome Modal for New Users */}
+        <WelcomeModal
+          isOpen={isNewUser}
+          onClose={dismissWelcome}
+          userName={telegramUser?.first_name}
+        />
+
         {/* Header Section */}
         <MiningHeader 
           telegramUser={telegramUser}
