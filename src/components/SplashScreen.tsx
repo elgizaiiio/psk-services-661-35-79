@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import BoltIcon from './ui/bolt-icon';
 
 interface SplashScreenProps {
@@ -8,15 +8,23 @@ interface SplashScreenProps {
 
 const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, duration = 2000 }) => {
   const [isVisible, setIsVisible] = useState(true);
+  const onCompleteRef = useRef(onComplete);
+  
+  // Keep ref updated
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsVisible(false);
-      setTimeout(onComplete, 200);
+      setTimeout(() => {
+        onCompleteRef.current();
+      }, 200);
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [onComplete, duration]);
+  }, [duration]); // Only depend on duration, not onComplete
 
   return (
     <div className={`fixed inset-0 bg-background z-50 flex items-center justify-center transition-opacity duration-200 ${!isVisible ? 'opacity-0 pointer-events-none' : ''}`}>
