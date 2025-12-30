@@ -18,7 +18,7 @@ const Invite: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
   const referralCode = useMemo(() => tgUser?.username || tgUser?.id?.toString() || "guest", [tgUser]);
-  const referralLink = useMemo(() => `https://t.me/Vlralbot?startapp=${encodeURIComponent(referralCode)}`, [referralCode]);
+  const referralLink = useMemo(() => `https://t.me/boltrsbot?start=${encodeURIComponent(referralCode)}`, [referralCode]);
 
   const copyLink = async () => {
     try { await navigator.clipboard.writeText(referralLink); setCopied(true); toast({ title: "Link copied!" }); setTimeout(() => setCopied(false), 1500); } catch { toast({ title: "Error" }); }

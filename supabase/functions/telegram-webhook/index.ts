@@ -73,6 +73,19 @@ serve(async (req) => {
     if (update.message?.text?.startsWith('/start')) {
       const chatId = update.message.chat.id;
       const firstName = update.message.from.first_name;
+      const messageText = update.message.text;
+
+      // Extract referral parameter from /start command (e.g., /start 123456 or /start username)
+      const parts = messageText.split(' ');
+      const referralParam = parts.length > 1 ? parts.slice(1).join(' ').trim() : null;
+      
+      console.log('Start command received, referral param:', referralParam);
+
+      // Build Web App URL with referral parameter if present
+      let webAppUrl = WEBAPP_URL;
+      if (referralParam) {
+        webAppUrl = `${WEBAPP_URL}?ref=${encodeURIComponent(referralParam)}`;
+      }
 
       const welcomeMessage = `👋 <b>Welcome ${firstName}!</b>
 
@@ -89,7 +102,7 @@ Click the button below to start mining! 👇`;
           [
             {
               text: '🚀 Start Mining Now',
-              web_app: { url: WEBAPP_URL }
+              web_app: { url: webAppUrl }
             }
           ],
           [
@@ -102,6 +115,7 @@ Click the button below to start mining! 👇`;
       };
 
       await sendTelegramMessage(chatId, welcomeMessage, keyboard);
+      console.log('Welcome message sent with webAppUrl:', webAppUrl);
     }
 
     return new Response(JSON.stringify({ ok: true }), {
