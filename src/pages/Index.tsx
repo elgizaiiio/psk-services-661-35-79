@@ -8,7 +8,7 @@ import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
-import { Server, ChevronRight, Wallet, Loader2, Play, Gift } from 'lucide-react';
+import { Server, ChevronRight, Loader2, Play, Gift } from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 
@@ -178,21 +178,6 @@ const Index = () => {
             </motion.button>
           </FadeUp>
 
-          {/* Wallet Quick Access */}
-          <FadeUp>
-            <motion.button onClick={() => navigate('/wallet')} className="w-full p-4 rounded-xl bg-card border border-border flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                  <Wallet className="w-5 h-5 text-foreground" />
-                </div>
-                <div className="text-left">
-                  <p className="font-medium text-foreground">Wallet</p>
-                  <p className="text-xs text-muted-foreground">Manage assets</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </motion.button>
-          </FadeUp>
         </StaggerContainer>
       </div>
     </PageWrapper>
