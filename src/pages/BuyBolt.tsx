@@ -23,12 +23,16 @@ interface Package {
   bonus: number;
 }
 
+// BOLT price: $0.001 per BOLT (1000 BOLT = $1, 1 TON ≈ $6)
+// So 1 TON = 6000 BOLT at market rate
+const BOLT_PER_TON = 6000;
+
 const packages: Package[] = [
-  { id: 'starter', name: 'Starter', bolts: 5000, priceTon: 0.5, priceStars: 50, bonus: 0 },
-  { id: 'basic', name: 'Basic', bolts: 15000, priceTon: 1.2, priceStars: 120, bonus: 10 },
-  { id: 'popular', name: 'Popular', bolts: 50000, priceTon: 3.5, priceStars: 350, bonus: 20 },
-  { id: 'premium', name: 'Premium', bolts: 150000, priceTon: 9, priceStars: 900, bonus: 30 },
-  { id: 'whale', name: 'Whale', bolts: 500000, priceTon: 25, priceStars: 2500, bonus: 40 },
+  { id: 'starter', name: 'Starter', bolts: 3000, priceTon: 0.5, priceStars: 50, bonus: 0 },
+  { id: 'basic', name: 'Basic', bolts: 6000, priceTon: 1, priceStars: 100, bonus: 5 },
+  { id: 'popular', name: 'Popular', bolts: 18000, priceTon: 3, priceStars: 300, bonus: 10 },
+  { id: 'premium', name: 'Premium', bolts: 36000, priceTon: 6, priceStars: 600, bonus: 15 },
+  { id: 'whale', name: 'Whale', bolts: 60000, priceTon: 10, priceStars: 1000, bonus: 20 },
 ];
 
 const BuyBolt = () => {
