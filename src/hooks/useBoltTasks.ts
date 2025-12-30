@@ -44,6 +44,10 @@ export const useBoltTasks = () => {
     }
   }, [boltUser]);
 
+  const refreshTasks = useCallback(async () => {
+    await Promise.all([loadTasks(), loadCompletedTasks()]);
+  }, [loadTasks, loadCompletedTasks]);
+
   const completeTask = useCallback(async (taskId: string) => {
     if (!boltUser) throw new Error('User not found');
 
@@ -81,14 +85,23 @@ export const useBoltTasks = () => {
         updated_at: new Date().toISOString(),
       }).eq('id', boltUser.id);
 
-      // Refresh data from backend - update local state immediately
-      await Promise.all([loadTasks(), loadCompletedTasks()]);
+      // Immediately update local state for instant UI feedback
+      setCompletedTasks(prev => [...prev, {
+        id: `temp-${taskId}`,
+        task_id: taskId,
+        user_id: boltUser.id,
+        points_earned: taskData.points,
+        completed_at: new Date().toISOString(),
+      }]);
+
+      // Then refresh from backend
+      await refreshTasks();
       await refreshUser();
     } catch (err: any) {
       console.error('Error completing task:', err);
       throw err;
     }
-  }, [boltUser, loadTasks, loadCompletedTasks, refreshUser]);
+  }, [boltUser, refreshTasks, refreshUser]);
 
   const revokeTaskCompletion = useCallback(async (taskId: string, points: number) => {
     if (!boltUser) return false;
@@ -108,14 +121,17 @@ export const useBoltTasks = () => {
         .update({ token_balance: next, updated_at: new Date().toISOString() })
         .eq('id', boltUser.id);
 
-      await loadCompletedTasks();
+      // Immediately update local state
+      setCompletedTasks(prev => prev.filter(c => c.task_id !== taskId));
+
+      await refreshTasks();
       await refreshUser();
       return true;
     } catch (err) {
       console.error('Error revoking task completion:', err);
       return false;
     }
-  }, [boltUser, loadCompletedTasks, refreshUser]);
+  }, [boltUser, refreshTasks, refreshUser]);
 
   // Filter out completed tasks - relies only on backend data
   const getAvailableTasks = useCallback(() => {
@@ -143,6 +159,6 @@ export const useBoltTasks = () => {
     completeTask,
     revokeTaskCompletion,
     clearError: () => setError(null),
-    refreshTasks: loadTasks,
+    refreshTasks,
   };
 };

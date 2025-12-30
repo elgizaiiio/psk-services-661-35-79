@@ -8,7 +8,7 @@ import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
-import { Server, ChevronRight, Loader2, Play, Gift, Coins } from 'lucide-react';
+import { Server, ChevronRight, Loader2, Play, Gift, ShoppingCart, Trophy } from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import DailyStreakModal from '@/components/DailyStreakModal';
@@ -168,7 +168,7 @@ const Index = () => {
             <motion.button onClick={() => navigate('/buy-bolt')} className="w-full p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                  <Coins className="w-5 h-5 text-primary" />
+                  <ShoppingCart className="w-5 h-5 text-primary" />
                 </div>
                 <div className="text-left">
                   <p className="font-medium text-foreground">Buy BOLT</p>
@@ -176,6 +176,25 @@ const Index = () => {
                 </div>
               </div>
               <ChevronRight className="w-5 h-5 text-primary" />
+            </motion.button>
+          </FadeUp>
+
+          {/* Contest Card */}
+          <FadeUp>
+            <motion.button onClick={() => navigate('/contest')} className="w-full p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-amber-600/5 border border-amber-500/20 flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-amber-400" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-foreground">Contest</p>
+                  <p className="text-xs text-muted-foreground">Compete & win prizes</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-amber-400 bg-amber-500/10 px-2 py-1 rounded-full">Live</span>
+                <ChevronRight className="w-5 h-5 text-amber-400" />
+              </div>
             </motion.button>
           </FadeUp>
 
