@@ -200,12 +200,14 @@ export const useTelegramAuth = () => {
       }
     };
 
-    if (document.readyState === 'complete') {
+    if (document.readyState === 'complete' || document.readyState === 'interactive') {
       initTelegramUser();
-    } else {
-      window.addEventListener('load', initTelegramUser);
-      return () => window.removeEventListener('load', initTelegramUser);
+      return;
     }
+
+    const onLoad = () => initTelegramUser();
+    window.addEventListener('load', onLoad);
+    return () => window.removeEventListener('load', onLoad);
   }, []);
 
   useEffect(() => {

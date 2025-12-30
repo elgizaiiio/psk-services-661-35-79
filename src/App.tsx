@@ -71,8 +71,21 @@ const queryClient = new QueryClient({
 function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
   const { webApp, user: telegramUser, isLoading: isTelegramLoading } = useTelegramAuth();
   const [showSplash, setShowSplash] = React.useState(true);
-  
+  const handleSplashComplete = React.useCallback(() => setShowSplash(false), []);
+
   useReferralHandler();
+
+  // Preview mode (testing outside Telegram)
+  const isPreviewMode = (() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const isPreviewModeUrl = urlParams.get("preview") === "true";
+      const isPreviewModeStorage = localStorage.getItem("previewMode") === "true";
+      return isPreviewModeUrl || isPreviewModeStorage;
+    } catch {
+      return false;
+    }
+  })();
 
   // Check if running in Telegram Mini App (must have a real Telegram user)
   const isTelegramApp = !!webApp && !!telegramUser?.id;
@@ -83,22 +96,22 @@ function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
       try {
         webApp.expand();
         // Use optional chaining for methods that might not exist
-        if ('requestFullscreen' in webApp) {
+        if ("requestFullscreen" in webApp) {
           (webApp as any).requestFullscreen?.();
         }
-        if ('enableClosingConfirmation' in webApp) {
+        if ("enableClosingConfirmation" in webApp) {
           (webApp as any).enableClosingConfirmation?.();
         }
-        if ('disableVerticalSwipes' in webApp) {
+        if ("disableVerticalSwipes" in webApp) {
           (webApp as any).disableVerticalSwipes?.();
         }
       } catch (e) {
-        console.log('Telegram WebApp expand/fullscreen not available:', e);
+        console.log("Telegram WebApp expand/fullscreen not available:", e);
       }
 
       if (webApp.viewportHeight) {
         document.documentElement.style.setProperty(
-          '--tg-viewport-height', 
+          "--tg-viewport-height",
           `${webApp.viewportHeight}px`
         );
       }
@@ -106,30 +119,30 @@ function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
       const handleViewportChanged = () => {
         if (webApp.viewportHeight) {
           document.documentElement.style.setProperty(
-            '--tg-viewport-height', 
+            "--tg-viewport-height",
             `${webApp.viewportHeight}px`
           );
         }
       };
 
       if (webApp.onEvent) {
-        webApp.onEvent('viewportChanged', handleViewportChanged);
+        webApp.onEvent("viewportChanged", handleViewportChanged);
       }
 
       return () => {
         if (webApp.offEvent) {
-          webApp.offEvent('viewportChanged', handleViewportChanged);
+          webApp.offEvent("viewportChanged", handleViewportChanged);
         }
       };
     }
   }, [webApp]);
 
   if (showSplash) {
-    return <SplashScreen onComplete={() => setShowSplash(false)} />;
+    return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
-  // Show loader while checking Telegram auth
-  if (isTelegramLoading) {
+  // Show loader while checking Telegram auth (skip in preview mode)
+  if (isTelegramLoading && !isPreviewMode) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -137,8 +150,8 @@ function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Redirect to auth page if not in Telegram
-  if (!isTelegramApp) {
+  // Redirect to auth page if not in Telegram (unless preview mode)
+  if (!isTelegramApp && !isPreviewMode) {
     return <Navigate to="/auth" replace />;
   }
 
