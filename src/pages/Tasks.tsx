@@ -64,30 +64,43 @@ const Tasks = () => {
   useEffect(() => {
     if (didRecheckRef.current) return;
     if (!tgUser?.id) return;
-    if (!allTasks.length || !completedTasks.length) return;
+    if (loading) return;
+    if (!allTasks.length) return;
+
+    // Build a set of completed task IDs for this check
+    const completedIds = new Set(completedTasks.map(c => c.task_id));
+    if (completedIds.size === 0) return;
 
     didRecheckRef.current = true;
 
     const run = async () => {
-      for (const task of allTasks) {
-        if (!isTaskCompleted(task.id)) continue;
-        if (!isJoinTask(task.title, task.task_url)) continue;
+      try {
+        for (const task of allTasks) {
+          if (!completedIds.has(task.id)) continue;
+          if (!isJoinTask(task.title, task.task_url)) continue;
 
-        const username = extractTelegramUsername(task.task_url || '');
-        if (!username) continue;
+          const username = extractTelegramUsername(task.task_url || '');
+          if (!username) continue;
 
-        const subscribed = await checkSubscription(tgUser.id, username);
-        if (!subscribed) {
-          const ok = await revokeTaskCompletion(task.id, task.points);
-          if (ok) {
-            toast.warning(`لقد غادرت ${username}. تم خصم ${task.points} BOLT وإعادة المهمة للقائمة.`);
+          try {
+            const subscribed = await checkSubscription(tgUser.id, username);
+            if (!subscribed) {
+              const ok = await revokeTaskCompletion(task.id, task.points);
+              if (ok) {
+                toast.warning(`لقد غادرت ${username}. تم خصم ${task.points} BOLT وإعادة المهمة للقائمة.`);
+              }
+            }
+          } catch (e) {
+            console.error('Error checking subscription for task:', task.id, e);
           }
         }
+      } catch (e) {
+        console.error('Error in subscription recheck:', e);
       }
     };
 
     run();
-  }, [allTasks, completedTasks, tgUser?.id, checkSubscription, revokeTaskCompletion]);
+  }, [allTasks, completedTasks, tgUser?.id, loading, checkSubscription, revokeTaskCompletion]);
 
   const handleTaskComplete = async (taskId: string, taskUrl: string, taskTitle: string) => {
     if (isTaskCompleted(taskId)) {
