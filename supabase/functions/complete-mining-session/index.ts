@@ -6,6 +6,42 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-telegram-id',
 };
 
+const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+
+async function sendTelegramNotification(telegramId: number, text: string, replyMarkup?: object): Promise<boolean> {
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.log('TELEGRAM_BOT_TOKEN not configured, skipping notification');
+    return false;
+  }
+
+  try {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    
+    const body: Record<string, unknown> = {
+      chat_id: telegramId,
+      text: text,
+      parse_mode: 'HTML',
+    };
+
+    if (replyMarkup) {
+      body.reply_markup = replyMarkup;
+    }
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+    console.log('Telegram notification sent:', result.ok);
+    return result.ok;
+  } catch (error) {
+    console.error('Error sending Telegram notification:', error);
+    return false;
+  }
+}
+
 // In-memory rate limit store (per session)
 const claimAttempts = new Map<string, number>();
 
@@ -151,6 +187,30 @@ serve(async (req) => {
     }
 
     console.log(`Mining session ${sessionId} completed. Reward: ${totalReward} BOLT, New balance: ${newBalance}`);
+
+    // Send Telegram notification
+    if (session.bolt_users?.telegram_id && totalReward > 0) {
+      const notificationMessage = `⛏️ <b>Mining Complete!</b>
+
+💰 You earned: <b>+${totalReward.toLocaleString()} BOLT</b>
+💎 New balance: <b>${newBalance.toLocaleString()} BOLT</b>
+
+🚀 Start a new mining session now!`;
+
+      const keyboard = {
+        inline_keyboard: [
+          [
+            {
+              text: '⛏️ Start New Session',
+              web_app: { url: 'https://bolt.elgiza.site' }
+            }
+          ]
+        ]
+      };
+
+      // Send notification in background
+      sendTelegramNotification(session.bolt_users.telegram_id, notificationMessage, keyboard);
+    }
 
     return new Response(
       JSON.stringify({ 

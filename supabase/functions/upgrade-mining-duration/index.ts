@@ -6,6 +6,38 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+
+async function sendTelegramNotification(telegramId: number, text: string): Promise<boolean> {
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.log('TELEGRAM_BOT_TOKEN not configured, skipping notification');
+    return false;
+  }
+
+  try {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    
+    const body = {
+      chat_id: telegramId,
+      text: text,
+      parse_mode: 'HTML',
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+    console.log('Telegram notification sent:', result.ok);
+    return result.ok;
+  } catch (error) {
+    console.error('Error sending Telegram notification:', error);
+    return false;
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -111,6 +143,19 @@ serve(async (req) => {
     }
 
     console.log(`Mining duration upgraded for user ${userId}: ${current}h -> ${nextDuration}h`);
+
+    // Send Telegram notification
+    if (user.telegram_id) {
+      const notificationMessage = `⏱️ <b>Mining Duration Upgraded!</b>
+
+📊 Previous: <b>${current} hours</b>
+🚀 New: <b>${nextDuration} hours</b>
+
+Enjoy longer mining sessions! 🎉`;
+
+      // Send notification in background
+      sendTelegramNotification(user.telegram_id, notificationMessage);
+    }
 
     return new Response(
       JSON.stringify({ 
