@@ -9,6 +9,9 @@ const corsHeaders = {
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 const WEBAPP_URL = 'https://bolts.elgiza.site';
 
+// Admin Telegram IDs that can use /102 command
+const ADMIN_IDS = [102, 6090594286]; // Add your admin Telegram IDs here
+
 interface TelegramUpdate {
   update_id: number;
   message?: {
@@ -24,8 +27,20 @@ interface TelegramUpdate {
       type: string;
     };
     text?: string;
+    photo?: Array<{
+      file_id: string;
+      file_unique_id: string;
+      width: number;
+      height: number;
+    }>;
     date: number;
   };
+}
+
+function getSupabaseClient() {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  return createClient(supabaseUrl, supabaseKey);
 }
 
 async function sendTelegramMessage(chatId: number, text: string, replyMarkup?: object) {
@@ -52,10 +67,23 @@ async function sendTelegramMessage(chatId: number, text: string, replyMarkup?: o
   return result;
 }
 
+async function getFileUrl(fileId: string): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`
+    );
+    const data = await response.json();
+    if (data.ok && data.result.file_path) {
+      return `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${data.result.file_path}`;
+    }
+  } catch (error) {
+    console.error('Error getting file URL:', error);
+  }
+  return null;
+}
+
 async function getUserStats(telegramId: number) {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getSupabaseClient();
 
   const { data: user, error } = await supabase
     .from('bolt_users')
@@ -71,11 +99,8 @@ async function getUserStats(telegramId: number) {
 }
 
 async function getContestInfo(userId?: string) {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getSupabaseClient();
 
-  // Get active contest
   const { data: contest } = await supabase
     .from('referral_contests')
     .select('*')
@@ -85,7 +110,6 @@ async function getContestInfo(userId?: string) {
 
   if (!contest) return null;
 
-  // Get top 3 participants
   const { data: top3 } = await supabase
     .from('contest_participants')
     .select('user_id, referral_count')
@@ -93,7 +117,6 @@ async function getContestInfo(userId?: string) {
     .order('referral_count', { ascending: false })
     .limit(3);
 
-  // Get usernames for top 3
   let top3WithNames: any[] = [];
   if (top3 && top3.length > 0) {
     const userIds = top3.map((p: any) => p.user_id);
@@ -112,7 +135,6 @@ async function getContestInfo(userId?: string) {
     }));
   }
 
-  // Get user's rank if userId provided
   let userRank = null;
   if (userId) {
     const { data: userPart } = await supabase
@@ -136,7 +158,6 @@ async function getContestInfo(userId?: string) {
     }
   }
 
-  // Calculate time remaining
   const endDate = new Date(contest.end_date);
   const now = new Date();
   const diff = endDate.getTime() - now.getTime();
@@ -152,8 +173,155 @@ async function getContestInfo(userId?: string) {
   };
 }
 
+// Admin task creation handlers
+async function getAdminState(telegramId: number) {
+  const supabase = getSupabaseClient();
+  const { data } = await supabase
+    .from('admin_task_creation_state')
+    .select('*')
+    .eq('telegram_id', telegramId)
+    .maybeSingle();
+  return data;
+}
+
+async function setAdminState(telegramId: number, step: string, updates: Record<string, any> = {}) {
+  const supabase = getSupabaseClient();
+  await supabase
+    .from('admin_task_creation_state')
+    .upsert({
+      telegram_id: telegramId,
+      step,
+      ...updates,
+      created_at: new Date().toISOString()
+    }, { onConflict: 'telegram_id' });
+}
+
+async function clearAdminState(telegramId: number) {
+  const supabase = getSupabaseClient();
+  await supabase
+    .from('admin_task_creation_state')
+    .delete()
+    .eq('telegram_id', telegramId);
+}
+
+async function createTask(title: string, url: string, image: string, reward: number) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('bolt_tasks')
+    .insert({
+      title,
+      task_url: url,
+      icon: image,
+      points: reward,
+      category: 'social',
+      is_active: true
+    })
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error creating task:', error);
+    throw error;
+  }
+  return data;
+}
+
+async function handleAdminCommand(chatId: number, telegramId: number, messageText: string, photo?: any[]) {
+  const state = await getAdminState(telegramId);
+  
+  // Check if user is admin
+  if (!ADMIN_IDS.includes(telegramId)) {
+    await sendTelegramMessage(chatId, '❌ غير مصرح لك باستخدام هذا الأمر');
+    return true;
+  }
+
+  // Handle /102 command to start task creation
+  if (messageText === '/102') {
+    await setAdminState(telegramId, 'title', { task_title: null, task_url: null, task_image: null });
+    await sendTelegramMessage(chatId, `📝 <b>إنشاء مهمة جديدة</b>
+
+الخطوة 1/4: أدخل اسم المهمة:`);
+    return true;
+  }
+
+  // Handle ongoing task creation
+  if (state) {
+    switch (state.step) {
+      case 'title':
+        await setAdminState(telegramId, 'url', { task_title: messageText });
+        await sendTelegramMessage(chatId, `✅ تم حفظ اسم المهمة: <b>${messageText}</b>
+
+الخطوة 2/4: أدخل رابط المهمة (URL):`);
+        return true;
+
+      case 'url':
+        if (!messageText.startsWith('http')) {
+          await sendTelegramMessage(chatId, '❌ يرجى إدخال رابط صحيح يبدأ بـ http أو https');
+          return true;
+        }
+        await setAdminState(telegramId, 'image', { 
+          task_title: state.task_title,
+          task_url: messageText 
+        });
+        await sendTelegramMessage(chatId, `✅ تم حفظ الرابط
+
+الخطوة 3/4: أرسل صورة المهمة أو أدخل رابط الصورة:`);
+        return true;
+
+      case 'image':
+        let imageUrl = messageText;
+        
+        // Check if a photo was sent
+        if (photo && photo.length > 0) {
+          // Get the largest photo
+          const largestPhoto = photo[photo.length - 1];
+          imageUrl = await getFileUrl(largestPhoto.file_id) || messageText;
+        }
+        
+        await setAdminState(telegramId, 'reward', { 
+          task_title: state.task_title,
+          task_url: state.task_url,
+          task_image: imageUrl
+        });
+        await sendTelegramMessage(chatId, `✅ تم حفظ الصورة
+
+الخطوة 4/4: أدخل قيمة المكافأة (عدد النقاط):`);
+        return true;
+
+      case 'reward':
+        const reward = parseInt(messageText);
+        if (isNaN(reward) || reward <= 0) {
+          await sendTelegramMessage(chatId, '❌ يرجى إدخال رقم صحيح موجب');
+          return true;
+        }
+        
+        try {
+          const task = await createTask(
+            state.task_title!,
+            state.task_url!,
+            state.task_image || '🎯',
+            reward
+          );
+          
+          await clearAdminState(telegramId);
+          await sendTelegramMessage(chatId, `✅ <b>تم إنشاء المهمة بنجاح!</b>
+
+📝 الاسم: ${state.task_title}
+🔗 الرابط: ${state.task_url}
+🎁 المكافأة: ${reward} نقطة
+
+ID: ${task.id}`);
+        } catch (error) {
+          await sendTelegramMessage(chatId, `❌ حدث خطأ أثناء إنشاء المهمة: ${error.message}`);
+        }
+        return true;
+    }
+  }
+
+  return false;
+}
+
 serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -174,8 +342,17 @@ serve(async (req) => {
     const chatId = update.message?.chat.id;
     const firstName = update.message?.from.first_name || 'User';
     const telegramId = update.message?.from.id;
+    const photo = update.message?.photo;
 
-    if (!chatId) {
+    if (!chatId || !telegramId) {
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check for admin commands first
+    const handledByAdmin = await handleAdminCommand(chatId, telegramId, messageText, photo);
+    if (handledByAdmin) {
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });

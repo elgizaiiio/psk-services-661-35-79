@@ -3,9 +3,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Check, Loader2, ChevronRight, Wallet, ExternalLink } from 'lucide-react';
-import { useUnifiedPayment, PaymentMethod, UnifiedPaymentParams } from '@/hooks/useUnifiedPayment';
-import { cn } from '@/lib/utils';
+import { Loader2, Wallet, Copy, Check } from 'lucide-react';
+import { useUnifiedPayment, UnifiedPaymentParams } from '@/hooks/useUnifiedPayment';
+import { useTonConnectUI } from '@tonconnect/ui-react';
+import { toast } from 'sonner';
 
 interface UnifiedPaymentModalProps {
   isOpen: boolean;
@@ -29,35 +30,22 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
   onSuccess,
 }) => {
   const {
-    selectedMethod,
-    setSelectedMethod,
-    selectedCurrency,
-    setSelectedCurrency,
-    paymentMethods,
     isProcessing,
     processPayment,
-    metaMaskWallet,
+    isWalletConnected,
+    destinationAddress,
   } = useUnifiedPayment();
 
-  const [step, setStep] = useState<'select' | 'currency' | 'confirm'>('select');
+  const [tonConnectUI] = useTonConnectUI();
+  const [copied, setCopied] = useState(false);
 
-  const handleMethodSelect = (method: PaymentMethod) => {
-    setSelectedMethod(method);
-    const methodInfo = paymentMethods.find(m => m.id === method);
-    
-    if (methodInfo?.currencies && methodInfo.currencies.length > 1) {
-      setStep('currency');
-    } else {
-      if (methodInfo?.currencies?.[0]) {
-        setSelectedCurrency(methodInfo.currencies[0]);
-      }
-      setStep('confirm');
+  const handleConnectWallet = async () => {
+    try {
+      await tonConnectUI.openModal();
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      toast.error('Failed to open wallet connection');
     }
-  };
-
-  const handleCurrencySelect = (currency: string) => {
-    setSelectedCurrency(currency);
-    setStep('confirm');
   };
 
   const handlePayment = async () => {
@@ -76,20 +64,14 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
     }
   };
 
-  const handleBack = () => {
-    if (step === 'currency') {
-      setStep('select');
-    } else if (step === 'confirm') {
-      const methodInfo = paymentMethods.find(m => m.id === selectedMethod);
-      if (methodInfo?.currencies && methodInfo.currencies.length > 1) {
-        setStep('currency');
-      } else {
-        setStep('select');
-      }
+  const handleCopyAddress = async () => {
+    if (destinationAddress) {
+      await navigator.clipboard.writeText(destinationAddress);
+      setCopied(true);
+      toast.success('Address copied!');
+      setTimeout(() => setCopied(false), 2000);
     }
   };
-
-  const selectedMethodInfo = paymentMethods.find(m => m.id === selectedMethod);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -97,7 +79,7 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
         <DialogHeader>
           <DialogTitle className="text-xl font-bold text-center flex items-center justify-center gap-2">
             <Wallet className="w-5 h-5 text-primary" />
-            Select Payment Method
+            الدفع بـ TON
           </DialogTitle>
         </DialogHeader>
 
@@ -105,151 +87,80 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
           {/* Amount Display */}
           <div className="text-center p-4 bg-primary/10 rounded-xl border border-primary/20">
             <p className="text-sm text-muted-foreground mb-1">{description}</p>
-            <p className="text-3xl font-bold text-primary">${amount}</p>
+            <p className="text-3xl font-bold text-primary">{amount} TON</p>
+            {credits && (
+              <Badge variant="secondary" className="mt-2">
+                +{credits} نقطة
+              </Badge>
+            )}
           </div>
 
-          {/* Step: Select Payment Method */}
-          {step === 'select' && (
-            <div className="space-y-2">
-              {paymentMethods.map((method) => (
-                <Card
-                  key={method.id}
-                  className={cn(
-                    'p-4 cursor-pointer transition-all hover:border-primary/50',
-                    !method.available && 'opacity-50 cursor-not-allowed',
-                    selectedMethod === method.id && 'border-primary bg-primary/5'
-                  )}
-                  onClick={() => method.available && handleMethodSelect(method.id)}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{method.icon}</span>
-                      <div>
-                        <p className="font-semibold">{method.name}</p>
-                        <p className="text-xs text-muted-foreground">{method.description}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {method.currencies && (
-                        <div className="flex gap-1">
-                          {method.currencies.slice(0, 3).map((curr) => (
-                            <Badge key={curr} variant="secondary" className="text-xs">
-                              {curr}
-                            </Badge>
-                          ))}
-                          {method.currencies.length > 3 && (
-                            <Badge variant="secondary" className="text-xs">
-                              +{method.currencies.length - 3}
-                            </Badge>
-                          )}
-                        </div>
-                      )}
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {/* Step: Select Currency */}
-          {step === 'currency' && selectedMethodInfo?.currencies && (
-            <div className="space-y-2">
-              <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
-                ← Back
-              </Button>
-              <p className="text-sm text-muted-foreground mb-3">Select Currency:</p>
-              <div className="grid grid-cols-3 gap-2">
-                {selectedMethodInfo.currencies.map((currency) => (
-                  <Card
-                    key={currency}
-                    className={cn(
-                      'p-3 cursor-pointer text-center transition-all hover:border-primary/50',
-                      selectedCurrency === currency && 'border-primary bg-primary/5'
-                    )}
-                    onClick={() => handleCurrencySelect(currency)}
-                  >
-                    <p className="font-bold">{currency}</p>
-                  </Card>
-                ))}
+          {/* Payment Method */}
+          <Card className="p-4 bg-secondary/30">
+            <div className="flex items-center gap-3 mb-4">
+              <span className="text-3xl">💎</span>
+              <div>
+                <p className="font-semibold">TON Connect</p>
+                <p className="text-xs text-muted-foreground">ادفع باستخدام محفظة TON</p>
               </div>
             </div>
-          )}
 
-          {/* Step: Confirm Payment */}
-          {step === 'confirm' && (
-            <div className="space-y-4">
-              <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2">
-                ← Back
-              </Button>
-
-              <Card className="p-4 bg-secondary/30">
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-3xl">{selectedMethodInfo?.icon}</span>
-                  <div>
-                    <p className="font-semibold">{selectedMethodInfo?.name}</p>
-                    <Badge variant="outline">{selectedCurrency}</Badge>
-                  </div>
-                </div>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Amount:</span>
-                    <span className="font-bold">${amount}</span>
-                  </div>
-                  {credits && (
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Credits:</span>
-                      <span className="font-bold">{credits} points</span>
-                    </div>
-                  )}
-                </div>
-              </Card>
-
-              {/* MetaMask Connection Status */}
-              {selectedMethod === 'metamask' && (
-                <div className="p-3 bg-secondary/30 rounded-lg">
-                  {metaMaskWallet.isConnected ? (
-                    <div className="flex items-center gap-2 text-green-500">
-                      <Check className="w-4 h-4" />
-                      <span className="text-sm">
-                        Connected: {metaMaskWallet.address?.slice(0, 8)}...{metaMaskWallet.address?.slice(-6)}
-                      </span>
-                    </div>
-                  ) : (
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={metaMaskWallet.connect}
-                      className="w-full"
-                    >
-                      <span className="mr-2">🦊</span>
-                      Connect MetaMask
-                    </Button>
-                  )}
-                </div>
-              )}
-
-              <Button
-                className="w-full"
-                size="lg"
-                onClick={handlePayment}
-                disabled={isProcessing || (selectedMethod === 'metamask' && !metaMaskWallet.isConnected)}
+            {/* Wallet Status */}
+            {isWalletConnected ? (
+              <div className="flex items-center gap-2 text-green-500 mb-3">
+                <Check className="w-4 h-4" />
+                <span className="text-sm">المحفظة متصلة</span>
+              </div>
+            ) : (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleConnectWallet}
+                className="w-full mb-3"
               >
-                {isProcessing ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    {selectedMethod === 'nowpayments' && <ExternalLink className="w-4 h-4 mr-2" />}
-                    Confirm Payment
-                  </>
-                )}
+                <span className="mr-2">💎</span>
+                ربط محفظة TON
               </Button>
-            </div>
-          )}
+            )}
+
+            {/* Destination Address */}
+            {destinationAddress && (
+              <div className="p-2 bg-background/50 rounded-lg">
+                <p className="text-xs text-muted-foreground mb-1">عنوان الاستلام:</p>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs flex-1 truncate">{destinationAddress}</code>
+                  <Button size="sm" variant="ghost" onClick={handleCopyAddress}>
+                    {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Card>
+
+          {/* Confirm Button */}
+          <Button
+            className="w-full"
+            size="lg"
+            onClick={handlePayment}
+            disabled={isProcessing || !isWalletConnected}
+          >
+            {isProcessing ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                جاري المعالجة...
+              </>
+            ) : !isWalletConnected ? (
+              'يرجى ربط المحفظة أولاً'
+            ) : (
+              <>
+                💎 تأكيد الدفع - {amount} TON
+              </>
+            )}
+          </Button>
+
+          <p className="text-xs text-center text-muted-foreground">
+            سيتم تأكيد الدفع تلقائياً بعد إتمام المعاملة
+          </p>
         </div>
       </DialogContent>
     </Dialog>

@@ -33,14 +33,27 @@ export const useDirectTonPayment = () => {
       return false;
     }
 
-    // Use provided userId, telegram ID, or wallet address as fallback
-    const userId = params.userId 
-      || telegramUser?.id?.toString() 
-      || wallet.account.address.slice(0, 32);
-    
     setIsProcessing(true);
     
     try {
+      // Get the bolt_users id using telegram_id
+      let boltUserId: string | null = null;
+      
+      if (telegramUser?.id) {
+        const { data: boltUser } = await supabase
+          .from('bolt_users')
+          .select('id')
+          .eq('telegram_id', telegramUser.id)
+          .maybeSingle();
+        
+        if (boltUser) {
+          boltUserId = boltUser.id;
+        }
+      }
+
+      // Use bolt_users.id if available, otherwise use wallet address
+      const userId = boltUserId || params.userId || wallet.account.address.slice(0, 32);
+      
       const amountNano = Math.floor(params.amount * 1e9);
 
       if (amountNano <= 0) {
@@ -65,7 +78,7 @@ export const useDirectTonPayment = () => {
             credits: params.credits,
             server_name: params.serverName,
             upgrade_type: params.upgradeType,
-            has_bolt_user: !!params.userId
+            bolt_user_id: boltUserId
           }
         })
         .select()

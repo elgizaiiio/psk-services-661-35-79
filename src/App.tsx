@@ -78,6 +78,23 @@ function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (webApp) {
+      // Enable full screen mode automatically
+      try {
+        webApp.expand();
+        // Use optional chaining for methods that might not exist
+        if ('requestFullscreen' in webApp) {
+          (webApp as any).requestFullscreen?.();
+        }
+        if ('enableClosingConfirmation' in webApp) {
+          (webApp as any).enableClosingConfirmation?.();
+        }
+        if ('disableVerticalSwipes' in webApp) {
+          (webApp as any).disableVerticalSwipes?.();
+        }
+      } catch (e) {
+        console.log('Telegram WebApp expand/fullscreen not available:', e);
+      }
+
       if (webApp.viewportHeight) {
         document.documentElement.style.setProperty(
           '--tg-viewport-height', 

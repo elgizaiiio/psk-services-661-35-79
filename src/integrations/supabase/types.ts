@@ -62,6 +62,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_task_creation_state: {
+        Row: {
+          created_at: string | null
+          id: string
+          step: string
+          task_image: string | null
+          task_title: string | null
+          task_url: string | null
+          telegram_id: number
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          step?: string
+          task_image?: string | null
+          task_title?: string | null
+          task_url?: string | null
+          telegram_id: number
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          step?: string
+          task_image?: string | null
+          task_title?: string | null
+          task_url?: string | null
+          telegram_id?: number
+        }
+        Relationships: []
+      }
       bolt_completed_tasks: {
         Row: {
           completed_at: string
