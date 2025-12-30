@@ -7,6 +7,50 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-nowpayments-sig',
 };
 
+const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+
+async function sendTelegramNotification(telegramId: number, text: string): Promise<boolean> {
+  if (!TELEGRAM_BOT_TOKEN) {
+    console.log('TELEGRAM_BOT_TOKEN not configured, skipping notification');
+    return false;
+  }
+
+  try {
+    const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+    
+    const body = {
+      chat_id: telegramId,
+      text: text,
+      parse_mode: 'HTML',
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+
+    const result = await response.json();
+    console.log('Telegram notification sent:', result.ok);
+    return result.ok;
+  } catch (error) {
+    console.error('Error sending Telegram notification:', error);
+    return false;
+  }
+}
+
+// Helper function to sort object keys for signature verification
+function sortObject(obj: Record<string, unknown>): Record<string, unknown> {
+  return Object.keys(obj)
+    .sort()
+    .reduce((result: Record<string, unknown>, key: string) => {
+      result[key] = obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key])
+        ? sortObject(obj[key] as Record<string, unknown>)
+        : obj[key];
+      return result;
+    }, {});
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -46,10 +90,10 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Find the payment by nowpayments_id or order_id
+    // Find the payment by nowpayments_id or order_id with user data
     const { data: payment, error: findError } = await supabase
       .from('ton_payments')
-      .select('*')
+      .select('*, bolt_users!ton_payments_user_id_fkey(telegram_id, first_name)')
       .or(`nowpayments_id.eq.${payment_id},metadata->>order_id.eq.${order_id}`)
       .single();
 
@@ -91,6 +135,31 @@ serve(async (req) => {
       console.error('Error updating payment:', updateError);
     }
 
+    // Send Telegram notification based on payment status
+    if (payment.bolt_users?.telegram_id) {
+      const telegramId = payment.bolt_users.telegram_id;
+      const productName = payment.product_type?.replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase()) || 'Product';
+      
+      if (newStatus === 'confirmed') {
+        const notificationMessage = `✅ <b>Payment Confirmed!</b>
+
+📦 Product: <b>${productName}</b>
+💰 Amount: <b>${actually_paid || payment.amount_ton} ${pay_currency || 'TON'}</b>
+
+Thank you for your purchase! 🙏`;
+
+        sendTelegramNotification(telegramId, notificationMessage);
+      } else if (newStatus === 'failed') {
+        const notificationMessage = `❌ <b>Payment Failed</b>
+
+📦 Product: <b>${productName}</b>
+
+Your payment could not be processed. Please try again or contact support.`;
+
+        sendTelegramNotification(telegramId, notificationMessage);
+      }
+    }
+
     // If payment confirmed, credit the user
     if (newStatus === 'confirmed' && payment.product_type === 'ai_credits') {
       const credits = payment.metadata?.credits || 100;
@@ -114,15 +183,3 @@ serve(async (req) => {
     );
   }
 });
-
-// Helper function to sort object keys for signature verification
-function sortObject(obj: Record<string, unknown>): Record<string, unknown> {
-  return Object.keys(obj)
-    .sort()
-    .reduce((result: Record<string, unknown>, key: string) => {
-      result[key] = obj[key] && typeof obj[key] === 'object' && !Array.isArray(obj[key])
-        ? sortObject(obj[key] as Record<string, unknown>)
-        : obj[key];
-      return result;
-    }, {});
-}
