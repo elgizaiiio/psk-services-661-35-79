@@ -6,12 +6,13 @@ import { useViralMining } from '@/hooks/useViralMining';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Gift, Zap, Ticket, Sparkles, X, Star, Crown } from 'lucide-react';
+import { Loader2, Gift, Zap, Ticket, Sparkles, X, Crown, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PageWrapper, StaggerContainer, FadeUp } from '@/components/ui/motion-wrapper';
+import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
 interface SpinReward {
   id: string;
@@ -19,7 +20,6 @@ interface SpinReward {
   type: 'bolt' | 'ton' | 'usdt' | 'booster' | 'nothing';
   value: number;
   probability: number;
-  color: string;
 }
 
 interface TicketPackage {
@@ -31,52 +31,52 @@ interface TicketPackage {
 
 // Normal Wheel Rewards
 const NORMAL_REWARDS: SpinReward[] = [
-  { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 35, color: '#FFB347' },
-  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 28, color: '#6B7280' },
-  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 18, color: '#FFD180' },
-  { id: 'bolt_200', label: '200', type: 'bolt', value: 200, probability: 10, color: '#FFAB76' },
-  { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 5, color: '#BB8FCE' },
-  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 2, color: '#7EC8E3' },
-  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 1.5, color: '#7ED9A6' },
-  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 0.3, color: '#5DADE2' },
-  { id: 'usdt_5', label: '5', type: 'usdt', value: 5, probability: 0.2, color: '#58D68D' },
+  { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 35 },
+  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 28 },
+  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 18 },
+  { id: 'bolt_200', label: '200', type: 'bolt', value: 200, probability: 10 },
+  { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 5 },
+  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 2 },
+  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 1.5 },
+  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 0.3 },
+  { id: 'usdt_5', label: '5', type: 'usdt', value: 5, probability: 0.2 },
 ];
 
 // PRO Wheel Rewards
 const PRO_REWARDS: SpinReward[] = [
-  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 25, color: '#FFB347' },
-  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 20, color: '#6B7280' },
-  { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 15, color: '#FFD180' },
-  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 10, color: '#FFAB76' },
-  { id: 'mining_x2_48', label: '2x 48h', type: 'booster', value: 48, probability: 8, color: '#BB8FCE' },
-  { id: 'ton_3_pro', label: '3', type: 'ton', value: 3, probability: 7, color: '#7EC8E3' },
-  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 5, color: '#7ED9A6' },
-  { id: 'ton_5_pro', label: '5', type: 'ton', value: 5, probability: 4, color: '#5DADE2' },
-  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 3, color: '#58D68D' },
-  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 2, color: '#3498DB' },
-  { id: 'usdt_25', label: '25', type: 'usdt', value: 25, probability: 0.7, color: '#27AE60' },
-  { id: 'ton_25', label: '25', type: 'ton', value: 25, probability: 0.3, color: '#2980B9' },
+  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 25 },
+  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 20 },
+  { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 15 },
+  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 10 },
+  { id: 'mining_x2_48', label: '2x 48h', type: 'booster', value: 48, probability: 8 },
+  { id: 'ton_3_pro', label: '3', type: 'ton', value: 3, probability: 7 },
+  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 5 },
+  { id: 'ton_5_pro', label: '5', type: 'ton', value: 5, probability: 4 },
+  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 3 },
+  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 2 },
+  { id: 'usdt_25', label: '25', type: 'usdt', value: 25, probability: 0.7 },
+  { id: 'ton_25', label: '25', type: 'ton', value: 25, probability: 0.3 },
 ];
 
-// Normal Ticket Packages
+// Normal Ticket Packages - Increased prices
 const NORMAL_PACKAGES: TicketPackage[] = [
-  { id: 'normal_3', tickets: 3, priceTon: 0.1, priceStars: 8 },
-  { id: 'normal_5', tickets: 5, priceTon: 0.2, priceStars: 16 },
-  { id: 'normal_10', tickets: 10, priceTon: 0.35, priceStars: 28 },
-  { id: 'normal_25', tickets: 25, priceTon: 0.7, priceStars: 56 },
+  { id: 'normal_3', tickets: 3, priceTon: 0.15, priceStars: 12 },
+  { id: 'normal_5', tickets: 5, priceTon: 0.25, priceStars: 20 },
+  { id: 'normal_10', tickets: 10, priceTon: 0.45, priceStars: 36 },
+  { id: 'normal_25', tickets: 25, priceTon: 1.0, priceStars: 80 },
 ];
 
-// PRO Ticket Packages
+// PRO Ticket Packages - Increased prices
 const PRO_PACKAGES: TicketPackage[] = [
-  { id: 'pro_3', tickets: 3, priceTon: 0.3, priceStars: 24 },
-  { id: 'pro_5', tickets: 5, priceTon: 0.5, priceStars: 40 },
-  { id: 'pro_10', tickets: 10, priceTon: 0.8, priceStars: 64 },
-  { id: 'pro_25', tickets: 25, priceTon: 1.5, priceStars: 120 },
+  { id: 'pro_3', tickets: 3, priceTon: 0.4, priceStars: 32 },
+  { id: 'pro_5', tickets: 5, priceTon: 0.65, priceStars: 52 },
+  { id: 'pro_10', tickets: 10, priceTon: 1.2, priceStars: 96 },
+  { id: 'pro_25', tickets: 25, priceTon: 2.5, priceStars: 200 },
 ];
 
-// Discount configuration
-const DISCOUNT_PERCENT = 30;
-const DISCOUNT_END_DATE = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days from now
+// Wheel colors - 2 colors each
+const NORMAL_COLORS = ['#3B82F6', '#1E40AF']; // Blue shades
+const PRO_COLORS = ['#F59E0B', '#D97706']; // Amber/Gold shades
 
 const Spin: React.FC = () => {
   const { user: tgUser, hapticFeedback } = useTelegramAuth();
@@ -92,33 +92,13 @@ const Spin: React.FC = () => {
   const [freeTicketAvailable, setFreeTicketAvailable] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<TicketPackage | null>(null);
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0 });
+  const [showPackagesSheet, setShowPackagesSheet] = useState(false);
 
   const rewards = wheelType === 'normal' ? NORMAL_REWARDS : PRO_REWARDS;
   const packages = wheelType === 'normal' ? NORMAL_PACKAGES : PRO_PACKAGES;
+  const wheelColors = wheelType === 'normal' ? NORMAL_COLORS : PRO_COLORS;
   const currentTickets = wheelType === 'normal' ? normalTickets : proTickets;
   const segmentAngle = 360 / rewards.length;
-
-  // Countdown timer
-  useEffect(() => {
-    const updateCountdown = () => {
-      const now = new Date().getTime();
-      const end = DISCOUNT_END_DATE.getTime();
-      const diff = end - now;
-
-      if (diff > 0) {
-        setTimeLeft({
-          days: Math.floor(diff / (1000 * 60 * 60 * 24)),
-          hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-          minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
-        });
-      }
-    };
-
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 60000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Load user tickets
   const loadTickets = useCallback(async () => {
@@ -206,7 +186,7 @@ const Spin: React.FC = () => {
     }
   };
 
-  // Claim free daily ticket
+  // Claim free daily ticket (Normal only)
   const claimFreeTicket = async () => {
     if (!user?.id || !freeTicketAvailable) return;
 
@@ -275,6 +255,7 @@ const Spin: React.FC = () => {
   // Handle package purchase
   const handleBuyPackage = (pkg: TicketPackage) => {
     setSelectedPackage(pkg);
+    setShowPackagesSheet(false);
     setShowPaymentModal(true);
   };
 
@@ -290,14 +271,6 @@ const Spin: React.FC = () => {
     setSelectedPackage(null);
   };
 
-  const getDiscountedPrice = (price: number) => {
-    return Math.round(price * (100 - DISCOUNT_PERCENT) / 100 * 100) / 100;
-  };
-
-  const getDiscountedStars = (stars: number) => {
-    return Math.ceil(stars * (100 - DISCOUNT_PERCENT) / 100);
-  };
-
   if (miningLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -309,87 +282,66 @@ const Spin: React.FC = () => {
   }
 
   return (
-    <PageWrapper className="min-h-screen bg-background pb-28">
+    <PageWrapper className="min-h-screen bg-background pb-24">
       <Helmet><title>Lucky Spin</title></Helmet>
       
-      <div className="max-w-md mx-auto px-4 pt-12">
-        <StaggerContainer className="space-y-4">
+      <div className="max-w-md mx-auto px-4 pt-4">
+        <div className="space-y-3">
 
-          {/* Discount Banner - Clean & Simple */}
+          {/* Header with Tickets Count */}
           <FadeUp>
-            <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
-              <Star className="w-4 h-4 text-amber-500" fill="currentColor" />
-              <span className="text-sm font-medium text-amber-500">{DISCOUNT_PERCENT}% OFF</span>
-              <span className="text-xs text-muted-foreground">•</span>
-              <span className="text-xs text-muted-foreground">
-                {timeLeft.days}d {timeLeft.hours}h left
-              </span>
+            <div className="flex items-center justify-between">
+              <h1 className="text-lg font-bold text-foreground">Lucky Spin</h1>
+              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${
+                wheelType === 'pro' 
+                  ? 'bg-amber-500/20 text-amber-500' 
+                  : 'bg-primary/20 text-primary'
+              }`}>
+                <Ticket className="w-4 h-4" />
+                <span>{currentTickets}</span>
+              </div>
             </div>
           </FadeUp>
 
           {/* Wheel Type Tabs */}
           <FadeUp>
             <Tabs value={wheelType} onValueChange={(v) => setWheelType(v as 'normal' | 'pro')} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 h-12">
-                <TabsTrigger value="normal" className="text-sm font-medium">
-                  <Sparkles className="w-4 h-4 mr-2" />
+              <TabsList className="grid w-full grid-cols-2 h-10">
+                <TabsTrigger value="normal" className="text-sm font-medium gap-1.5">
+                  <Sparkles className="w-4 h-4" />
                   Normal
                 </TabsTrigger>
-                <TabsTrigger value="pro" className="text-sm font-medium">
-                  <Crown className="w-4 h-4 mr-2" />
+                <TabsTrigger value="pro" className="text-sm font-medium gap-1.5">
+                  <Crown className="w-4 h-4" />
                   PRO
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </FadeUp>
 
-          {/* Tickets Display */}
+          {/* Spin Wheel - Larger */}
           <FadeUp>
-            <div className="flex items-center justify-center gap-4">
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${
-                wheelType === 'normal' 
-                  ? 'bg-card border-primary/30' 
-                  : 'bg-card/50 border-border'
-              }`}>
-                <Ticket className="w-4 h-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">{normalTickets}</span>
-                <span className="text-xs text-muted-foreground">Normal</span>
-              </div>
-              <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border ${
-                wheelType === 'pro' 
-                  ? 'bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30' 
-                  : 'bg-card/50 border-border'
-              }`}>
-                <Crown className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-medium text-foreground">{proTickets}</span>
-                <span className="text-xs text-muted-foreground">PRO</span>
-              </div>
-            </div>
-          </FadeUp>
-
-          {/* Spin Wheel */}
-          <FadeUp>
-            <div className="relative flex items-center justify-center py-4">
+            <div className="relative flex items-center justify-center py-2">
               {/* Pointer */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">
-                <div className={`w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent ${
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
+                <div className={`w-0 h-0 border-l-[14px] border-r-[14px] border-t-[24px] border-l-transparent border-r-transparent ${
                   wheelType === 'pro' ? 'border-t-amber-500' : 'border-t-primary'
                 } drop-shadow-lg`} />
               </div>
 
-              {/* Wheel Container */}
-              <div className="relative w-[260px] h-[260px]">
+              {/* Wheel Container - Bigger */}
+              <div className="relative w-[300px] h-[300px]">
                 <motion.div
                   className="relative w-full h-full rounded-full shadow-2xl"
                   style={{ 
                     boxShadow: wheelType === 'pro'
-                      ? '0 0 0 5px rgb(245 158 11), 0 0 30px rgba(245, 158, 11, 0.4)'
-                      : '0 0 0 5px hsl(var(--primary)), 0 0 25px hsl(var(--primary)/0.3)'
+                      ? '0 0 0 6px rgb(245 158 11), 0 0 40px rgba(245, 158, 11, 0.4)'
+                      : '0 0 0 6px hsl(var(--primary)), 0 0 30px hsl(var(--primary)/0.3)'
                   }}
                   animate={{ rotate: rotation }}
                   transition={{ duration: 5, ease: [0.17, 0.67, 0.12, 0.99] }}
                 >
-                  {/* SVG Segments */}
+                  {/* SVG Segments - 2 alternating colors */}
                   <svg viewBox="0 0 100 100" className="w-full h-full rounded-full overflow-hidden">
                     {rewards.map((reward, index) => {
                       const startAngle = index * segmentAngle;
@@ -402,13 +354,16 @@ const Spin: React.FC = () => {
                       const y2 = 50 + 50 * Math.sin(endRad);
                       const largeArc = segmentAngle > 180 ? 1 : 0;
                       
+                      // Alternate between 2 colors
+                      const color = wheelColors[index % 2];
+                      
                       return (
                         <path
                           key={reward.id}
                           d={`M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArc} 1 ${x2} ${y2} Z`}
-                          fill={reward.color}
-                          stroke="rgba(255,255,255,0.2)"
-                          strokeWidth="0.5"
+                          fill={color}
+                          stroke="rgba(255,255,255,0.15)"
+                          strokeWidth="0.3"
                         />
                       );
                     })}
@@ -417,9 +372,9 @@ const Spin: React.FC = () => {
                   {/* Icons overlay */}
                   {rewards.map((reward, index) => {
                     const midAngle = (index * segmentAngle + segmentAngle / 2 - 90) * (Math.PI / 180);
-                    const radius = 90;
-                    const x = 50 + (radius / 2.8) * Math.cos(midAngle);
-                    const y = 50 + (radius / 2.8) * Math.sin(midAngle);
+                    const radius = 85;
+                    const x = 50 + (radius / 2.6) * Math.cos(midAngle);
+                    const y = 50 + (radius / 2.6) * Math.sin(midAngle);
                     const rot = index * segmentAngle + segmentAngle / 2;
                     
                     return (
@@ -433,27 +388,27 @@ const Spin: React.FC = () => {
                         }}
                       >
                         <div className="w-5 h-5 flex items-center justify-center">
-                          {reward.type === 'bolt' && <BoltIcon size={16} />}
-                          {reward.type === 'ton' && <TonIcon size={16} />}
-                          {reward.type === 'usdt' && <UsdtIcon size={16} />}
+                          {reward.type === 'bolt' && <BoltIcon size={18} />}
+                          {reward.type === 'ton' && <TonIcon size={18} />}
+                          {reward.type === 'usdt' && <UsdtIcon size={18} />}
                           {reward.type === 'booster' && <Zap className="w-4 h-4 text-white" />}
                           {reward.type === 'nothing' && <X className="w-4 h-4 text-white/70" />}
                         </div>
-                        <span className="text-[9px] font-bold text-white drop-shadow-md">{reward.label}</span>
+                        <span className="text-[10px] font-bold text-white drop-shadow-md">{reward.label}</span>
                       </div>
                     );
                   })}
 
                   {/* Center */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className={`w-11 h-11 rounded-full border-4 flex items-center justify-center shadow-xl ${
+                    <div className={`w-12 h-12 rounded-full border-4 flex items-center justify-center shadow-xl ${
                       wheelType === 'pro'
                         ? 'bg-gradient-to-br from-amber-500 to-orange-500 border-amber-300'
-                        : 'bg-background border-primary'
+                        : 'bg-gradient-to-br from-blue-500 to-blue-700 border-blue-300'
                     }`}>
                       {wheelType === 'pro' 
                         ? <Crown className="w-5 h-5 text-white" />
-                        : <Sparkles className="w-5 h-5 text-primary" />
+                        : <Sparkles className="w-5 h-5 text-white" />
                       }
                     </div>
                   </div>
@@ -469,7 +424,7 @@ const Spin: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.8, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.8, y: -20 }}
-                className={`p-4 rounded-xl text-center ${
+                className={`p-3 rounded-xl text-center ${
                   result.type !== 'nothing' 
                     ? wheelType === 'pro'
                       ? 'bg-amber-500/10 border border-amber-500/30'
@@ -477,13 +432,13 @@ const Spin: React.FC = () => {
                     : 'bg-muted border border-border'
                 }`}
               >
-                <div className="flex items-center justify-center gap-2 mb-1">
+                <div className="flex items-center justify-center gap-2">
                   {result.type === 'bolt' && <BoltIcon size={20} />}
                   {result.type === 'ton' && <TonIcon size={20} />}
                   {result.type === 'usdt' && <UsdtIcon size={20} />}
                   {result.type === 'booster' && <Zap className="w-5 h-5 text-purple-500" />}
                   {result.type === 'nothing' && <X className="w-5 h-5 text-muted-foreground" />}
-                  <span className={`text-xl font-bold ${
+                  <span className={`text-lg font-bold ${
                     result.type !== 'nothing' 
                       ? wheelType === 'pro' ? 'text-amber-500' : 'text-primary' 
                       : 'text-muted-foreground'
@@ -494,9 +449,6 @@ const Spin: React.FC = () => {
                      result.type === 'booster' ? `2x Boost ${result.value}h` : 'Try Again'}
                   </span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  {result.type !== 'nothing' ? 'Congratulations!' : 'Better luck next time!'}
-                </p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -506,7 +458,7 @@ const Spin: React.FC = () => {
             <Button
               onClick={handleSpin}
               disabled={isSpinning || currentTickets <= 0}
-              className={`w-full h-14 text-lg font-bold rounded-xl ${
+              className={`w-full h-12 text-base font-bold rounded-xl ${
                 wheelType === 'pro' 
                   ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white' 
                   : ''
@@ -529,65 +481,83 @@ const Spin: React.FC = () => {
             </Button>
           </FadeUp>
 
-          {/* Free Ticket Button */}
+          {/* Action Buttons */}
           <FadeUp>
-            <Button
-              onClick={claimFreeTicket}
-              disabled={!freeTicketAvailable}
-              variant={freeTicketAvailable ? "default" : "secondary"}
-              className="w-full h-11"
-            >
-              <Gift className="w-5 h-5 mr-2" />
-              {freeTicketAvailable ? 'Claim Free Ticket' : 'Free Ticket Claimed'}
-            </Button>
-          </FadeUp>
-
-          {/* Ticket Packages */}
-          <FadeUp>
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-center text-muted-foreground">
-                {wheelType === 'normal' ? 'Normal' : 'PRO'} Ticket Packages
-              </h3>
-              <div className="grid grid-cols-2 gap-2">
-                {packages.map((pkg) => (
-                  <button
-                    key={pkg.id}
-                    onClick={() => handleBuyPackage(pkg)}
-                    className={`relative p-3 rounded-xl border transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                      wheelType === 'pro'
-                        ? 'bg-gradient-to-br from-amber-500/5 to-orange-500/5 border-amber-500/20 hover:border-amber-500/40'
-                        : 'bg-card border-border hover:border-primary/40'
-                    }`}
+            <div className={`grid gap-2 ${wheelType === 'normal' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+              {/* Free Ticket - Normal only */}
+              {wheelType === 'normal' && (
+                <Button
+                  onClick={claimFreeTicket}
+                  disabled={!freeTicketAvailable}
+                  variant={freeTicketAvailable ? "default" : "secondary"}
+                  className="h-10"
+                >
+                  <Gift className="w-4 h-4 mr-2" />
+                  {freeTicketAvailable ? 'Free Ticket' : 'Claimed'}
+                </Button>
+              )}
+              
+              {/* Buy Tickets - Opens Sheet */}
+              <Sheet open={showPackagesSheet} onOpenChange={setShowPackagesSheet}>
+                <SheetTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={`h-10 ${wheelType === 'pro' ? 'border-amber-500/30 hover:bg-amber-500/10' : ''}`}
                   >
-                    {/* Discount Badge */}
-                    <div className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-red-500 text-[10px] font-bold text-white">
-                      -{DISCOUNT_PERCENT}%
-                    </div>
-                    
-                    <div className="flex flex-col items-center gap-1">
-                      <div className="flex items-center gap-1">
-                        <Ticket className={`w-4 h-4 ${wheelType === 'pro' ? 'text-amber-500' : 'text-primary'}`} />
-                        <span className="text-lg font-bold text-foreground">{pkg.tickets}</span>
-                      </div>
-                      <div className="flex flex-col items-center">
-                        <div className="flex items-center gap-1">
-                          <TonIcon size={12} />
-                          <span className="text-xs line-through text-muted-foreground">{pkg.priceTon}</span>
-                          <span className="text-sm font-semibold text-foreground">{getDiscountedPrice(pkg.priceTon)}</span>
+                    <ShoppingCart className="w-4 h-4 mr-2" />
+                    Buy Tickets
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="rounded-t-2xl">
+                  <SheetHeader>
+                    <SheetTitle className="flex items-center justify-center gap-2">
+                      {wheelType === 'pro' ? (
+                        <>
+                          <Crown className="w-5 h-5 text-amber-500" />
+                          <span>PRO Ticket Packages</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-5 h-5 text-primary" />
+                          <span>Normal Ticket Packages</span>
+                        </>
+                      )}
+                    </SheetTitle>
+                  </SheetHeader>
+                  <div className="grid grid-cols-2 gap-3 py-4">
+                    {packages.map((pkg) => (
+                      <button
+                        key={pkg.id}
+                        onClick={() => handleBuyPackage(pkg)}
+                        className={`p-4 rounded-xl border transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                          wheelType === 'pro'
+                            ? 'bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-500/50'
+                            : 'bg-card border-border hover:border-primary/50'
+                        }`}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <div className="flex items-center gap-1">
+                            <Ticket className={`w-5 h-5 ${wheelType === 'pro' ? 'text-amber-500' : 'text-primary'}`} />
+                            <span className="text-xl font-bold text-foreground">{pkg.tickets}</span>
+                          </div>
+                          <div className="flex flex-col items-center gap-0.5">
+                            <div className="flex items-center gap-1">
+                              <TonIcon size={14} />
+                              <span className="text-sm font-semibold text-foreground">{pkg.priceTon} TON</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              or {pkg.priceStars} Stars
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Star className="w-3 h-3" />
-                          <span className="text-[10px] line-through">{pkg.priceStars}</span>
-                          <span className="text-xs font-medium">{getDiscountedStars(pkg.priceStars)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+                      </button>
+                    ))}
+                  </div>
+                </SheetContent>
+              </Sheet>
             </div>
           </FadeUp>
-        </StaggerContainer>
+        </div>
       </div>
 
       {/* Payment Modal */}
@@ -598,11 +568,11 @@ const Spin: React.FC = () => {
             setShowPaymentModal(false);
             setSelectedPackage(null);
           }}
-          amount={getDiscountedPrice(selectedPackage.priceTon)}
+          amount={selectedPackage.priceTon}
           description={`${selectedPackage.tickets} ${wheelType === 'pro' ? 'PRO ' : ''}Spin Tickets`}
           productType="spin_tickets"
           credits={selectedPackage.tickets}
-          starsOverride={getDiscountedStars(selectedPackage.priceStars)}
+          starsOverride={selectedPackage.priceStars}
           onSuccess={handlePurchaseSuccess}
         />
       )}
