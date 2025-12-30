@@ -2,6 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Achievement, UserAchievement } from '@/types/mining';
 import { toast } from 'sonner';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('Achievements');
+
+interface UserData {
+  token_balance: number;
+}
 
 export const useAchievements = (userId: string | undefined) => {
   const [achievements, setAchievements] = useState<Achievement[]>([]);
@@ -19,7 +26,7 @@ export const useAchievements = (userId: string | undefined) => {
       if (error) throw error;
       setAchievements(data as Achievement[] || []);
     } catch (error) {
-      console.error('Error fetching achievements:', error);
+      logger.error('Error fetching achievements', error);
     }
   }, []);
 
@@ -42,11 +49,11 @@ export const useAchievements = (userId: string | undefined) => {
         achievement: ua.achievement as Achievement
       })) as UserAchievement[]);
     } catch (error) {
-      console.error('Error fetching user achievements:', error);
+      logger.error('Error fetching user achievements', error);
     }
   }, [userId]);
 
-  const updateProgress = async (achievementId: string, value: number) => {
+  const updateProgress = async (achievementId: string, value: number): Promise<boolean> => {
     if (!userId) return false;
 
     try {
@@ -54,7 +61,6 @@ export const useAchievements = (userId: string | undefined) => {
       const achievement = achievements.find(a => a.id === achievementId);
       if (!achievement) return false;
 
-      // Create user achievement if doesn't exist
       if (!userAchievement) {
         const { data, error } = await supabase
           .from('user_achievements')
@@ -85,17 +91,18 @@ export const useAchievements = (userId: string | undefined) => {
       if (error) throw error;
 
       if (unlocked && !userAchievement.unlocked && achievement.reward_tokens > 0) {
-        // Award tokens
         const { data: userData } = await supabase
           .from('bolt_users')
           .select('token_balance')
           .eq('id', userId)
           .single();
 
+        const typedUserData = userData as unknown as UserData | null;
+        
         await supabase
           .from('bolt_users')
           .update({ 
-            token_balance: (userData?.token_balance || 0) + achievement.reward_tokens 
+            token_balance: (typedUserData?.token_balance || 0) + achievement.reward_tokens 
           })
           .eq('id', userId);
 
@@ -105,7 +112,7 @@ export const useAchievements = (userId: string | undefined) => {
       await fetchUserAchievements();
       return true;
     } catch (error) {
-      console.error('Error updating achievement progress:', error);
+      logger.error('Error updating achievement progress', error);
       return false;
     }
   };

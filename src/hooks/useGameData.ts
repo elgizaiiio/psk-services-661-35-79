@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from './useTelegramAuth';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('GameData');
 
 interface GamePlayer {
   id: string;
@@ -46,39 +49,37 @@ export const useGameData = () => {
     if (!telegramUser) return;
 
     try {
-      let { data: existingPlayer, error: fetchError } = await supabase
-        .from('game_players' as any)
+      const { data: existingPlayer, error: fetchError } = await supabase
+        .from('game_players')
         .select('*')
-        .eq('telegram_id', telegramUser.id)
+        .eq('user_id', String(telegramUser.id))
         .maybeSingle();
 
-      if (fetchError && (fetchError as any).code !== 'PGRST116') {
+      if (fetchError && fetchError.code !== 'PGRST116') {
         throw fetchError;
       }
 
       if (!existingPlayer) {
         const { data: newPlayer, error: createError } = await supabase
-          .from('game_players' as any)
+          .from('game_players')
           .insert({
-            telegram_id: telegramUser.id,
+            user_id: String(telegramUser.id),
             username: telegramUser.username || telegramUser.first_name,
             coins: 0,
-            energy: 5,
-            max_energy: 5,
-            energy_refill_rate_minutes: 10,
-            current_skin: 'classic'
+            current_skin: 'default'
           })
           .select()
           .single();
 
         if (createError) throw createError;
-        existingPlayer = newPlayer;
+        setPlayer(newPlayer as unknown as GamePlayer);
+      } else {
+        setPlayer(existingPlayer as unknown as GamePlayer);
       }
-
-      setPlayer(existingPlayer as unknown as GamePlayer);
-    } catch (err: any) {
-      console.error('Error initializing player:', err);
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logger.error('Error initializing player', err);
+      setError(errorMessage);
     }
   }, [telegramUser]);
 
@@ -86,32 +87,32 @@ export const useGameData = () => {
     if (!player) return;
 
     try {
-      const { data, error } = await supabase
-        .from('game_scores' as any)
+      const { data, error: fetchError } = await supabase
+        .from('game_scores')
         .select('*')
-        .eq('player_id', player.id)
+        .eq('user_id', player.user_id || '')
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       setScores((data || []) as unknown as GameScore[]);
-    } catch (err: any) {
-      console.error('Error loading scores:', err);
+    } catch (err) {
+      logger.error('Error loading scores', err);
     }
   }, [player]);
 
   const loadSkins = useCallback(async () => {
     try {
-      const { data, error } = await supabase
-        .from('game_skins' as any)
+      const { data, error: fetchError } = await supabase
+        .from('game_skins')
         .select('*')
         .eq('is_active', true)
-        .order('price_ton', { ascending: true });
+        .order('price_coins', { ascending: true });
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
       setSkins((data || []) as unknown as GameSkin[]);
-    } catch (err: any) {
-      console.error('Error loading skins:', err);
+    } catch (err) {
+      logger.error('Error loading skins', err);
     }
   }, []);
 
@@ -119,17 +120,17 @@ export const useGameData = () => {
     if (!player) throw new Error('Player not found');
 
     try {
-      const { error } = await supabase
-        .from('game_scores' as any)
+      const { error: insertError } = await supabase
+        .from('game_scores')
         .insert({
-          player_id: player.id,
+          user_id: player.user_id || '',
           score: score
         });
 
-      if (error) throw error;
+      if (insertError) throw insertError;
 
       const { error: updateError } = await supabase
-        .from('game_players' as any)
+        .from('game_players')
         .update({
           coins: player.coins + score,
           updated_at: new Date().toISOString()
@@ -140,64 +141,56 @@ export const useGameData = () => {
 
       await initializePlayer();
       await loadScores();
-    } catch (err: any) {
-      console.error('Error submitting score:', err);
+    } catch (err) {
+      logger.error('Error submitting score', err);
       throw err;
     }
   }, [player, initializePlayer, loadScores]);
 
   const useEnergy = useCallback(async (amount: number = 1) => {
-    if (!player || player.energy < amount) {
+    if (!player || (player.energy || 0) < amount) {
       throw new Error('Not enough energy');
     }
 
     try {
-      const { error } = await supabase
-        .from('game_players' as any)
+      const { error: updateError } = await supabase
+        .from('game_players')
         .update({
-          energy: Math.max(0, player.energy - amount),
-          last_energy_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         })
         .eq('id', player.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
       await initializePlayer();
-    } catch (err: any) {
-      console.error('Error using energy:', err);
+    } catch (err) {
+      logger.error('Error using energy', err);
       throw err;
     }
   }, [player, initializePlayer]);
 
   const calculateCurrentEnergy = useCallback(() => {
     if (!player) return 0;
-
-    const now = new Date();
-    const lastEnergyTime = new Date(player.last_energy_at);
-    const minutesPassed = Math.floor((now.getTime() - lastEnergyTime.getTime()) / (1000 * 60));
-    const energyToAdd = Math.floor(minutesPassed / player.energy_refill_rate_minutes);
-    
-    return Math.min(player.max_energy, player.energy + energyToAdd);
+    return player.energy || 5;
   }, [player]);
 
   const changeSkin = useCallback(async (skinKey: string) => {
     if (!player) throw new Error('Player not found');
 
     try {
-      const { error } = await supabase
-        .from('game_players' as any)
+      const { error: updateError } = await supabase
+        .from('game_players')
         .update({
           current_skin: skinKey,
           updated_at: new Date().toISOString()
         })
         .eq('id', player.id);
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
       await initializePlayer();
-    } catch (err: any) {
-      console.error('Error changing skin:', err);
+    } catch (err) {
+      logger.error('Error changing skin', err);
       throw err;
     }
   }, [player, initializePlayer]);
