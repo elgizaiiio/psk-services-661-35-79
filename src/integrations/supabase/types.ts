@@ -1449,6 +1449,7 @@ export type Database = {
           reward_amount: number | null
           reward_type: string
           user_id: string
+          wheel_type: string | null
         }
         Insert: {
           created_at?: string
@@ -1456,6 +1457,7 @@ export type Database = {
           reward_amount?: number | null
           reward_type: string
           user_id: string
+          wheel_type?: string | null
         }
         Update: {
           created_at?: string
@@ -1463,6 +1465,7 @@ export type Database = {
           reward_amount?: number | null
           reward_type?: string
           user_id?: string
+          wheel_type?: string | null
         }
         Relationships: [
           {
@@ -1885,6 +1888,7 @@ export type Database = {
           created_at: string
           free_ticket_date: string | null
           id: string
+          pro_tickets_count: number | null
           tickets_count: number
           updated_at: string
           user_id: string
@@ -1893,6 +1897,7 @@ export type Database = {
           created_at?: string
           free_ticket_date?: string | null
           id?: string
+          pro_tickets_count?: number | null
           tickets_count?: number
           updated_at?: string
           user_id: string
@@ -1901,6 +1906,7 @@ export type Database = {
           created_at?: string
           free_ticket_date?: string | null
           id?: string
+          pro_tickets_count?: number | null
           tickets_count?: number
           updated_at?: string
           user_id?: string
