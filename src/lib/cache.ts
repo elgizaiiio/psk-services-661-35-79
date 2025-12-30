@@ -1,7 +1,16 @@
 // Cache utilities for localStorage and performance optimization
 
 const CACHE_PREFIX = 'bolt_cache_';
-const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours
+const COMPLETED_TASKS_KEY = 'bolt_completed_tasks';
+
+// Cache expiry times
+export const CACHE_EXPIRY = {
+  tasks: 5 * 60 * 1000, // 5 minutes
+  characters: 10 * 60 * 1000, // 10 minutes
+  challenges: 5 * 60 * 1000, // 5 minutes
+  achievements: 10 * 60 * 1000, // 10 minutes
+  default: 24 * 60 * 60 * 1000, // 24 hours
+};
 
 interface CacheItem<T> {
   data: T;
@@ -9,39 +18,112 @@ interface CacheItem<T> {
   expiry: number;
 }
 
-// Set item in localStorage with expiry
-export function setCache<T>(key: string, data: T, expiryMs: number = CACHE_EXPIRY): void {
-  try {
-    const item: CacheItem<T> = {
-      data,
-      timestamp: Date.now(),
-      expiry: expiryMs,
-    };
-    localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(item));
-  } catch (error) {
-    // localStorage full - clear old items
-    clearExpiredCache();
-  }
-}
+// Cache object with get/set methods
+export const cache = {
+  set: <T>(key: string, data: T, expiryMs: number = CACHE_EXPIRY.default): void => {
+    try {
+      const item: CacheItem<T> = {
+        data,
+        timestamp: Date.now(),
+        expiry: expiryMs,
+      };
+      localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(item));
+    } catch (error) {
+      clearExpiredCache();
+    }
+  },
 
-// Get item from localStorage
-export function getCache<T>(key: string): T | null {
-  try {
-    const item = localStorage.getItem(CACHE_PREFIX + key);
-    if (!item) return null;
+  get: <T>(key: string): T | null => {
+    try {
+      const item = localStorage.getItem(CACHE_PREFIX + key);
+      if (!item) return null;
 
-    const cached: CacheItem<T> = JSON.parse(item);
-    const isExpired = Date.now() - cached.timestamp > cached.expiry;
+      const cached: CacheItem<T> = JSON.parse(item);
+      const isExpired = Date.now() - cached.timestamp > cached.expiry;
 
-    if (isExpired) {
-      localStorage.removeItem(CACHE_PREFIX + key);
+      if (isExpired) {
+        localStorage.removeItem(CACHE_PREFIX + key);
+        return null;
+      }
+
+      return cached.data;
+    } catch {
       return null;
     }
+  },
 
-    return cached.data;
-  } catch {
-    return null;
-  }
+  remove: (key: string): void => {
+    try {
+      localStorage.removeItem(CACHE_PREFIX + key);
+    } catch (e) {
+      console.warn('Cache remove failed:', e);
+    }
+  },
+
+  clear: (): void => {
+    try {
+      const keys = Object.keys(localStorage).filter(k => k.startsWith(CACHE_PREFIX));
+      keys.forEach(k => localStorage.removeItem(k));
+    } catch (e) {
+      console.warn('Cache clear failed:', e);
+    }
+  },
+};
+
+// Completed tasks storage (permanent, never expires)
+export const completedTasksStorage = {
+  get: (): Set<string> => {
+    try {
+      const raw = localStorage.getItem(COMPLETED_TASKS_KEY);
+      if (!raw) return new Set();
+      return new Set(JSON.parse(raw));
+    } catch (e) {
+      return new Set();
+    }
+  },
+
+  add: (taskId: string): void => {
+    try {
+      const completed = completedTasksStorage.get();
+      completed.add(taskId);
+      localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...completed]));
+    } catch (e) {
+      console.warn('Failed to save completed task:', e);
+    }
+  },
+
+  remove: (taskId: string): void => {
+    try {
+      const completed = completedTasksStorage.get();
+      completed.delete(taskId);
+      localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...completed]));
+    } catch (e) {
+      console.warn('Failed to remove completed task:', e);
+    }
+  },
+
+  has: (taskId: string): boolean => {
+    return completedTasksStorage.get().has(taskId);
+  },
+
+  sync: (taskIds: string[]): void => {
+    try {
+      const current = completedTasksStorage.get();
+      taskIds.forEach(id => current.add(id));
+      localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...current]));
+    } catch (e) {
+      console.warn('Failed to sync completed tasks:', e);
+    }
+  },
+};
+
+// Legacy exports for backwards compatibility
+export function setCache<T>(key: string, data: T, expiryMs: number = CACHE_EXPIRY.default): void {
+  cache.set(key, data, expiryMs);
+}
+
+export function getCache<T>(key: string): T | null {
+  return cache.get<T>(key);
 }
 
 // Clear expired cache items
@@ -68,12 +150,7 @@ export function clearExpiredCache(): void {
 
 // Clear all cache
 export function clearAllCache(): void {
-  const keys = Object.keys(localStorage);
-  keys.forEach((key) => {
-    if (key.startsWith(CACHE_PREFIX)) {
-      localStorage.removeItem(key);
-    }
-  });
+  cache.clear();
 }
 
 // Preload and cache images
