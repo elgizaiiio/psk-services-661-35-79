@@ -18,12 +18,13 @@ type MiningServer = {
   boltPerDay: number;
   usdtPerDay: number;
   priceTon: number;
-  tier: 'Basic' | 'Pro' | 'Elite';
+  tier: 'Free' | 'Basic' | 'Pro' | 'Elite';
   color: string;
   glow: string;
 };
 
 const servers: MiningServer[] = [
+  { id: 'free-starter', name: 'Free Starter', hashRate: '1 TH/s', boltPerDay: 10, usdtPerDay: 0.02, priceTon: 0, tier: 'Free', color: '#10B981', glow: 'shadow-emerald-500/30' },
   { id: 'basic-1', name: 'Starter', hashRate: '5 TH/s', boltPerDay: 50, usdtPerDay: 0.15, priceTon: 1.5, tier: 'Basic', color: '#3B82F6', glow: 'shadow-blue-500/30' },
   { id: 'basic-2', name: 'Basic', hashRate: '10 TH/s', boltPerDay: 100, usdtPerDay: 0.30, priceTon: 2.5, tier: 'Basic', color: '#06B6D4', glow: 'shadow-cyan-500/30' },
   { id: 'pro-1', name: 'Pro', hashRate: '18 TH/s', boltPerDay: 180, usdtPerDay: 0.55, priceTon: 4.0, tier: 'Pro', color: '#8B5CF6', glow: 'shadow-violet-500/30' },
@@ -41,8 +42,8 @@ const MiningServers = () => {
 
   const isReady = !isTelegramLoading && !isMiningUserLoading;
 
-  const handleBuyClick = (server: MiningServer) => {
-    if (!isReady) {
+  const handleBuyClick = async (server: MiningServer) => {
+    if (!isReady || !user?.id) {
       toast.error('Loading… please wait.');
       return;
     }
@@ -51,6 +52,21 @@ const MiningServers = () => {
       toast.error('Sold out!');
       return;
     }
+    
+    // Handle free server - no payment needed
+    if (server.priceTon === 0) {
+      await purchaseServer(
+        server.id,
+        server.tier,
+        server.name,
+        server.hashRate,
+        server.boltPerDay,
+        server.usdtPerDay
+      );
+      toast.success('Free server claimed!');
+      return;
+    }
+    
     setSelectedServer(server);
     setIsPaymentOpen(true);
   };
@@ -211,11 +227,17 @@ const MiningServers = () => {
                         {/* Right - Price & Action */}
                         <div className="flex flex-col items-end gap-3">
                           <div className="text-right">
-                            <div className="flex items-center gap-1.5">
-                              <TonIcon size={20} />
-                              <span className="text-2xl font-black text-foreground">{server.priceTon}</span>
-                            </div>
-                            <span className="text-xs text-muted-foreground">TON</span>
+                            {server.priceTon === 0 ? (
+                              <span className="text-2xl font-black text-emerald-400">FREE</span>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-1.5">
+                                  <TonIcon size={20} />
+                                  <span className="text-2xl font-black text-foreground">{server.priceTon}</span>
+                                </div>
+                                <span className="text-xs text-muted-foreground">TON</span>
+                              </>
+                            )}
                           </div>
 
                           {owned ? (
@@ -237,7 +259,7 @@ const MiningServers = () => {
                                 boxShadow: `0 4px 20px ${server.color}40`
                               }}
                             >
-                              Buy Now
+                              {server.priceTon === 0 ? 'Claim Free' : 'Buy Now'}
                             </Button>
                           )}
                         </div>
