@@ -161,7 +161,7 @@ const DailyTasks = () => {
           </motion.div>}
       </AnimatePresence>
 
-      <div className="max-w-md mx-auto px-4 pt-6">
+      <div className="max-w-md mx-auto px-4 pt-16">
         {/* Header with gradient */}
         <motion.div initial={{
         opacity: 0,

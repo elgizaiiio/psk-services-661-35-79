@@ -185,7 +185,7 @@ const TokenStore = () => {
         <meta name="description" content="Buy VIRAL Tokens with TON" />
       </Helmet>
 
-      <div className="max-w-md mx-auto px-4 pt-6">
+      <div className="max-w-md mx-auto px-4 pt-16">
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground">Token Store</h1>

@@ -103,7 +103,7 @@ const Achievements = () => {
   return (
     <div className="min-h-screen bg-background pb-24" dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-2xl border-b border-border/20">
+      <header className="sticky top-0 z-50 bg-background/90 backdrop-blur-2xl border-b border-border/20 pt-16">
         <div className="px-4 py-4">
           <div className="flex items-center justify-center mb-4">
             <h1 className="text-2xl font-black text-foreground flex items-center gap-2">

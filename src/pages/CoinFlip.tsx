@@ -30,7 +30,7 @@ const CoinFlip: React.FC = () => {
       </Helmet>
 
       {/* Header */}
-      <div className="px-4 py-4">
+      <div className="px-4 pt-16 pb-4">
         <h1 className="text-xl font-bold text-foreground">قلب العملة</h1>
         <p className="text-sm text-muted-foreground">اختر الجهة الصحيحة وضاعف!</p>
       </div>

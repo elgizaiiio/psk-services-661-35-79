@@ -129,7 +129,7 @@ const MiningInner = () => {
       </Helmet>
 
       <main className="safe-area pb-16">
-        <div className="max-w-sm mx-auto px-6 py-8 space-y-6">
+        <div className="max-w-sm mx-auto px-6 pt-16 pb-8 space-y-6">
           {/* User Avatar */}
           <div className="text-center">
             <Avatar className="w-20 h-20 mx-auto border-4 border-primary/20">

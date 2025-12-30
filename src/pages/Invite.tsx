@@ -38,7 +38,7 @@ const Invite: React.FC = () => {
   return (
     <PageWrapper className="min-h-screen bg-background pb-44">
       <Helmet><title>Invite Friends</title></Helmet>
-      <div className="max-w-md mx-auto px-5 pt-8">
+      <div className="max-w-md mx-auto px-5 pt-16">
         <StaggerContainer className="space-y-6">
           <FadeUp><ContestBanner userId={boltUser?.id} /></FadeUp>
           <FadeUp><h1 className="text-xl font-semibold text-foreground">Invite Friends</h1><p className="text-sm text-muted-foreground">Earn BOLT for every friend who joins</p></FadeUp>

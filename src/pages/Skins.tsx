@@ -58,7 +58,7 @@ const Skins: React.FC = () => {
   };
 
   return (
-    <main className="max-w-md mx-auto p-4 pb-24 space-y-4">
+    <main className="max-w-md mx-auto p-4 pt-16 pb-24 space-y-4">
       <Helmet>
         <title>Buy Skins | 2048 TON</title>
         <meta name="description" content="Browse and purchase game skins using TON to customize your game board appearance." />

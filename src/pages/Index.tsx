@@ -56,7 +56,7 @@ const Index = () => {
     <PageWrapper className="min-h-screen bg-background pb-28">
       <Helmet><title>Bolt Mining</title></Helmet>
 
-      <div className="max-w-md mx-auto px-5 pt-8">
+      <div className="max-w-md mx-auto px-5 pt-16">
         <StaggerContainer className="space-y-6">
           {/* Header */}
           <FadeUp>

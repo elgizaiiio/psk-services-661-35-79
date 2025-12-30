@@ -30,7 +30,7 @@ const DiceGame: React.FC = () => {
       </Helmet>
 
       {/* Header */}
-      <div className="px-4 py-4">
+      <div className="px-4 pt-16 pb-4">
         <h1 className="text-xl font-bold text-foreground">لعبة النرد</h1>
         <p className="text-sm text-muted-foreground">خمّن الرقم واربح 5x!</p>
       </div>

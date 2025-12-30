@@ -79,7 +79,7 @@ const MiningServers = () => {
         <meta name="description" content="Buy mining servers to earn daily rewards in BOLT and USDT." />
         <link rel="canonical" href="/mining-servers" />
       </Helmet>
-      <div className="max-w-md mx-auto px-5 pt-8">
+      <div className="max-w-md mx-auto px-5 pt-16">
         <StaggerContainer className="space-y-6">
           <FadeUp>
             <div>
