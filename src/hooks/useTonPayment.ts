@@ -20,7 +20,7 @@ export interface PaymentResult {
 }
 
 // Wallet address for receiving TON payments
-const TON_DESTINATION_ADDRESS = 'UQB3zld6sleav5U7Rga1JmpHJccaczHzCuTRNK4QM5i001Vm';
+const TON_DESTINATION_ADDRESS = 'UQBJSGcoWTcjdkWFSxA4A6sLmnD5uFKoKHFEHc3LqGJvFWya';
 
 export const useTonPayment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
