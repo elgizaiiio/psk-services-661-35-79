@@ -9,7 +9,7 @@ import { logger } from '@/lib/logger';
 export interface DirectPaymentParams {
   amount: number;
   description: string;
-  productType: 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting' | 'mining_upgrade' | 'token_purchase';
+  productType: 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting' | 'mining_upgrade' | 'token_purchase' | 'spin_tickets';
   productId?: string;
   credits?: number;
   serverName?: string;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, Gamepad2, ListTodo, Wallet, Gift } from 'lucide-react';
+import { Home, Gamepad2, ListTodo, Wallet, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 
@@ -12,8 +12,8 @@ const BottomNavigation = () => {
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
-    { icon: Gift, label: 'Spin', path: '/spin' },
     { icon: ListTodo, label: 'Tasks', path: '/tasks' },
+    { icon: Users, label: 'Invite', path: '/invite' },
     { icon: Wallet, label: 'Wallet', path: '/wallet' },
     { icon: Gamepad2, label: 'Game', path: '/game' },
   ];
@@ -25,7 +25,6 @@ const BottomNavigation = () => {
 
   const hideNavigationPaths = ['/runner-game', '/chat-ai', '/krunker', '/game'];
   
-  // Don't render navigation on hidden paths
   if (hideNavigationPaths.includes(location.pathname)) {
     return null;
   }
@@ -40,7 +39,6 @@ const BottomNavigation = () => {
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
     >
       <div className="bg-card border border-border rounded-2xl max-w-md mx-auto relative">
-        {/* Active Indicator */}
         {activeIndex !== -1 && (
           <motion.div
             className="absolute top-0 h-0.5 bg-primary rounded-full"
