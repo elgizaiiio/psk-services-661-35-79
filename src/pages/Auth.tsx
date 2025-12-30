@@ -9,24 +9,24 @@ const Auth = () => {
   const telegramBotUrl = "https://t.me/boltrsbot?start=mining";
   const navigate = useNavigate();
 
-  // Check for preview mode via URL param
+  // Check for preview mode via URL param or localStorage
   const urlParams = new URLSearchParams(window.location.search);
-  const isPreviewMode = urlParams.get('preview') === 'true';
+  const isPreviewModeUrl = urlParams.get('preview') === 'true';
+  const isPreviewModeStorage = localStorage.getItem('previewMode') === 'true';
 
   const handleOpenTelegram = () => {
     window.open(telegramBotUrl, "_blank");
   };
 
   const handlePreviewMode = () => {
-    // Navigate to home with preview flag in localStorage
     localStorage.setItem('previewMode', 'true');
-    navigate('/');
+    window.location.href = '/';
   };
 
   // If already in preview mode, redirect to home
-  if (isPreviewMode) {
+  if (isPreviewModeUrl || isPreviewModeStorage) {
     localStorage.setItem('previewMode', 'true');
-    navigate('/');
+    window.location.href = '/';
     return null;
   }
 
