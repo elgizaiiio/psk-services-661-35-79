@@ -9,6 +9,7 @@ import { useBoltReferrals } from "@/hooks/useBoltReferrals";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Copy, Check, Users, Share2, Loader2 } from "lucide-react";
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber } from '@/components/ui/motion-wrapper';
+import { ContestBanner } from '@/components/contest/ContestBanner';
 
 const Invite: React.FC = () => {
   const { user: tgUser } = useTelegramAuth();
@@ -37,6 +38,7 @@ const Invite: React.FC = () => {
       <Helmet><title>Invite Friends</title></Helmet>
       <div className="max-w-md mx-auto px-5 pt-8">
         <StaggerContainer className="space-y-6">
+          <FadeUp><ContestBanner userId={boltUser?.id} /></FadeUp>
           <FadeUp><h1 className="text-xl font-semibold text-foreground">Invite Friends</h1><p className="text-sm text-muted-foreground">Earn BOLT for every friend who joins</p></FadeUp>
 
           <div className="grid grid-cols-2 gap-4">

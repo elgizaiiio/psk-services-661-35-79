@@ -44,6 +44,7 @@ const VIPSubscription = lazy(() => import("./pages/VIPSubscription"));
 const TokenStore = lazy(() => import("./pages/TokenStore"));
 const DailyTasks = lazy(() => import("./pages/DailyTasks"));
 const KrunkerGame = lazy(() => import("./pages/KrunkerGame"));
+const Contest = lazy(() => import("./pages/Contest"));
 const Auth = lazy(() => import("./pages/Auth"));
 
 // Loading component
@@ -177,6 +178,7 @@ const App = () => (
                             <Route path="/token-store" element={<TokenStore />} />
                             <Route path="/daily-tasks" element={<DailyTasks />} />
                             <Route path="/game" element={<KrunkerGame />} />
+                            <Route path="/contest" element={<Contest />} />
                           </Routes>
                         </Suspense>
                         <BottomNavigation />

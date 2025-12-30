@@ -739,6 +739,48 @@ export type Database = {
           },
         ]
       }
+      contest_participants: {
+        Row: {
+          contest_id: string
+          id: string
+          joined_at: string
+          last_referral_at: string | null
+          referral_count: number
+          user_id: string
+        }
+        Insert: {
+          contest_id: string
+          id?: string
+          joined_at?: string
+          last_referral_at?: string | null
+          referral_count?: number
+          user_id: string
+        }
+        Update: {
+          contest_id?: string
+          id?: string
+          joined_at?: string
+          last_referral_at?: string | null
+          referral_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contest_participants_contest_id_fkey"
+            columns: ["contest_id"]
+            isOneToOne: false
+            referencedRelation: "referral_contests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contest_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_daily_rewards: {
         Row: {
           claimed_at: string
@@ -1121,6 +1163,51 @@ export type Database = {
           price_tokens?: number
           price_ton?: number
           tier?: string
+        }
+        Relationships: []
+      }
+      referral_contests: {
+        Row: {
+          created_at: string
+          description: string | null
+          description_ar: string | null
+          end_date: string
+          id: string
+          is_active: boolean
+          name: string
+          name_ar: string | null
+          prize_pool_usd: number
+          prizes_config: Json
+          start_date: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          end_date: string
+          id?: string
+          is_active?: boolean
+          name: string
+          name_ar?: string | null
+          prize_pool_usd?: number
+          prizes_config?: Json
+          start_date: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          description_ar?: string | null
+          end_date?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          name_ar?: string | null
+          prize_pool_usd?: number
+          prizes_config?: Json
+          start_date?: string
+          status?: string
         }
         Relationships: []
       }
