@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useAiUsageLimit } from './useAiUsageLimit';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from './useTelegramAuth';
+import { logger } from '@/lib/logger';
 
 export interface DirectPaymentParams {
   amount: number;
@@ -71,7 +72,7 @@ export const useDirectTonPayment = () => {
         .single();
 
       if (paymentError) {
-        console.error('Payment record error:', paymentError);
+        logger.error('Payment record error', paymentError);
       }
 
       const transaction = {
@@ -84,12 +85,12 @@ export const useDirectTonPayment = () => {
         ]
       };
 
-      console.log('Sending TON transaction:', transaction);
+      logger.debug('Sending TON transaction', { amount: params.amount });
       
       const result = await tonConnectUI.sendTransaction(transaction);
       
       if (result) {
-        console.log('Transaction successful:', result);
+        logger.info('Transaction successful', { boc: result.boc?.slice(0, 20) + '...' });
         
         // Update payment status in database
         if (paymentData) {
@@ -117,7 +118,7 @@ export const useDirectTonPayment = () => {
       }
 
     } catch (error: any) {
-      console.error('Payment error:', error);
+      logger.error('Payment error', error);
       
       if (error.message?.includes('User declined') || error.message?.includes('cancelled')) {
         toast.error('Transaction cancelled');

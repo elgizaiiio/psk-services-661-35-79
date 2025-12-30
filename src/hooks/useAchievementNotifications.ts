@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface AchievementNotification {
   id: string;
@@ -59,7 +60,7 @@ export const useAchievementNotifications = (userId: string | null) => {
         }
       }
     } catch (error) {
-      console.error('Error checking achievements:', error);
+      logger.error('Error checking achievements', error);
     }
   }, [userId, lastCheckedAchievements]);
 
