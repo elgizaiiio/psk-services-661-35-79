@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
 import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
-import { Eye, EyeOff, Loader2, Wallet as WalletIcon } from "lucide-react";
+import { Eye, EyeOff, Loader2, Wallet as WalletIcon, ArrowUpRight } from "lucide-react";
 import { TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
 import { PageWrapper, StaggerContainer, FadeUp, ScaleIn, AnimatedNumber } from '@/components/ui/motion-wrapper';
 import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
+import { Button } from '@/components/ui/button';
+import WithdrawModal from '@/components/WithdrawModal';
 
 const Wallet: React.FC = () => {
   const { user: tgUser, isLoading: authLoading } = useTelegramAuth();
@@ -15,6 +17,7 @@ const Wallet: React.FC = () => {
   const wallet = useTonWallet();
   const [tonPrice, setTonPrice] = useState<number | null>(null);
   const [showBalance, setShowBalance] = useState(true);
+  const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; currency: 'TON' | 'USDT' | 'BOLT' } | null>(null);
   useTelegramBackButton();
 
   const boltBalance = user?.token_balance ?? 0;
@@ -101,9 +104,9 @@ const Wallet: React.FC = () => {
           <FadeUp><p className="text-sm font-medium text-muted-foreground px-1">Assets</p></FadeUp>
 
           {[
-            { name: 'BOLT', balance: boltBalance, value: 0, icon: <BoltIcon size={40} /> },
-            { name: 'TON', balance: 0, value: 0, icon: <TonIcon size={40} /> },
-            { name: 'USDT', balance: usdtBalance, value: usdtBalance, icon: <UsdtIcon size={40} /> },
+            { name: 'BOLT' as const, balance: boltBalance, value: 0, icon: <BoltIcon size={40} /> },
+            { name: 'TON' as const, balance: 0, value: 0, icon: <TonIcon size={40} /> },
+            { name: 'USDT' as const, balance: usdtBalance, value: usdtBalance, icon: <UsdtIcon size={40} /> },
           ].map((asset) => (
             <FadeUp key={asset.name}>
               <motion.div className="p-4 rounded-xl bg-card border border-border" whileTap={{ scale: 0.98 }}>
@@ -115,13 +118,39 @@ const Wallet: React.FC = () => {
                       <p className="text-xs text-muted-foreground">{showBalance ? asset.balance.toFixed(2) : '••••'}</p>
                     </div>
                   </div>
-                  <p className="font-medium text-foreground">{showBalance ? `$${asset.value.toFixed(2)}` : '••••'}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-foreground">{showBalance ? `$${asset.value.toFixed(2)}` : '••••'}</p>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 text-xs"
+                      onClick={() => setWithdrawModal({ open: true, currency: asset.name })}
+                      disabled={asset.balance <= 0}
+                    >
+                      <ArrowUpRight className="w-3 h-3 mr-1" />
+                      Withdraw
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             </FadeUp>
           ))}
         </StaggerContainer>
       </div>
+
+      {/* Withdraw Modal */}
+      {withdrawModal && user && (
+        <WithdrawModal
+          open={withdrawModal.open}
+          onClose={() => setWithdrawModal(null)}
+          userId={user.id}
+          currency={withdrawModal.currency}
+          balance={
+            withdrawModal.currency === 'BOLT' ? boltBalance :
+            withdrawModal.currency === 'USDT' ? usdtBalance : 0
+          }
+        />
+      )}
     </PageWrapper>
   );
 };

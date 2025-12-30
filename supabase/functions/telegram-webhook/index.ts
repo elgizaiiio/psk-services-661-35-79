@@ -35,6 +35,20 @@ interface TelegramUpdate {
     }>;
     date: number;
   };
+  pre_checkout_query?: {
+    id: string;
+    from: { id: number };
+    currency: string;
+    total_amount: number;
+    invoice_payload: string;
+  };
+  successful_payment?: {
+    currency: string;
+    total_amount: number;
+    invoice_payload: string;
+    telegram_payment_charge_id: string;
+    provider_payment_charge_id: string;
+  };
 }
 
 function getSupabaseClient() {
@@ -65,6 +79,25 @@ async function sendTelegramMessage(chatId: number, text: string, replyMarkup?: o
   const result = await response.json();
   console.log('Telegram API response:', result);
   return result;
+}
+
+async function answerPreCheckoutQuery(queryId: string, ok: boolean, errorMessage?: string) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerPreCheckoutQuery`;
+  
+  const body: Record<string, unknown> = {
+    pre_checkout_query_id: queryId,
+    ok: ok,
+  };
+
+  if (!ok && errorMessage) {
+    body.error_message = errorMessage;
+  }
+
+  await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
 }
 
 async function getFileUrl(fileId: string): Promise<string | null> {
@@ -230,44 +263,37 @@ async function createTask(title: string, url: string, image: string, reward: num
 async function getAdminStats() {
   const supabase = getSupabaseClient();
   
-  // Total users
   const { count: totalUsers } = await supabase
     .from('bolt_users')
     .select('*', { count: 'exact', head: true });
   
-  // Active users in last 24 hours
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { count: activeUsers } = await supabase
     .from('bolt_users')
     .select('*', { count: 'exact', head: true })
     .gte('updated_at', yesterday);
   
-  // Total tokens
   const { data: tokenData } = await supabase
     .from('bolt_users')
     .select('token_balance');
   const totalTokens = tokenData?.reduce((sum, u) => sum + (u.token_balance || 0), 0) || 0;
   
-  // Active mining sessions
   const { count: activeSessions } = await supabase
     .from('bolt_mining_sessions')
     .select('*', { count: 'exact', head: true })
     .eq('is_active', true);
   
-  // Total payments
   const { count: totalPayments } = await supabase
     .from('ton_payments')
     .select('*', { count: 'exact', head: true })
     .eq('status', 'confirmed');
   
-  // Payment sum
   const { data: paymentData } = await supabase
     .from('ton_payments')
     .select('amount_ton')
     .eq('status', 'confirmed');
   const totalTonRevenue = paymentData?.reduce((sum, p) => sum + (p.amount_ton || 0), 0) || 0;
   
-  // Total tasks
   const { count: totalTasks } = await supabase
     .from('bolt_tasks')
     .select('*', { count: 'exact', head: true })
@@ -299,7 +325,6 @@ async function getRecentUsers(limit: number = 10) {
 async function broadcastMessage(message: string): Promise<{ sent: number; failed: number }> {
   const supabase = getSupabaseClient();
   
-  // Get all users with telegram_id
   const { data: users } = await supabase
     .from('bolt_users')
     .select('telegram_id');
@@ -311,7 +336,6 @@ async function broadcastMessage(message: string): Promise<{ sent: number; failed
   let sent = 0;
   let failed = 0;
   
-  // Send message to each user
   for (const user of users) {
     try {
       const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
@@ -333,7 +357,6 @@ async function broadcastMessage(message: string): Promise<{ sent: number; failed
         console.log(`Failed to send to ${user.telegram_id}:`, result);
       }
       
-      // Small delay to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 50));
     } catch (error) {
       failed++;
@@ -345,63 +368,65 @@ async function broadcastMessage(message: string): Promise<{ sent: number; failed
 }
 
 async function handleAdminCommand(chatId: number, telegramId: number, messageText: string, photo?: any[]) {
-  const state = await getAdminState(telegramId);
-  
-  // Check if user is admin
+  // Check if user is admin FIRST before anything else
   if (!ADMIN_IDS.includes(telegramId)) {
-    // Only respond if it's an admin command
+    // Only respond to admin commands with error
     if (messageText.startsWith('/101') || messageText.startsWith('/102')) {
-      await sendTelegramMessage(chatId, '❌ غير مصرح لك باستخدام هذا الأمر');
+      await sendTelegramMessage(chatId, 'You are not authorized to use this command');
       return true;
     }
+    // For regular users, just return false to let normal command handling continue
     return false;
   }
+
+  // From here, only admins can proceed
+  const state = await getAdminState(telegramId);
 
   // Handle /101 command - Admin Panel
   if (messageText === '/101' || messageText === '/101 stats') {
     const stats = await getAdminStats();
     
-    const statsMessage = `🛡️ <b>لوحة تحكم المشرف</b>
+    const statsMessage = `<b>Admin Panel</b>
 
-📊 <b>الإحصائيات العامة:</b>
-👥 إجمالي المستخدمين: <b>${stats.totalUsers.toLocaleString()}</b>
-🟢 نشطين آخر 24 ساعة: <b>${stats.activeUsers.toLocaleString()}</b>
-💰 إجمالي التوكنات: <b>${stats.totalTokens.toLocaleString()} BOLT</b>
-⛏️ جلسات التعدين النشطة: <b>${stats.activeSessions}</b>
+<b>General Stats:</b>
+Total Users: <b>${stats.totalUsers.toLocaleString()}</b>
+Active (24h): <b>${stats.activeUsers.toLocaleString()}</b>
+Total Tokens: <b>${stats.totalTokens.toLocaleString()} BOLT</b>
+Active Mining: <b>${stats.activeSessions}</b>
 
-💳 <b>المدفوعات:</b>
-📈 عدد المعاملات: <b>${stats.totalPayments}</b>
-💎 إجمالي الإيرادات: <b>${stats.totalTonRevenue.toFixed(2)} TON</b>
+<b>Payments:</b>
+Transactions: <b>${stats.totalPayments}</b>
+Revenue: <b>${stats.totalTonRevenue.toFixed(2)} TON</b>
 
-📝 <b>المهام النشطة:</b> ${stats.totalTasks}
+<b>Active Tasks:</b> ${stats.totalTasks}
 
-<b>الأوامر المتاحة:</b>
-/101 stats - إحصائيات تفصيلية
-/101 users - آخر 10 مستخدمين
-/101 broadcast - إرسال رسالة للجميع
-/102 - إضافة مهمة جديدة`;
+<b>Commands:</b>
+/101 stats - Detailed stats
+/101 users - Recent 10 users
+/101 broadcast - Send message to all
+/102 - Add new task`;
 
     const keyboard = {
       inline_keyboard: [
         [
           {
-            text: '🔧 فتح لوحة التحكم الكاملة',
+            text: 'Open Full Panel',
             web_app: { url: `${WEBAPP_URL}/admin` }
           }
         ],
         [
           {
-            text: '👥 آخر المستخدمين',
+            text: 'Recent Users',
             callback_data: 'admin_users'
           },
           {
-            text: '📢 إرسال رسالة',
+            text: 'Broadcast',
             callback_data: 'admin_broadcast'
           }
         ],
         [
           {
-            text: '➕ إضافة مهمة',
+            text: 'Add Task',
             callback_data: 'admin_add_task'
           }
         ]
@@ -416,13 +441,13 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
   if (messageText === '/101 users') {
     const users = await getRecentUsers(10);
     
-    let usersMessage = `👥 <b>آخر 10 مستخدمين مسجلين:</b>\n\n`;
+    let usersMessage = `<b>Recent 10 Users:</b>\n\n`;
     
     users.forEach((user, index) => {
-      const username = user.telegram_username ? `@${user.telegram_username}` : user.first_name || 'مجهول';
-      const date = new Date(user.created_at).toLocaleDateString('ar-EG');
+      const username = user.telegram_username ? `@${user.telegram_username}` : user.first_name || 'Unknown';
+      const date = new Date(user.created_at).toLocaleDateString('en-US');
       usersMessage += `${index + 1}. ${username}\n`;
-      usersMessage += `   💰 ${user.token_balance.toLocaleString()} BOLT | 📅 ${date}\n\n`;
+      usersMessage += `   ${user.token_balance.toLocaleString()} BOLT | ${date}\n\n`;
     });
     
     await sendTelegramMessage(chatId, usersMessage);
@@ -432,16 +457,16 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
   // Handle /101 broadcast - Start broadcast
   if (messageText === '/101 broadcast') {
     await setAdminState(telegramId, 'broadcast_message', { action_type: 'broadcast' });
-    await sendTelegramMessage(chatId, `📢 <b>إرسال رسالة جماعية</b>
+    await sendTelegramMessage(chatId, `<b>Broadcast Message</b>
 
-أدخل الرسالة التي تريد إرسالها لجميع المستخدمين:
+Enter the message to send to all users:
 
-💡 يمكنك استخدام HTML للتنسيق:
-• <code>&lt;b&gt;نص&lt;/b&gt;</code> للغامق
-• <code>&lt;i&gt;نص&lt;/i&gt;</code> للمائل
-• <code>&lt;a href="URL"&gt;رابط&lt;/a&gt;</code> للروابط
+You can use HTML formatting:
+<code>&lt;b&gt;text&lt;/b&gt;</code> for bold
+<code>&lt;i&gt;text&lt;/i&gt;</code> for italic
+<code>&lt;a href="URL"&gt;link&lt;/a&gt;</code> for links
 
-أرسل /cancel للإلغاء`);
+Send /cancel to cancel`);
     return true;
   }
 
@@ -453,11 +478,11 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
       task_url: null, 
       task_image: null 
     });
-    await sendTelegramMessage(chatId, `📝 <b>إنشاء مهمة جديدة</b>
+    await sendTelegramMessage(chatId, `<b>Create New Task</b>
 
-الخطوة 1/4: أدخل اسم المهمة:
+Step 1/4: Enter task title:
 
-أرسل /cancel للإلغاء`);
+Send /cancel to cancel`);
     return true;
   }
 
@@ -465,7 +490,7 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
   if (messageText === '/cancel') {
     if (state) {
       await clearAdminState(telegramId);
-      await sendTelegramMessage(chatId, '✅ تم إلغاء العملية');
+      await sendTelegramMessage(chatId, 'Operation cancelled');
       return true;
     }
     return false;
@@ -482,38 +507,36 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
         });
         
         const stats = await getAdminStats();
-        await sendTelegramMessage(chatId, `📢 <b>تأكيد الإرسال</b>
+        await sendTelegramMessage(chatId, `<b>Confirm Send</b>
 
-سيتم إرسال الرسالة التالية إلى <b>${stats.totalUsers}</b> مستخدم:
+Message will be sent to <b>${stats.totalUsers}</b> users:
 
 <blockquote>${messageText}</blockquote>
 
-هل تريد المتابعة؟
-
-أرسل <b>نعم</b> للتأكيد أو /cancel للإلغاء`);
+Send <b>yes</b> to confirm or /cancel to cancel`);
         return true;
       }
       
       if (state.step === 'broadcast_confirm') {
-        if (messageText.toLowerCase() === 'نعم' || messageText.toLowerCase() === 'yes') {
-          await sendTelegramMessage(chatId, '⏳ جاري إرسال الرسالة...');
+        if (messageText.toLowerCase() === 'yes') {
+          await sendTelegramMessage(chatId, 'Sending message...');
           
           const result = await broadcastMessage(state.broadcast_message!);
           await clearAdminState(telegramId);
           
-          await sendTelegramMessage(chatId, `✅ <b>تم إرسال الرسالة!</b>
+          await sendTelegramMessage(chatId, `<b>Message Sent!</b>
 
-📤 تم الإرسال: <b>${result.sent}</b>
-❌ فشل: <b>${result.failed}</b>`);
+Sent: <b>${result.sent}</b>
+Failed: <b>${result.failed}</b>`);
         } else {
           await clearAdminState(telegramId);
-          await sendTelegramMessage(chatId, '❌ تم إلغاء الإرسال');
+          await sendTelegramMessage(chatId, 'Broadcast cancelled');
         }
         return true;
       }
     }
 
-    // Handle task creation (action_type === 'task' or default)
+    // Handle task creation
     if (!state.action_type || state.action_type === 'task') {
       switch (state.step) {
         case 'title':
@@ -521,14 +544,14 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
             action_type: 'task',
             task_title: messageText 
           });
-          await sendTelegramMessage(chatId, `✅ تم حفظ اسم المهمة: <b>${messageText}</b>
+          await sendTelegramMessage(chatId, `Task title saved: <b>${messageText}</b>
 
-الخطوة 2/4: أدخل رابط المهمة (URL):`);
+Step 2/4: Enter task URL:`);
           return true;
 
         case 'url':
           if (!messageText.startsWith('http')) {
-            await sendTelegramMessage(chatId, '❌ يرجى إدخال رابط صحيح يبدأ بـ http أو https');
+            await sendTelegramMessage(chatId, 'Please enter a valid URL starting with http or https');
             return true;
           }
           await setAdminState(telegramId, 'image', { 
@@ -536,15 +559,14 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
             task_title: state.task_title,
             task_url: messageText 
           });
-          await sendTelegramMessage(chatId, `✅ تم حفظ الرابط
+          await sendTelegramMessage(chatId, `URL saved
 
-الخطوة 3/4: أرسل صورة المهمة أو أدخل رابط الصورة:`);
+Step 3/4: Send task image or image URL:`);
           return true;
 
         case 'image':
           let imageUrl = messageText;
           
-          // Check if a photo was sent
           if (photo && photo.length > 0) {
             const largestPhoto = photo[photo.length - 1];
             imageUrl = await getFileUrl(largestPhoto.file_id) || messageText;
@@ -556,15 +578,15 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
             task_url: state.task_url,
             task_image: imageUrl
           });
-          await sendTelegramMessage(chatId, `✅ تم حفظ الصورة
+          await sendTelegramMessage(chatId, `Image saved
 
-الخطوة 4/4: أدخل قيمة المكافأة (عدد النقاط):`);
+Step 4/4: Enter reward amount (points):`);
           return true;
 
         case 'reward':
           const reward = parseInt(messageText);
           if (isNaN(reward) || reward <= 0) {
-            await sendTelegramMessage(chatId, '❌ يرجى إدخال رقم صحيح موجب');
+            await sendTelegramMessage(chatId, 'Please enter a valid positive number');
             return true;
           }
           
@@ -572,20 +594,20 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
             const task = await createTask(
               state.task_title!,
               state.task_url!,
-              state.task_image || '🎯',
+              state.task_image || '',
               reward
             );
             
             await clearAdminState(telegramId);
-            await sendTelegramMessage(chatId, `✅ <b>تم إنشاء المهمة بنجاح!</b>
+            await sendTelegramMessage(chatId, `<b>Task Created Successfully!</b>
 
-📝 الاسم: ${state.task_title}
-🔗 الرابط: ${state.task_url}
-🎁 المكافأة: ${reward} نقطة
+Title: ${state.task_title}
+URL: ${state.task_url}
+Reward: ${reward} points
 
 ID: ${task.id}`);
           } catch (error) {
-            await sendTelegramMessage(chatId, `❌ حدث خطأ أثناء إنشاء المهمة: ${error.message}`);
+            await sendTelegramMessage(chatId, `Error creating task: ${error.message}`);
           }
           return true;
       }
@@ -611,6 +633,15 @@ serve(async (req) => {
 
     const update: TelegramUpdate = await req.json();
     console.log('Received Telegram update:', JSON.stringify(update));
+
+    // Handle pre_checkout_query for Stars payments
+    if (update.pre_checkout_query) {
+      console.log('Processing pre_checkout_query:', update.pre_checkout_query);
+      await answerPreCheckoutQuery(update.pre_checkout_query.id, true);
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const messageText = update.message?.text || '';
     const chatId = update.message?.chat.id;
@@ -644,37 +675,37 @@ serve(async (req) => {
         webAppUrl = `${WEBAPP_URL}?ref=${encodeURIComponent(referralParam)}`;
       }
 
-      const welcomeMessage = `👋 <b>Welcome ${firstName}!</b>
+      const welcomeMessage = `<b>Welcome ${firstName}!</b>
 
-🚀 Welcome to <b>Bolt Mining</b> - Smart Mining Platform!
+Welcome to Bolt Mining - Smart Mining Platform!
 
-⚡ Start now and earn BOLT tokens for FREE
-💎 Complete daily tasks to boost your earnings
-🎁 Invite friends and get extra rewards
+Start now and earn BOLT tokens for FREE
+Complete daily tasks to boost your earnings
+Invite friends and get extra rewards
 
-🏆 <b>$10,000 Referral Contest Active!</b>
+$10,000 Referral Contest Active!
 Invite friends to compete for amazing prizes!
 
-Click the button below to start mining! 👇`;
+Click the button below to start mining!`;
 
       const keyboard = {
         inline_keyboard: [
           [
             {
-              text: '🚀 Start Mining Now',
+              text: 'Start Mining Now',
               web_app: { url: webAppUrl }
             }
           ],
           [
             {
-              text: '🏆 View Contest',
+              text: 'View Contest',
               web_app: { url: `${WEBAPP_URL}/contest` }
             }
           ],
           [
             {
-              text: '📢 Join Our Channel',
-              url: 'https://t.me/boltrs'
+              text: 'Join Our Channel',
+              url: 'https://t.me/boltcomm'
             }
           ]
         ]
@@ -689,27 +720,27 @@ Click the button below to start mining! 👇`;
       const user = await getUserStats(telegramId!);
       
       if (!user) {
-        const notFoundMessage = `❌ <b>Account Not Found</b>
+        const notFoundMessage = `<b>Account Not Found</b>
 
 You haven't started mining yet!
 Use /start to begin your journey.`;
         await sendTelegramMessage(chatId, notFoundMessage);
       } else {
-        const balanceMessage = `📊 <b>Your BOLT Stats</b>
+        const balanceMessage = `<b>Your BOLT Stats</b>
 
-💰 Balance: <b>${user.token_balance.toLocaleString()} BOLT</b>
-⚡ Mining Power: <b>${user.mining_power}x</b>
-⏱️ Mining Duration: <b>${user.mining_duration_hours}h</b>
-👥 Total Referrals: <b>${user.total_referrals}</b>
-🎁 Referral Earnings: <b>${user.referral_bonus.toLocaleString()} BOLT</b>
+Balance: <b>${user.token_balance.toLocaleString()} BOLT</b>
+Mining Power: <b>${user.mining_power}x</b>
+Mining Duration: <b>${user.mining_duration_hours}h</b>
+Total Referrals: <b>${user.total_referrals}</b>
+Referral Earnings: <b>${user.referral_bonus.toLocaleString()} BOLT</b>
 
-🚀 Keep mining to earn more!`;
+Keep mining to earn more!`;
 
         const keyboard = {
           inline_keyboard: [
             [
               {
-                text: '⛏️ Open Mining App',
+                text: 'Open Mining App',
                 web_app: { url: WEBAPP_URL }
               }
             ]
@@ -725,7 +756,7 @@ Use /start to begin your journey.`;
       const user = await getUserStats(telegramId!);
       
       if (!user) {
-        const notFoundMessage = `❌ <b>Account Not Found</b>
+        const notFoundMessage = `<b>Account Not Found</b>
 
 You haven't started mining yet!
 Use /start to begin your journey.`;
@@ -734,30 +765,30 @@ Use /start to begin your journey.`;
         const referralCode = user.telegram_username || telegramId;
         const referralLink = `https://t.me/boltrsbot?start=${referralCode}`;
         
-        const referralMessage = `🎁 <b>Your Referral Link</b>
+        const referralMessage = `<b>Your Referral Link</b>
 
 Share this link with friends:
 <code>${referralLink}</code>
 
-📊 <b>Your Stats:</b>
-👥 Total Referrals: <b>${user.total_referrals}</b>
-💰 Earnings: <b>${user.referral_bonus.toLocaleString()} BOLT</b>
+<b>Your Stats:</b>
+Total Referrals: <b>${user.total_referrals}</b>
+Earnings: <b>${user.referral_bonus.toLocaleString()} BOLT</b>
 
-🏆 <b>Rewards:</b>
-• +100 BOLT per friend
-• +500 BOLT at 5 friends
-• +1500 BOLT at 10 friends
+<b>Rewards:</b>
++100 BOLT per friend
++500 BOLT at 5 friends
++1500 BOLT at 10 friends
 
-🏆 <b>Contest Active!</b>
+<b>Contest Active!</b>
 Compete for $10,000 in TON prizes!
 
-Share now and earn! 🚀`;
+Share now and earn!`;
 
         const keyboard = {
           inline_keyboard: [
             [
               {
-                text: '🏆 View Contest Leaderboard',
+                text: 'View Contest Leaderboard',
                 web_app: { url: `${WEBAPP_URL}/contest` }
               }
             ]
@@ -774,41 +805,41 @@ Share now and earn! 🚀`;
       const contestInfo = await getContestInfo(user?.id);
 
       if (!contestInfo) {
-        const noContestMessage = `🏆 <b>No Active Contest</b>
+        const noContestMessage = `<b>No Active Contest</b>
 
 There's no referral contest active right now.
 Check back later for upcoming contests!`;
         await sendTelegramMessage(chatId, noContestMessage);
       } else {
-        let contestMessage = `🏆 <b>${contestInfo.name}</b>
+        let contestMessage = `<b>${contestInfo.name}</b>
 
-💰 Prize Pool: <b>$${contestInfo.prizePool.toLocaleString()} in TON</b>
-⏳ Time Remaining: <b>${contestInfo.timeRemaining}</b>
+Prize Pool: <b>$${contestInfo.prizePool.toLocaleString()} in TON</b>
+Time Remaining: <b>${contestInfo.timeRemaining}</b>
 
-🥇 1st Place: <b>$3,000</b>
-🥈 2nd Place: <b>$2,000</b>
-🥉 3rd Place: <b>$1,500</b>
+1st Place: <b>$3,000</b>
+2nd Place: <b>$2,000</b>
+3rd Place: <b>$1,500</b>
 4th-10th: <b>$500 each</b>`;
 
         if (contestInfo.userRank) {
           contestMessage += `
 
-📊 <b>Your Stats:</b>
+<b>Your Stats:</b>
 Rank: <b>#${contestInfo.userRank.rank}</b>
 Referrals: <b>${contestInfo.userRank.referrals}</b>`;
           
           if (contestInfo.userRank.rank <= 10) {
             contestMessage += `
-🎯 <b>You're in the prize zone!</b>`;
+<b>You're in the prize zone!</b>`;
           }
         }
 
         if (contestInfo.top3.length > 0) {
           contestMessage += `
 
-🏅 <b>Top 3:</b>`;
+<b>Top 3:</b>`;
           contestInfo.top3.forEach((p: any) => {
-            const emoji = p.rank === 1 ? '🥇' : p.rank === 2 ? '🥈' : '🥉';
+            const emoji = p.rank === 1 ? '1.' : p.rank === 2 ? '2.' : '3.';
             contestMessage += `
 ${emoji} @${p.username} - ${p.count} refs`;
           });
@@ -816,19 +847,19 @@ ${emoji} @${p.username} - ${p.count} refs`;
 
         contestMessage += `
 
-Invite friends to climb the leaderboard! 🚀`;
+Invite friends to climb the leaderboard!`;
 
         const keyboard = {
           inline_keyboard: [
             [
               {
-                text: '🏆 View Full Leaderboard',
+                text: 'View Full Leaderboard',
                 web_app: { url: `${WEBAPP_URL}/contest` }
               }
             ],
             [
               {
-                text: '🔗 Get Referral Link',
+                text: 'Get Referral Link',
                 callback_data: 'get_referral'
               }
             ]
@@ -841,43 +872,43 @@ Invite friends to climb the leaderboard! 🚀`;
 
     // Handle /help command
     else if (messageText === '/help') {
-      const helpMessage = `📚 <b>Available Commands</b>
+      const helpMessage = `<b>Available Commands</b>
 
-/start - Start the bot & open mining app
-/balance - Check your BOLT balance & stats
+/start - Start the bot and open mining app
+/balance - Check your BOLT balance and stats
 /referral - Get your referral link
-/contest - View contest info & leaderboard
+/contest - View contest info and leaderboard
 /help - Show this help message
 
-🚀 <b>Quick Actions:</b>
-• Tap the button below to start mining
-• Invite friends to earn bonus BOLT
-• Complete daily tasks for extra rewards
-• Compete in the $10,000 referral contest!
+<b>Quick Actions:</b>
+Tap the button below to start mining
+Invite friends to earn bonus BOLT
+Complete daily tasks for extra rewards
+Compete in the $10,000 referral contest!
 
-💡 <b>Tips:</b>
-• Mine daily to maximize earnings
-• Upgrade mining power for faster rewards
-• Extend mining duration for longer sessions`;
+<b>Tips:</b>
+Mine daily to maximize earnings
+Upgrade mining power for faster rewards
+Extend mining duration for longer sessions`;
 
       const keyboard = {
         inline_keyboard: [
           [
             {
-              text: '🚀 Start Mining',
+              text: 'Start Mining',
               web_app: { url: WEBAPP_URL }
             }
           ],
           [
             {
-              text: '🏆 View Contest',
+              text: 'View Contest',
               web_app: { url: `${WEBAPP_URL}/contest` }
             }
           ],
           [
             {
-              text: '📢 Join Channel',
-              url: 'https://t.me/boltrs'
+              text: 'Join Channel',
+              url: 'https://t.me/boltcomm'
             }
           ]
         ]

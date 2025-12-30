@@ -876,6 +876,48 @@ export type Database = {
           },
         ]
       }
+      daily_spins: {
+        Row: {
+          created_at: string
+          free_spin_used: boolean | null
+          id: string
+          paid_spins_count: number | null
+          spin_date: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          free_spin_used?: boolean | null
+          id?: string
+          paid_spins_count?: number | null
+          spin_date?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          free_spin_used?: boolean | null
+          id?: string
+          paid_spins_count?: number | null
+          spin_date?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_spins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_spins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_daily_rewards: {
         Row: {
           claimed_at: string
@@ -1400,6 +1442,99 @@ export type Database = {
           },
         ]
       }
+      spin_history: {
+        Row: {
+          created_at: string
+          id: string
+          reward_amount: number | null
+          reward_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          reward_amount?: number | null
+          reward_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          reward_amount?: number | null
+          reward_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "spin_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "spin_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stars_payments: {
+        Row: {
+          amount_stars: number
+          amount_usd: number | null
+          created_at: string
+          id: string
+          product_id: string | null
+          product_type: string
+          status: string
+          telegram_id: number
+          telegram_payment_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount_stars: number
+          amount_usd?: number | null
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_type: string
+          status?: string
+          telegram_id: number
+          telegram_payment_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount_stars?: number
+          amount_usd?: number | null
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_type?: string
+          status?: string
+          telegram_id?: number
+          telegram_payment_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stars_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stars_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ton_payments: {
         Row: {
           amount_ton: number
@@ -1508,6 +1643,45 @@ export type Database = {
           },
           {
             foreignKeyName: "user_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_boosters: {
+        Row: {
+          booster_type: string
+          created_at: string
+          expires_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          booster_type: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          booster_type?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_boosters_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_boosters_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_leaderboard"
@@ -1742,6 +1916,57 @@ export type Database = {
           },
           {
             foreignKeyName: "user_upgrades_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      withdrawal_requests: {
+        Row: {
+          admin_note: string | null
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          processed_at: string | null
+          status: string
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          admin_note?: string | null
+          amount: number
+          created_at?: string
+          currency: string
+          id?: string
+          processed_at?: string | null
+          status?: string
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          admin_note?: string | null
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          processed_at?: string | null
+          status?: string
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "withdrawal_requests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "withdrawal_requests_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "public_leaderboard"
