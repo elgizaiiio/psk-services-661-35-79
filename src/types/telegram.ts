@@ -15,8 +15,10 @@ export interface ViralUser {
   last_name?: string;
   photo_url?: string;
   token_balance: number;
-  mining_power_multiplier: number;
+  mining_power: number;
   mining_duration_hours: number;
+  total_referrals?: number;
+  referral_bonus?: number;
   created_at: string;
   updated_at: string;
 }
@@ -27,7 +29,7 @@ export interface MiningSession {
   start_time: string;
   end_time: string;
   tokens_per_hour: number;
-  mining_power_multiplier: number;
+  mining_power: number;
   total_mined: number;
   is_active: boolean;
   completed_at?: string;

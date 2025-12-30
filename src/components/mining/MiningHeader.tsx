@@ -25,11 +25,11 @@ const MiningHeader: React.FC<MiningHeaderProps> = ({ telegramUser, user }) => {
             <p className="text-sm text-muted-foreground">Level</p>
             <div className="flex items-center gap-2">
               <span className="text-lg font-bold text-primary">
-                {Math.floor((user?.mining_power_multiplier || 2) / 2)}
+                {Math.floor((user?.mining_power || 2) / 2)}
               </span>
               <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
                 <span className="text-xs font-bold text-primary-foreground">
-                  {Math.floor((user?.mining_power_multiplier || 2) / 2)}
+                  {Math.floor((user?.mining_power || 2) / 2)}
                 </span>
               </div>
             </div>
