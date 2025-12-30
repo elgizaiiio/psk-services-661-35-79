@@ -23,16 +23,16 @@ interface SpinReward {
 }
 
 const SPIN_REWARDS: SpinReward[] = [
-  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 22, color: '#F59E0B', icon: <BoltIcon size={14} /> },
-  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 20, color: '#374151', icon: <Gift className="w-3 h-3" /> },
-  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 15, color: '#EAB308', icon: <BoltIcon size={14} /> },
-  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 10, color: '#0EA5E9', icon: <TonIcon size={14} /> },
-  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 10, color: '#D97706', icon: <BoltIcon size={14} /> },
-  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 8, color: '#10B981', icon: <UsdtIcon size={14} /> },
-  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 6, color: '#0284C7', icon: <TonIcon size={14} /> },
-  { id: 'usdt_5', label: '5', type: 'usdt', value: 5, probability: 5, color: '#059669', icon: <UsdtIcon size={14} /> },
-  { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 3, color: '#8B5CF6', icon: <Zap className="w-3 h-3" /> },
-  { id: 'ton_5', label: '5', type: 'ton', value: 5, probability: 1, color: '#0369A1', icon: <TonIcon size={14} /> },
+  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 22, color: '#FFB347', icon: <BoltIcon size={14} /> },
+  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 20, color: '#A8B4C4', icon: <Gift className="w-3 h-3" /> },
+  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 15, color: '#FFD180', icon: <BoltIcon size={14} /> },
+  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 10, color: '#7EC8E3', icon: <TonIcon size={14} /> },
+  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 10, color: '#FFAB76', icon: <BoltIcon size={14} /> },
+  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 8, color: '#7ED9A6', icon: <UsdtIcon size={14} /> },
+  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 6, color: '#5DADE2', icon: <TonIcon size={14} /> },
+  { id: 'usdt_5', label: '5', type: 'usdt', value: 5, probability: 5, color: '#58D68D', icon: <UsdtIcon size={14} /> },
+  { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 3, color: '#BB8FCE', icon: <Zap className="w-3 h-3" /> },
+  { id: 'ton_5', label: '5', type: 'ton', value: 5, probability: 1, color: '#85C1E9', icon: <TonIcon size={14} /> },
 ];
 
 const TICKET_PRICE_TON = 0.1;
