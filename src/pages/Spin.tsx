@@ -6,7 +6,7 @@ import { useViralMining } from '@/hooks/useViralMining';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Gift, Star, Zap, Ticket, Plus, Sparkles } from 'lucide-react';
+import { Loader2, Gift, Zap, Ticket, Plus, Sparkles, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageWrapper, StaggerContainer, FadeUp } from '@/components/ui/motion-wrapper';
 import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
@@ -232,63 +232,76 @@ const Spin: React.FC = () => {
           <FadeUp>
             <div className="relative flex items-center justify-center py-6">
               {/* Pointer */}
-              <div className="absolute -top-0 left-1/2 -translate-x-1/2 z-20">
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
                 <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent border-t-primary drop-shadow-lg" />
               </div>
 
-              {/* Wheel Container - Larger */}
-              <div className="relative w-[300px] h-[300px]">
+              {/* Wheel Container */}
+              <div className="relative w-[280px] h-[280px]">
                 <motion.div
-                  className="relative w-full h-full rounded-full shadow-2xl overflow-hidden"
-                  style={{ boxShadow: '0 0 0 6px hsl(var(--primary)), 0 0 30px hsl(var(--primary)/0.4)' }}
+                  className="relative w-full h-full rounded-full shadow-2xl"
+                  style={{ boxShadow: '0 0 0 5px hsl(var(--primary)), 0 0 25px hsl(var(--primary)/0.3)' }}
                   animate={{ rotate: rotation }}
                   transition={{ duration: 5, ease: [0.17, 0.67, 0.12, 0.99] }}
                 >
-                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                  {/* SVG Segments */}
+                  <svg viewBox="0 0 100 100" className="w-full h-full rounded-full overflow-hidden">
                     {SPIN_REWARDS.map((reward, index) => {
                       const startAngle = index * segmentAngle;
-                      const endAngle = (index + 1) * segmentAngle;
                       const startRad = (startAngle - 90) * (Math.PI / 180);
-                      const endRad = (endAngle - 90) * (Math.PI / 180);
+                      const endRad = ((index + 1) * segmentAngle - 90) * (Math.PI / 180);
                       
                       const x1 = 50 + 50 * Math.cos(startRad);
                       const y1 = 50 + 50 * Math.sin(startRad);
                       const x2 = 50 + 50 * Math.cos(endRad);
                       const y2 = 50 + 50 * Math.sin(endRad);
                       
-                      const pathD = `M 50 50 L ${x1} ${y1} A 50 50 0 0 1 ${x2} ${y2} Z`;
-                      
-                      const midAngle = (startAngle + segmentAngle / 2 - 90) * (Math.PI / 180);
-                      const iconX = 50 + 28 * Math.cos(midAngle);
-                      const iconY = 50 + 28 * Math.sin(midAngle);
-                      const textX = 50 + 40 * Math.cos(midAngle);
-                      const textY = 50 + 40 * Math.sin(midAngle);
-                      const rot = startAngle + segmentAngle / 2;
-                      
-                      // Icon character based on type
-                      const iconChar = reward.type === 'bolt' ? '⚡' : 
-                                       reward.type === 'ton' ? '💎' : 
-                                       reward.type === 'usdt' ? '💵' : 
-                                       reward.type === 'booster' ? '🚀' : '❌';
-                      
                       return (
-                        <g key={reward.id}>
-                          <path d={pathD} fill={reward.color} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
-                          <text x={iconX} y={iconY} textAnchor="middle" dominantBaseline="middle" fontSize="6" transform={`rotate(${rot}, ${iconX}, ${iconY})`}>
-                            {iconChar}
-                          </text>
-                          <text x={textX} y={textY} textAnchor="middle" dominantBaseline="middle" transform={`rotate(${rot}, ${textX}, ${textY})`} fill="white" fontSize="5" fontWeight="bold">
-                            {reward.label}
-                          </text>
-                        </g>
+                        <path
+                          key={reward.id}
+                          d={`M 50 50 L ${x1} ${y1} A 50 50 0 0 1 ${x2} ${y2} Z`}
+                          fill={reward.color}
+                          stroke="rgba(255,255,255,0.15)"
+                          strokeWidth="0.5"
+                        />
                       );
                     })}
                   </svg>
 
+                  {/* Icons overlay */}
+                  {SPIN_REWARDS.map((reward, index) => {
+                    const midAngle = (index * segmentAngle + segmentAngle / 2 - 90) * (Math.PI / 180);
+                    const radius = 95;
+                    const x = 50 + (radius / 2.8) * Math.cos(midAngle);
+                    const y = 50 + (radius / 2.8) * Math.sin(midAngle);
+                    const rot = index * segmentAngle + segmentAngle / 2;
+                    
+                    return (
+                      <div
+                        key={reward.id}
+                        className="absolute flex flex-col items-center gap-0.5"
+                        style={{
+                          left: `${x}%`,
+                          top: `${y}%`,
+                          transform: `translate(-50%, -50%) rotate(${rot}deg)`,
+                        }}
+                      >
+                        <div className="w-5 h-5 flex items-center justify-center">
+                          {reward.type === 'bolt' && <BoltIcon size={18} />}
+                          {reward.type === 'ton' && <TonIcon size={18} />}
+                          {reward.type === 'usdt' && <UsdtIcon size={18} />}
+                          {reward.type === 'booster' && <Zap className="w-4 h-4 text-white" />}
+                          {reward.type === 'nothing' && <X className="w-4 h-4 text-white/70" />}
+                        </div>
+                        <span className="text-[10px] font-bold text-white drop-shadow-md">{reward.label}</span>
+                      </div>
+                    );
+                  })}
+
                   {/* Center */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-14 h-14 rounded-full bg-background border-4 border-primary flex items-center justify-center shadow-xl">
-                      <span className="text-xl">🎰</span>
+                    <div className="w-12 h-12 rounded-full bg-background border-4 border-primary flex items-center justify-center shadow-xl">
+                      <Sparkles className="w-5 h-5 text-primary" />
                     </div>
                   </div>
                 </motion.div>
