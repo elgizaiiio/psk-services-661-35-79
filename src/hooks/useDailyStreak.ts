@@ -4,7 +4,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 
 // Rewards increase each day up to day 7, then reset
-const STREAK_REWARDS = [100, 200, 350, 500, 750, 1000, 1500];
+const STREAK_REWARDS = [5, 10, 15, 25, 35, 50, 75];
 
 interface DailyLoginReward {
   id: string;

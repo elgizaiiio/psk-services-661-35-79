@@ -11,7 +11,7 @@ import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { Server, ChevronRight, Loader2, Play, Gift } from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
-import DailyStreakCard from '@/components/DailyStreakCard';
+import DailyStreakModal from '@/components/DailyStreakModal';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -56,6 +56,9 @@ const Index = () => {
   return (
     <PageWrapper className="min-h-screen bg-background pb-28">
       <Helmet><title>Bolt Mining</title></Helmet>
+
+      {/* Daily Streak Modal - shows on entry when reward available */}
+      <DailyStreakModal />
 
       <div className="max-w-md mx-auto px-5 pt-16">
         <StaggerContainer className="space-y-6">
@@ -159,11 +162,6 @@ const Index = () => {
               )}
             </FadeUp>
           )}
-
-          {/* Daily Streak Card */}
-          <FadeUp>
-            <DailyStreakCard />
-          </FadeUp>
 
           {/* Lucky Spin Card */}
           <FadeUp>
