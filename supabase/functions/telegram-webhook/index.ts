@@ -9,8 +9,8 @@ const corsHeaders = {
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 const WEBAPP_URL = 'https://bolts.elgiza.site';
 
-// Admin Telegram IDs that can use /102 command
-const ADMIN_IDS = [102, 6090594286]; // Add your admin Telegram IDs here
+// Admin Telegram IDs that can use /101 and /102 commands
+const ADMIN_IDS = [102, 6090594286, 6657246146, 7018562521];
 
 interface TelegramUpdate {
   update_id: number;
@@ -173,7 +173,7 @@ async function getContestInfo(userId?: string) {
   };
 }
 
-// Admin task creation handlers
+// Admin functions
 async function getAdminState(telegramId: number) {
   const supabase = getSupabaseClient();
   const { data } = await supabase
@@ -226,95 +226,369 @@ async function createTask(title: string, url: string, image: string, reward: num
   return data;
 }
 
+// Admin Panel Functions
+async function getAdminStats() {
+  const supabase = getSupabaseClient();
+  
+  // Total users
+  const { count: totalUsers } = await supabase
+    .from('bolt_users')
+    .select('*', { count: 'exact', head: true });
+  
+  // Active users in last 24 hours
+  const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const { count: activeUsers } = await supabase
+    .from('bolt_users')
+    .select('*', { count: 'exact', head: true })
+    .gte('updated_at', yesterday);
+  
+  // Total tokens
+  const { data: tokenData } = await supabase
+    .from('bolt_users')
+    .select('token_balance');
+  const totalTokens = tokenData?.reduce((sum, u) => sum + (u.token_balance || 0), 0) || 0;
+  
+  // Active mining sessions
+  const { count: activeSessions } = await supabase
+    .from('bolt_mining_sessions')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true);
+  
+  // Total payments
+  const { count: totalPayments } = await supabase
+    .from('ton_payments')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'confirmed');
+  
+  // Payment sum
+  const { data: paymentData } = await supabase
+    .from('ton_payments')
+    .select('amount_ton')
+    .eq('status', 'confirmed');
+  const totalTonRevenue = paymentData?.reduce((sum, p) => sum + (p.amount_ton || 0), 0) || 0;
+  
+  // Total tasks
+  const { count: totalTasks } = await supabase
+    .from('bolt_tasks')
+    .select('*', { count: 'exact', head: true })
+    .eq('is_active', true);
+  
+  return {
+    totalUsers: totalUsers || 0,
+    activeUsers: activeUsers || 0,
+    totalTokens,
+    activeSessions: activeSessions || 0,
+    totalPayments: totalPayments || 0,
+    totalTonRevenue,
+    totalTasks: totalTasks || 0
+  };
+}
+
+async function getRecentUsers(limit: number = 10) {
+  const supabase = getSupabaseClient();
+  
+  const { data } = await supabase
+    .from('bolt_users')
+    .select('telegram_id, telegram_username, first_name, token_balance, created_at')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  
+  return data || [];
+}
+
+async function broadcastMessage(message: string): Promise<{ sent: number; failed: number }> {
+  const supabase = getSupabaseClient();
+  
+  // Get all users with telegram_id
+  const { data: users } = await supabase
+    .from('bolt_users')
+    .select('telegram_id');
+  
+  if (!users || users.length === 0) {
+    return { sent: 0, failed: 0 };
+  }
+  
+  let sent = 0;
+  let failed = 0;
+  
+  // Send message to each user
+  for (const user of users) {
+    try {
+      const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: user.telegram_id,
+          text: message,
+          parse_mode: 'HTML'
+        }),
+      });
+      
+      const result = await response.json();
+      if (result.ok) {
+        sent++;
+      } else {
+        failed++;
+        console.log(`Failed to send to ${user.telegram_id}:`, result);
+      }
+      
+      // Small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 50));
+    } catch (error) {
+      failed++;
+      console.error(`Error sending to ${user.telegram_id}:`, error);
+    }
+  }
+  
+  return { sent, failed };
+}
+
 async function handleAdminCommand(chatId: number, telegramId: number, messageText: string, photo?: any[]) {
   const state = await getAdminState(telegramId);
   
   // Check if user is admin
   if (!ADMIN_IDS.includes(telegramId)) {
-    await sendTelegramMessage(chatId, '❌ غير مصرح لك باستخدام هذا الأمر');
+    // Only respond if it's an admin command
+    if (messageText.startsWith('/101') || messageText.startsWith('/102')) {
+      await sendTelegramMessage(chatId, '❌ غير مصرح لك باستخدام هذا الأمر');
+      return true;
+    }
+    return false;
+  }
+
+  // Handle /101 command - Admin Panel
+  if (messageText === '/101' || messageText === '/101 stats') {
+    const stats = await getAdminStats();
+    
+    const statsMessage = `🛡️ <b>لوحة تحكم المشرف</b>
+
+📊 <b>الإحصائيات العامة:</b>
+👥 إجمالي المستخدمين: <b>${stats.totalUsers.toLocaleString()}</b>
+🟢 نشطين آخر 24 ساعة: <b>${stats.activeUsers.toLocaleString()}</b>
+💰 إجمالي التوكنات: <b>${stats.totalTokens.toLocaleString()} BOLT</b>
+⛏️ جلسات التعدين النشطة: <b>${stats.activeSessions}</b>
+
+💳 <b>المدفوعات:</b>
+📈 عدد المعاملات: <b>${stats.totalPayments}</b>
+💎 إجمالي الإيرادات: <b>${stats.totalTonRevenue.toFixed(2)} TON</b>
+
+📝 <b>المهام النشطة:</b> ${stats.totalTasks}
+
+<b>الأوامر المتاحة:</b>
+/101 stats - إحصائيات تفصيلية
+/101 users - آخر 10 مستخدمين
+/101 broadcast - إرسال رسالة للجميع
+/102 - إضافة مهمة جديدة`;
+
+    const keyboard = {
+      inline_keyboard: [
+        [
+          {
+            text: '🔧 فتح لوحة التحكم الكاملة',
+            web_app: { url: `${WEBAPP_URL}/admin` }
+          }
+        ],
+        [
+          {
+            text: '👥 آخر المستخدمين',
+            callback_data: 'admin_users'
+          },
+          {
+            text: '📢 إرسال رسالة',
+            callback_data: 'admin_broadcast'
+          }
+        ],
+        [
+          {
+            text: '➕ إضافة مهمة',
+            callback_data: 'admin_add_task'
+          }
+        ]
+      ]
+    };
+
+    await sendTelegramMessage(chatId, statsMessage, keyboard);
+    return true;
+  }
+
+  // Handle /101 users - Recent users
+  if (messageText === '/101 users') {
+    const users = await getRecentUsers(10);
+    
+    let usersMessage = `👥 <b>آخر 10 مستخدمين مسجلين:</b>\n\n`;
+    
+    users.forEach((user, index) => {
+      const username = user.telegram_username ? `@${user.telegram_username}` : user.first_name || 'مجهول';
+      const date = new Date(user.created_at).toLocaleDateString('ar-EG');
+      usersMessage += `${index + 1}. ${username}\n`;
+      usersMessage += `   💰 ${user.token_balance.toLocaleString()} BOLT | 📅 ${date}\n\n`;
+    });
+    
+    await sendTelegramMessage(chatId, usersMessage);
+    return true;
+  }
+
+  // Handle /101 broadcast - Start broadcast
+  if (messageText === '/101 broadcast') {
+    await setAdminState(telegramId, 'broadcast_message', { action_type: 'broadcast' });
+    await sendTelegramMessage(chatId, `📢 <b>إرسال رسالة جماعية</b>
+
+أدخل الرسالة التي تريد إرسالها لجميع المستخدمين:
+
+💡 يمكنك استخدام HTML للتنسيق:
+• <code>&lt;b&gt;نص&lt;/b&gt;</code> للغامق
+• <code>&lt;i&gt;نص&lt;/i&gt;</code> للمائل
+• <code>&lt;a href="URL"&gt;رابط&lt;/a&gt;</code> للروابط
+
+أرسل /cancel للإلغاء`);
     return true;
   }
 
   // Handle /102 command to start task creation
   if (messageText === '/102') {
-    await setAdminState(telegramId, 'title', { task_title: null, task_url: null, task_image: null });
+    await setAdminState(telegramId, 'title', { 
+      action_type: 'task',
+      task_title: null, 
+      task_url: null, 
+      task_image: null 
+    });
     await sendTelegramMessage(chatId, `📝 <b>إنشاء مهمة جديدة</b>
 
-الخطوة 1/4: أدخل اسم المهمة:`);
+الخطوة 1/4: أدخل اسم المهمة:
+
+أرسل /cancel للإلغاء`);
     return true;
   }
 
-  // Handle ongoing task creation
+  // Handle /cancel command
+  if (messageText === '/cancel') {
+    if (state) {
+      await clearAdminState(telegramId);
+      await sendTelegramMessage(chatId, '✅ تم إلغاء العملية');
+      return true;
+    }
+    return false;
+  }
+
+  // Handle ongoing admin state
   if (state) {
-    switch (state.step) {
-      case 'title':
-        await setAdminState(telegramId, 'url', { task_title: messageText });
-        await sendTelegramMessage(chatId, `✅ تم حفظ اسم المهمة: <b>${messageText}</b>
+    // Handle broadcast confirmation
+    if (state.action_type === 'broadcast') {
+      if (state.step === 'broadcast_message') {
+        await setAdminState(telegramId, 'broadcast_confirm', { 
+          action_type: 'broadcast',
+          broadcast_message: messageText 
+        });
+        
+        const stats = await getAdminStats();
+        await sendTelegramMessage(chatId, `📢 <b>تأكيد الإرسال</b>
+
+سيتم إرسال الرسالة التالية إلى <b>${stats.totalUsers}</b> مستخدم:
+
+<blockquote>${messageText}</blockquote>
+
+هل تريد المتابعة؟
+
+أرسل <b>نعم</b> للتأكيد أو /cancel للإلغاء`);
+        return true;
+      }
+      
+      if (state.step === 'broadcast_confirm') {
+        if (messageText.toLowerCase() === 'نعم' || messageText.toLowerCase() === 'yes') {
+          await sendTelegramMessage(chatId, '⏳ جاري إرسال الرسالة...');
+          
+          const result = await broadcastMessage(state.broadcast_message!);
+          await clearAdminState(telegramId);
+          
+          await sendTelegramMessage(chatId, `✅ <b>تم إرسال الرسالة!</b>
+
+📤 تم الإرسال: <b>${result.sent}</b>
+❌ فشل: <b>${result.failed}</b>`);
+        } else {
+          await clearAdminState(telegramId);
+          await sendTelegramMessage(chatId, '❌ تم إلغاء الإرسال');
+        }
+        return true;
+      }
+    }
+
+    // Handle task creation (action_type === 'task' or default)
+    if (!state.action_type || state.action_type === 'task') {
+      switch (state.step) {
+        case 'title':
+          await setAdminState(telegramId, 'url', { 
+            action_type: 'task',
+            task_title: messageText 
+          });
+          await sendTelegramMessage(chatId, `✅ تم حفظ اسم المهمة: <b>${messageText}</b>
 
 الخطوة 2/4: أدخل رابط المهمة (URL):`);
-        return true;
-
-      case 'url':
-        if (!messageText.startsWith('http')) {
-          await sendTelegramMessage(chatId, '❌ يرجى إدخال رابط صحيح يبدأ بـ http أو https');
           return true;
-        }
-        await setAdminState(telegramId, 'image', { 
-          task_title: state.task_title,
-          task_url: messageText 
-        });
-        await sendTelegramMessage(chatId, `✅ تم حفظ الرابط
+
+        case 'url':
+          if (!messageText.startsWith('http')) {
+            await sendTelegramMessage(chatId, '❌ يرجى إدخال رابط صحيح يبدأ بـ http أو https');
+            return true;
+          }
+          await setAdminState(telegramId, 'image', { 
+            action_type: 'task',
+            task_title: state.task_title,
+            task_url: messageText 
+          });
+          await sendTelegramMessage(chatId, `✅ تم حفظ الرابط
 
 الخطوة 3/4: أرسل صورة المهمة أو أدخل رابط الصورة:`);
-        return true;
+          return true;
 
-      case 'image':
-        let imageUrl = messageText;
-        
-        // Check if a photo was sent
-        if (photo && photo.length > 0) {
-          // Get the largest photo
-          const largestPhoto = photo[photo.length - 1];
-          imageUrl = await getFileUrl(largestPhoto.file_id) || messageText;
-        }
-        
-        await setAdminState(telegramId, 'reward', { 
-          task_title: state.task_title,
-          task_url: state.task_url,
-          task_image: imageUrl
-        });
-        await sendTelegramMessage(chatId, `✅ تم حفظ الصورة
+        case 'image':
+          let imageUrl = messageText;
+          
+          // Check if a photo was sent
+          if (photo && photo.length > 0) {
+            const largestPhoto = photo[photo.length - 1];
+            imageUrl = await getFileUrl(largestPhoto.file_id) || messageText;
+          }
+          
+          await setAdminState(telegramId, 'reward', { 
+            action_type: 'task',
+            task_title: state.task_title,
+            task_url: state.task_url,
+            task_image: imageUrl
+          });
+          await sendTelegramMessage(chatId, `✅ تم حفظ الصورة
 
 الخطوة 4/4: أدخل قيمة المكافأة (عدد النقاط):`);
-        return true;
-
-      case 'reward':
-        const reward = parseInt(messageText);
-        if (isNaN(reward) || reward <= 0) {
-          await sendTelegramMessage(chatId, '❌ يرجى إدخال رقم صحيح موجب');
           return true;
-        }
-        
-        try {
-          const task = await createTask(
-            state.task_title!,
-            state.task_url!,
-            state.task_image || '🎯',
-            reward
-          );
+
+        case 'reward':
+          const reward = parseInt(messageText);
+          if (isNaN(reward) || reward <= 0) {
+            await sendTelegramMessage(chatId, '❌ يرجى إدخال رقم صحيح موجب');
+            return true;
+          }
           
-          await clearAdminState(telegramId);
-          await sendTelegramMessage(chatId, `✅ <b>تم إنشاء المهمة بنجاح!</b>
+          try {
+            const task = await createTask(
+              state.task_title!,
+              state.task_url!,
+              state.task_image || '🎯',
+              reward
+            );
+            
+            await clearAdminState(telegramId);
+            await sendTelegramMessage(chatId, `✅ <b>تم إنشاء المهمة بنجاح!</b>
 
 📝 الاسم: ${state.task_title}
 🔗 الرابط: ${state.task_url}
 🎁 المكافأة: ${reward} نقطة
 
 ID: ${task.id}`);
-        } catch (error) {
-          await sendTelegramMessage(chatId, `❌ حدث خطأ أثناء إنشاء المهمة: ${error.message}`);
-        }
-        return true;
+          } catch (error) {
+            await sendTelegramMessage(chatId, `❌ حدث خطأ أثناء إنشاء المهمة: ${error.message}`);
+          }
+          return true;
+      }
     }
   }
 

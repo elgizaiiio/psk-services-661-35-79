@@ -64,28 +64,37 @@ export type Database = {
       }
       admin_task_creation_state: {
         Row: {
+          action_type: string | null
+          broadcast_message: string | null
           created_at: string | null
           id: string
           step: string
           task_image: string | null
+          task_reward: number | null
           task_title: string | null
           task_url: string | null
           telegram_id: number
         }
         Insert: {
+          action_type?: string | null
+          broadcast_message?: string | null
           created_at?: string | null
           id?: string
           step?: string
           task_image?: string | null
+          task_reward?: number | null
           task_title?: string | null
           task_url?: string | null
           telegram_id: number
         }
         Update: {
+          action_type?: string | null
+          broadcast_message?: string | null
           created_at?: string | null
           id?: string
           step?: string
           task_image?: string | null
+          task_reward?: number | null
           task_title?: string | null
           task_url?: string | null
           telegram_id?: number
