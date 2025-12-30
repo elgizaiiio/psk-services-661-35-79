@@ -33,7 +33,7 @@ const packages: Package[] = [
 
 const BuyBolt = () => {
   const { user: telegramUser, webApp } = useTelegramAuth();
-  const initData = webApp?.initData || '';
+  
   const { user } = useViralMining(telegramUser);
   const [tonConnectUI] = useTonConnectUI();
   const { price: tonPrice } = useTonPrice();
@@ -50,71 +50,120 @@ const BuyBolt = () => {
     }
 
     if (method === 'stars') {
-      if (!telegramUser?.id || !initData) {
-        toast.error('Telegram authentication required');
+      if (!telegramUser?.id || !webApp) {
+        toast.error('Stars payment only works inside Telegram');
         return;
       }
+
+      const totalBolts = pkg.bolts + Math.floor(pkg.bolts * pkg.bonus / 100);
 
       setSelectedPackage(pkg.id);
       setPaymentMethod('stars');
       setIsProcessing(true);
 
       try {
+        // 1) Create a payment record (same pattern as UnifiedPaymentModal)
+        const { data: paymentRecord, error: paymentError } = await supabase
+          .from('stars_payments')
+          .insert({
+            user_id: user.id,
+            telegram_id: telegramUser.id,
+            product_type: 'token_purchase',
+            product_id: pkg.id,
+            amount_stars: pkg.priceStars,
+            amount_usd: null,
+            status: 'pending',
+          })
+          .select()
+          .single();
+
+        if (paymentError) throw paymentError;
+
+        // 2) Create invoice link via backend function
         const { data, error } = await supabase.functions.invoke('create-stars-invoice', {
           body: {
             title: `${pkg.name} Package`,
             description: `${pkg.bolts.toLocaleString()} BOLT tokens${pkg.bonus > 0 ? ` (+${pkg.bonus}% bonus)` : ''}`,
-            payload: JSON.stringify({ 
-              type: 'bolt_tokens', 
-              packageId: pkg.id, 
-              userId: user.id,
-              bolts: pkg.bolts + Math.floor(pkg.bolts * pkg.bonus / 100)
+            payload: JSON.stringify({
+              payment_id: paymentRecord.id,
+              product_type: 'token_purchase',
+              product_id: pkg.id,
+              user_id: user.id,
+              bolts: totalBolts,
             }),
             amount: pkg.priceStars,
-          },
-          headers: {
-            'x-telegram-init-data': initData,
           },
         });
 
         if (error) throw error;
 
         const invoiceUrl = data?.invoice_link;
-        if (invoiceUrl) {
-          const tgWebApp = (window as any).Telegram?.WebApp;
-          if (tgWebApp?.openInvoice) {
-            tgWebApp.openInvoice(invoiceUrl, async (status: string) => {
-              if (status === 'paid') {
-                // Update user balance
-                const totalBolts = pkg.bolts + Math.floor(pkg.bolts * pkg.bonus / 100);
-                const { data: currentUser } = await supabase
-                  .from('bolt_users')
-                  .select('token_balance')
-                  .eq('id', user.id)
-                  .single();
-                
-                const newBalance = (currentUser?.token_balance || 0) + totalBolts;
-                await supabase
-                  .from('bolt_users')
-                  .update({ token_balance: newBalance })
-                  .eq('id', user.id);
-                
-                toast.success(`Purchased ${totalBolts.toLocaleString()} BOLT`);
-              } else if (status === 'cancelled') {
-                toast.info('Payment cancelled');
-              } else {
-                toast.error('Payment failed');
+        if (!invoiceUrl) {
+          throw new Error('No invoice URL returned');
+        }
+
+        // 3) Open invoice and wait for completion
+        if ('openInvoice' in webApp) {
+          await new Promise<void>((resolve) => {
+            (webApp as any).openInvoice(invoiceUrl, async (status: string) => {
+              try {
+                if (status === 'paid') {
+                  await supabase
+                    .from('stars_payments')
+                    .update({ status: 'completed' })
+                    .eq('id', paymentRecord.id);
+
+                  const { data: currentUser, error: balanceError } = await supabase
+                    .from('bolt_users')
+                    .select('token_balance')
+                    .eq('id', user.id)
+                    .single();
+
+                  if (balanceError) throw balanceError;
+
+                  const newBalance = (currentUser?.token_balance || 0) + totalBolts;
+                  const { error: updateError } = await supabase
+                    .from('bolt_users')
+                    .update({ token_balance: newBalance })
+                    .eq('id', user.id);
+
+                  if (updateError) throw updateError;
+
+                  toast.success(`Purchased ${totalBolts.toLocaleString()} BOLT`);
+                } else if (status === 'cancelled') {
+                  await supabase
+                    .from('stars_payments')
+                    .update({ status: 'cancelled' })
+                    .eq('id', paymentRecord.id);
+                  toast.info('Payment cancelled');
+                } else if (status === 'failed') {
+                  await supabase
+                    .from('stars_payments')
+                    .update({ status: 'failed' })
+                    .eq('id', paymentRecord.id);
+                  toast.error('Payment failed');
+                } else {
+                  // pending / unknown
+                  await supabase
+                    .from('stars_payments')
+                    .update({ status: 'processing' })
+                    .eq('id', paymentRecord.id);
+                  toast.info('Payment is processing...');
+                }
+              } catch (e) {
+                console.error('Stars payment completion error:', e);
+                toast.error('Failed to complete payment');
+              } finally {
+                resolve();
               }
             });
-          } else {
-            window.open(invoiceUrl, '_blank');
-          }
+          });
         } else {
-          throw new Error('No invoice URL returned');
+          window.open(invoiceUrl, '_blank');
         }
       } catch (error: any) {
         console.error('Stars payment error:', error);
-        toast.error('Failed to create payment');
+        toast.error('Failed to start Stars payment');
       } finally {
         setIsProcessing(false);
         setSelectedPackage(null);
