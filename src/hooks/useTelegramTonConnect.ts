@@ -167,9 +167,9 @@ export const useTelegramTonConnect = () => {
     
     const tonkeeperUrl = walletUrls.tonkeeper;
     
-    if (isTelegramEnvironment && webApp?.openTelegramLink) {
-      // Try to use Telegram's method first
-      webApp.openTelegramLink(tonkeeperUrl);
+    if (isTelegramEnvironment && (webApp as any)?.openLink) {
+      // Try to use Telegram's openLink method
+      (webApp as any).openLink(tonkeeperUrl);
     } else {
       // Fallback to regular window.open
       window.open(tonkeeperUrl, '_blank');

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { MarketplaceListing, UserCharacter, MiningCharacter } from '@/types/mining';
 import { toast } from 'sonner';
+import { logger } from '@/lib/logger';
 
 export const useMarketplace = (userId: string | undefined) => {
   const [listings, setListings] = useState<MarketplaceListing[]>([]);
@@ -34,8 +35,9 @@ export const useMarketplace = (userId: string | undefined) => {
       })) as MarketplaceListing[];
       
       setListings(formattedListings);
+      logger.debug('Marketplace listings fetched', { count: formattedListings.length });
     } catch (error) {
-      console.error('Error fetching listings:', error);
+      logger.error('Error fetching listings', error);
     }
   }, []);
 
@@ -64,8 +66,9 @@ export const useMarketplace = (userId: string | undefined) => {
           character: listing.user_character.character as MiningCharacter
         } as UserCharacter : undefined
       })) as MarketplaceListing[]);
+      logger.debug('My listings fetched', { count: data?.length || 0 });
     } catch (error) {
-      console.error('Error fetching my listings:', error);
+      logger.error('Error fetching my listings', error);
     }
   }, [userId]);
 
@@ -101,9 +104,10 @@ export const useMarketplace = (userId: string | undefined) => {
 
       toast.success('Character listed for sale!');
       await Promise.all([fetchListings(), fetchMyListings()]);
+      logger.info('Listing created successfully');
       return true;
     } catch (error) {
-      console.error('Error creating listing:', error);
+      logger.error('Error creating listing', error);
       toast.error('Failed to create listing');
       return false;
     }
@@ -123,9 +127,10 @@ export const useMarketplace = (userId: string | undefined) => {
 
       toast.success('Listing cancelled');
       await Promise.all([fetchListings(), fetchMyListings()]);
+      logger.info('Listing cancelled');
       return true;
     } catch (error) {
-      console.error('Error cancelling listing:', error);
+      logger.error('Error cancelling listing', error);
       toast.error('Failed to cancel listing');
       return false;
     }
@@ -198,13 +203,14 @@ export const useMarketplace = (userId: string | undefined) => {
 
         toast.success('Character purchased!');
         await Promise.all([fetchListings(), fetchMyListings()]);
+        logger.info('Character purchased successfully');
         return true;
       }
 
       toast.info('TON payment coming soon');
       return false;
     } catch (error) {
-      console.error('Error purchasing listing:', error);
+      logger.error('Error purchasing listing', error);
       toast.error('Failed to purchase');
       return false;
     }

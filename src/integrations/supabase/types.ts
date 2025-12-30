@@ -99,6 +99,13 @@ export type Database = {
             referencedRelation: "bolt_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bolt_completed_tasks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bolt_daily_code_attempts: {
@@ -132,6 +139,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolt_daily_code_attempts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
             referencedColumns: ["id"]
           },
         ]
@@ -207,6 +221,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolt_daily_task_completions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
             referencedColumns: ["id"]
           },
         ]
@@ -382,6 +403,13 @@ export type Database = {
             referencedRelation: "bolt_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bolt_mining_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bolt_referrals: {
@@ -418,10 +446,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "bolt_referrals_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bolt_referrals_referrer_id_fkey"
             columns: ["referrer_id"]
             isOneToOne: false
             referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolt_referrals_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
             referencedColumns: ["id"]
           },
         ]
@@ -642,6 +684,13 @@ export type Database = {
             referencedRelation: "bolt_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bolt_users_referred_by_fkey"
+            columns: ["referred_by"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
         ]
       }
       bolt_vip_tiers: {
@@ -777,6 +826,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contest_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
             referencedColumns: ["id"]
           },
         ]
@@ -1028,10 +1084,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "marketplace_listings_buyer_id_fkey"
+            columns: ["buyer_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "marketplace_listings_seller_id_fkey"
             columns: ["seller_id"]
             isOneToOne: false
             referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketplace_listings_seller_id_fkey"
+            columns: ["seller_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
             referencedColumns: ["id"]
           },
           {
@@ -1397,6 +1467,13 @@ export type Database = {
             referencedRelation: "bolt_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_challenges: {
@@ -1440,6 +1517,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_challenges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
             referencedColumns: ["id"]
           },
         ]
@@ -1488,6 +1572,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_characters_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
             referencedColumns: ["id"]
           },
         ]
@@ -1567,6 +1658,13 @@ export type Database = {
             referencedRelation: "bolt_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_servers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_upgrades: {
@@ -1603,13 +1701,39 @@ export type Database = {
             referencedRelation: "bolt_users"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "user_upgrades_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      public_leaderboard: {
+        Row: {
+          display_name: string | null
+          id: string | null
+          mining_power: number | null
+          photo_url: string | null
+          token_balance: number | null
+          total_referrals: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          p_action: string
+          p_identifier: string
+          p_max_requests?: number
+          p_window_seconds?: number
+        }
+        Returns: boolean
+      }
       get_contest_leaderboard: {
         Args: { contest: string; limit_count?: number }
         Returns: {
@@ -1622,6 +1746,24 @@ export type Database = {
       }
       get_current_telegram_id: { Args: never; Returns: string }
       get_current_user_uuid: { Args: never; Returns: string }
+      get_my_user_data: {
+        Args: { p_telegram_id: number }
+        Returns: {
+          created_at: string
+          first_name: string
+          id: string
+          last_name: string
+          mining_duration_hours: number
+          mining_power: number
+          photo_url: string
+          referral_bonus: number
+          telegram_username: string
+          token_balance: number
+          total_referrals: number
+          updated_at: string
+          usdt_balance: number
+        }[]
+      }
       get_scores_leaderboard: {
         Args: { game?: string; limit_count?: number }
         Returns: {

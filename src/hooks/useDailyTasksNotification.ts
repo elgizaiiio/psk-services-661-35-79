@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { logger } from '@/lib/logger';
 
 interface DailyTasksNotification {
   availableTasks: number;
@@ -61,8 +62,9 @@ export const useDailyTasksNotification = (userId: string | null) => {
 
       // Update last check
       localStorage.setItem(LAST_CHECK_KEY, today);
+      logger.debug('Daily tasks checked', { availableTasks: availableTasks.length, totalRewards });
     } catch (error) {
-      console.error('Error checking daily tasks:', error);
+      logger.error('Error checking daily tasks', error);
     }
   }, [userId]);
 
