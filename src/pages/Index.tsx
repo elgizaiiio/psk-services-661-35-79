@@ -121,11 +121,30 @@ const Index = () => {
             </FadeUp>
           </div>
 
-          {/* Servers Card */}
+          {/* Lucky Spin Card - First */}
           <FadeUp>
-            <motion.button onClick={() => navigate('/mining-servers')} className="w-full p-4 rounded-xl bg-card border border-border flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
+            <motion.button onClick={() => navigate('/spin')} className="w-full p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-foreground">Lucky Spin</p>
+                  <p className="text-xs text-muted-foreground">Win TON, USDT and more</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">Free Daily</span>
+                <ChevronRight className="w-5 h-5 text-primary" />
+              </div>
+            </motion.button>
+          </FadeUp>
+
+          {/* Servers Card - Second */}
+          <FadeUp>
+            <motion.button onClick={() => navigate('/mining-servers')} className="w-full p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
                   <Server className="w-5 h-5 text-primary" />
                 </div>
                 <div className="text-left">
@@ -133,7 +152,7 @@ const Index = () => {
                   <p className="text-xs text-muted-foreground">{stats.totalServers > 0 ? `${stats.totalServers} servers • ${stats.totalHashRate} TH/s` : 'No servers yet'}</p>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              <ChevronRight className="w-5 h-5 text-primary" />
             </motion.button>
           </FadeUp>
 
@@ -165,26 +184,26 @@ const Index = () => {
 
           {/* Buy Bolt Card */}
           <FadeUp>
-            <motion.button onClick={() => navigate('/buy-bolt')} className="w-full p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
+            <motion.button onClick={() => navigate('/buy-bolt')} className="w-full p-4 rounded-xl bg-card border border-border flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                  <ShoppingCart className="w-5 h-5 text-primary" />
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                  <ShoppingCart className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div className="text-left">
                   <p className="font-medium text-foreground">Buy BOLT</p>
                   <p className="text-xs text-muted-foreground">Get more tokens instantly</p>
                 </div>
               </div>
-              <ChevronRight className="w-5 h-5 text-primary" />
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
             </motion.button>
           </FadeUp>
 
-          {/* Contest Card */}
+          {/* Contest Card - Same color as other buttons */}
           <FadeUp>
-            <motion.button onClick={() => navigate('/contest')} className="w-full p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-amber-600/5 border border-amber-500/20 flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
+            <motion.button onClick={() => navigate('/contest')} className="w-full p-4 rounded-xl bg-card border border-border flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-amber-400" />
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                  <Trophy className="w-5 h-5 text-muted-foreground" />
                 </div>
                 <div className="text-left">
                   <p className="font-medium text-foreground">Contest</p>
@@ -192,26 +211,7 @@ const Index = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-amber-400 bg-amber-500/10 px-2 py-1 rounded-full">Live</span>
-                <ChevronRight className="w-5 h-5 text-amber-400" />
-              </div>
-            </motion.button>
-          </FadeUp>
-
-          {/* Lucky Spin Card */}
-          <FadeUp>
-            <motion.button onClick={() => navigate('/spin')} className="w-full p-4 rounded-xl bg-card border border-border flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                  <Gift className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div className="text-left">
-                  <p className="font-medium text-foreground">Lucky Spin</p>
-                  <p className="text-xs text-muted-foreground">Win TON, USDT and more</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded-full">Free Daily</span>
+                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">Live</span>
                 <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </div>
             </motion.button>

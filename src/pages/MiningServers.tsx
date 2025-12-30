@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
-import { Server, Check, Cpu, Activity, Zap, Crown, Star, Flame, TrendingUp, Sparkles, Rocket, Diamond } from 'lucide-react';
+import { Server, Check, Cpu, Activity, TrendingUp, HardDrive, Database, Cloud, Wifi, Globe, Shield, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, FadeUp, StaggerContainer } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon, TonIcon } from '@/components/ui/currency-icons';
@@ -21,7 +21,6 @@ type MiningServer = {
   priceTon: number;
   tier: 'Free' | 'Basic' | 'Pro' | 'Elite';
   icon: React.ElementType;
-  popular?: boolean;
 };
 
 const servers: MiningServer[] = [
@@ -33,7 +32,7 @@ const servers: MiningServer[] = [
     usdtPerDay: 0.05, 
     priceTon: 0, 
     tier: 'Free',
-    icon: Zap,
+    icon: Wifi,
   },
   { 
     id: 'basic-1', 
@@ -43,7 +42,7 @@ const servers: MiningServer[] = [
     usdtPerDay: 0.25, 
     priceTon: 1.5, 
     tier: 'Basic',
-    icon: Server,
+    icon: HardDrive,
   },
   { 
     id: 'basic-2', 
@@ -53,7 +52,7 @@ const servers: MiningServer[] = [
     usdtPerDay: 0.50, 
     priceTon: 2.5, 
     tier: 'Basic',
-    icon: Server,
+    icon: Database,
   },
   { 
     id: 'pro-1', 
@@ -63,8 +62,7 @@ const servers: MiningServer[] = [
     usdtPerDay: 1.25, 
     priceTon: 5.0, 
     tier: 'Pro',
-    icon: Flame,
-    popular: true,
+    icon: Cloud,
   },
   { 
     id: 'pro-2', 
@@ -74,7 +72,7 @@ const servers: MiningServer[] = [
     usdtPerDay: 2.50, 
     priceTon: 9.0, 
     tier: 'Pro',
-    icon: Rocket,
+    icon: Globe,
   },
   { 
     id: 'elite-1', 
@@ -84,7 +82,7 @@ const servers: MiningServer[] = [
     usdtPerDay: 5.00, 
     priceTon: 16.0, 
     tier: 'Elite',
-    icon: Crown,
+    icon: Shield,
   },
   { 
     id: 'elite-2', 
@@ -94,7 +92,7 @@ const servers: MiningServer[] = [
     usdtPerDay: 10.00, 
     priceTon: 30.0, 
     tier: 'Elite',
-    icon: Diamond,
+    icon: Layers,
   },
 ];
 
@@ -111,7 +109,6 @@ const MiningServers = () => {
   const { servers: ownedServers, purchaseServer, getStock } = useUserServers(user?.id || null);
   const [selectedServer, setSelectedServer] = useState<MiningServer | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<string>('all');
   useTelegramBackButton();
 
   const isReady = !isTelegramLoading && !isMiningUserLoading;
@@ -169,11 +166,6 @@ const MiningServers = () => {
     usdtPerDay: ownedServers.reduce((sum, s) => sum + s.daily_usdt_yield, 0),
   };
 
-  const filters = ['all', 'free', 'basic', 'pro', 'elite'];
-  const filteredServers = activeFilter === 'all' 
-    ? servers 
-    : servers.filter(s => s.tier.toLowerCase() === activeFilter);
-
   return (
     <PageWrapper className="min-h-screen bg-background pb-32">
       <Helmet>
@@ -217,35 +209,9 @@ const MiningServers = () => {
             </FadeUp>
           )}
 
-          {/* Filter Tabs */}
-          <FadeUp>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {filters.map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setActiveFilter(filter)}
-                  className={`px-4 py-2 rounded-full text-xs font-medium capitalize whitespace-nowrap transition-all ${
-                    activeFilter === filter
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-card border border-border text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {filter}
-                </button>
-              ))}
-            </div>
-          </FadeUp>
-
           {/* Server Grid */}
-          <AnimatePresence mode="wait">
-            <motion.div 
-              key={activeFilter}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="space-y-3"
-            >
-              {filteredServers.map((server, index) => {
+          <div className="space-y-3">
+            {servers.map((server, index) => {
                 const owned = isOwned(server.id);
                 const stock = getStock(server.id);
                 const Icon = server.icon;
@@ -253,23 +219,16 @@ const MiningServers = () => {
 
                 return (
                   <FadeUp key={server.id}>
-                    <motion.div
-                      className={`relative p-4 rounded-2xl bg-card border transition-all ${
-                        owned ? 'border-primary/30 opacity-80' : stock.soldOut ? 'border-border opacity-50' : 'border-border hover:border-primary/30'
-                      }`}
-                      whileHover={!owned && !stock.soldOut ? { scale: 1.01 } : undefined}
-                      whileTap={!owned && !stock.soldOut ? { scale: 0.99 } : undefined}
-                      initial={{ opacity: 0, y: 15 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                    >
-                      {/* Popular Badge */}
-                      {server.popular && !owned && (
-                        <div className="absolute -top-2 -right-2 flex items-center gap-1 px-2 py-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full">
-                          <Sparkles className="w-3 h-3" />
-                          POPULAR
-                        </div>
-                      )}
+                  <motion.div
+                    className={`relative p-4 rounded-2xl bg-card border transition-all ${
+                      owned ? 'border-primary/30 opacity-80' : stock.soldOut ? 'border-border opacity-50' : 'border-border hover:border-primary/30'
+                    }`}
+                    whileHover={!owned && !stock.soldOut ? { scale: 1.01 } : undefined}
+                    whileTap={!owned && !stock.soldOut ? { scale: 0.99 } : undefined}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                  >
 
                       <div className="flex items-start gap-4">
                         {/* Icon */}
@@ -334,15 +293,7 @@ const MiningServers = () => {
                   </FadeUp>
                 );
               })}
-
-              {filteredServers.length === 0 && (
-                <div className="text-center py-12">
-                  <Server className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
-                  <p className="text-sm text-muted-foreground">No servers in this category</p>
-                </div>
-              )}
-            </motion.div>
-          </AnimatePresence>
+          </div>
 
           {/* Info Card */}
           <FadeUp>
