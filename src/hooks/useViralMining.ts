@@ -53,8 +53,14 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     try {
       setLoading(true);
       
+      // Get Telegram initData for secure authentication
+      const initData = window.Telegram?.WebApp?.initData || '';
+      
       const { data: syncResult, error: syncError } = await supabase.functions.invoke('sync-telegram-user', {
-        body: { telegramUser }
+        body: { telegramUser },
+        headers: {
+          'x-telegram-init-data': initData
+        }
       });
 
       if (syncError) {

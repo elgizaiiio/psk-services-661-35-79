@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { validateInitData } from '../_shared/telegram-auth.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -67,8 +68,39 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    // Validate Telegram initData if bot token is configured
+    const initData = req.headers.get('x-telegram-init-data');
+    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    
+    let validatedUser = null;
+    
+    if (botToken && initData) {
+      console.log('🔐 Validating Telegram initData...');
+      const validated = validateInitData(initData, botToken);
+      
+      if (validated) {
+        console.log('✅ initData validated successfully for user:', validated.user.id);
+        validatedUser = validated.user;
+      } else {
+        console.error('❌ Invalid initData - authentication failed');
+        return new Response(
+          JSON.stringify({ error: 'Invalid Telegram authentication', success: false }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+        );
+      }
+    } else if (botToken && !initData) {
+      console.warn('⚠️ Bot token configured but no initData provided');
+      return new Response(
+        JSON.stringify({ error: 'Telegram authentication required', success: false }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 401 }
+      );
+    } else {
+      console.warn('⚠️ TELEGRAM_BOT_TOKEN not configured - running in development mode');
+    }
+
     const body = await req.json();
-    const { telegramUser } = body as { telegramUser: unknown };
+    // Use validated user if available, otherwise fall back to body (dev mode only)
+    const telegramUser = validatedUser || (body as { telegramUser: unknown }).telegramUser;
 
     // Validate input
     if (!validateTelegramUser(telegramUser)) {
