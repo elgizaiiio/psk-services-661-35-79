@@ -21,7 +21,7 @@ const MiningUpgrades: React.FC<MiningUpgradesProps> = ({
 
   const getNextPowerMultiplier = () => {
     if (!user) return 4;
-    const current = user.mining_power_multiplier;
+    const current = user.mining_power || 2;
     if (current < 10) return current + 2;
     if (current < 50) return current + 10;
     if (current < 100) return current + 25;
@@ -40,7 +40,7 @@ const MiningUpgrades: React.FC<MiningUpgradesProps> = ({
   };
 
   const canUpgradePower = () => {
-    return user && user.mining_power_multiplier < 200;
+    return user && (user.mining_power || 2) < 200;
   };
 
   const handlePowerUpgrade = async () => {
@@ -48,7 +48,7 @@ const MiningUpgrades: React.FC<MiningUpgradesProps> = ({
     
     const success = await createMiningUpgradePayment({
       upgradeType: 'power',
-      currentValue: user.mining_power_multiplier,
+      currentValue: user.mining_power || 2,
       tonAmount: 0.5,
       userId: user.id
     });
@@ -93,7 +93,7 @@ const MiningUpgrades: React.FC<MiningUpgradesProps> = ({
           icon={<Zap className="w-6 h-6 text-primary" />}
           title="Mining Power"
           description="Increase mining rate"
-          currentValue={`×${user?.mining_power_multiplier || 2}`}
+          currentValue={`×${user?.mining_power || 2}`}
           nextValue={`×${getNextPowerMultiplier()}`}
           price="0.5 TON"
           onUpgrade={handlePowerUpgrade}

@@ -85,7 +85,7 @@ const MiningInner = () => {
       const success = await createMiningUpgradePayment({
         upgradeType: type,
         currentValue: type === 'power' 
-          ? (user.mining_power_multiplier || 2) 
+          ? (user.mining_power || 2) 
           : (user.mining_duration_hours || 4),
         tonAmount: upgradePrices[type],
         userId: user.id
@@ -214,7 +214,7 @@ const MiningInner = () => {
                     <div>
                       <p className="text-base font-semibold text-foreground">Mining Power</p>
                       <p className="text-sm text-muted-foreground">
-                        ×{user?.mining_power_multiplier || 2} → ×{(user?.mining_power_multiplier || 2) + 2}
+                        ×{user?.mining_power || 2} → ×{(user?.mining_power || 2) + 2}
                       </p>
                     </div>
                   </div>

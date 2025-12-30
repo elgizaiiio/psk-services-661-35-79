@@ -1,37 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { TelegramUser } from '@/types/telegram';
+import { TelegramUser, ViralUser, MiningSession } from '@/types/telegram';
 import { logger } from '@/lib/logger';
-
-interface ViralUser {
-  id: string;
-  telegram_id: number;
-  telegram_username?: string;
-  first_name?: string;
-  last_name?: string;
-  photo_url?: string;
-  token_balance: number;
-  mining_power_multiplier: number;
-  mining_duration_hours: number;
-  total_referrals: number;
-  referral_bonus: number;
-  last_active_at?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface MiningSession {
-  id: string;
-  user_id: string;
-  start_time: string;
-  end_time: string;
-  tokens_per_hour: number;
-  mining_power_multiplier: number;
-  total_mined: number;
-  is_active: boolean;
-  completed_at?: string;
-  created_at: string;
-}
 
 export const useViralMining = (telegramUser: TelegramUser | null) => {
   const [user, setUser] = useState<ViralUser | null>(null);
@@ -128,30 +98,40 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
   }, [user]);
 
   const startMining = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      setError('Please wait for user to load');
+      return;
+    }
 
     try {
+      const durationHours = user.mining_duration_hours || 4;
+      const miningPower = user.mining_power || 2;
+      
       const now = new Date();
-      const endTime = new Date(now.getTime() + user.mining_duration_hours * 60 * 60 * 1000);
+      const endTime = new Date(now.getTime() + durationHours * 60 * 60 * 1000);
 
       const { data: session, error } = await supabase
-        .from('bolt_mining_sessions' as any)
+        .from('bolt_mining_sessions')
         .insert({
           user_id: user.id,
           start_time: now.toISOString(),
           end_time: endTime.toISOString(),
           tokens_per_hour: 1.0,
-          mining_power: user.mining_power_multiplier,
+          mining_power: miningPower,
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        logger.error('Error inserting mining session', error);
+        throw error;
+      }
+      
       setActiveMiningSession(session as unknown as MiningSession);
-      logger.info('Mining session started');
+      logger.info('Mining session started', { sessionId: session?.id });
     } catch (err: any) {
       logger.error('Error starting mining', err);
-      setError(err.message);
+      setError(err.message || 'Failed to start mining');
     }
   }, [user]);
 
@@ -196,7 +176,7 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     const remaining = Math.max(0, endTime.getTime() - now.getTime());
     
     const progress = Math.min(1, elapsed / totalDuration);
-    const miningPower = (activeMiningSession as any).mining_power || activeMiningSession.mining_power_multiplier || 1;
+    const miningPower = activeMiningSession.mining_power || 1;
     const tokensMinedSoFar = (elapsed / (1000 * 60 * 60)) * activeMiningSession.tokens_per_hour * miningPower;
     
     return {
@@ -211,7 +191,7 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     if (!user) return;
 
     try {
-      const current = Number(user.mining_power_multiplier) || 1;
+      const current = Number(user.mining_power) || 1;
       let nextMultiplier: number;
       if (current < 10) {
         nextMultiplier = current + 2;

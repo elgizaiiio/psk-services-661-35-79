@@ -47,7 +47,7 @@ const Profile: React.FC = () => {
     },
     {
       label: "Mining Power",
-      value: `×${vmUser?.mining_power_multiplier || 1}`,
+      value: `×${vmUser?.mining_power || 1}`,
       icon: Zap,
       color: "text-yellow-500"
     },
@@ -92,7 +92,7 @@ const Profile: React.FC = () => {
     },
     {
       label: "Total Expected",
-      value: `${(activeMiningSession.tokens_per_hour * activeMiningSession.mining_power_multiplier * vmUser?.mining_duration_hours || 0).toFixed(4)} BOLT`,
+      value: `${(activeMiningSession.tokens_per_hour * (activeMiningSession as any).mining_power * vmUser?.mining_duration_hours || 0).toFixed(4)} BOLT`,
     }
   ] : [];
 
