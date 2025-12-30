@@ -29,33 +29,32 @@ interface TicketPackage {
   priceStars: number;
 }
 
-// Normal Wheel Rewards
+// Normal Wheel Rewards - 10 items, well distributed (TON, BOLT, USDT, BOLT pattern)
 const NORMAL_REWARDS: SpinReward[] = [
-  { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 35 },
-  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 28 },
-  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 18 },
-  { id: 'bolt_200', label: '200', type: 'bolt', value: 200, probability: 10 },
-  { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 5 },
   { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 2 },
+  { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 25 },
   { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 1.5 },
-  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 0.3 },
-  { id: 'usdt_5', label: '5', type: 'usdt', value: 5, probability: 0.2 },
+  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 20 },
+  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 25 },
+  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 0.5 },
+  { id: 'bolt_200', label: '200', type: 'bolt', value: 200, probability: 15 },
+  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0.5 },
+  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 8 },
+  { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 2.5 },
 ];
 
-// PRO Wheel Rewards
+// PRO Wheel Rewards - 10 items, well distributed
 const PRO_REWARDS: SpinReward[] = [
-  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 25 },
-  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 20 },
+  { id: 'ton_3_pro', label: '3', type: 'ton', value: 3, probability: 8 },
+  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 20 },
+  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 6 },
   { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 15 },
-  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 10 },
-  { id: 'mining_x2_48', label: '2x 48h', type: 'booster', value: 48, probability: 8 },
-  { id: 'ton_3_pro', label: '3', type: 'ton', value: 3, probability: 7 },
-  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 5 },
-  { id: 'ton_5_pro', label: '5', type: 'ton', value: 5, probability: 4 },
-  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 3 },
-  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 2 },
-  { id: 'usdt_25', label: '25', type: 'usdt', value: 25, probability: 0.7 },
-  { id: 'ton_25', label: '25', type: 'ton', value: 25, probability: 0.3 },
+  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 18 },
+  { id: 'ton_5_pro', label: '5', type: 'ton', value: 5, probability: 5 },
+  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 12 },
+  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 4 },
+  { id: 'bolt_10000', label: '10K', type: 'bolt', value: 10000, probability: 8 },
+  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 4 },
 ];
 
 // Normal Ticket Packages - Higher prices
@@ -76,7 +75,7 @@ const PRO_PACKAGES: TicketPackage[] = [
 
 // Wheel colors - 2 colors each
 const NORMAL_COLORS = ['#3B82F6', '#1E40AF']; // Blue shades
-const PRO_COLORS = ['#F59E0B', '#D97706']; // Amber/Gold shades
+const PRO_COLORS = ['#8B5CF6', '#6D28D9']; // Purple shades
 
 const Spin: React.FC = () => {
   const { user: tgUser, hapticFeedback } = useTelegramAuth();
@@ -307,35 +306,33 @@ const Spin: React.FC = () => {
           <FadeUp>
             <Tabs value={wheelType} onValueChange={(v) => setWheelType(v as 'normal' | 'pro')} className="w-full">
               <TabsList className="grid w-full grid-cols-2 h-10">
-                <TabsTrigger value="normal" className="text-sm font-medium gap-1.5">
-                  <Sparkles className="w-4 h-4" />
+                <TabsTrigger value="normal" className="text-sm font-medium">
                   Normal
                 </TabsTrigger>
-                <TabsTrigger value="pro" className="text-sm font-medium gap-1.5">
-                  <Crown className="w-4 h-4" />
+                <TabsTrigger value="pro" className="text-sm font-medium">
                   PRO
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </FadeUp>
 
-          {/* Spin Wheel - Much Larger */}
+          {/* Spin Wheel - Extra Large */}
           <FadeUp>
-            <div className="relative flex items-center justify-center py-6">
+            <div className="relative flex items-center justify-center py-8">
               {/* Pointer */}
-              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
-                <div className={`w-0 h-0 border-l-[16px] border-r-[16px] border-t-[28px] border-l-transparent border-r-transparent ${
-                  wheelType === 'pro' ? 'border-t-amber-500' : 'border-t-primary'
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
+                <div className={`w-0 h-0 border-l-[18px] border-r-[18px] border-t-[32px] border-l-transparent border-r-transparent ${
+                  wheelType === 'pro' ? 'border-t-purple-500' : 'border-t-primary'
                 } drop-shadow-lg`} />
               </div>
 
-              {/* Wheel Container - Much Bigger */}
-              <div className="relative w-[320px] h-[320px]">
+              {/* Wheel Container - Extra Large */}
+              <div className="relative w-[340px] h-[340px]">
                 <motion.div
                   className="relative w-full h-full rounded-full shadow-2xl"
                   style={{ 
                     boxShadow: wheelType === 'pro'
-                      ? '0 0 0 6px rgb(245 158 11), 0 0 40px rgba(245, 158, 11, 0.4)'
+                      ? '0 0 0 6px rgb(139 92 246), 0 0 40px rgba(139, 92, 246, 0.4)'
                       : '0 0 0 6px hsl(var(--primary)), 0 0 30px hsl(var(--primary)/0.3)'
                   }}
                   animate={{ rotate: rotation }}
@@ -401,15 +398,12 @@ const Spin: React.FC = () => {
 
                   {/* Center */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className={`w-12 h-12 rounded-full border-4 flex items-center justify-center shadow-xl ${
+                    <div className={`w-14 h-14 rounded-full border-4 flex items-center justify-center shadow-xl ${
                       wheelType === 'pro'
-                        ? 'bg-gradient-to-br from-amber-500 to-orange-500 border-amber-300'
+                        ? 'bg-gradient-to-br from-purple-500 to-purple-700 border-purple-300'
                         : 'bg-gradient-to-br from-blue-500 to-blue-700 border-blue-300'
                     }`}>
-                      {wheelType === 'pro' 
-                        ? <Crown className="w-5 h-5 text-white" />
-                        : <Sparkles className="w-5 h-5 text-white" />
-                      }
+                      <span className="text-white font-bold text-sm">SPIN</span>
                     </div>
                   </div>
                 </motion.div>
@@ -427,7 +421,7 @@ const Spin: React.FC = () => {
                 className={`p-3 rounded-xl text-center ${
                   result.type !== 'nothing' 
                     ? wheelType === 'pro'
-                      ? 'bg-amber-500/10 border border-amber-500/30'
+                      ? 'bg-purple-500/10 border border-purple-500/30'
                       : 'bg-primary/10 border border-primary/30'
                     : 'bg-muted border border-border'
                 }`}
@@ -440,7 +434,7 @@ const Spin: React.FC = () => {
                   {result.type === 'nothing' && <X className="w-5 h-5 text-muted-foreground" />}
                   <span className={`text-lg font-bold ${
                     result.type !== 'nothing' 
-                      ? wheelType === 'pro' ? 'text-amber-500' : 'text-primary' 
+                      ? wheelType === 'pro' ? 'text-purple-500' : 'text-primary' 
                       : 'text-muted-foreground'
                   }`}>
                     {result.type === 'bolt' ? `${result.value} BOLT` : 
@@ -460,7 +454,7 @@ const Spin: React.FC = () => {
               disabled={isSpinning || currentTickets <= 0}
               className={`w-full h-12 text-base font-bold rounded-xl ${
                 wheelType === 'pro' 
-                  ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white' 
+                  ? 'bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white' 
                   : ''
               }`}
               size="lg"
@@ -471,10 +465,7 @@ const Spin: React.FC = () => {
                   Spinning...
                 </>
               ) : currentTickets > 0 ? (
-                <>
-                  {wheelType === 'pro' ? <Crown className="w-5 h-5 mr-2" /> : <Sparkles className="w-5 h-5 mr-2" />}
-                  SPIN NOW
-                </>
+                'SPIN NOW'
               ) : (
                 'No Tickets'
               )}
@@ -502,7 +493,7 @@ const Spin: React.FC = () => {
                 <SheetTrigger asChild>
                   <Button
                     variant="outline"
-                    className={`h-10 ${wheelType === 'pro' ? 'border-amber-500/30 hover:bg-amber-500/10' : ''}`}
+                    className={`h-10 ${wheelType === 'pro' ? 'border-purple-500/30 hover:bg-purple-500/10' : ''}`}
                   >
                     <ShoppingCart className="w-4 h-4 mr-2" />
                     Buy Tickets
@@ -510,18 +501,8 @@ const Spin: React.FC = () => {
                 </SheetTrigger>
                 <SheetContent side="bottom" className="rounded-t-2xl">
                   <SheetHeader>
-                    <SheetTitle className="flex items-center justify-center gap-2">
-                      {wheelType === 'pro' ? (
-                        <>
-                          <Crown className="w-5 h-5 text-amber-500" />
-                          <span>PRO Ticket Packages</span>
-                        </>
-                      ) : (
-                        <>
-                          <Sparkles className="w-5 h-5 text-primary" />
-                          <span>Normal Ticket Packages</span>
-                        </>
-                      )}
+                    <SheetTitle className="text-center">
+                      {wheelType === 'pro' ? 'PRO Ticket Packages' : 'Ticket Packages'}
                     </SheetTitle>
                   </SheetHeader>
                   <div className="grid grid-cols-2 gap-3 py-4">
@@ -531,12 +512,12 @@ const Spin: React.FC = () => {
                         onClick={() => handleBuyPackage(pkg)}
                         className={`p-4 rounded-xl border transition-all hover:scale-[1.02] active:scale-[0.98] ${
                           wheelType === 'pro'
-                            ? 'bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-500/50'
+                            ? 'bg-gradient-to-br from-purple-500/10 to-purple-700/10 border-purple-500/30 hover:border-purple-500/50'
                             : 'bg-card border-border hover:border-primary/50'
                         }`}
                       >
                         <div className="flex flex-col items-center gap-2">
-                          <span className={`text-2xl font-bold ${wheelType === 'pro' ? 'text-amber-500' : 'text-primary'}`}>{pkg.tickets}</span>
+                          <span className={`text-2xl font-bold ${wheelType === 'pro' ? 'text-purple-500' : 'text-primary'}`}>{pkg.tickets}</span>
                           <div className="flex flex-col items-center gap-0.5">
                             <span className="text-sm font-semibold text-foreground">{pkg.priceTon} TON</span>
                             <span className="text-xs text-muted-foreground">
