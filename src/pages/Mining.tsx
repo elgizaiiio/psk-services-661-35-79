@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Pickaxe, Timer, Zap, Clock, Coins, TrendingUp, Server, Wallet, Loader2, ArrowLeft } from 'lucide-react';
+import { Pickaxe, Timer, Zap, Clock, Coins, TrendingUp, Server, Wallet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTonConnectUI, TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
 import { useNavigate } from 'react-router-dom';
@@ -130,19 +130,6 @@ const MiningInner = () => {
 
       <main className="safe-area pb-16">
         <div className="max-w-sm mx-auto px-6 py-8 space-y-6">
-          
-          {/* Back Button */}
-          <button
-            onClick={() => {
-              const tg = window.Telegram?.WebApp;
-              if (tg?.close) tg.close();
-              else navigate('/');
-            }}
-            className="w-10 h-10 bg-card border border-border rounded-xl flex items-center justify-center hover:bg-muted transition-colors"
-            aria-label="Exit"
-          >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
-          </button>
           {/* User Avatar */}
           <div className="text-center">
             <Avatar className="w-20 h-20 mx-auto border-4 border-primary/20">

@@ -9,7 +9,6 @@ import {
   Shield, 
   Star, 
   Gem,
-  ArrowLeft,
   Check,
   Sparkles,
   Rocket
@@ -232,19 +231,9 @@ const VIPSubscription = () => {
 
       <div className="max-w-md mx-auto px-4 pt-6">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate(-1)}
-            className="rounded-full"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">VIP Subscriptions</h1>
-            <p className="text-sm text-muted-foreground">Get exclusive benefits</p>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground">VIP Subscriptions</h1>
+          <p className="text-sm text-muted-foreground">Get exclusive benefits</p>
         </div>
 
         {/* Hero Section */}

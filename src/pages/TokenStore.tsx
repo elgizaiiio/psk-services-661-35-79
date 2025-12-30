@@ -6,7 +6,6 @@ import {
   Coins, 
   Zap, 
   Gift, 
-  ArrowLeft,
   Sparkles,
   TrendingUp,
   Star,
@@ -188,19 +187,9 @@ const TokenStore = () => {
 
       <div className="max-w-md mx-auto px-4 pt-6">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-6">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => navigate('/')}
-            className="rounded-full"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Token Store</h1>
-            <p className="text-sm text-muted-foreground">Buy VIRAL with TON</p>
-          </div>
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold text-foreground">Token Store</h1>
+          <p className="text-sm text-muted-foreground">Buy VIRAL with TON</p>
         </div>
 
         {/* Hero Banner */}

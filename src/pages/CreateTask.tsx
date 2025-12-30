@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft, Link, Plus } from "lucide-react";
+import { Link, Plus } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const CreateTask = () => {
@@ -89,20 +89,9 @@ const CreateTask = () => {
         <link rel="canonical" href={`${window.location.origin}/create-task`} />
       </Helmet>
 
-      <div className="flex items-center gap-4 mb-6">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Create New Task</h1>
-          <p className="text-muted-foreground">Add a new task with a link for users to complete</p>
-        </div>
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold">Create New Task</h1>
+        <p className="text-muted-foreground">Add a new task with a link for users to complete</p>
       </div>
 
       <Card>
