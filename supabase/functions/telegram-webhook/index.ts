@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
-const WEBAPP_URL = 'https://pxerqticmmpurwmumhyw.lovableproject.com';
+const WEBAPP_URL = 'https://bolt.elgiza.site';
 
 interface TelegramUpdate {
   update_id: number;
@@ -74,27 +74,27 @@ serve(async (req) => {
       const chatId = update.message.chat.id;
       const firstName = update.message.from.first_name;
 
-      const welcomeMessage = `👋 <b>مرحباً ${firstName}!</b>
+      const welcomeMessage = `👋 <b>Welcome ${firstName}!</b>
 
-🚀 أهلاً بك في <b>Bolt Mining</b> - منصة التعدين الذكية!
+🚀 Welcome to <b>Bolt Mining</b> - Smart Mining Platform!
 
-⚡ ابدأ الآن واربح عملات BOLT مجاناً
-💎 أكمل المهام اليومية لزيادة أرباحك
-🎁 ادعُ أصدقائك واحصل على مكافآت إضافية
+⚡ Start now and earn BOLT tokens for FREE
+💎 Complete daily tasks to boost your earnings
+🎁 Invite friends and get extra rewards
 
-اضغط على الزر أدناه لبدء التعدين! 👇`;
+Click the button below to start mining! 👇`;
 
       const keyboard = {
         inline_keyboard: [
           [
             {
-              text: '🚀 ابدأ التعدين الآن',
+              text: '🚀 Start Mining Now',
               web_app: { url: WEBAPP_URL }
             }
           ],
           [
             {
-              text: '📢 انضم لقناتنا',
+              text: '📢 Join Our Channel',
               url: 'https://t.me/boltrs'
             }
           ]
