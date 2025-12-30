@@ -1880,6 +1880,48 @@ export type Database = {
           },
         ]
       }
+      user_spin_tickets: {
+        Row: {
+          created_at: string
+          free_ticket_date: string | null
+          id: string
+          tickets_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          free_ticket_date?: string | null
+          id?: string
+          tickets_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          free_ticket_date?: string | null
+          id?: string
+          tickets_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_spin_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_spin_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_upgrades: {
         Row: {
           id: string

@@ -4,7 +4,7 @@ import { useDirectTonPayment } from './useDirectTonPayment';
 
 export type PaymentMethod = 'ton_connect' | 'stars';
 
-export type ProductType = 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting' | 'mining_upgrade' | 'token_purchase';
+export type ProductType = 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting' | 'mining_upgrade' | 'token_purchase' | 'spin_tickets';
 
 export interface UnifiedPaymentParams {
   amount: number;
