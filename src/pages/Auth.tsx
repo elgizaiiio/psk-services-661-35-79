@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import BoltIcon from "@/components/ui/bolt-icon";
 
 const Auth = () => {
-  const telegramBotUrl = "https://t.me/Vlralbot";
+  const telegramBotUrl = "https://t.me/boltrsbot?start=mining";
 
   const handleOpenTelegram = () => {
     window.open(telegramBotUrl, "_blank");
@@ -66,7 +66,7 @@ const Auth = () => {
                 rel="noopener noreferrer"
                 className="text-primary hover:underline text-sm font-medium"
               >
-                {telegramBotUrl}
+                @boltrsbot
               </a>
             </div>
           </CardContent>
