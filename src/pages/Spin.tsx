@@ -214,19 +214,8 @@ const Spin: React.FC = () => {
     <PageWrapper className="min-h-screen bg-background pb-28">
       <Helmet><title>Lucky Spin</title></Helmet>
       
-      <div className="max-w-md mx-auto px-5 pt-16">
-        <StaggerContainer className="space-y-6">
-          {/* Header */}
-          <FadeUp>
-            <div className="text-center">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 mb-4">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <span className="text-sm font-medium text-primary">Lucky Spin</span>
-              </div>
-              <h1 className="text-2xl font-bold text-foreground">Spin to Win</h1>
-              <p className="text-sm text-muted-foreground mt-1">Use tickets to spin the wheel</p>
-            </div>
-          </FadeUp>
+      <div className="max-w-md mx-auto px-5 pt-8">
+        <StaggerContainer className="space-y-4">
 
           {/* Tickets Display */}
           <FadeUp>
@@ -241,32 +230,20 @@ const Spin: React.FC = () => {
 
           {/* Spin Wheel */}
           <FadeUp>
-            <div className="relative flex items-center justify-center py-4">
-              {/* Outer glow */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-[260px] h-[260px] rounded-full bg-primary/10 blur-xl" />
-              </div>
-
+            <div className="relative flex items-center justify-center py-6">
               {/* Pointer */}
-              <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-20">
-                <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[16px] border-l-transparent border-r-transparent border-t-primary drop-shadow-lg" />
+              <div className="absolute -top-0 left-1/2 -translate-x-1/2 z-20">
+                <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent border-t-primary drop-shadow-lg" />
               </div>
 
-              {/* Wheel Container */}
-              <div className="relative w-[240px] h-[240px]">
-                {/* Wheel */}
+              {/* Wheel Container - Larger */}
+              <div className="relative w-[300px] h-[300px]">
                 <motion.div
                   className="relative w-full h-full rounded-full shadow-2xl overflow-hidden"
-                  style={{
-                    boxShadow: '0 0 0 4px hsl(var(--primary)), 0 0 20px hsl(var(--primary)/0.3)',
-                  }}
+                  style={{ boxShadow: '0 0 0 6px hsl(var(--primary)), 0 0 30px hsl(var(--primary)/0.4)' }}
                   animate={{ rotate: rotation }}
-                  transition={{ 
-                    duration: 5, 
-                    ease: [0.17, 0.67, 0.12, 0.99],
-                  }}
+                  transition={{ duration: 5, ease: [0.17, 0.67, 0.12, 0.99] }}
                 >
-                  {/* SVG Wheel with segments */}
                   <svg viewBox="0 0 100 100" className="w-full h-full">
                     {SPIN_REWARDS.map((reward, index) => {
                       const startAngle = index * segmentAngle;
@@ -279,30 +256,28 @@ const Spin: React.FC = () => {
                       const x2 = 50 + 50 * Math.cos(endRad);
                       const y2 = 50 + 50 * Math.sin(endRad);
                       
-                      const largeArc = segmentAngle > 180 ? 1 : 0;
-                      const pathD = `M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArc} 1 ${x2} ${y2} Z`;
+                      const pathD = `M 50 50 L ${x1} ${y1} A 50 50 0 0 1 ${x2} ${y2} Z`;
                       
-                      // Text position
                       const midAngle = (startAngle + segmentAngle / 2 - 90) * (Math.PI / 180);
-                      const textRadius = 35;
-                      const textX = 50 + textRadius * Math.cos(midAngle);
-                      const textY = 50 + textRadius * Math.sin(midAngle);
-                      const textRotation = startAngle + segmentAngle / 2;
+                      const iconX = 50 + 28 * Math.cos(midAngle);
+                      const iconY = 50 + 28 * Math.sin(midAngle);
+                      const textX = 50 + 40 * Math.cos(midAngle);
+                      const textY = 50 + 40 * Math.sin(midAngle);
+                      const rot = startAngle + segmentAngle / 2;
+                      
+                      // Icon character based on type
+                      const iconChar = reward.type === 'bolt' ? '⚡' : 
+                                       reward.type === 'ton' ? '💎' : 
+                                       reward.type === 'usdt' ? '💵' : 
+                                       reward.type === 'booster' ? '🚀' : '❌';
                       
                       return (
                         <g key={reward.id}>
-                          <path d={pathD} fill={reward.color} stroke="rgba(255,255,255,0.1)" strokeWidth="0.3" />
-                          <text
-                            x={textX}
-                            y={textY}
-                            textAnchor="middle"
-                            dominantBaseline="middle"
-                            transform={`rotate(${textRotation}, ${textX}, ${textY})`}
-                            fill="white"
-                            fontSize="4"
-                            fontWeight="bold"
-                            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
-                          >
+                          <path d={pathD} fill={reward.color} stroke="rgba(255,255,255,0.2)" strokeWidth="0.5" />
+                          <text x={iconX} y={iconY} textAnchor="middle" dominantBaseline="middle" fontSize="6" transform={`rotate(${rot}, ${iconX}, ${iconY})`}>
+                            {iconChar}
+                          </text>
+                          <text x={textX} y={textY} textAnchor="middle" dominantBaseline="middle" transform={`rotate(${rot}, ${textX}, ${textY})`} fill="white" fontSize="5" fontWeight="bold">
                             {reward.label}
                           </text>
                         </g>
@@ -310,10 +285,10 @@ const Spin: React.FC = () => {
                     })}
                   </svg>
 
-                  {/* Center Circle */}
+                  {/* Center */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="w-12 h-12 rounded-full bg-background border-4 border-primary flex items-center justify-center shadow-lg">
-                      <Sparkles className="w-4 h-4 text-primary" />
+                    <div className="w-14 h-14 rounded-full bg-background border-4 border-primary flex items-center justify-center shadow-xl">
+                      <span className="text-xl">🎰</span>
                     </div>
                   </div>
                 </motion.div>
