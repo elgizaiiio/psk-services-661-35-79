@@ -45,6 +45,113 @@ async function sendTelegramNotification(chatId: number, text: string) {
   }
 }
 
+async function updateContestParticipant(supabase: any, referrerId: string) {
+  try {
+    // Get active contest
+    const { data: contest } = await supabase
+      .from('referral_contests')
+      .select('id')
+      .eq('status', 'active')
+      .eq('is_active', true)
+      .single();
+
+    if (!contest) {
+      console.log('No active contest found');
+      return null;
+    }
+
+    // Check if participant exists
+    const { data: existingParticipant } = await supabase
+      .from('contest_participants')
+      .select('id, referral_count')
+      .eq('contest_id', contest.id)
+      .eq('user_id', referrerId)
+      .single();
+
+    if (existingParticipant) {
+      // Update existing participant
+      const { error } = await supabase
+        .from('contest_participants')
+        .update({
+          referral_count: existingParticipant.referral_count + 1,
+          last_referral_at: new Date().toISOString()
+        })
+        .eq('id', existingParticipant.id);
+
+      if (error) {
+        console.error('Error updating contest participant:', error);
+      } else {
+        console.log(`🏆 Contest participant updated: ${referrerId}, count: ${existingParticipant.referral_count + 1}`);
+      }
+      return existingParticipant.referral_count + 1;
+    } else {
+      // Create new participant
+      const { error } = await supabase
+        .from('contest_participants')
+        .insert({
+          contest_id: contest.id,
+          user_id: referrerId,
+          referral_count: 1,
+          last_referral_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error creating contest participant:', error);
+      } else {
+        console.log(`🏆 New contest participant created: ${referrerId}`);
+      }
+      return 1;
+    }
+  } catch (error) {
+    console.error('Error in updateContestParticipant:', error);
+    return null;
+  }
+}
+
+async function getContestRank(supabase: any, referrerId: string): Promise<{ rank: number; total: number } | null> {
+  try {
+    const { data: contest } = await supabase
+      .from('referral_contests')
+      .select('id')
+      .eq('status', 'active')
+      .eq('is_active', true)
+      .single();
+
+    if (!contest) return null;
+
+    // Get user's referral count
+    const { data: userPart } = await supabase
+      .from('contest_participants')
+      .select('referral_count')
+      .eq('contest_id', contest.id)
+      .eq('user_id', referrerId)
+      .single();
+
+    if (!userPart) return null;
+
+    // Count participants with higher count
+    const { count: higherCount } = await supabase
+      .from('contest_participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('contest_id', contest.id)
+      .gt('referral_count', userPart.referral_count);
+
+    // Get total participants
+    const { count: total } = await supabase
+      .from('contest_participants')
+      .select('*', { count: 'exact', head: true })
+      .eq('contest_id', contest.id);
+
+    return {
+      rank: (higherCount || 0) + 1,
+      total: total || 0
+    };
+  } catch (error) {
+    console.error('Error getting contest rank:', error);
+    return null;
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -223,6 +330,10 @@ Deno.serve(async (req) => {
 
     console.log(`🎉 Referral created successfully: ${newReferral.id}`)
 
+    // Update contest participant
+    const contestReferralCount = await updateContestParticipant(supabase, referrer.id);
+    const contestRank = await getContestRank(supabase, referrer.id);
+
     // Give referrer bonus - update token_balance, total_referrals, and referral_bonus
     const { data: currentReferrer } = await supabase
       .from('bolt_users')
@@ -273,6 +384,15 @@ Deno.serve(async (req) => {
         
         notificationText += `\n\n👥 Total friends: <b>${newTotalReferrals}</b>`
 
+        // Add contest info if participating
+        if (contestReferralCount && contestRank) {
+          notificationText += `\n\n🏆 <b>Contest Update!</b>\nYour rank: <b>#${contestRank.rank}</b> of ${contestRank.total}\nContest referrals: <b>${contestReferralCount}</b>`
+          
+          if (contestRank.rank <= 10) {
+            notificationText += `\n🎯 You're in the prize zone!`
+          }
+        }
+
         await sendTelegramNotification(referrer.telegram_id, notificationText)
       }
     }
@@ -293,7 +413,8 @@ Deno.serve(async (req) => {
         message: 'Referral processed successfully',
         user_id: newUser.id,
         referrer_id: referrer.id,
-        bonus_given: REFERRAL_BONUS
+        bonus_given: REFERRAL_BONUS,
+        contest_rank: contestRank?.rank || null
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
