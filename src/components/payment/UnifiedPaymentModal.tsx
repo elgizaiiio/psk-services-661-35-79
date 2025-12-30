@@ -18,6 +18,7 @@ interface UnifiedPaymentModalProps {
   productType: 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting' | 'mining_upgrade' | 'token_purchase' | 'spin_tickets';
   productId?: string;
   credits?: number;
+  starsOverride?: number;
   onSuccess?: () => void;
 }
 
@@ -33,6 +34,7 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
   productType,
   productId,
   credits,
+  starsOverride,
   onSuccess,
 }) => {
   const navigate = useNavigate();
@@ -46,9 +48,9 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
 
   const [starsLoading, setStarsLoading] = useState(false);
 
-  // Calculate stars amount from TON
+  // Calculate stars amount from TON (or use override)
   const tonInUsd = amount * TON_TO_USD;
-  const starsAmount = Math.ceil(tonInUsd / STAR_PRICE_USD);
+  const starsAmount = starsOverride || Math.ceil(tonInUsd / STAR_PRICE_USD);
 
   const handleTonPayment = async () => {
     if (!isWalletConnected) {

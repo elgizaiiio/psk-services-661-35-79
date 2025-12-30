@@ -403,6 +403,7 @@ const Spin: React.FC = () => {
         description={`${TICKETS_PER_PURCHASE} Spin Tickets`}
         productType="spin_tickets"
         credits={TICKETS_PER_PURCHASE}
+        starsOverride={1}
         onSuccess={handleBuyTicketsSuccess}
       />
     </PageWrapper>
