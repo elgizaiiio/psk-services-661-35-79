@@ -87,7 +87,7 @@ const Tasks = () => {
             if (!subscribed) {
               const ok = await revokeTaskCompletion(task.id, task.points);
               if (ok) {
-                toast.warning(`لقد غادرت ${username}. تم خصم ${task.points} BOLT وإعادة المهمة للقائمة.`);
+                toast.warning(`You left ${username}. ${task.points} BOLT deducted and task restored.`);
               }
             }
           } catch (e) {
@@ -104,7 +104,7 @@ const Tasks = () => {
 
   const handleTaskComplete = async (taskId: string, taskUrl: string, taskTitle: string) => {
     if (isTaskCompleted(taskId)) {
-      toast.info('تم إكمال المهمة مسبقًا');
+      toast.info('Task already completed');
       return;
     }
 
@@ -123,12 +123,12 @@ const Tasks = () => {
         if (subscribed) {
           try {
             await completeTask(taskId);
-            toast.success('تم إكمال المهمة وإضافة النقاط');
+            toast.success('Task completed! Points added');
           } catch {
-            toast.error('تعذر إكمال المهمة');
+            toast.error('Failed to complete task');
           }
         } else {
-          toast.error('اشترك أولاً ثم أعد المحاولة');
+          toast.error('Please subscribe first and try again');
         }
         setProcessingTask(null);
       }, 3000);
@@ -143,9 +143,9 @@ const Tasks = () => {
       setTimeout(async () => {
         try {
           await completeTask(taskId);
-          toast.success('تم إكمال المهمة وإضافة النقاط');
+          toast.success('Task completed! Points added');
         } catch {
-          toast.error('تعذر إكمال المهمة');
+          toast.error('Failed to complete task');
         }
         setProcessingTask(null);
       }, 3000);
