@@ -37,6 +37,7 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
   const [activeMiningSession, setActiveMiningSession] = useState<MiningSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isNewUser, setIsNewUser] = useState(false);
   const [miningProgress, setMiningProgress] = useState<{
     progress: number;
     tokensMinedSoFar: number;
@@ -71,6 +72,15 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
       if (syncResult?.user) {
         setUser(syncResult.user as ViralUser);
         console.log('User synced successfully:', syncResult.message);
+        
+        // Check if this is a new user
+        if (syncResult.message === 'User profile created') {
+          const welcomeKey = `bolt_welcome_shown_${syncResult.user.id}`;
+          if (!localStorage.getItem(welcomeKey)) {
+            setIsNewUser(true);
+            localStorage.setItem(welcomeKey, 'true');
+          }
+        }
       }
 
       await checkActiveMiningSession();
@@ -293,11 +303,17 @@ export const useViralMining = (telegramUser: TelegramUser | null) => {
     return () => clearInterval(interval);
   }, [activeMiningSession, getCurrentMiningProgress, completeMiningSession]);
 
+  const dismissWelcome = useCallback(() => {
+    setIsNewUser(false);
+  }, []);
+
   return {
     user,
     activeMiningSession,
     loading,
     error,
+    isNewUser,
+    dismissWelcome,
     startMining,
     completeMiningSession,
     getCurrentMiningProgress,
