@@ -92,6 +92,7 @@ const Spin: React.FC = () => {
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<TicketPackage | null>(null);
   const [showPackagesSheet, setShowPackagesSheet] = useState(false);
+  const [rewardApplied, setRewardApplied] = useState(false);
 
   const rewards = wheelType === 'normal' ? NORMAL_REWARDS : PRO_REWARDS;
   const packages = wheelType === 'normal' ? NORMAL_PACKAGES : PRO_PACKAGES;
@@ -209,6 +210,9 @@ const Spin: React.FC = () => {
   const handleSpin = async () => {
     if (!user?.id || isSpinning || currentTickets <= 0) return;
 
+    // Reset reward applied flag
+    setRewardApplied(false);
+
     // Deduct ticket based on wheel type
     if (wheelType === 'normal') {
       await supabase
@@ -237,7 +241,13 @@ const Spin: React.FC = () => {
     
     setRotation(totalRotation);
 
+    // Use a ref-like approach to prevent double execution
+    let hasAppliedReward = false;
+
     setTimeout(async () => {
+      if (hasAppliedReward) return;
+      hasAppliedReward = true;
+      
       setIsSpinning(false);
       setResult(reward);
       hapticFeedback.notification('success');
