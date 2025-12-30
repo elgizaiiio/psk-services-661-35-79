@@ -17,8 +17,7 @@ import {
   Globe,
   Cpu,
   HardDrive,
-  Wifi,
-  ArrowLeft
+  Wifi
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
@@ -117,13 +116,6 @@ const ServerStoreInner: React.FC = () => {
   const { sendDirectPayment, isProcessing, isWalletConnected } = useDirectTonPayment();
   const { formatUsd } = useTonPrice();
 
-  const handleBack = () => {
-    if (window.history.length > 1) {
-      navigate(-1);
-    } else {
-      navigate('/');
-    }
-  };
 
   const handlePurchase = async (pkg: typeof serverPackages[0]) => {
     if (!isWalletConnected) {
@@ -159,15 +151,6 @@ const ServerStoreInner: React.FC = () => {
 
       <main className="min-h-screen bg-gradient-to-br from-background via-background/95 to-primary/5 pb-24">
         <div className="max-w-md mx-auto px-4 py-6">
-          
-          {/* Back Button */}
-          <button 
-            onClick={handleBack}
-            className="mb-6 flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back</span>
-          </button>
           
           {/* Hero Header */}
           <header className="text-center mb-8">

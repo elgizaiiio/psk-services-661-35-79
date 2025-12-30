@@ -6,7 +6,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTonPrice } from '@/hooks/useTonPrice';
-import { Server, Check, Loader2, ArrowLeft, Package } from 'lucide-react';
+import { Server, Check, Loader2, Package } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber } from '@/components/ui/motion-wrapper';
@@ -69,25 +69,6 @@ const MiningServers = () => {
     setSelectedServer(null);
   };
 
-  const handleBack = () => {
-    const idx = typeof window !== 'undefined' ? (window.history.state?.idx as number | undefined) : undefined;
-
-    // Only rely on the React Router history index (idx). In embedded previews, window.history.length
-    // can be > 1 even when there is no in-app route to go back to.
-    const canGoBackInApp = typeof idx === 'number' && idx > 0;
-
-    if (canGoBackInApp) {
-      navigate(-1);
-      return;
-    }
-
-    const tg = window.Telegram?.WebApp;
-    if (tg?.close) {
-      tg.close();
-    } else {
-      navigate('/');
-    }
-  };
 
   const isOwned = (serverId: string) => ownedServers.some(s => s.server_name === servers.find(srv => srv.id === serverId)?.name);
 
@@ -101,11 +82,9 @@ const MiningServers = () => {
       <div className="max-w-md mx-auto px-5 pt-8">
         <StaggerContainer className="space-y-6">
           <FadeUp>
-            <div className="flex items-center gap-3">
-              <motion.button onClick={handleBack} whileTap={{ scale: 0.9 }} className="w-10 h-10 bg-card border border-border rounded-xl flex items-center justify-center">
-                <ArrowLeft className="w-5 h-5 text-foreground" />
-              </motion.button>
-              <div><h1 className="text-xl font-semibold text-foreground">Mining Servers</h1><p className="text-sm text-muted-foreground">Buy servers to earn daily</p></div>
+            <div>
+              <h1 className="text-xl font-semibold text-foreground">Mining Servers</h1>
+              <p className="text-sm text-muted-foreground">Buy servers to earn daily</p>
             </div>
           </FadeUp>
 

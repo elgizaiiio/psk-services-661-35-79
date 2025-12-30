@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
-import { ArrowLeft } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { MemoryGame as MemoryGameComponent } from "@/components/games/MemoryGame";
 import { useGameData } from "@/hooks/useGameData";
@@ -30,18 +30,9 @@ const MemoryGame: React.FC = () => {
       </Helmet>
 
       {/* Header */}
-      <div className="px-4 py-4 flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/mini-games")}
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-xl font-bold text-foreground">لعبة الذاكرة</h1>
-          <p className="text-sm text-muted-foreground">اعثر على الأزواج المتطابقة!</p>
-        </div>
+      <div className="px-4 py-4">
+        <h1 className="text-xl font-bold text-foreground">لعبة الذاكرة</h1>
+        <p className="text-sm text-muted-foreground">اعثر على الأزواج المتطابقة!</p>
       </div>
 
       {/* Game */}

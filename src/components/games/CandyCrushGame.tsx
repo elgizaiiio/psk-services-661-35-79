@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Star, Heart, Zap, RotateCcw, Home, Trophy, Target } from 'lucide-react';
+import { Star, Heart, Zap, RotateCcw, Home, Trophy, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
@@ -42,10 +42,7 @@ const CandyCrushGame: React.FC<CandyCrushGameProps> = ({ onBack }) => {
   if (gameStatus === 'idle') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 p-4">
-        <div className="flex items-center gap-3 mb-6">
-          <Button variant="ghost" size="icon" onClick={onBack} className="text-white">
-            <ArrowLeft className="w-6 h-6" />
-          </Button>
+        <div className="mb-6">
           <h1 className="text-2xl font-bold text-white">Candy Crush</h1>
         </div>
 
@@ -153,9 +150,7 @@ const CandyCrushGame: React.FC<CandyCrushGameProps> = ({ onBack }) => {
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-pink-800 to-orange-700 p-4 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-4">
-          <Button variant="ghost" size="icon" onClick={exitGame} className="text-white">
-            <ArrowLeft className="w-6 h-6" />
-          </Button>
+          <div className="w-10" /> {/* Spacer */}
           <div className="text-center">
             <div className="text-sm text-white/70">Level {level.id}</div>
             <div className="text-xl font-bold text-white">{gameState.score.toLocaleString()}</div>
