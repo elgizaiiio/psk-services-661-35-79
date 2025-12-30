@@ -133,7 +133,7 @@ const Tasks = () => {
 
               <AnimatePresence mode="wait">
                 {categories.map(cat => (
-                  <TabsContent key={cat} value={cat} className="space-y-2 mt-0">
+                  <TabsContent key={cat} value={cat} className="space-y-3 mt-0">
                     {getTasksByCategory(cat).map((task, i) => (
                       <motion.button
                         key={task.id}
@@ -150,14 +150,28 @@ const Tasks = () => {
                         whileTap={{ scale: 0.98 }}
                       >
                         <div className="flex items-center gap-3">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                          {/* Task Image */}
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden shrink-0 ${
                             isTaskCompleted(task.id) ? 'bg-primary/20' : 'bg-muted'
                           }`}>
-                            {isTaskCompleted(task.id) 
-                              ? <Check className="w-5 h-5 text-primary" /> 
-                              : <Target className="w-5 h-5 text-muted-foreground" />
-                            }
+                            {task.icon ? (
+                              <img 
+                                src={task.icon} 
+                                alt={task.title}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.target as HTMLImageElement;
+                                  target.style.display = 'none';
+                                }}
+                              />
+                            ) : isTaskCompleted(task.id) ? (
+                              <Check className="w-6 h-6 text-primary" />
+                            ) : (
+                              <Target className="w-6 h-6 text-muted-foreground" />
+                            )}
                           </div>
+
+                          {/* Task Info */}
                           <div className="flex-1 min-w-0">
                             <p className={`font-medium truncate ${
                               isTaskCompleted(task.id) ? 'text-primary' : 'text-foreground'
@@ -166,14 +180,21 @@ const Tasks = () => {
                             </p>
                             <p className="text-xs text-muted-foreground">+{task.points} BOLT</p>
                           </div>
-                          {!isTaskCompleted(task.id) && (
-                            <ExternalLink className="w-4 h-4 text-muted-foreground" />
+
+                          {/* Status/Action Icon */}
+                          {isTaskCompleted(task.id) ? (
+                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                              <Check className="w-4 h-4 text-primary" />
+                            </div>
+                          ) : (
+                            <ExternalLink className="w-5 h-5 text-muted-foreground" />
                           )}
                         </div>
                       </motion.button>
                     ))}
                     {getTasksByCategory(cat).length === 0 && (
                       <div className="text-center py-12">
+                        <Target className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
                         <p className="text-sm text-muted-foreground">No tasks available</p>
                       </div>
                     )}
