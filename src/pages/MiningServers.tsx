@@ -5,11 +5,10 @@ import { Button } from '@/components/ui/button';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useUserServers } from '@/hooks/useUserServers';
-import { useTonPrice } from '@/hooks/useTonPrice';
-import { Server, Check } from 'lucide-react';
+import { Server, Check, Zap, TrendingUp } from 'lucide-react';
 import { toast } from 'sonner';
-import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
-import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
+import { PageWrapper, FadeUp, StaggerContainer } from '@/components/ui/motion-wrapper';
+import { BoltIcon, UsdtIcon, TonIcon } from '@/components/ui/currency-icons';
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
 
 type MiningServer = {
@@ -18,18 +17,36 @@ type MiningServer = {
   hashRate: string;
   boltPerDay: number;
   usdtPerDay: number;
-  price: number;
+  priceTon: number;
   tier: 'Basic' | 'Pro' | 'Elite';
 };
 
 const servers: MiningServer[] = [
-  { id: 'basic-1', name: 'Starter', hashRate: '2.5 TH/s', boltPerDay: 15, usdtPerDay: 0.05, price: 1.5, tier: 'Basic' },
-  { id: 'basic-2', name: 'Basic', hashRate: '5.0 TH/s', boltPerDay: 30, usdtPerDay: 0.10, price: 2.5, tier: 'Basic' },
-  { id: 'pro-1', name: 'Pro', hashRate: '8.0 TH/s', boltPerDay: 50, usdtPerDay: 0.18, price: 4.0, tier: 'Pro' },
-  { id: 'pro-2', name: 'Advanced', hashRate: '12.0 TH/s', boltPerDay: 80, usdtPerDay: 0.28, price: 6.5, tier: 'Pro' },
-  { id: 'elite-1', name: 'Elite', hashRate: '20.0 TH/s', boltPerDay: 120, usdtPerDay: 0.45, price: 10.0, tier: 'Elite' },
-  { id: 'elite-2', name: 'Ultra', hashRate: '35.0 TH/s', boltPerDay: 200, usdtPerDay: 0.80, price: 18.0, tier: 'Elite' },
+  { id: 'basic-1', name: 'Starter', hashRate: '5 TH/s', boltPerDay: 50, usdtPerDay: 0.15, priceTon: 1.5, tier: 'Basic' },
+  { id: 'basic-2', name: 'Basic', hashRate: '10 TH/s', boltPerDay: 100, usdtPerDay: 0.30, priceTon: 2.5, tier: 'Basic' },
+  { id: 'pro-1', name: 'Pro', hashRate: '18 TH/s', boltPerDay: 180, usdtPerDay: 0.55, priceTon: 4.0, tier: 'Pro' },
+  { id: 'pro-2', name: 'Advanced', hashRate: '30 TH/s', boltPerDay: 300, usdtPerDay: 0.90, priceTon: 6.5, tier: 'Pro' },
+  { id: 'elite-1', name: 'Elite', hashRate: '50 TH/s', boltPerDay: 500, usdtPerDay: 1.50, priceTon: 10.0, tier: 'Elite' },
+  { id: 'elite-2', name: 'Ultra', hashRate: '100 TH/s', boltPerDay: 1000, usdtPerDay: 3.00, priceTon: 18.0, tier: 'Elite' },
 ];
+
+const getTierColor = (tier: string) => {
+  switch (tier) {
+    case 'Basic': return 'from-blue-500/20 to-cyan-500/20 border-blue-500/30';
+    case 'Pro': return 'from-purple-500/20 to-pink-500/20 border-purple-500/30';
+    case 'Elite': return 'from-amber-500/20 to-orange-500/20 border-amber-500/30';
+    default: return 'from-muted/20 to-muted/10 border-border';
+  }
+};
+
+const getTierBadgeColor = (tier: string) => {
+  switch (tier) {
+    case 'Basic': return 'bg-blue-500/20 text-blue-400';
+    case 'Pro': return 'bg-purple-500/20 text-purple-400';
+    case 'Elite': return 'bg-amber-500/20 text-amber-400';
+    default: return 'bg-muted text-muted-foreground';
+  }
+};
 
 const MiningServers = () => {
   const { user: telegramUser, isLoading: isTelegramLoading } = useTelegramAuth();
@@ -37,7 +54,6 @@ const MiningServers = () => {
   const { servers: ownedServers, purchaseServer, getStock } = useUserServers(user?.id || null);
   const [selectedServer, setSelectedServer] = useState<MiningServer | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-  const { tonToUsd } = useTonPrice();
 
   const isReady = !isTelegramLoading && !isMiningUserLoading;
 
@@ -73,6 +89,12 @@ const MiningServers = () => {
   const isOwned = (serverId: string) =>
     ownedServers.some((s) => s.server_name === servers.find((srv) => srv.id === serverId)?.name);
 
+  const totalStats = {
+    servers: ownedServers.length,
+    boltPerDay: ownedServers.reduce((sum, s) => sum + s.daily_bolt_yield, 0),
+    usdtPerDay: ownedServers.reduce((sum, s) => sum + s.daily_usdt_yield, 0),
+  };
+
   return (
     <PageWrapper className="min-h-screen bg-background pb-32">
       <Helmet>
@@ -80,84 +102,123 @@ const MiningServers = () => {
         <meta name="description" content="Buy mining servers to earn daily rewards." />
       </Helmet>
 
-      <div className="max-w-md mx-auto px-4 pt-10">
-        {/* Header */}
-        <FadeUp>
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-foreground">Servers</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {ownedServers.length} owned
-            </p>
+      <div className="max-w-md mx-auto px-4 pt-8">
+        <StaggerContainer className="space-y-6">
+          {/* Header */}
+          <FadeUp>
+            <div className="text-center mb-2">
+              <h1 className="text-2xl font-bold text-foreground">Mining Servers</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                Purchase servers to earn passive income
+              </p>
+            </div>
+          </FadeUp>
+
+          {/* Stats Card */}
+          {totalStats.servers > 0 && (
+            <FadeUp>
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Server className="w-5 h-5 text-primary" />
+                    <span className="font-medium text-foreground">{totalStats.servers} Servers</span>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Daily Earnings</p>
+                    <p className="text-sm font-semibold text-primary">+{totalStats.boltPerDay} BOLT • +${totalStats.usdtPerDay.toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+            </FadeUp>
+          )}
+
+          {/* Server List */}
+          <div className="space-y-3">
+            {servers.map((server) => {
+              const owned = isOwned(server.id);
+              const stock = getStock(server.id);
+
+              return (
+                <FadeUp key={server.id}>
+                  <motion.div
+                    className={`p-4 rounded-2xl bg-gradient-to-r ${getTierColor(server.tier)} border backdrop-blur-sm transition-all ${
+                      owned ? 'opacity-70' : stock.soldOut ? 'opacity-40' : ''
+                    }`}
+                    whileTap={!owned && !stock.soldOut ? { scale: 0.98 } : undefined}
+                  >
+                    {/* Top Row */}
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 rounded-xl bg-background/50 flex items-center justify-center">
+                          <Server className="w-6 h-6 text-foreground" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-bold text-foreground">{server.name}</h3>
+                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${getTierBadgeColor(server.tier)}`}>
+                              {server.tier}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5">
+                            <Zap className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">{server.hashRate}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Price */}
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 justify-end">
+                          <TonIcon size={16} />
+                          <span className="font-bold text-foreground">{server.priceTon}</span>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground">TON</span>
+                      </div>
+                    </div>
+
+                    {/* Rewards Row */}
+                    <div className="flex items-center gap-4 mb-3 py-2 px-3 rounded-xl bg-background/30">
+                      <div className="flex items-center gap-1.5">
+                        <TrendingUp className="w-3 h-3 text-primary" />
+                        <span className="text-xs text-muted-foreground">Daily:</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <BoltIcon size={14} />
+                        <span className="text-xs font-medium text-foreground">+{server.boltPerDay}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <UsdtIcon size={14} />
+                        <span className="text-xs font-medium text-foreground">+${server.usdtPerDay.toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    {/* Action Button */}
+                    {owned ? (
+                      <div className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/20 text-primary text-sm font-medium">
+                        <Check className="w-4 h-4" />
+                        Owned
+                      </div>
+                    ) : stock.soldOut ? (
+                      <div className="py-2.5 text-center rounded-xl bg-muted/50 text-muted-foreground text-sm font-medium">
+                        Sold Out
+                      </div>
+                    ) : (
+                      <Button 
+                        onClick={() => handleBuyClick(server)} 
+                        className="w-full h-10 font-semibold"
+                      >
+                        Buy Server
+                      </Button>
+                    )}
+                  </motion.div>
+                </FadeUp>
+              );
+            })}
           </div>
-        </FadeUp>
-
-        {/* Server Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {servers.map((server) => {
-            const owned = isOwned(server.id);
-            const stock = getStock(server.id);
-
-            return (
-              <FadeUp key={server.id}>
-                <motion.div
-                  className={`p-4 rounded-2xl border transition-all ${
-                    owned
-                      ? 'bg-primary/5 border-primary/30'
-                      : stock.soldOut
-                      ? 'bg-muted/30 border-border opacity-50'
-                      : 'bg-card border-border'
-                  }`}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {/* Server Name */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <Server className="w-4 h-4 text-primary" />
-                    <span className="font-semibold text-foreground">{server.name}</span>
-                  </div>
-
-                  {/* Hash Rate */}
-                  <p className="text-xs text-muted-foreground mb-2">{server.hashRate}</p>
-
-                  {/* Rewards */}
-                  <div className="space-y-1 mb-4">
-                    <div className="flex items-center gap-1 text-xs">
-                      <BoltIcon size={12} />
-                      <span className="text-primary font-medium">+{server.boltPerDay}/day</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs">
-                      <UsdtIcon size={12} />
-                      <span className="text-muted-foreground">+${server.usdtPerDay}/day</span>
-                    </div>
-                  </div>
-
-                  {/* Price */}
-                  <div className="mb-3">
-                    <p className="text-lg font-bold text-foreground">{server.price} TON</p>
-                  </div>
-
-                  {/* Action */}
-                  {owned ? (
-                    <div className="flex items-center justify-center gap-1.5 py-2 rounded-xl bg-primary/10 text-primary text-sm font-medium">
-                      <Check className="w-4 h-4" />
-                      Owned
-                    </div>
-                  ) : stock.soldOut ? (
-                    <div className="py-2 text-center rounded-xl bg-muted text-muted-foreground text-sm">
-                      Sold Out
-                    </div>
-                  ) : (
-                    <Button onClick={() => handleBuyClick(server)} className="w-full h-9 text-sm">
-                      Buy
-                    </Button>
-                  )}
-                </motion.div>
-              </FadeUp>
-            );
-          })}
-        </div>
+        </StaggerContainer>
       </div>
 
-      {/* Payment Modal */}
+      {/* Payment Modal - Using priceTon directly */}
       {selectedServer && (
         <UnifiedPaymentModal
           isOpen={isPaymentOpen}
@@ -165,8 +226,8 @@ const MiningServers = () => {
             setIsPaymentOpen(false);
             setSelectedServer(null);
           }}
-          amount={tonToUsd(selectedServer.price)}
-          description={`Server - ${selectedServer.name}`}
+          amount={selectedServer.priceTon}
+          description={`${selectedServer.name} Server`}
           productType="server_hosting"
           productId={selectedServer.id}
           onSuccess={handlePaymentSuccess}
