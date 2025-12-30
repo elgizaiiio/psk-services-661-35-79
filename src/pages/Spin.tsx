@@ -23,18 +23,16 @@ interface SpinReward {
 }
 
 const SPIN_REWARDS: SpinReward[] = [
-  { id: 'nothing', label: 'Try Again', type: 'nothing', value: 0, probability: 25, color: 'hsl(220, 20%, 25%)', icon: <Gift className="w-4 h-4" /> },
-  { id: 'bolt_100', label: '100 BOLT', type: 'bolt', value: 100, probability: 20, color: 'hsl(45, 95%, 55%)', icon: <BoltIcon size={16} /> },
-  { id: 'bolt_500', label: '500 BOLT', type: 'bolt', value: 500, probability: 15, color: 'hsl(45, 95%, 50%)', icon: <BoltIcon size={16} /> },
-  { id: 'bolt_1000', label: '1K BOLT', type: 'bolt', value: 1000, probability: 10, color: 'hsl(45, 95%, 45%)', icon: <BoltIcon size={16} /> },
-  { id: 'ton_1', label: '1 TON', type: 'ton', value: 1, probability: 8, color: 'hsl(200, 100%, 50%)', icon: <TonIcon size={16} /> },
-  { id: 'ton_3', label: '3 TON', type: 'ton', value: 3, probability: 5, color: 'hsl(200, 100%, 45%)', icon: <TonIcon size={16} /> },
-  { id: 'ton_5', label: '5 TON', type: 'ton', value: 5, probability: 2, color: 'hsl(200, 100%, 40%)', icon: <TonIcon size={16} /> },
-  { id: 'usdt_1', label: '1 USDT', type: 'usdt', value: 1, probability: 6, color: 'hsl(160, 70%, 45%)', icon: <UsdtIcon size={16} /> },
-  { id: 'usdt_5', label: '5 USDT', type: 'usdt', value: 5, probability: 4, color: 'hsl(160, 70%, 40%)', icon: <UsdtIcon size={16} /> },
-  { id: 'usdt_10', label: '10 USDT', type: 'usdt', value: 10, probability: 2, color: 'hsl(160, 70%, 35%)', icon: <UsdtIcon size={16} /> },
-  { id: 'mining_x2', label: '2x Mining', type: 'booster', value: 24, probability: 2, color: 'hsl(270, 80%, 55%)', icon: <Zap className="w-4 h-4" /> },
-  { id: 'task_x2', label: '2x Tasks', type: 'booster', value: 24, probability: 1, color: 'hsl(330, 80%, 55%)', icon: <Star className="w-4 h-4" /> },
+  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 22, color: '#F59E0B', icon: <BoltIcon size={14} /> },
+  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 20, color: '#374151', icon: <Gift className="w-3 h-3" /> },
+  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 15, color: '#EAB308', icon: <BoltIcon size={14} /> },
+  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 10, color: '#0EA5E9', icon: <TonIcon size={14} /> },
+  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 10, color: '#D97706', icon: <BoltIcon size={14} /> },
+  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 8, color: '#10B981', icon: <UsdtIcon size={14} /> },
+  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 6, color: '#0284C7', icon: <TonIcon size={14} /> },
+  { id: 'usdt_5', label: '5', type: 'usdt', value: 5, probability: 5, color: '#059669', icon: <UsdtIcon size={14} /> },
+  { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 3, color: '#8B5CF6', icon: <Zap className="w-3 h-3" /> },
+  { id: 'ton_5', label: '5', type: 'ton', value: 5, probability: 1, color: '#0369A1', icon: <TonIcon size={14} /> },
 ];
 
 const TICKET_PRICE_TON = 0.1;
@@ -243,59 +241,83 @@ const Spin: React.FC = () => {
 
           {/* Spin Wheel */}
           <FadeUp>
-            <div className="relative flex items-center justify-center py-6">
+            <div className="relative flex items-center justify-center py-4">
               {/* Outer glow */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-[280px] h-[280px] rounded-full bg-primary/20 blur-2xl" />
+                <div className="w-[260px] h-[260px] rounded-full bg-primary/10 blur-xl" />
               </div>
 
               {/* Pointer */}
-              <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">
-                <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-t-[20px] border-l-transparent border-r-transparent border-t-primary drop-shadow-lg" />
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2 z-20">
+                <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[16px] border-l-transparent border-r-transparent border-t-primary drop-shadow-lg" />
               </div>
 
-              {/* Wheel */}
-              <motion.div
-                className="relative w-64 h-64 rounded-full shadow-2xl overflow-hidden"
-                style={{
-                  background: `conic-gradient(${SPIN_REWARDS.map((r, i) => 
-                    `${r.color} ${i * segmentAngle}deg ${(i + 1) * segmentAngle}deg`
-                  ).join(', ')})`,
-                  boxShadow: '0 0 0 4px hsl(var(--primary)), 0 0 30px hsl(var(--primary)/0.3)',
-                }}
-                animate={{ rotate: rotation }}
-                transition={{ 
-                  duration: 5, 
-                  ease: [0.17, 0.67, 0.12, 0.99],
-                }}
-              >
-                {/* Segment Labels */}
-                {SPIN_REWARDS.map((reward, index) => {
-                  const angle = index * segmentAngle + segmentAngle / 2;
-                  return (
-                    <div
-                      key={reward.id}
-                      className="absolute left-1/2 top-1/2 origin-left"
-                      style={{
-                        transform: `rotate(${angle}deg) translateY(-50%)`,
-                        width: '100px',
-                      }}
-                    >
-                      <div className="flex items-center gap-1 text-white text-[10px] font-bold pl-4 drop-shadow-md">
-                        {reward.icon}
-                        <span className="truncate">{reward.label}</span>
-                      </div>
-                    </div>
-                  );
-                })}
+              {/* Wheel Container */}
+              <div className="relative w-[240px] h-[240px]">
+                {/* Wheel */}
+                <motion.div
+                  className="relative w-full h-full rounded-full shadow-2xl overflow-hidden"
+                  style={{
+                    boxShadow: '0 0 0 4px hsl(var(--primary)), 0 0 20px hsl(var(--primary)/0.3)',
+                  }}
+                  animate={{ rotate: rotation }}
+                  transition={{ 
+                    duration: 5, 
+                    ease: [0.17, 0.67, 0.12, 0.99],
+                  }}
+                >
+                  {/* SVG Wheel with segments */}
+                  <svg viewBox="0 0 100 100" className="w-full h-full">
+                    {SPIN_REWARDS.map((reward, index) => {
+                      const startAngle = index * segmentAngle;
+                      const endAngle = (index + 1) * segmentAngle;
+                      const startRad = (startAngle - 90) * (Math.PI / 180);
+                      const endRad = (endAngle - 90) * (Math.PI / 180);
+                      
+                      const x1 = 50 + 50 * Math.cos(startRad);
+                      const y1 = 50 + 50 * Math.sin(startRad);
+                      const x2 = 50 + 50 * Math.cos(endRad);
+                      const y2 = 50 + 50 * Math.sin(endRad);
+                      
+                      const largeArc = segmentAngle > 180 ? 1 : 0;
+                      const pathD = `M 50 50 L ${x1} ${y1} A 50 50 0 ${largeArc} 1 ${x2} ${y2} Z`;
+                      
+                      // Text position
+                      const midAngle = (startAngle + segmentAngle / 2 - 90) * (Math.PI / 180);
+                      const textRadius = 35;
+                      const textX = 50 + textRadius * Math.cos(midAngle);
+                      const textY = 50 + textRadius * Math.sin(midAngle);
+                      const textRotation = startAngle + segmentAngle / 2;
+                      
+                      return (
+                        <g key={reward.id}>
+                          <path d={pathD} fill={reward.color} stroke="rgba(255,255,255,0.1)" strokeWidth="0.3" />
+                          <text
+                            x={textX}
+                            y={textY}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            transform={`rotate(${textRotation}, ${textX}, ${textY})`}
+                            fill="white"
+                            fontSize="4"
+                            fontWeight="bold"
+                            style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                          >
+                            {reward.label}
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
 
-                {/* Center Circle */}
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-14 h-14 rounded-full bg-background border-4 border-primary flex items-center justify-center shadow-lg">
-                    <Sparkles className="w-5 h-5 text-primary" />
+                  {/* Center Circle */}
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="w-12 h-12 rounded-full bg-background border-4 border-primary flex items-center justify-center shadow-lg">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                    </div>
                   </div>
-                </div>
-              </motion.div>
+                </motion.div>
+              </div>
             </div>
           </FadeUp>
 
@@ -315,11 +337,14 @@ const Spin: React.FC = () => {
                 <div className="flex items-center justify-center gap-2 mb-2">
                   {result.icon}
                   <span className={`text-xl font-bold ${result.type !== 'nothing' ? 'text-primary' : 'text-muted-foreground'}`}>
-                    {result.label}
+                    {result.type === 'bolt' ? `${result.value} BOLT` : 
+                     result.type === 'ton' ? `${result.value} TON` :
+                     result.type === 'usdt' ? `${result.value} USDT` :
+                     result.type === 'booster' ? '2x Boost' : 'Try Again'}
                   </span>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  {result.type !== 'nothing' ? 'Congratulations!' : 'Try again!'}
+                  {result.type !== 'nothing' ? 'Congratulations!' : 'Better luck next time!'}
                 </p>
               </motion.div>
             )}
