@@ -876,6 +876,48 @@ export type Database = {
           },
         ]
       }
+      daily_login_rewards: {
+        Row: {
+          claimed_at: string
+          created_at: string
+          id: string
+          reward_claimed: number
+          streak_day: number
+          user_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          created_at?: string
+          id?: string
+          reward_claimed?: number
+          streak_day?: number
+          user_id: string
+        }
+        Update: {
+          claimed_at?: string
+          created_at?: string
+          id?: string
+          reward_claimed?: number
+          streak_day?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_login_rewards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_login_rewards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_spins: {
         Row: {
           created_at: string
