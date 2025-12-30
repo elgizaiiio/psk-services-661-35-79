@@ -8,7 +8,7 @@ import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
-import { Server, ChevronRight, Wallet, Loader2, Play } from 'lucide-react';
+import { Server, ChevronRight, Wallet, Loader2, Play, Gift } from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 
@@ -158,6 +158,25 @@ const Index = () => {
               )}
             </FadeUp>
           )}
+
+          {/* Lucky Spin Card */}
+          <FadeUp>
+            <motion.button onClick={() => navigate('/spin')} className="w-full p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Gift className="w-5 h-5 text-purple-400" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-foreground">Lucky Spin</p>
+                  <p className="text-xs text-muted-foreground">Win TON, USDT & more!</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-purple-400 bg-purple-500/20 px-2 py-1 rounded-full">Free Daily</span>
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
+              </div>
+            </motion.button>
+          </FadeUp>
 
           {/* Wallet Quick Access */}
           <FadeUp>
