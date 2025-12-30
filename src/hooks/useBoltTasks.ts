@@ -81,14 +81,14 @@ export const useBoltTasks = () => {
         updated_at: new Date().toISOString(),
       }).eq('id', boltUser.id);
 
-      // Refresh data from backend
-      await loadCompletedTasks();
+      // Refresh data from backend - update local state immediately
+      await Promise.all([loadTasks(), loadCompletedTasks()]);
       await refreshUser();
     } catch (err: any) {
       console.error('Error completing task:', err);
       throw err;
     }
-  }, [boltUser, loadCompletedTasks, refreshUser]);
+  }, [boltUser, loadTasks, loadCompletedTasks, refreshUser]);
 
   const revokeTaskCompletion = useCallback(async (taskId: string, points: number) => {
     if (!boltUser) return false;
