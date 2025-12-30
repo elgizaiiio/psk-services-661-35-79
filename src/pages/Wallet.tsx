@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
 import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
@@ -11,9 +12,9 @@ import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import { Button } from '@/components/ui/button';
 import WithdrawModal from '@/components/WithdrawModal';
 import WithdrawSelectModal from '@/components/wallet/WithdrawSelectModal';
-import BuyBoltModal from '@/components/wallet/BuyBoltModal';
 
 const Wallet: React.FC = () => {
+  const navigate = useNavigate();
   const { user: tgUser, isLoading: authLoading } = useTelegramAuth();
   const { user, loading: miningLoading } = useViralMining(tgUser);
   const wallet = useTonWallet();
@@ -21,7 +22,6 @@ const Wallet: React.FC = () => {
   const [showBalance, setShowBalance] = useState(true);
   const [withdrawSelectOpen, setWithdrawSelectOpen] = useState(false);
   const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; currency: 'TON' | 'USDT' } | null>(null);
-  const [buyBoltOpen, setBuyBoltOpen] = useState(false);
   useTelegramBackButton();
 
   const boltBalance = user?.token_balance ?? 0;
@@ -92,8 +92,9 @@ const Wallet: React.FC = () => {
                 Withdraw
               </Button>
               <Button
-                onClick={() => setBuyBoltOpen(true)}
-                className="flex-1 h-12 bg-gradient-to-r from-primary to-primary/80"
+                onClick={() => navigate('/buy-bolt')}
+                variant="outline"
+                className="flex-1 h-12 bg-white text-black hover:bg-white/90 border-white/20"
               >
                 <ShoppingCart className="w-4 h-4 mr-2" />
                 Buy BOLT
@@ -171,15 +172,6 @@ const Wallet: React.FC = () => {
           userId={user.id}
           currency={withdrawModal.currency}
           balance={withdrawModal.currency === 'USDT' ? usdtBalance : 0}
-        />
-      )}
-
-      {/* Buy BOLT Modal */}
-      {user && (
-        <BuyBoltModal
-          open={buyBoltOpen}
-          onClose={() => setBuyBoltOpen(false)}
-          userId={user.id}
         />
       )}
     </PageWrapper>

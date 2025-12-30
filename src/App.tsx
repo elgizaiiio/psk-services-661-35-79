@@ -50,6 +50,7 @@ const KrunkerGame = lazy(() => import("./pages/KrunkerGame"));
 const Contest = lazy(() => import("./pages/Contest"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Spin = lazy(() => import("./pages/Spin"));
+const BuyBolt = lazy(() => import("./pages/BuyBolt"));
 
 // Loading component
 const PageLoader = () => (
@@ -217,6 +218,7 @@ const App = () => (
                               <Route path="/game" element={<KrunkerGame />} />
                               <Route path="/contest" element={<Contest />} />
                               <Route path="/spin" element={<Spin />} />
+                              <Route path="/buy-bolt" element={<BuyBolt />} />
                             </Routes>
                           </Suspense>
                           <BottomNavigation />
