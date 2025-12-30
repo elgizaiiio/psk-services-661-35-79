@@ -61,7 +61,7 @@ const Tasks = () => {
 
   return (
     <PageWrapper className="min-h-screen bg-background pb-28">
-      <div className="max-w-md mx-auto px-5 pt-8">
+      <div className="max-w-md mx-auto px-5 pt-16">
         <Helmet><title>Tasks</title></Helmet>
         <StaggerContainer className="space-y-6">
           <FadeUp>

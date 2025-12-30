@@ -77,7 +77,7 @@ const Contest = () => {
 
       <div className="min-h-screen bg-background pb-32">
         {/* Header */}
-        <div className="px-4 pt-6 pb-4">
+        <div className="px-4 pt-16 pb-4">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-lg font-semibold text-foreground">{contest.name}</h1>

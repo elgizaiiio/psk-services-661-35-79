@@ -130,7 +130,7 @@ const Profile: React.FC = () => {
       </Helmet>
 
       <main className="safe-area pb-24">
-        <div className="max-w-md mx-auto px-4 py-6 space-y-6">
+        <div className="max-w-md mx-auto px-4 pt-16 pb-6 space-y-6">
           
           {/* Settings Button */}
           <div className="flex justify-end">

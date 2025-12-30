@@ -62,7 +62,7 @@ const Wallet: React.FC = () => {
   return (
     <PageWrapper className="min-h-screen bg-background pb-28">
       <Helmet><title>Wallet</title></Helmet>
-      <div className="max-w-md mx-auto px-5 pt-8">
+      <div className="max-w-md mx-auto px-5 pt-16">
         <StaggerContainer className="space-y-6">
           <FadeUp>
             <div className="flex items-center justify-between">
