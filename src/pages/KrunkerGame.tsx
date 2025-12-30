@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
-import { X, Clock, Gift } from "lucide-react";
+import { X, Clock, Gift, RotateCcw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
+import { motion } from "framer-motion";
 
 const KrunkerGame = () => {
   const navigate = useNavigate();
@@ -112,18 +113,54 @@ const KrunkerGame = () => {
     return (
       <div className="fixed inset-0 z-50 bg-background flex flex-col items-center justify-center p-6">
         <div className="text-center max-w-xs">
-          <div className="w-16 h-24 border-2 border-border rounded-2xl mx-auto mb-6 relative">
-            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 bg-muted rounded-full" />
-          </div>
+          {/* Animated Phone Rotation */}
+          <motion.div
+            className="w-16 h-24 border-2 border-primary rounded-2xl mx-auto mb-6 relative"
+            animate={{ rotate: [0, 90, 90, 0] }}
+            transition={{ 
+              duration: 2.5, 
+              repeat: Infinity, 
+              ease: "easeInOut",
+              times: [0, 0.3, 0.7, 1]
+            }}
+          >
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 w-6 h-1 bg-primary/50 rounded-full" />
+            <motion.div 
+              className="absolute inset-2 rounded-lg bg-primary/10 flex items-center justify-center"
+              animate={{ opacity: [0.3, 1, 1, 0.3] }}
+              transition={{ duration: 2.5, repeat: Infinity, times: [0, 0.3, 0.7, 1] }}
+            >
+              <motion.div
+                animate={{ rotate: [0, -90, -90, 0] }}
+                transition={{ duration: 2.5, repeat: Infinity, times: [0, 0.3, 0.7, 1] }}
+              >
+                <RotateCcw className="w-6 h-6 text-primary" />
+              </motion.div>
+            </motion.div>
+          </motion.div>
 
-          <h1 className="text-xl font-semibold text-foreground mb-2">
+          <motion.h1 
+            className="text-xl font-semibold text-foreground mb-2"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             Rotate Your Phone
-          </h1>
-          <p className="text-sm text-muted-foreground mb-6">
+          </motion.h1>
+          <motion.p 
+            className="text-sm text-muted-foreground mb-6"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
             This game works best in landscape mode
-          </p>
+          </motion.p>
 
-          <div className="p-4 rounded-xl bg-card border border-border mb-6">
+          <motion.div 
+            className="p-4 rounded-xl bg-card border border-border"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <p className="text-sm font-medium text-foreground mb-3">Play Rewards</p>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
@@ -139,16 +176,7 @@ const KrunkerGame = () => {
                 <span className="text-primary font-medium">+50 BOLT</span>
               </div>
             </div>
-          </div>
-
-          <div className="flex gap-3">
-            <Button onClick={handleStartPlaying} className="flex-1">
-              Play Anyway
-            </Button>
-            <Button variant="outline" onClick={handleClose}>
-              Back
-            </Button>
-          </div>
+          </motion.div>
         </div>
       </div>
     );
