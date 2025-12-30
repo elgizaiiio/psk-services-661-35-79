@@ -202,7 +202,7 @@ serve(async (req) => {
           [
             {
               text: '⛏️ Start New Session',
-              web_app: { url: 'https://bolt.elgiza.site' }
+              web_app: { url: 'https://bolts.elgiza.site' }
             }
           ]
         ]

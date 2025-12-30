@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
-const WEBAPP_URL = 'https://bolt.elgiza.site';
+const WEBAPP_URL = 'https://bolts.elgiza.site';
 
 interface TelegramUpdate {
   update_id: number;
