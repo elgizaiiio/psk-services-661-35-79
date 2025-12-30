@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
 export const useTelegramBackButton = (customBackPath?: string) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const handlerRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     const webApp = (window as any).Telegram?.WebApp;
@@ -11,24 +12,54 @@ export const useTelegramBackButton = (customBackPath?: string) => {
 
     const isHomePage = location.pathname === '/' || location.pathname === '/index';
 
-    if (isHomePage) {
-      webApp.BackButton.hide();
-    } else {
-      webApp.BackButton.show();
+    // Safely show/hide BackButton
+    try {
+      if (isHomePage) {
+        webApp.BackButton.hide();
+      } else {
+        webApp.BackButton.show();
+      }
+    } catch (e) {
+      // Ignore BackButton visibility errors
     }
 
+    // Create handler and store reference
     const handleBack = () => {
-      if (customBackPath) {
-        navigate(customBackPath);
-      } else {
-        navigate(-1);
+      try {
+        if (customBackPath) {
+          navigate(customBackPath);
+        } else {
+          navigate(-1);
+        }
+      } catch (e) {
+        // Fallback to home
+        try {
+          navigate('/');
+        } catch {
+          // Ignore navigation errors
+        }
       }
     };
 
-    webApp.BackButton.onClick(handleBack);
+    handlerRef.current = handleBack;
 
+    // Safely register click handler
+    try {
+      webApp.BackButton.onClick(handleBack);
+    } catch (e) {
+      // Ignore registration errors
+    }
+
+    // Cleanup with full error protection
     return () => {
-      webApp.BackButton.offClick(handleBack);
+      try {
+        if (handlerRef.current && webApp?.BackButton?.offClick) {
+          webApp.BackButton.offClick(handlerRef.current);
+        }
+      } catch (e) {
+        // Ignore cleanup errors completely
+      }
+      handlerRef.current = null;
     };
   }, [navigate, location.pathname, customBackPath]);
 };
