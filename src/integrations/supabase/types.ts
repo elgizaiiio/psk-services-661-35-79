@@ -2084,6 +2084,8 @@ export type Database = {
           username: string
         }[]
       }
+      get_telegram_user_id: { Args: never; Returns: string }
+      get_telegram_user_id_text: { Args: never; Returns: string }
     }
     Enums: {
       [_ in never]: never

@@ -3,7 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { BoltTask, BoltCompletedTask } from '@/types/bolt';
-import { cache, completedTasksStorage, CACHE_EXPIRY } from '@/lib/cache';
 
 export const useBoltTasks = () => {
   const { user: telegramUser } = useTelegramAuth();
@@ -16,13 +15,6 @@ export const useBoltTasks = () => {
 
   const loadTasks = useCallback(async () => {
     try {
-      // Try cache first
-      const cached = cache.get<BoltTask[]>('tasks');
-      if (cached) {
-        setTasks(cached);
-        return;
-      }
-
       const { data, error } = await supabase
         .from('bolt_tasks' as any)
         .select('*')
@@ -30,11 +22,7 @@ export const useBoltTasks = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      const tasksData = (data || []) as unknown as BoltTask[];
-      setTasks(tasksData);
-      
-      // Cache tasks
-      cache.set('tasks', tasksData, CACHE_EXPIRY.tasks);
+      setTasks((data || []) as unknown as BoltTask[]);
     } catch (err: any) {
       console.error('Error loading tasks:', err);
       setError(err?.message || 'Unknown error');
@@ -50,11 +38,7 @@ export const useBoltTasks = () => {
         .eq('user_id', boltUser.id);
 
       if (error) throw error;
-      const completedData = (data || []) as unknown as BoltCompletedTask[];
-      setCompletedTasks(completedData);
-      
-      // Sync with localStorage
-      completedTasksStorage.sync(completedData.map(c => c.task_id));
+      setCompletedTasks((data || []) as unknown as BoltCompletedTask[]);
     } catch (err: any) {
       console.error('Error loading completed tasks:', err);
     }
@@ -97,10 +81,7 @@ export const useBoltTasks = () => {
         updated_at: new Date().toISOString(),
       }).eq('id', boltUser.id);
 
-      // Save to localStorage (permanent)
-      completedTasksStorage.add(taskId);
-
-      // Refresh data
+      // Refresh data from backend
       await loadCompletedTasks();
       await refreshUser();
     } catch (err: any) {
@@ -127,9 +108,6 @@ export const useBoltTasks = () => {
         .update({ token_balance: next, updated_at: new Date().toISOString() })
         .eq('id', boltUser.id);
 
-      // Remove from localStorage
-      completedTasksStorage.remove(taskId);
-
       await loadCompletedTasks();
       await refreshUser();
       return true;
@@ -139,15 +117,10 @@ export const useBoltTasks = () => {
     }
   }, [boltUser, loadCompletedTasks, refreshUser]);
 
+  // Filter out completed tasks - relies only on backend data
   const getAvailableTasks = useCallback(() => {
-    // Get permanently hidden tasks from localStorage
-    const permanentlyCompleted = completedTasksStorage.get();
-    
-    // Filter out both DB completed and localStorage completed
-    return tasks.filter(task => 
-      !completedTasks.some(c => c.task_id === task.id) && 
-      !permanentlyCompleted.has(task.id)
-    );
+    const completedIds = new Set(completedTasks.map(c => c.task_id));
+    return tasks.filter(task => !completedIds.has(task.id));
   }, [tasks, completedTasks]);
 
   useEffect(() => {

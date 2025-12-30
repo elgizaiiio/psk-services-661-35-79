@@ -1,14 +1,10 @@
 // Cache utilities for localStorage and performance optimization
+// Only for non-sensitive, static data like UI preferences
 
 const CACHE_PREFIX = 'bolt_cache_';
-const COMPLETED_TASKS_KEY = 'bolt_completed_tasks';
 
 // Cache expiry times
 export const CACHE_EXPIRY = {
-  tasks: 5 * 60 * 1000, // 5 minutes
-  characters: 10 * 60 * 1000, // 10 minutes
-  challenges: 5 * 60 * 1000, // 5 minutes
-  achievements: 10 * 60 * 1000, // 10 minutes
   default: 24 * 60 * 60 * 1000, // 24 hours
 };
 
@@ -18,7 +14,7 @@ interface CacheItem<T> {
   expiry: number;
 }
 
-// Cache object with get/set methods
+// Cache object for non-sensitive data only
 export const cache = {
   set: <T>(key: string, data: T, expiryMs: number = CACHE_EXPIRY.default): void => {
     try {
@@ -66,53 +62,6 @@ export const cache = {
       keys.forEach(k => localStorage.removeItem(k));
     } catch (e) {
       console.warn('Cache clear failed:', e);
-    }
-  },
-};
-
-// Completed tasks storage (permanent, never expires)
-export const completedTasksStorage = {
-  get: (): Set<string> => {
-    try {
-      const raw = localStorage.getItem(COMPLETED_TASKS_KEY);
-      if (!raw) return new Set();
-      return new Set(JSON.parse(raw));
-    } catch (e) {
-      return new Set();
-    }
-  },
-
-  add: (taskId: string): void => {
-    try {
-      const completed = completedTasksStorage.get();
-      completed.add(taskId);
-      localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...completed]));
-    } catch (e) {
-      console.warn('Failed to save completed task:', e);
-    }
-  },
-
-  remove: (taskId: string): void => {
-    try {
-      const completed = completedTasksStorage.get();
-      completed.delete(taskId);
-      localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...completed]));
-    } catch (e) {
-      console.warn('Failed to remove completed task:', e);
-    }
-  },
-
-  has: (taskId: string): boolean => {
-    return completedTasksStorage.get().has(taskId);
-  },
-
-  sync: (taskIds: string[]): void => {
-    try {
-      const current = completedTasksStorage.get();
-      taskIds.forEach(id => current.add(id));
-      localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...current]));
-    } catch (e) {
-      console.warn('Failed to sync completed tasks:', e);
     }
   },
 };
