@@ -1,7 +1,5 @@
 import { Helmet } from 'react-helmet-async';
-import { Trophy, Gift, Users, Share2, Copy, Check } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { CountdownTimer } from '@/components/contest/CountdownTimer';
@@ -11,6 +9,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { toast } from 'sonner';
+import { Copy, Check, Share2 } from 'lucide-react';
 
 const Contest = () => {
   const { user: tgUser } = useTelegramAuth();
@@ -36,7 +35,7 @@ const Contest = () => {
   };
 
   const handleShare = () => {
-    const text = `🏆 Join the BOLT Referral Championship!\n\n💰 Prize Pool: $10,000 in TON\n\nJoin now and compete!`;
+    const text = `Join the BOLT Referral Championship!\n\nPrize Pool: $10,000 in TON\n\nJoin now and compete!`;
     const webApp = (window as any).Telegram?.WebApp;
     
     if (webApp?.openTelegramLink) {
@@ -57,9 +56,8 @@ const Contest = () => {
   if (!contest) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-        <Trophy className="w-12 h-12 text-muted-foreground mb-4" />
-        <h1 className="text-lg font-semibold mb-2">No Active Contest</h1>
-        <p className="text-sm text-muted-foreground mb-6">Check back later</p>
+        <h1 className="text-lg font-semibold mb-2 text-foreground">No Active Contest</h1>
+        <p className="text-sm text-muted-foreground mb-6">Check back later for new competitions</p>
         <Link to="/invite">
           <Button variant="outline" size="sm">Back</Button>
         </Link>
@@ -72,123 +70,103 @@ const Contest = () => {
   return (
     <>
       <Helmet>
-        <title>Referral Contest</title>
+        <title>Referral Contest | BOLT</title>
       </Helmet>
 
       <div className="min-h-screen bg-background pb-32">
-        {/* Header */}
-        <div className="px-4 pt-16 pb-4">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-lg font-semibold text-foreground">{contest.name}</h1>
-              <p className="text-xs text-muted-foreground">Top 10 Winners</p>
+        <div className="px-5 pt-16 pb-4 max-w-md mx-auto">
+          
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-2xl font-bold text-foreground mb-1">{contest.name}</h1>
+            <p className="text-muted-foreground text-sm">Invite friends to win prizes</p>
+          </div>
+
+          {/* Prize & Timer */}
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="p-5 rounded-2xl bg-card border border-border">
+              <p className="text-xs text-muted-foreground mb-1">Prize Pool</p>
+              <p className="text-2xl font-bold text-primary">$10,000</p>
             </div>
-            <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full">
-              <Gift className="w-4 h-4 text-primary" />
-              <span className="text-sm font-semibold text-primary">$10,000</span>
+            <div className="p-5 rounded-2xl bg-card border border-border">
+              <p className="text-xs text-muted-foreground mb-1">Ends In</p>
+              <CountdownTimer endDate={contest.end_date} compact />
             </div>
           </div>
 
-          {/* Countdown */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mb-6"
-          >
-            <CountdownTimer endDate={contest.end_date} />
-          </motion.div>
-
-          {/* Your Stats */}
+          {/* Your Position */}
           {userRank && (
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="grid grid-cols-3 gap-3 mb-6"
-            >
-              <div className="bg-card border border-border rounded-xl p-3 text-center">
-                <p className="text-xl font-bold text-primary">
-                  {userRank.rank > 0 ? `#${userRank.rank}` : '-'}
-                </p>
-                <p className="text-xs text-muted-foreground">Rank</p>
+            <div className="mb-8">
+              <h2 className="text-sm font-medium text-foreground mb-3">Your Position</h2>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="p-4 rounded-xl bg-card border border-border text-center">
+                  <p className="text-2xl font-bold text-foreground">
+                    {userRank.rank > 0 ? `#${userRank.rank}` : '-'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Rank</p>
+                </div>
+                <div className="p-4 rounded-xl bg-card border border-border text-center">
+                  <p className="text-2xl font-bold text-foreground">{userRank.referral_count}</p>
+                  <p className="text-xs text-muted-foreground">Referrals</p>
+                </div>
+                <div className="p-4 rounded-xl bg-card border border-border text-center">
+                  <p className="text-2xl font-bold text-primary">
+                    {userRank.prize_usd ? `$${userRank.prize_usd}` : '-'}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Prize</p>
+                </div>
               </div>
-              <div className="bg-card border border-border rounded-xl p-3 text-center">
-                <p className="text-xl font-bold text-foreground">{userRank.referral_count}</p>
-                <p className="text-xs text-muted-foreground">Referrals</p>
-              </div>
-              <div className="bg-card border border-border rounded-xl p-3 text-center">
-                <p className="text-xl font-bold text-green-500">
-                  {userRank.prize_usd ? `$${userRank.prize_usd}` : '-'}
-                </p>
-                <p className="text-xs text-muted-foreground">Prize</p>
-              </div>
-            </motion.div>
+            </div>
           )}
 
-          {/* Prizes */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="mb-6"
-          >
-            <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-              <Trophy className="w-4 h-4 text-primary" />
-              Prizes
-            </h3>
-            <div className="grid grid-cols-5 gap-2">
-              {prizes.slice(0, 10).map((prize: any) => (
-                <div
-                  key={prize.rank}
-                  className={`p-2 rounded-lg text-center ${
-                    prize.rank <= 3 ? 'bg-primary/10 border border-primary/20' : 'bg-card border border-border'
-                  }`}
-                >
-                  <p className="text-xs mb-1">
-                    {prize.rank === 1 && '🥇'}
-                    {prize.rank === 2 && '🥈'}
-                    {prize.rank === 3 && '🥉'}
-                    {prize.rank > 3 && `#${prize.rank}`}
-                  </p>
-                  <p className="text-xs font-semibold text-primary">${prize.prize_usd}</p>
-                </div>
-              ))}
+          {/* Prize Breakdown */}
+          <div className="mb-8">
+            <h2 className="text-sm font-medium text-foreground mb-3">Prize Distribution</h2>
+            <div className="p-4 rounded-xl bg-card border border-border">
+              <div className="space-y-2">
+                {prizes.slice(0, 10).map((prize: any) => (
+                  <div 
+                    key={prize.rank} 
+                    className={`flex items-center justify-between py-2 ${
+                      prize.rank <= 3 ? 'text-primary' : 'text-foreground'
+                    }`}
+                  >
+                    <span className="text-sm">
+                      {prize.rank === 1 ? '1st' : prize.rank === 2 ? '2nd' : prize.rank === 3 ? '3rd' : `${prize.rank}th`} Place
+                    </span>
+                    <span className="font-semibold">${prize.prize_usd}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Leaderboard */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <h3 className="text-sm font-medium text-foreground mb-3 flex items-center gap-2">
-              <Users className="w-4 h-4 text-primary" />
-              Leaderboard
-            </h3>
-            <div className="bg-card border border-border rounded-xl overflow-hidden">
+          <div className="mb-8">
+            <h2 className="text-sm font-medium text-foreground mb-3">Leaderboard</h2>
+            <div className="rounded-xl bg-card border border-border overflow-hidden">
               <Leaderboard
                 entries={leaderboard}
                 prizes={prizes}
                 currentUserId={userData?.id}
               />
             </div>
-          </motion.div>
+          </div>
         </div>
 
         {/* Bottom Actions */}
-        <div className="fixed bottom-20 left-0 right-0 p-4 bg-background/80 backdrop-blur-sm border-t border-border">
-          <div className="max-w-lg mx-auto flex gap-3">
-            <Button onClick={handleShare} className="flex-1 h-11 rounded-xl gap-2">
-              <Share2 className="w-4 h-4" />
-              Share
+        <div className="fixed bottom-20 left-0 right-0 p-4 bg-background/90 backdrop-blur-sm border-t border-border">
+          <div className="max-w-md mx-auto flex gap-3">
+            <Button onClick={handleShare} className="flex-1 h-12 rounded-xl font-medium">
+              <Share2 className="w-4 h-4 mr-2" />
+              Share Link
             </Button>
             <Button
               onClick={handleCopy}
               variant="outline"
-              className="h-11 w-11 p-0 rounded-xl"
+              className="h-12 w-12 p-0 rounded-xl"
             >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-4 h-4 text-primary" /> : <Copy className="w-4 h-4" />}
             </Button>
           </div>
         </div>

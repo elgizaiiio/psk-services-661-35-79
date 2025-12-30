@@ -4,21 +4,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltTasks } from '@/hooks/useBoltTasks';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
+import { useChannelSubscription } from '@/hooks/useChannelSubscription';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Target, Check, ExternalLink, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 
 const Tasks = () => {
-  const { hapticFeedback } = useTelegramAuth();
+  const { user: tgUser, hapticFeedback } = useTelegramAuth();
   const { allTasks, completedTasks, loading, completeTask } = useBoltTasks();
+  const { checkSubscription, isChecking } = useChannelSubscription('boltcomm');
   const [activeTab, setActiveTab] = useState('social');
+  const [processingTask, setProcessingTask] = useState<string | null>(null);
   useTelegramBackButton();
 
   const getTasksByCategory = (category: string) => allTasks.filter(task => task.category === category);
   const isTaskCompleted = (taskId: string) => completedTasks.some(ct => ct.task_id === taskId);
 
-  // Get all unique categories from tasks
   const categories = useMemo(() => {
     const cats = [...new Set(allTasks.map(t => t.category))];
     return cats.length > 0 ? cats : ['social', 'mining', 'referral'];
@@ -31,31 +33,61 @@ const Tasks = () => {
     return { totalTasks, completed, earnedPoints };
   }, [allTasks, completedTasks]);
 
-  const handleTaskComplete = async (taskId: string, taskUrl: string) => {
+  const handleTaskComplete = async (taskId: string, taskUrl: string, taskTitle: string) => {
     if (isTaskCompleted(taskId)) {
       toast.info('Task already completed!');
       return;
     }
     
     hapticFeedback?.impact?.('medium');
-    
-    if (taskUrl) {
-      // Check if it's an internal link
-      if (taskUrl.startsWith('/')) {
-        window.location.href = taskUrl;
-      } else {
+    setProcessingTask(taskId);
+
+    // Check if this is a community/channel join task
+    const isCommunityTask = taskTitle.toLowerCase().includes('community') || 
+                            taskTitle.toLowerCase().includes('channel') ||
+                            taskUrl?.includes('t.me/boltcomm');
+
+    if (isCommunityTask && tgUser?.id) {
+      // Open the channel first
+      if (taskUrl) {
         window.open(taskUrl, '_blank');
       }
       
-      // Complete task after 3 seconds
+      // Wait a moment then check subscription
       setTimeout(async () => {
-        try {
-          await completeTask(taskId);
-          toast.success('Task completed! Points added.');
-        } catch (err) {
-          toast.error('Could not complete task');
+        const isSubscribed = await checkSubscription(tgUser.id);
+        
+        if (isSubscribed) {
+          try {
+            await completeTask(taskId);
+            toast.success('Task completed! Points added.');
+          } catch (err) {
+            toast.error('Could not complete task');
+          }
+        } else {
+          toast.error('Please join the channel first, then try again');
         }
+        setProcessingTask(null);
       }, 3000);
+    } else {
+      // Regular task flow
+      if (taskUrl) {
+        if (taskUrl.startsWith('/')) {
+          window.location.href = taskUrl;
+        } else {
+          window.open(taskUrl, '_blank');
+        }
+        
+        setTimeout(async () => {
+          try {
+            await completeTask(taskId);
+            toast.success('Task completed! Points added.');
+          } catch (err) {
+            toast.error('Could not complete task');
+          }
+          setProcessingTask(null);
+        }, 3000);
+      }
     }
   };
 
@@ -134,64 +166,66 @@ const Tasks = () => {
               <AnimatePresence mode="wait">
                 {categories.map(cat => (
                   <TabsContent key={cat} value={cat} className="space-y-3 mt-0">
-                    {getTasksByCategory(cat).map((task, i) => (
-                      <motion.button
-                        key={task.id}
-                        onClick={() => handleTaskComplete(task.id, task.task_url || '')}
-                        disabled={isTaskCompleted(task.id)}
-                        className={`w-full p-4 rounded-xl border text-left transition-all ${
-                          isTaskCompleted(task.id) 
-                            ? 'bg-primary/5 border-primary/20' 
-                            : 'bg-card border-border hover:border-primary/30'
-                        }`}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <div className="flex items-center gap-3">
-                          {/* Task Image */}
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden shrink-0 ${
-                            isTaskCompleted(task.id) ? 'bg-primary/20' : 'bg-muted'
-                          }`}>
-                            {task.icon ? (
-                              <img 
-                                src={task.icon} 
-                                alt={task.title}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement;
-                                  target.style.display = 'none';
-                                }}
-                              />
+                    {getTasksByCategory(cat).map((task, i) => {
+                      const isProcessing = processingTask === task.id || isChecking;
+                      return (
+                        <motion.button
+                          key={task.id}
+                          onClick={() => handleTaskComplete(task.id, task.task_url || '', task.title)}
+                          disabled={isTaskCompleted(task.id) || isProcessing}
+                          className={`w-full p-4 rounded-xl border text-left transition-all ${
+                            isTaskCompleted(task.id) 
+                              ? 'bg-primary/5 border-primary/20' 
+                              : 'bg-card border-border hover:border-primary/30'
+                          }`}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center overflow-hidden shrink-0 ${
+                              isTaskCompleted(task.id) ? 'bg-primary/20' : 'bg-muted'
+                            }`}>
+                              {task.icon ? (
+                                <img 
+                                  src={task.icon} 
+                                  alt={task.title}
+                                  className="w-full h-full object-cover"
+                                  onError={(e) => {
+                                    const target = e.target as HTMLImageElement;
+                                    target.style.display = 'none';
+                                  }}
+                                />
+                              ) : isTaskCompleted(task.id) ? (
+                                <Check className="w-6 h-6 text-primary" />
+                              ) : (
+                                <Target className="w-6 h-6 text-muted-foreground" />
+                              )}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                              <p className={`font-medium truncate ${
+                                isTaskCompleted(task.id) ? 'text-primary' : 'text-foreground'
+                              }`}>
+                                {task.title}
+                              </p>
+                              <p className="text-xs text-muted-foreground">+{task.points} BOLT</p>
+                            </div>
+
+                            {isProcessing ? (
+                              <Loader2 className="w-5 h-5 text-primary animate-spin" />
                             ) : isTaskCompleted(task.id) ? (
-                              <Check className="w-6 h-6 text-primary" />
+                              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                <Check className="w-4 h-4 text-primary" />
+                              </div>
                             ) : (
-                              <Target className="w-6 h-6 text-muted-foreground" />
+                              <ExternalLink className="w-5 h-5 text-muted-foreground" />
                             )}
                           </div>
-
-                          {/* Task Info */}
-                          <div className="flex-1 min-w-0">
-                            <p className={`font-medium truncate ${
-                              isTaskCompleted(task.id) ? 'text-primary' : 'text-foreground'
-                            }`}>
-                              {task.title}
-                            </p>
-                            <p className="text-xs text-muted-foreground">+{task.points} BOLT</p>
-                          </div>
-
-                          {/* Status/Action Icon */}
-                          {isTaskCompleted(task.id) ? (
-                            <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                              <Check className="w-4 h-4 text-primary" />
-                            </div>
-                          ) : (
-                            <ExternalLink className="w-5 h-5 text-muted-foreground" />
-                          )}
-                        </div>
-                      </motion.button>
-                    ))}
+                        </motion.button>
+                      );
+                    })}
                     {getTasksByCategory(cat).length === 0 && (
                       <div className="text-center py-12">
                         <Target className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
