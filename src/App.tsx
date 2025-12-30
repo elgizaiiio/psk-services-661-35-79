@@ -12,6 +12,7 @@ import { useReferralHandler } from "./hooks/useReferralHandler";
 import Index from "./pages/Index";
 import BottomNavigation from "./components/BottomNavigation";
 import SplashScreen from "./components/SplashScreen";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 // Lazy load pages for better performance
 const ServerStore = lazy(() => import("./pages/ServerStore"));
@@ -125,74 +126,76 @@ function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
 }
 
 const App = () => (
-  <HelmetProvider>
-    <QueryClientProvider client={queryClient}>
-      <Router>
-        <TelegramTonConnectProvider>
-          <LanguageProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <Routes>
-                {/* Auth page - outside Telegram wrapper */}
-                <Route path="/auth" element={
-                  <Suspense fallback={<PageLoader />}>
-                    <Auth />
-                  </Suspense>
-                } />
-                {/* All routes with Telegram auth */}
-                <Route path="/*" element={
-                  <TelegramWebAppWrapper>
-                    <div className="tg-webapp-container min-h-screen bg-background relative">
-                      <div className="pt-6 relative z-10">
-                        <Suspense fallback={<PageLoader />}>
-                          <Routes>
-                            <Route path="/" element={<Index />} />
-                            <Route path="/mining" element={<Mining />} />
-                            <Route path="/apps" element={<Apps />} />
-                            <Route path="/ai-generator" element={<AiGenerator />} />
-                            <Route path="/profile" element={<Profile />} />
-                            <Route path="/skins" element={<Skins />} />
-                            <Route path="/tasks" element={<Tasks />} />
-                            <Route path="/invite" element={<Invite />} />
-                            <Route path="/wallet" element={<Wallet />} />
-                            <Route path="/server-store" element={<ServerStore />} />
-                            <Route path="/upgrade-center" element={<UpgradeCenter />} />
-                            <Route path="/premium-packages" element={<PremiumPackages />} />
-                            <Route path="/elite-addons" element={<EliteAddOns />} />
-                            <Route path="/upgrade-matrix" element={<UpgradeMatrix />} />
-                            <Route path="/legendary-servers" element={<LegendaryServers />} />
-                            <Route path="/ai-subscription" element={<AiSubscription />} />
-                            <Route path="/mining-servers" element={<MiningServers />} />
-                            <Route path="/events" element={<Events />} />
-                            <Route path="/ai-image-store" element={<AiImageStore />} />
-                            <Route path="/giveaways" element={<Giveaways />} />
-                            <Route path="/admin" element={<Admin />} />
-                            <Route path="/create-task" element={<CreateTask />} />
-                            <Route path="/chat-ai" element={<ChatAI />} />
-                            <Route path="/slots" element={<Slots />} />
-                            <Route path="/settings" element={<Settings />} />
-                            <Route path="/challenges" element={<Challenges />} />
-                            <Route path="/achievements" element={<Achievements />} />
-                            <Route path="/vip" element={<VIPSubscription />} />
-                            <Route path="/token-store" element={<TokenStore />} />
-                            <Route path="/daily-tasks" element={<DailyTasks />} />
-                            <Route path="/game" element={<KrunkerGame />} />
-                            <Route path="/contest" element={<Contest />} />
-                          </Routes>
-                        </Suspense>
-                        <BottomNavigation />
+  <ErrorBoundary>
+    <HelmetProvider>
+      <QueryClientProvider client={queryClient}>
+        <Router>
+          <TelegramTonConnectProvider>
+            <LanguageProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <Routes>
+                  {/* Auth page - outside Telegram wrapper */}
+                  <Route path="/auth" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <Auth />
+                    </Suspense>
+                  } />
+                  {/* All routes with Telegram auth */}
+                  <Route path="/*" element={
+                    <TelegramWebAppWrapper>
+                      <div className="tg-webapp-container min-h-screen bg-background relative">
+                        <div className="pt-6 relative z-10">
+                          <Suspense fallback={<PageLoader />}>
+                            <Routes>
+                              <Route path="/" element={<Index />} />
+                              <Route path="/mining" element={<Mining />} />
+                              <Route path="/apps" element={<Apps />} />
+                              <Route path="/ai-generator" element={<AiGenerator />} />
+                              <Route path="/profile" element={<Profile />} />
+                              <Route path="/skins" element={<Skins />} />
+                              <Route path="/tasks" element={<Tasks />} />
+                              <Route path="/invite" element={<Invite />} />
+                              <Route path="/wallet" element={<Wallet />} />
+                              <Route path="/server-store" element={<ServerStore />} />
+                              <Route path="/upgrade-center" element={<UpgradeCenter />} />
+                              <Route path="/premium-packages" element={<PremiumPackages />} />
+                              <Route path="/elite-addons" element={<EliteAddOns />} />
+                              <Route path="/upgrade-matrix" element={<UpgradeMatrix />} />
+                              <Route path="/legendary-servers" element={<LegendaryServers />} />
+                              <Route path="/ai-subscription" element={<AiSubscription />} />
+                              <Route path="/mining-servers" element={<MiningServers />} />
+                              <Route path="/events" element={<Events />} />
+                              <Route path="/ai-image-store" element={<AiImageStore />} />
+                              <Route path="/giveaways" element={<Giveaways />} />
+                              <Route path="/admin" element={<Admin />} />
+                              <Route path="/create-task" element={<CreateTask />} />
+                              <Route path="/chat-ai" element={<ChatAI />} />
+                              <Route path="/slots" element={<Slots />} />
+                              <Route path="/settings" element={<Settings />} />
+                              <Route path="/challenges" element={<Challenges />} />
+                              <Route path="/achievements" element={<Achievements />} />
+                              <Route path="/vip" element={<VIPSubscription />} />
+                              <Route path="/token-store" element={<TokenStore />} />
+                              <Route path="/daily-tasks" element={<DailyTasks />} />
+                              <Route path="/game" element={<KrunkerGame />} />
+                              <Route path="/contest" element={<Contest />} />
+                            </Routes>
+                          </Suspense>
+                          <BottomNavigation />
+                        </div>
                       </div>
-                    </div>
-                  </TelegramWebAppWrapper>
-                } />
-              </Routes>
-            </TooltipProvider>
-          </LanguageProvider>
-        </TelegramTonConnectProvider>
-      </Router>
-    </QueryClientProvider>
-  </HelmetProvider>
+                    </TelegramWebAppWrapper>
+                  } />
+                </Routes>
+              </TooltipProvider>
+            </LanguageProvider>
+          </TelegramTonConnectProvider>
+        </Router>
+      </QueryClientProvider>
+    </HelmetProvider>
+  </ErrorBoundary>
 );
 
 export default App;

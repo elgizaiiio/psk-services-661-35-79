@@ -1610,8 +1610,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_contest_leaderboard: {
+        Args: { contest: string; limit_count?: number }
+        Returns: {
+          first_name: string
+          photo_url: string
+          rank: number
+          referral_count: number
+          telegram_username: string
+        }[]
+      }
       get_current_telegram_id: { Args: never; Returns: string }
       get_current_user_uuid: { Args: never; Returns: string }
+      get_scores_leaderboard: {
+        Args: { game?: string; limit_count?: number }
+        Returns: {
+          created_at: string
+          score: number
+          username: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

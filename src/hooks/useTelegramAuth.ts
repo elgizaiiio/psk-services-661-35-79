@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import { TelegramUser } from '@/types/telegram';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('TelegramAuth');
 
 declare global {
   interface Window {
@@ -52,39 +55,70 @@ declare global {
   }
 }
 
+interface TelegramWebApp {
+  initData: string;
+  initDataUnsafe: {
+    user?: TelegramUser;
+    start_param?: string;
+  };
+  ready: () => void;
+  expand: () => void;
+  close: () => void;
+  MainButton: {
+    text: string;
+    color: string;
+    textColor: string;
+    isVisible: boolean;
+    isActive: boolean;
+    show: () => void;
+    hide: () => void;
+    onClick: (callback: () => void) => void;
+  };
+  BackButton: {
+    isVisible: boolean;
+    show: () => void;
+    hide: () => void;
+    onClick: (callback: () => void) => void;
+  };
+  HapticFeedback: {
+    impactOccurred: (style: 'light' | 'medium' | 'heavy') => void;
+    notificationOccurred: (type: 'error' | 'success' | 'warning') => void;
+    selectionChanged: () => void;
+  };
+  themeParams: {
+    bg_color?: string;
+    text_color?: string;
+    hint_color?: string;
+    link_color?: string;
+    button_color?: string;
+    button_text_color?: string;
+  };
+  viewportHeight?: number;
+  viewportStableHeight?: number;
+  onEvent?: (eventType: string, callback: () => void) => void;
+  offEvent?: (eventType: string, callback: () => void) => void;
+}
+
 export const useTelegramAuth = () => {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [webApp, setWebApp] = useState<any>(null);
+  const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
     const initTelegramUser = () => {
-      console.log('🔍 Initializing Telegram user...');
-      console.log('🌐 window.Telegram:', window.Telegram);
-      console.log('📱 window.Telegram?.WebApp:', window.Telegram?.WebApp);
+      logger.debug('Initializing Telegram user...');
       
-      // Check if we're in Telegram WebApp environment
       if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
-        console.log('✅ Telegram WebApp detected');
+        logger.debug('Telegram WebApp detected');
         const tg = window.Telegram.WebApp;
         setWebApp(tg);
         
-        console.log('🚀 Telegram WebApp object:', tg);
-        console.log('📊 initData:', tg.initData);
-        console.log('🔓 initDataUnsafe:', tg.initDataUnsafe);
-        
-        // Initialize the app
         tg.ready();
-        
-        // Enable full-screen mode and viewport expansion
         tg.expand();
         
-        // Set viewport to maximum available height
         if (tg.viewportHeight) {
-          tg.expand();
-          // Force full viewport expansion
           document.documentElement.style.setProperty('--tg-viewport-height', `${tg.viewportHeight}px`);
         }
         
@@ -92,7 +126,6 @@ export const useTelegramAuth = () => {
           document.documentElement.style.setProperty('--tg-viewport-stable-height', `${tg.viewportStableHeight}px`);
         }
         
-        // Apply Telegram theme colors if available
         if (tg.themeParams) {
           const theme = tg.themeParams;
           if (theme.bg_color) {
@@ -103,12 +136,10 @@ export const useTelegramAuth = () => {
           }
         }
         
-        // Configure Back Button to always show
         if (tg.BackButton) {
           tg.BackButton.show();
         }
         
-        // Handle viewport changes for responsive behavior
         if (tg.onEvent) {
           tg.onEvent('viewportChanged', () => {
             if (tg.viewportHeight) {
@@ -120,85 +151,55 @@ export const useTelegramAuth = () => {
           });
         }
         
-        // Get user data with multiple attempts
         const getUserData = () => {
           const telegramUser = tg.initDataUnsafe?.user;
-          const startParam = tg.initDataUnsafe?.start_param;
-          console.log('👤 Raw Telegram user data:', telegramUser);
-          console.log('🔗 Start param:', startParam);
           
           if (telegramUser && telegramUser.id) {
-            console.log('✅ Valid Telegram user found:', telegramUser);
+            logger.info('Valid Telegram user found', { id: telegramUser.id });
             
-            // Ensure photo_url is properly formatted
             if (telegramUser.photo_url && !telegramUser.photo_url.startsWith('http')) {
               telegramUser.photo_url = `https://t.me/i/userpic/320/${telegramUser.photo_url}`;
-              console.log('🖼️ Photo URL formatted:', telegramUser.photo_url);
             }
             
             setUser(telegramUser);
-            console.log('🎉 Telegram user loaded successfully:', telegramUser);
           } else {
-            console.warn('⚠️ No valid Telegram user data in initDataUnsafe');
-            
-            // Try to get data from initData string
             if (tg.initData) {
-              console.log('🔍 Trying to parse initData string...');
               try {
                 const urlParams = new URLSearchParams(tg.initData);
                 const userParam = urlParams.get('user');
-                console.log('📝 User param from initData:', userParam);
                 
                 if (userParam) {
                   const parsedUser = JSON.parse(decodeURIComponent(userParam));
-                  console.log('✅ User parsed from initData:', parsedUser);
+                  logger.info('User parsed from initData', { id: parsedUser.id });
                   setUser(parsedUser);
                   return;
                 }
               } catch (error) {
-                console.error('❌ Error parsing initData:', error);
+                logger.error('Error parsing initData', error);
               }
             }
             
-            console.log('⚠️ No user data found, will use development mock data');
+            logger.warn('No user data found');
           }
         };
         
-        // Try to get user data immediately
         getUserData();
         
-        // If no user data, wait and try again
         if (!tg.initDataUnsafe?.user) {
-          console.log('⏳ No immediate user data, retrying in 500ms...');
-          setTimeout(() => {
-            console.log('🔄 Retry attempt 1...');
-            getUserData();
-          }, 500);
-          
-          setTimeout(() => {
-            console.log('🔄 Retry attempt 2...');
-            getUserData();
-          }, 1000);
-          
-          setTimeout(() => {
-            console.log('🔄 Final retry attempt...');
-            getUserData();
-          }, 2000);
+          const retryIntervals = [500, 1000, 2000];
+          retryIntervals.forEach((delay) => {
+            setTimeout(getUserData, delay);
+          });
         }
         
         setIsLoading(false);
       } else {
-        console.log('❌ No Telegram WebApp found - running in browser mode');
-        console.log('🛠️ User Agent:', navigator.userAgent);
-        console.log('🌍 Location:', window.location.href);
-        
-        // In browser mode, don't set mock user - let email auth handle it
+        logger.debug('No Telegram WebApp found - browser mode');
         setUser(null);
         setIsLoading(false);
       }
     };
 
-    // Wait for window to be fully loaded
     if (document.readyState === 'complete') {
       initTelegramUser();
     } else {
@@ -207,14 +208,10 @@ export const useTelegramAuth = () => {
     }
   }, []);
 
-  // Handle Back Button functionality
   useEffect(() => {
     if (webApp?.BackButton) {
       const handleBackButton = () => {
         const idx = typeof window !== 'undefined' ? (window.history.state?.idx as number | undefined) : undefined;
-
-        // Only rely on the React Router history index (idx). In embedded previews / WebViews,
-        // window.history.length can be > 1 even when there is no in-app route to go back to.
         const canGoBackInApp = typeof idx === 'number' && idx > 0;
 
         if (canGoBackInApp) {
@@ -222,7 +219,6 @@ export const useTelegramAuth = () => {
           return;
         }
 
-        // If there's no in-app history, close the Telegram mini app (if available), otherwise go home.
         if (webApp?.close) {
           webApp.close();
         } else {

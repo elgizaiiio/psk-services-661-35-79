@@ -1,18 +1,23 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BoltUser, BoltMiningSession, TelegramUser } from '@/types/bolt';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('BoltMining');
+
+interface MiningProgress {
+  progress: number;
+  tokensMinedSoFar: number;
+  timeRemaining: number;
+  isComplete: boolean;
+}
 
 export const useBoltMining = (telegramUser: TelegramUser | null) => {
   const [user, setUser] = useState<BoltUser | null>(null);
   const [activeMiningSession, setActiveMiningSession] = useState<BoltMiningSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [miningProgress, setMiningProgress] = useState<{
-    progress: number;
-    tokensMinedSoFar: number;
-    timeRemaining: number;
-    isComplete: boolean;
-  } | null>(null);
+  const [miningProgress, setMiningProgress] = useState<MiningProgress | null>(null);
 
   const initializeUser = useCallback(async () => {
     if (!telegramUser) {
@@ -24,7 +29,7 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
       setLoading(true);
       
       const { data: existingUser, error: fetchError } = await supabase
-        .from('bolt_users' as any)
+        .from('bolt_users')
         .select('*')
         .eq('telegram_id', telegramUser.id)
         .maybeSingle();
@@ -32,8 +37,9 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
       if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
 
       if (existingUser) {
+        const typedUser = existingUser as unknown as BoltUser;
         const { data: updatedUser, error: updateError } = await supabase
-          .from('bolt_users' as any)
+          .from('bolt_users')
           .update({
             telegram_username: telegramUser.username,
             first_name: telegramUser.first_name,
@@ -41,7 +47,7 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
             photo_url: telegramUser.photo_url,
             updated_at: new Date().toISOString()
           })
-          .eq('id', (existingUser as unknown as BoltUser).id)
+          .eq('id', typedUser.id)
           .select()
           .single();
 
@@ -49,7 +55,7 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
         setUser(updatedUser as unknown as BoltUser);
       } else {
         const { data: newUser, error: insertError } = await supabase
-          .from('bolt_users' as any)
+          .from('bolt_users')
           .insert({
             telegram_id: telegramUser.id,
             telegram_username: telegramUser.username,
@@ -69,9 +75,10 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
         setUser(newUser as unknown as BoltUser);
       }
       
-    } catch (err: any) {
-      console.error('Error initializing user:', err);
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logger.error('Error initializing user', err);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -81,8 +88,8 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
     if (!user) return;
 
     try {
-      const { data: session, error } = await supabase
-        .from('bolt_mining_sessions' as any)
+      const { data: session, error: sessionError } = await supabase
+        .from('bolt_mining_sessions')
         .select('*')
         .eq('user_id', user.id)
         .eq('is_active', true)
@@ -90,7 +97,7 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
         .limit(1)
         .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (sessionError && sessionError.code !== 'PGRST116') throw sessionError;
 
       if (session) {
         const sessionData = session as unknown as BoltMiningSession;
@@ -103,22 +110,21 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
           await completeMiningSession(sessionData.id);
         }
       }
-    } catch (err: any) {
-      console.error('Error checking mining session:', err);
+    } catch (err) {
+      logger.error('Error checking mining session', err);
     }
   }, [user]);
 
   const startMining = useCallback(async () => {
     if (!user) {
-      console.error('Cannot start mining: user not initialized');
+      logger.error('Cannot start mining: user not initialized');
       setError('Please open the app from within Telegram');
       return;
     }
 
     try {
-      // Check if there's already an active session
       const { data: existingSession } = await supabase
-        .from('bolt_mining_sessions' as any)
+        .from('bolt_mining_sessions')
         .select('*')
         .eq('user_id', user.id)
         .eq('is_active', true)
@@ -132,8 +138,8 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
       const now = new Date();
       const endTime = new Date(now.getTime() + user.mining_duration_hours * 60 * 60 * 1000);
 
-      const { data: session, error } = await supabase
-        .from('bolt_mining_sessions' as any)
+      const { data: session, error: insertError } = await supabase
+        .from('bolt_mining_sessions')
         .insert({
           user_id: user.id,
           start_time: now.toISOString(),
@@ -145,19 +151,20 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (insertError) throw insertError;
       setActiveMiningSession(session as unknown as BoltMiningSession);
       
-    } catch (err: any) {
-      console.error('Error starting mining:', err);
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logger.error('Error starting mining', err);
+      setError(errorMessage);
     }
   }, [user]);
 
   const completeMiningSession = useCallback(async (sessionId: string) => {
     try {
       const { data: session, error: sessionError } = await supabase
-        .from('bolt_mining_sessions' as any)
+        .from('bolt_mining_sessions')
         .select('*')
         .eq('id', sessionId)
         .single();
@@ -174,14 +181,14 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
       const tokensMined = hoursWorked * sessionData.tokens_per_hour * sessionData.mining_power;
 
       await supabase
-        .from('bolt_mining_sessions' as any)
+        .from('bolt_mining_sessions')
         .update({ is_active: false, completed_at: new Date().toISOString(), total_mined: tokensMined })
         .eq('id', sessionId);
 
       if (user) {
         const newBalance = (Number(user.token_balance) || 0) + tokensMined;
         const { data: updatedUser } = await supabase
-          .from('bolt_users' as any)
+          .from('bolt_users')
           .update({ token_balance: newBalance, updated_at: new Date().toISOString() })
           .eq('id', user.id)
           .select()
@@ -192,13 +199,14 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
 
       setActiveMiningSession(null);
       
-    } catch (err: any) {
-      console.error('Error completing mining session:', err);
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logger.error('Error completing mining session', err);
+      setError(errorMessage);
     }
   }, [user]);
 
-  const getCurrentMiningProgress = useCallback(() => {
+  const getCurrentMiningProgress = useCallback((): MiningProgress | null => {
     if (!activeMiningSession) return null;
 
     const now = new Date();
@@ -221,19 +229,20 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
       const current = Number(user.mining_power) || 1;
       const nextPower = current < 10 ? current + 2 : current < 50 ? current + 10 : Math.min(200, current + 25);
 
-      await supabase.from('bolt_upgrades' as any).insert({ user_id: user.id, upgrade_type: 'mining_power', level: nextPower, cost: 0.5 });
+      await supabase.from('bolt_upgrade_purchases').insert({ user_id: user.id, upgrade_type: 'mining_power', amount_paid: 0.5 });
 
       const { data: updatedUser } = await supabase
-        .from('bolt_users' as any)
+        .from('bolt_users')
         .update({ mining_power: nextPower, updated_at: new Date().toISOString() })
         .eq('id', user.id)
         .select()
         .single();
 
       if (updatedUser) setUser(updatedUser as unknown as BoltUser);
-    } catch (err: any) {
-      console.error('Error upgrading mining power:', err);
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logger.error('Error upgrading mining power', err);
+      setError(errorMessage);
     }
   }, [user]);
 
@@ -243,19 +252,20 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
       const current = Number(user.mining_duration_hours) || 4;
       const nextDuration = current === 4 ? 12 : current === 12 ? 24 : 24;
 
-      await supabase.from('bolt_upgrades' as any).insert({ user_id: user.id, upgrade_type: 'mining_duration', level: nextDuration, cost: 0.5 });
+      await supabase.from('bolt_upgrade_purchases').insert({ user_id: user.id, upgrade_type: 'mining_duration', amount_paid: 0.5 });
 
       const { data: updatedUser } = await supabase
-        .from('bolt_users' as any)
+        .from('bolt_users')
         .update({ mining_duration_hours: nextDuration, updated_at: new Date().toISOString() })
         .eq('id', user.id)
         .select()
         .single();
 
       if (updatedUser) setUser(updatedUser as unknown as BoltUser);
-    } catch (err: any) {
-      console.error('Error upgrading mining duration:', err);
-      setError(err.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      logger.error('Error upgrading mining duration', err);
+      setError(errorMessage);
     }
   }, [user]);
 
@@ -274,5 +284,18 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
     return () => clearInterval(interval);
   }, [activeMiningSession, getCurrentMiningProgress, completeMiningSession]);
 
-  return { user, activeMiningSession, loading, error, startMining, completeMiningSession, getCurrentMiningProgress, miningProgress, upgradeMiningPower, upgradeMiningDuration, refreshUser: initializeUser, clearError: () => setError(null) };
+  return { 
+    user, 
+    activeMiningSession, 
+    loading, 
+    error, 
+    startMining, 
+    completeMiningSession, 
+    getCurrentMiningProgress, 
+    miningProgress, 
+    upgradeMiningPower, 
+    upgradeMiningDuration, 
+    refreshUser: initializeUser, 
+    clearError: () => setError(null) 
+  };
 };
