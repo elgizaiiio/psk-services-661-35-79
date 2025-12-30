@@ -58,20 +58,20 @@ const PRO_REWARDS: SpinReward[] = [
   { id: 'ton_25', label: '25', type: 'ton', value: 25, probability: 0.3 },
 ];
 
-// Normal Ticket Packages - Increased prices
+// Normal Ticket Packages - Higher prices
 const NORMAL_PACKAGES: TicketPackage[] = [
-  { id: 'normal_3', tickets: 3, priceTon: 0.15, priceStars: 12 },
-  { id: 'normal_5', tickets: 5, priceTon: 0.25, priceStars: 20 },
-  { id: 'normal_10', tickets: 10, priceTon: 0.45, priceStars: 36 },
-  { id: 'normal_25', tickets: 25, priceTon: 1.0, priceStars: 80 },
+  { id: 'normal_3', tickets: 3, priceTon: 0.25, priceStars: 20 },
+  { id: 'normal_5', tickets: 5, priceTon: 0.4, priceStars: 32 },
+  { id: 'normal_10', tickets: 10, priceTon: 0.7, priceStars: 56 },
+  { id: 'normal_25', tickets: 25, priceTon: 1.5, priceStars: 120 },
 ];
 
-// PRO Ticket Packages - Increased prices
+// PRO Ticket Packages - Higher prices
 const PRO_PACKAGES: TicketPackage[] = [
-  { id: 'pro_3', tickets: 3, priceTon: 0.4, priceStars: 32 },
-  { id: 'pro_5', tickets: 5, priceTon: 0.65, priceStars: 52 },
-  { id: 'pro_10', tickets: 10, priceTon: 1.2, priceStars: 96 },
-  { id: 'pro_25', tickets: 25, priceTon: 2.5, priceStars: 200 },
+  { id: 'pro_3', tickets: 3, priceTon: 0.6, priceStars: 48 },
+  { id: 'pro_5', tickets: 5, priceTon: 0.9, priceStars: 72 },
+  { id: 'pro_10', tickets: 10, priceTon: 1.6, priceStars: 128 },
+  { id: 'pro_25', tickets: 25, priceTon: 3.5, priceStars: 280 },
 ];
 
 // Wheel colors - 2 colors each
@@ -282,11 +282,11 @@ const Spin: React.FC = () => {
   }
 
   return (
-    <PageWrapper className="min-h-screen bg-background pb-24">
+    <PageWrapper className="min-h-screen bg-background pb-32">
       <Helmet><title>Lucky Spin</title></Helmet>
       
-      <div className="max-w-md mx-auto px-4 pt-4">
-        <div className="space-y-3">
+      <div className="max-w-md mx-auto px-4 pt-10">
+        <div className="space-y-6">
 
           {/* Header with Tickets Count */}
           <FadeUp>
@@ -319,18 +319,18 @@ const Spin: React.FC = () => {
             </Tabs>
           </FadeUp>
 
-          {/* Spin Wheel - Larger */}
+          {/* Spin Wheel - Much Larger */}
           <FadeUp>
-            <div className="relative flex items-center justify-center py-2">
+            <div className="relative flex items-center justify-center py-6">
               {/* Pointer */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20">
-                <div className={`w-0 h-0 border-l-[14px] border-r-[14px] border-t-[24px] border-l-transparent border-r-transparent ${
+              <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20">
+                <div className={`w-0 h-0 border-l-[16px] border-r-[16px] border-t-[28px] border-l-transparent border-r-transparent ${
                   wheelType === 'pro' ? 'border-t-amber-500' : 'border-t-primary'
                 } drop-shadow-lg`} />
               </div>
 
-              {/* Wheel Container - Bigger */}
-              <div className="relative w-[300px] h-[300px]">
+              {/* Wheel Container - Much Bigger */}
+              <div className="relative w-[320px] h-[320px]">
                 <motion.div
                   className="relative w-full h-full rounded-full shadow-2xl"
                   style={{ 
@@ -536,17 +536,11 @@ const Spin: React.FC = () => {
                         }`}
                       >
                         <div className="flex flex-col items-center gap-2">
-                          <div className="flex items-center gap-1">
-                            <Ticket className={`w-5 h-5 ${wheelType === 'pro' ? 'text-amber-500' : 'text-primary'}`} />
-                            <span className="text-xl font-bold text-foreground">{pkg.tickets}</span>
-                          </div>
+                          <span className={`text-2xl font-bold ${wheelType === 'pro' ? 'text-amber-500' : 'text-primary'}`}>{pkg.tickets}</span>
                           <div className="flex flex-col items-center gap-0.5">
-                            <div className="flex items-center gap-1">
-                              <TonIcon size={14} />
-                              <span className="text-sm font-semibold text-foreground">{pkg.priceTon} TON</span>
-                            </div>
+                            <span className="text-sm font-semibold text-foreground">{pkg.priceTon} TON</span>
                             <span className="text-xs text-muted-foreground">
-                              or {pkg.priceStars} Stars
+                              {pkg.priceStars} Stars
                             </span>
                           </div>
                         </div>
