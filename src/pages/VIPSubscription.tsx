@@ -3,20 +3,18 @@ import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
-  Crown, 
-  Zap, 
-  Gift, 
-  Shield, 
-  Star, 
-  Gem,
+  ArrowLeft,
+  Sparkles,
+  Zap,
   Check,
-  Rocket,
-  Ticket,
-  ArrowLeft
+  CircleDollarSign,
+  Flame,
+  Diamond,
+  Clock,
+  Users,
+  Gauge
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
@@ -33,82 +31,68 @@ interface VIPPlan {
   features: string[];
   miningBoost: number;
   dailyBonus: number;
-  referralBonus: number;
   weeklySpinTickets: number;
   icon: React.ReactNode;
-  gradient: string;
-  borderColor: string;
+  accentColor: string;
 }
 
 const vipPlans: VIPPlan[] = [
   {
     id: 'silver',
-    name: 'Silver VIP',
+    name: 'Silver',
     tier: 'silver',
     priceTon: 2,
     duration: 30,
     features: [
-      '+20% Mining Power',
-      '100 BOLT Daily Bonus',
-      '3 Free Spin Tickets/week',
-      'Silver VIP Badge',
-      '1.2x Referral Bonus',
+      '+20% Mining Speed',
+      '100 BOLT Daily',
+      '3 Spins/week',
       'Priority Support'
     ],
     miningBoost: 20,
     dailyBonus: 100,
-    referralBonus: 20,
     weeklySpinTickets: 3,
-    icon: <Star className="w-6 h-6" />,
-    gradient: 'from-gray-300 via-gray-200 to-gray-400',
-    borderColor: 'border-gray-400/30'
+    icon: <Sparkles className="w-5 h-5" />,
+    accentColor: 'text-gray-400'
   },
   {
     id: 'gold',
-    name: 'Gold VIP',
+    name: 'Gold',
     tier: 'gold',
     priceTon: 5,
     duration: 30,
     features: [
-      '+50% Mining Power',
-      '300 BOLT Daily Bonus',
-      '10 Free Spin Tickets/week',
-      'Gold VIP Badge',
-      '1.5x Referral Bonus',
-      'Early Access to Features',
-      'Weekly Bonus Chest'
+      '+50% Mining Speed',
+      '300 BOLT Daily',
+      '10 Spins/week',
+      'Early Access',
+      'Weekly Chest'
     ],
     miningBoost: 50,
     dailyBonus: 300,
-    referralBonus: 50,
     weeklySpinTickets: 10,
-    icon: <Crown className="w-6 h-6" />,
-    gradient: 'from-yellow-400 via-amber-300 to-yellow-500',
-    borderColor: 'border-amber-400/30'
+    icon: <Flame className="w-5 h-5" />,
+    accentColor: 'text-amber-500'
   },
   {
     id: 'platinum',
-    name: 'Platinum VIP',
+    name: 'Platinum',
     tier: 'platinum',
     priceTon: 10,
     duration: 30,
     features: [
-      '+100% Mining Power',
-      '700 BOLT Daily Bonus',
-      '25 Free Spin Tickets/week',
-      'Platinum VIP Badge',
-      '2x Referral Bonus',
-      'Exclusive Features',
-      'Monthly Premium Gifts',
+      '+100% Mining Speed',
+      '700 BOLT Daily',
+      '25 Spins/week',
+      'Exclusive Access',
+      'Monthly Gifts',
       'No Ads'
     ],
     miningBoost: 100,
     dailyBonus: 700,
-    referralBonus: 100,
     weeklySpinTickets: 25,
-    icon: <Gem className="w-6 h-6" />,
-    gradient: 'from-purple-400 via-violet-300 to-purple-500',
-    borderColor: 'border-purple-400/30'
+    icon: <Diamond className="w-5 h-5" />,
+    accentColor: 'text-violet-400'
   }
 ];
 
@@ -117,7 +101,7 @@ const VIPSubscription = () => {
   const { user: telegramUser } = useTelegramAuth();
   const { isConnected, connectWallet } = useTelegramTonConnect();
   const { sendDirectPayment, isProcessing } = useDirectTonPayment();
-  const { tonToUsd, tonToStars, formatUsd } = usePriceCalculator();
+  const { tonToUsd, formatUsd } = usePriceCalculator();
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [currentVIP, setCurrentVIP] = useState<string | null>(null);
 
@@ -173,7 +157,7 @@ const VIPSubscription = () => {
 
       const success = await sendDirectPayment({
         amount: plan.priceTon,
-        description: `${plan.name} subscription for ${plan.duration} days`,
+        description: `${plan.name} VIP - ${plan.duration} days`,
         productType: 'subscription',
         productId: plan.id
       });
@@ -191,7 +175,6 @@ const VIPSubscription = () => {
         const benefits = {
           miningBoost: plan.miningBoost,
           dailyBonus: plan.dailyBonus,
-          referralBonus: plan.referralBonus,
           weeklySpinTickets: plan.weeklySpinTickets
         };
 
@@ -217,12 +200,12 @@ const VIPSubscription = () => {
             });
         }
 
-        toast.success(`${plan.name} activated successfully!`);
+        toast.success(`${plan.name} VIP activated!`);
         setCurrentVIP(plan.tier);
       }
     } catch (error) {
       console.error('Purchase error:', error);
-      toast.error('An error occurred during purchase');
+      toast.error('Purchase failed');
     } finally {
       setPurchasing(null);
     }
@@ -231,174 +214,138 @@ const VIPSubscription = () => {
   return (
     <main className="min-h-screen bg-background pb-24">
       <Helmet>
-        <title>Premium VIP | Bolt</title>
-        <meta name="description" content="Subscribe to VIP and unlock exclusive benefits" />
+        <title>VIP | Bolt</title>
+        <meta name="description" content="Get VIP benefits" />
       </Helmet>
 
       <div className="max-w-md mx-auto px-4 pt-6">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
+        <div className="flex items-center gap-3 mb-8">
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={() => navigate(-1)}
-            className="shrink-0"
+            className="shrink-0 -ml-2"
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Premium VIP</h1>
-            <p className="text-sm text-muted-foreground">Unlock exclusive benefits</p>
-          </div>
+          <h1 className="text-xl font-semibold text-foreground">VIP Plans</h1>
         </div>
 
-        {/* Hero */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl overflow-hidden mb-6 p-6 bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-primary/20"
-        >
-          <div className="text-center">
-            <motion.div
-              animate={{ scale: [1, 1.1, 1] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
-              <Crown className="w-12 h-12 text-primary mx-auto mb-3" />
-            </motion.div>
-            <h2 className="text-lg font-bold text-foreground mb-1">
-              Join Premium VIP
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              Faster mining, free spins, and more
-            </p>
+        {/* Stats Row */}
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          <div className="flex flex-col items-center p-3 rounded-xl bg-card border border-border">
+            <Gauge className="w-5 h-5 text-primary mb-1" />
+            <span className="text-xs text-muted-foreground">Speed</span>
           </div>
-        </motion.div>
-
-        {/* Quick Benefits */}
-        <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-card rounded-xl p-3 text-center border border-border">
-            <Rocket className="w-5 h-5 text-primary mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground">Fast Mining</p>
+          <div className="flex flex-col items-center p-3 rounded-xl bg-card border border-border">
+            <CircleDollarSign className="w-5 h-5 text-primary mb-1" />
+            <span className="text-xs text-muted-foreground">Bonus</span>
           </div>
-          <div className="bg-card rounded-xl p-3 text-center border border-border">
-            <Ticket className="w-5 h-5 text-primary mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground">Free Spins</p>
-          </div>
-          <div className="bg-card rounded-xl p-3 text-center border border-border">
-            <Gift className="w-5 h-5 text-primary mx-auto mb-1" />
-            <p className="text-xs text-muted-foreground">Daily Bonus</p>
+          <div className="flex flex-col items-center p-3 rounded-xl bg-card border border-border">
+            <Clock className="w-5 h-5 text-primary mb-1" />
+            <span className="text-xs text-muted-foreground">30 Days</span>
           </div>
         </div>
 
         {/* Plans */}
-        <div className="space-y-4">
-          {vipPlans.map((plan, index) => (
-            <motion.div
-              key={plan.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-            >
-              <Card className={`relative overflow-hidden p-4 border ${plan.borderColor} ${
-                currentVIP === plan.tier ? 'ring-2 ring-primary' : ''
-              }`}>
-                {/* Active Badge */}
-                {currentVIP === plan.tier && (
-                  <Badge className="absolute top-2 right-2 bg-green-500/90 text-white text-xs">
-                    <Check className="w-3 h-3 mr-1" />
-                    Active
-                  </Badge>
+        <div className="space-y-3">
+          {vipPlans.map((plan, index) => {
+            const isActive = currentVIP === plan.tier;
+            const isLoading = purchasing === plan.id;
+            
+            return (
+              <motion.div
+                key={plan.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className={`relative p-4 rounded-2xl border transition-all ${
+                  isActive 
+                    ? 'bg-primary/5 border-primary/30' 
+                    : 'bg-card border-border hover:border-primary/20'
+                }`}
+              >
+                {/* Active indicator */}
+                {isActive && (
+                  <div className="absolute top-3 right-3">
+                    <span className="text-[10px] font-medium text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                      Active
+                    </span>
+                  </div>
                 )}
 
                 <div className="flex items-start gap-3">
                   {/* Icon */}
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${plan.gradient} flex items-center justify-center text-white shadow-md shrink-0`}>
+                  <div className={`w-10 h-10 rounded-xl bg-muted flex items-center justify-center ${plan.accentColor}`}>
                     {plan.icon}
                   </div>
 
-                  {/* Info */}
+                  {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-foreground">{plan.name}</h3>
-                    <div className="flex items-baseline gap-2 mt-0.5">
-                      <span className="text-xl font-bold text-primary">{plan.priceTon} TON</span>
-                      <span className="text-xs text-muted-foreground">
-                        ~{formatUsd(tonToUsd(plan.priceTon))} • {tonToStars(plan.priceTon)} Stars
-                      </span>
+                    <div className="flex items-baseline justify-between mb-2">
+                      <h3 className="font-medium text-foreground">{plan.name}</h3>
+                      <div className="text-right">
+                        <span className="text-lg font-semibold text-foreground">{plan.priceTon} TON</span>
+                        <p className="text-[10px] text-muted-foreground">{formatUsd(tonToUsd(plan.priceTon))}</p>
+                      </div>
                     </div>
-                  </div>
-                </div>
 
-                {/* Features */}
-                <div className="mt-3 space-y-1.5">
-                  {plan.features.map((feature, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <Check className="w-3.5 h-3.5 text-primary shrink-0" />
-                      <span className="text-xs text-muted-foreground">{feature}</span>
+                    {/* Features */}
+                    <div className="flex flex-wrap gap-1.5 mb-3">
+                      {plan.features.slice(0, 3).map((feature, i) => (
+                        <span 
+                          key={i}
+                          className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full"
+                        >
+                          {feature}
+                        </span>
+                      ))}
+                      {plan.features.length > 3 && (
+                        <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                          +{plan.features.length - 3} more
+                        </span>
+                      )}
                     </div>
-                  ))}
-                </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-4 gap-2 mt-3 p-2 bg-muted/30 rounded-lg">
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-primary">+{plan.miningBoost}%</p>
-                    <p className="text-[10px] text-muted-foreground">Mining</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-primary">+{plan.dailyBonus}</p>
-                    <p className="text-[10px] text-muted-foreground">Daily</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-primary">{plan.weeklySpinTickets}</p>
-                    <p className="text-[10px] text-muted-foreground">Spins/wk</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-sm font-bold text-primary">+{plan.referralBonus}%</p>
-                    <p className="text-[10px] text-muted-foreground">Referral</p>
+                    {/* Button */}
+                    <Button
+                      onClick={() => handlePurchase(plan)}
+                      disabled={isActive || isLoading || isProcessing}
+                      size="sm"
+                      className="w-full h-9"
+                      variant={isActive ? "secondary" : "default"}
+                    >
+                      {isLoading ? (
+                        <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : isActive ? (
+                        <span className="flex items-center gap-1.5">
+                          <Check className="w-3.5 h-3.5" />
+                          Subscribed
+                        </span>
+                      ) : !isConnected ? (
+                        'Connect Wallet'
+                      ) : (
+                        <span className="flex items-center gap-1.5">
+                          <Zap className="w-3.5 h-3.5" />
+                          Subscribe
+                        </span>
+                      )}
+                    </Button>
                   </div>
                 </div>
-
-                {/* Buy Button */}
-                <Button
-                  onClick={() => handlePurchase(plan)}
-                  disabled={purchasing === plan.id || currentVIP === plan.tier || isProcessing}
-                  className="w-full mt-3"
-                  variant={currentVIP === plan.tier ? "secondary" : "default"}
-                >
-                  {purchasing === plan.id ? (
-                    <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                  ) : currentVIP === plan.tier ? (
-                    'Currently Active'
-                  ) : !isConnected ? (
-                    'Connect Wallet'
-                  ) : (
-                    <>
-                      <Zap className="w-4 h-4 mr-2" />
-                      Subscribe
-                    </>
-                  )}
-                </Button>
-              </Card>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
 
-        {/* FAQ */}
-        <div className="mt-6 p-4 bg-card rounded-xl border border-border">
-          <h3 className="font-semibold text-foreground mb-3">FAQ</h3>
-          <div className="space-y-3 text-sm">
-            <div>
-              <p className="font-medium text-foreground">When do benefits start?</p>
-              <p className="text-muted-foreground text-xs">Immediately after payment</p>
-            </div>
-            <div>
-              <p className="font-medium text-foreground">Can I upgrade?</p>
-              <p className="text-muted-foreground text-xs">Yes, upgrade anytime</p>
-            </div>
-            <div>
-              <p className="font-medium text-foreground">How do I get free spins?</p>
-              <p className="text-muted-foreground text-xs">Tickets are added weekly to your account</p>
-            </div>
+        {/* Info */}
+        <div className="mt-6 p-4 rounded-xl bg-muted/30">
+          <div className="flex items-start gap-3">
+            <Users className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              VIP benefits activate immediately after payment. Subscriptions are valid for 30 days and do not auto-renew.
+            </p>
           </div>
         </div>
       </div>
