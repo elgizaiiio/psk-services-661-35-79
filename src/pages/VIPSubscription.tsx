@@ -11,8 +11,13 @@ import {
   Gem,
   Rocket,
   Gift,
-  Shield,
-  Sparkles
+  Ticket,
+  Percent,
+  Clock,
+  TrendingUp,
+  Users,
+  Ban,
+  Headphones
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
@@ -21,6 +26,12 @@ import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
 import { usePriceCalculator } from '@/hooks/usePriceCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+interface VIPBenefit {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}
 
 interface VIPPlan {
   id: string;
@@ -31,10 +42,13 @@ interface VIPPlan {
   miningBoost: number;
   dailyBonus: number;
   weeklySpinTickets: number;
+  referralBonus: number;
+  withdrawalDiscount: number;
+  miningDurationBonus: number;
   gradient: string;
   iconBg: string;
   icon: React.ReactNode;
-  extras: string[];
+  benefits: VIPBenefit[];
 }
 
 const vipPlans: VIPPlan[] = [
@@ -47,10 +61,20 @@ const vipPlans: VIPPlan[] = [
     miningBoost: 20,
     dailyBonus: 100,
     weeklySpinTickets: 3,
+    referralBonus: 20,
+    withdrawalDiscount: 10,
+    miningDurationBonus: 2,
     gradient: 'from-slate-400 to-slate-500',
     iconBg: 'bg-slate-500/20',
     icon: <Star className="w-6 h-6 text-slate-400" />,
-    extras: ['Priority Support']
+    benefits: [
+      { icon: <Rocket className="w-4 h-4" />, label: 'Mining Speed', value: '+20%' },
+      { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '100 BOLT' },
+      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '3/week' },
+      { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+20%' },
+      { icon: <Percent className="w-4 h-4" />, label: 'Withdrawal Fee', value: '-10%' },
+      { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+2 hours' },
+    ]
   },
   {
     id: 'gold',
@@ -61,10 +85,22 @@ const vipPlans: VIPPlan[] = [
     miningBoost: 50,
     dailyBonus: 300,
     weeklySpinTickets: 10,
+    referralBonus: 50,
+    withdrawalDiscount: 25,
+    miningDurationBonus: 4,
     gradient: 'from-amber-400 to-orange-500',
     iconBg: 'bg-amber-500/20',
     icon: <Crown className="w-6 h-6 text-amber-400" />,
-    extras: ['Early Access', 'Weekly Chest']
+    benefits: [
+      { icon: <Rocket className="w-4 h-4" />, label: 'Mining Speed', value: '+50%' },
+      { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '300 BOLT' },
+      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '10/week' },
+      { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+50%' },
+      { icon: <Percent className="w-4 h-4" />, label: 'Withdrawal Fee', value: '-25%' },
+      { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+4 hours' },
+      { icon: <TrendingUp className="w-4 h-4" />, label: 'Early Access', value: 'Enabled' },
+      { icon: <Headphones className="w-4 h-4" />, label: 'Priority Support', value: 'Enabled' },
+    ]
   },
   {
     id: 'platinum',
@@ -75,10 +111,23 @@ const vipPlans: VIPPlan[] = [
     miningBoost: 100,
     dailyBonus: 700,
     weeklySpinTickets: 25,
+    referralBonus: 100,
+    withdrawalDiscount: 50,
+    miningDurationBonus: 8,
     gradient: 'from-violet-400 to-purple-600',
     iconBg: 'bg-violet-500/20',
     icon: <Gem className="w-6 h-6 text-violet-400" />,
-    extras: ['Exclusive Access', 'Monthly Gifts', 'No Ads']
+    benefits: [
+      { icon: <Rocket className="w-4 h-4" />, label: 'Mining Speed', value: '+100%' },
+      { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '700 BOLT' },
+      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '25/week' },
+      { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+100%' },
+      { icon: <Percent className="w-4 h-4" />, label: 'Withdrawal Fee', value: '-50%' },
+      { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+8 hours' },
+      { icon: <TrendingUp className="w-4 h-4" />, label: 'Early Access', value: 'Enabled' },
+      { icon: <Headphones className="w-4 h-4" />, label: 'VIP Support', value: '24/7' },
+      { icon: <Ban className="w-4 h-4" />, label: 'Ads', value: 'Removed' },
+    ]
   }
 ];
 
@@ -163,7 +212,10 @@ const VIPSubscription = () => {
         const benefits = {
           miningBoost: plan.miningBoost,
           dailyBonus: plan.dailyBonus,
-          weeklySpinTickets: plan.weeklySpinTickets
+          weeklySpinTickets: plan.weeklySpinTickets,
+          referralBonus: plan.referralBonus,
+          withdrawalDiscount: plan.withdrawalDiscount,
+          miningDurationBonus: plan.miningDurationBonus
         };
 
         if (existingVIP) {
@@ -278,27 +330,15 @@ const VIPSubscription = () => {
               <span className="text-sm text-muted-foreground">≈ {formatUsd(tonToUsd(currentPlan.priceTon))}</span>
             </div>
 
-            {/* Benefits List */}
-            <div className="space-y-2.5 mb-5">
-              <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50">
-                <Rocket className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-sm text-foreground">+{currentPlan.miningBoost}% Mining Speed</span>
-              </div>
-              
-              <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50">
-                <Gift className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-sm text-foreground">{currentPlan.dailyBonus} BOLT Daily Bonus</span>
-              </div>
-              
-              <div className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50">
-                <Shield className="w-4 h-4 text-primary shrink-0" />
-                <span className="text-sm text-foreground">{currentPlan.weeklySpinTickets} Free Spins/week</span>
-              </div>
-
-              {currentPlan.extras.map((extra, i) => (
-                <div key={i} className="flex items-center gap-3 p-2.5 rounded-lg bg-muted/50">
-                  <Sparkles className="w-4 h-4 text-primary shrink-0" />
-                  <span className="text-sm text-foreground">{extra}</span>
+            {/* Benefits Grid */}
+            <div className="grid grid-cols-2 gap-2 mb-5">
+              {currentPlan.benefits.map((benefit, i) => (
+                <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50">
+                  <span className="text-primary shrink-0">{benefit.icon}</span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground truncate">{benefit.label}</p>
+                    <p className="text-xs font-medium text-foreground">{benefit.value}</p>
+                  </div>
                 </div>
               ))}
             </div>
