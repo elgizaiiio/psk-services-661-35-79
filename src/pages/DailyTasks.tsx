@@ -362,7 +362,7 @@ const DailyTasks = () => {
         }} className="w-12 h-12 border-3 border-primary border-t-transparent rounded-full" />
             <p className="text-muted-foreground">Loading tasks...</p>
           </div> : <div className="space-y-3">
-            {tasks.map((task, index) => <motion.div key={task.id} initial={{
+            {tasks.filter(t => !t.is_completed).map((task, index) => <motion.div key={task.id} initial={{
           opacity: 0,
           x: -20
         }} animate={{
