@@ -1,12 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltTasks } from '@/hooks/useBoltTasks';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useChannelSubscription } from '@/hooks/useChannelSubscription';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Target, Check, ExternalLink, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Target, Check, ExternalLink, Loader2, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 
@@ -31,6 +33,7 @@ const isJoinTask = (taskTitle: string, taskUrl?: string | null) => {
 };
 
 const Tasks = () => {
+  const navigate = useNavigate();
   const { user: tgUser, hapticFeedback } = useTelegramAuth();
   const { allTasks, completedTasks, loading, completeTask, revokeTaskCompletion, refreshTasks } = useBoltTasks();
   const { checkSubscription, isChecking } = useChannelSubscription('boltcomm');
@@ -123,8 +126,6 @@ const Tasks = () => {
         if (subscribed) {
           try {
             await completeTask(taskId);
-            // Force immediate refetch to update UI
-            await refreshTasks();
             toast.success('Task completed! Points added');
           } catch {
             toast.error('Failed to complete task');
@@ -145,8 +146,6 @@ const Tasks = () => {
       setTimeout(async () => {
         try {
           await completeTask(taskId);
-          // Force immediate refetch to update UI
-          await refreshTasks();
           toast.success('Task completed! Points added');
         } catch {
           toast.error('Failed to complete task');
@@ -183,8 +182,20 @@ const Tasks = () => {
         <Helmet><title>Tasks</title></Helmet>
         <StaggerContainer className="space-y-6">
           <FadeUp>
-            <h1 className="text-xl font-semibold text-foreground">Tasks</h1>
-            <p className="text-sm text-muted-foreground">Complete tasks to earn BOLT</p>
+            <div className="flex items-center gap-3 mb-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => navigate(-1)}
+                className="shrink-0 -ml-2"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </Button>
+              <div>
+                <h1 className="text-xl font-semibold text-foreground">Tasks</h1>
+                <p className="text-sm text-muted-foreground">Complete tasks to earn BOLT</p>
+              </div>
+            </div>
           </FadeUp>
 
           <div className="grid grid-cols-2 gap-4">

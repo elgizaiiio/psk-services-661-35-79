@@ -51,6 +51,11 @@ export const useBoltTasks = () => {
   const completeTask = useCallback(async (taskId: string) => {
     if (!boltUser) throw new Error('User not found');
 
+    // Check if already completed locally first
+    if (completedTasks.some(c => c.task_id === taskId)) {
+      throw new Error('Task already completed');
+    }
+
     try {
       // Get task details
       const { data: task, error: taskError } = await supabase
@@ -62,7 +67,7 @@ export const useBoltTasks = () => {
       if (taskError) throw taskError;
       const taskData = task as unknown as BoltTask;
 
-      // Check if already completed
+      // Check if already completed in DB
       const { data: existing } = await supabase
         .from('bolt_completed_tasks' as any)
         .select('*')
@@ -70,14 +75,36 @@ export const useBoltTasks = () => {
         .eq('task_id', taskId)
         .maybeSingle();
 
-      if (existing) throw new Error('Task already completed');
+      if (existing) {
+        // Already completed, just update local state
+        if (!completedTasks.some(c => c.task_id === taskId)) {
+          setCompletedTasks(prev => [...prev, existing as unknown as BoltCompletedTask]);
+        }
+        return;
+      }
+
+      // Immediately update local state for instant UI feedback BEFORE DB operations
+      const newCompletion: BoltCompletedTask = {
+        id: `temp-${taskId}`,
+        task_id: taskId,
+        user_id: boltUser.id,
+        points_earned: taskData.points,
+        completed_at: new Date().toISOString(),
+      };
+      setCompletedTasks(prev => [...prev, newCompletion]);
 
       // Insert completion record
-      await supabase.from('bolt_completed_tasks' as any).insert({
+      const { error: insertError } = await supabase.from('bolt_completed_tasks' as any).insert({
         user_id: boltUser.id,
         task_id: taskId,
         points_earned: taskData.points,
       });
+
+      if (insertError) {
+        // Rollback local state on error
+        setCompletedTasks(prev => prev.filter(c => c.task_id !== taskId));
+        throw insertError;
+      }
 
       // Update user balance
       await supabase.from('bolt_users' as any).update({
@@ -85,23 +112,13 @@ export const useBoltTasks = () => {
         updated_at: new Date().toISOString(),
       }).eq('id', boltUser.id);
 
-      // Immediately update local state for instant UI feedback
-      setCompletedTasks(prev => [...prev, {
-        id: `temp-${taskId}`,
-        task_id: taskId,
-        user_id: boltUser.id,
-        points_earned: taskData.points,
-        completed_at: new Date().toISOString(),
-      }]);
-
-      // Then refresh from backend
-      await refreshTasks();
+      // Refresh user data only (not tasks - we already updated locally)
       await refreshUser();
     } catch (err: any) {
       console.error('Error completing task:', err);
       throw err;
     }
-  }, [boltUser, refreshTasks, refreshUser]);
+  }, [boltUser, completedTasks, refreshUser]);
 
   const revokeTaskCompletion = useCallback(async (taskId: string, points: number) => {
     if (!boltUser) return false;
