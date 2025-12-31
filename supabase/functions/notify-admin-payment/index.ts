@@ -34,12 +34,17 @@ async function sendTelegramMessage(chatId: number, text: string) {
 }
 
 serve(async (req) => {
+  console.log('notify-admin-payment called with method:', req.method);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const body = await req.json();
+    console.log('Request body:', JSON.stringify(body));
+    
     const { 
       userId, 
       username, 
@@ -50,7 +55,7 @@ serve(async (req) => {
       productType,
       productName,
       description
-    } = await req.json();
+    } = body;
 
     console.log('Received payment notification request:', { userId, username, paymentMethod, amount, productType });
 

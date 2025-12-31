@@ -124,7 +124,8 @@ export const useDirectTonPayment = () => {
 
         // Notify admin about the payment
         try {
-          await supabase.functions.invoke('notify-admin-payment', {
+          console.log('Sending admin notification for payment...');
+          const notifyResult = await supabase.functions.invoke('notify-admin-payment', {
             body: {
               userId: userId,
               username: telegramUser?.username || telegramUser?.first_name || 'Unknown',
@@ -137,7 +138,9 @@ export const useDirectTonPayment = () => {
               description: params.description,
             }
           });
+          console.log('Admin notification result:', notifyResult);
         } catch (notifyError) {
+          console.error('Failed to notify admin:', notifyError);
           logger.error('Failed to notify admin', notifyError);
         }
         
