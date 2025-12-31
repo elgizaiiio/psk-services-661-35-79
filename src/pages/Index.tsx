@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -8,10 +8,23 @@ import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
-import { Server, ChevronRight, Loader2, Play, Gift, ShoppingCart, Trophy, Crown } from 'lucide-react';
+import { Server, Loader2, Play, Gift, ShoppingCart, Trophy, Crown, type LucideIcon } from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import DailyStreakModal from '@/components/DailyStreakModal';
+import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
+
+interface QuickAction {
+  id: string;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  path: string;
+  badge?: string;
+  gradient: string;
+  iconBg: string;
+  iconColor: string;
+}
 
 const Index = () => {
   const navigate = useNavigate();
@@ -21,6 +34,78 @@ const Index = () => {
   const { getTotalStats } = useUserServers(user?.id || null);
   const stats = getTotalStats();
   useTelegramBackButton();
+
+  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const quickActions: QuickAction[] = [
+    {
+      id: 'spin',
+      title: 'Lucky Spin',
+      description: 'Win TON, USDT and more',
+      icon: Gift,
+      path: '/spin',
+      badge: 'Free Daily',
+      gradient: 'bg-gradient-to-br from-primary/15 to-primary/5',
+      iconBg: 'bg-primary/20',
+      iconColor: 'text-primary',
+    },
+    {
+      id: 'vip',
+      title: 'Premium VIP',
+      description: 'Unlock all benefits',
+      icon: Crown,
+      path: '/vip',
+      gradient: 'bg-gradient-to-br from-amber-500/15 to-amber-500/5',
+      iconBg: 'bg-amber-500/20',
+      iconColor: 'text-amber-500',
+    },
+    {
+      id: 'servers',
+      title: 'My Servers',
+      description: stats.totalServers > 0 ? `${stats.totalServers} servers • ${stats.totalHashRate} TH/s` : 'No servers yet',
+      icon: Server,
+      path: '/mining-servers',
+      gradient: 'bg-gradient-to-br from-emerald-500/15 to-emerald-500/5',
+      iconBg: 'bg-emerald-500/20',
+      iconColor: 'text-emerald-500',
+    },
+    {
+      id: 'buy',
+      title: 'Buy BOLT',
+      description: 'Get more tokens instantly',
+      icon: ShoppingCart,
+      path: '/buy-bolt',
+      gradient: 'bg-gradient-to-br from-blue-500/15 to-blue-500/5',
+      iconBg: 'bg-blue-500/20',
+      iconColor: 'text-blue-500',
+    },
+    {
+      id: 'contest',
+      title: 'Contest',
+      description: 'Compete & win prizes',
+      icon: Trophy,
+      path: '/contest',
+      badge: 'Live',
+      gradient: 'bg-gradient-to-br from-purple-500/15 to-purple-500/5',
+      iconBg: 'bg-purple-500/20',
+      iconColor: 'text-purple-500',
+    },
+  ];
+
+  const onSelect = useCallback(() => {
+    if (!carouselApi) return;
+    setCurrentSlide(carouselApi.selectedScrollSnap());
+  }, [carouselApi]);
+
+  useEffect(() => {
+    if (!carouselApi) return;
+    onSelect();
+    carouselApi.on('select', onSelect);
+    return () => {
+      carouselApi.off('select', onSelect);
+    };
+  }, [carouselApi, onSelect]);
 
   const handleStartMining = async () => {
     hapticFeedback.impact('medium');
@@ -136,60 +221,61 @@ const Index = () => {
             </FadeUp>
           </div>
 
-          {/* Lucky Spin Card - First */}
+          {/* Quick Actions Carousel */}
           <FadeUp>
-            <motion.button onClick={() => navigate('/spin')} className="w-full p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                  <Gift className="w-5 h-5 text-primary" />
-                </div>
-                <div className="text-left">
-                  <p className="font-medium text-foreground">Lucky Spin</p>
-                  <p className="text-xs text-muted-foreground">Win TON, USDT and more</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">Free Daily</span>
-                <ChevronRight className="w-5 h-5 text-primary" />
-              </div>
-            </motion.button>
-          </FadeUp>
+            <div className="space-y-3">
+              <Carousel
+                opts={{ align: "start", dragFree: true }}
+                className="w-full"
+                setApi={setCarouselApi}
+              >
+                <CarouselContent className="-ml-3">
+                  {quickActions.map((action) => (
+                    <CarouselItem key={action.id} className="pl-3 basis-[280px]">
+                      <motion.button
+                        onClick={() => {
+                          hapticFeedback.impact('light');
+                          navigate(action.path);
+                        }}
+                        className={`w-full h-[120px] p-4 rounded-2xl ${action.gradient} border border-border/50 flex flex-col justify-between text-left relative overflow-hidden`}
+                        whileTap={{ scale: 0.97 }}
+                        whileHover={{ scale: 1.02 }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className={`w-11 h-11 rounded-xl ${action.iconBg} flex items-center justify-center`}>
+                            <action.icon className={`w-5 h-5 ${action.iconColor}`} />
+                          </div>
+                          {action.badge && (
+                            <span className="text-[10px] font-semibold text-primary-foreground bg-primary px-2 py-0.5 rounded-full">
+                              {action.badge}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground text-sm">{action.title}</p>
+                          <p className="text-xs text-muted-foreground line-clamp-1">{action.description}</p>
+                        </div>
+                      </motion.button>
+                    </CarouselItem>
+                  ))}
+                </CarouselContent>
+              </Carousel>
 
-          {/* Premium VIP Card */}
-          <FadeUp>
-            <motion.button 
-              onClick={() => navigate('/vip')} 
-              className="w-full p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/5 border border-amber-500/20 flex items-center justify-between" 
-              whileTap={{ scale: 0.98 }} 
-              whileHover={{ y: -2 }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
-                  <Crown className="w-5 h-5 text-amber-500" />
-                </div>
-                <div className="text-left">
-                  <p className="font-medium text-foreground">Premium VIP</p>
-                  <p className="text-xs text-muted-foreground">Unlock all benefits</p>
-                </div>
+              {/* Pagination Dots */}
+              <div className="flex justify-center gap-1.5">
+                {quickActions.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => carouselApi?.scrollTo(index)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      currentSlide === index 
+                        ? 'w-6 bg-primary' 
+                        : 'w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    }`}
+                  />
+                ))}
               </div>
-              <ChevronRight className="w-5 h-5 text-amber-500" />
-            </motion.button>
-          </FadeUp>
-
-          {/* Servers Card - Second */}
-          <FadeUp>
-            <motion.button onClick={() => navigate('/mining-servers')} className="w-full p-4 rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                  <Server className="w-5 h-5 text-primary" />
-                </div>
-                <div className="text-left">
-                  <p className="font-medium text-foreground">My Servers</p>
-                  <p className="text-xs text-muted-foreground">{stats.totalServers > 0 ? `${stats.totalServers} servers • ${stats.totalHashRate} TH/s` : 'No servers yet'}</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-primary" />
-            </motion.button>
+            </div>
           </FadeUp>
 
           {/* Mining Button (only when not mining) */}
@@ -203,41 +289,6 @@ const Index = () => {
               </motion.div>
             </FadeUp>
           )}
-
-          {/* Buy Bolt Card */}
-          <FadeUp>
-            <motion.button onClick={() => navigate('/buy-bolt')} className="w-full p-4 rounded-xl bg-card border border-border flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                  <ShoppingCart className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div className="text-left">
-                  <p className="font-medium text-foreground">Buy BOLT</p>
-                  <p className="text-xs text-muted-foreground">Get more tokens instantly</p>
-                </div>
-              </div>
-              <ChevronRight className="w-5 h-5 text-muted-foreground" />
-            </motion.button>
-          </FadeUp>
-
-          {/* Contest Card - Same color as other buttons */}
-          <FadeUp>
-            <motion.button onClick={() => navigate('/contest')} className="w-full p-4 rounded-xl bg-card border border-border flex items-center justify-between" whileTap={{ scale: 0.98 }} whileHover={{ y: -2 }}>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                  <Trophy className="w-5 h-5 text-muted-foreground" />
-                </div>
-                <div className="text-left">
-                  <p className="font-medium text-foreground">Contest</p>
-                  <p className="text-xs text-muted-foreground">Compete & win prizes</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">Live</span>
-                <ChevronRight className="w-5 h-5 text-muted-foreground" />
-              </div>
-            </motion.button>
-          </FadeUp>
 
         </StaggerContainer>
       </div>
