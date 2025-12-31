@@ -65,7 +65,7 @@ const vipPlans: VIPPlan[] = [
     benefits: [
       { icon: <Rocket className="w-4 h-4" />, label: 'Mining Speed', value: '+20%' },
       { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '100 BOLT' },
-      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '1/day' },
+      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '3/day' },
       { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+20%' },
       { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+2 hours' },
     ]
@@ -87,7 +87,7 @@ const vipPlans: VIPPlan[] = [
     benefits: [
       { icon: <Rocket className="w-4 h-4" />, label: 'Mining Speed', value: '+50%' },
       { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '300 BOLT' },
-      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '2/day' },
+      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '5/day' },
       { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+50%' },
       { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+4 hours' },
       { icon: <Headphones className="w-4 h-4" />, label: 'Support', value: 'Priority' },
@@ -110,7 +110,7 @@ const vipPlans: VIPPlan[] = [
     benefits: [
       { icon: <Rocket className="w-4 h-4" />, label: 'Mining Speed', value: '+100%' },
       { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '700 BOLT' },
-      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '5/day' },
+      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '10/day' },
       { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+100%' },
       { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+8 hours' },
       { icon: <Headphones className="w-4 h-4" />, label: 'Support', value: 'VIP 24/7' },
