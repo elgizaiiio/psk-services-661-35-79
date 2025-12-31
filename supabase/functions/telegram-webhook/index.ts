@@ -310,6 +310,90 @@ async function getAdminStats() {
   };
 }
 
+// Get recent payments (TON and Stars)
+async function getRecentPayments(limit: number = 15) {
+  const supabase = getSupabaseClient();
+  
+  // Get TON payments
+  const { data: tonPayments } = await supabase
+    .from('ton_payments')
+    .select('id, user_id, amount_ton, status, product_type, created_at, payment_method')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  
+  // Get Stars payments
+  const { data: starsPayments } = await supabase
+    .from('stars_payments')
+    .select('id, user_id, amount_stars, amount_usd, status, product_type, created_at, telegram_id')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  
+  // Get payment stats
+  const { count: totalTonPayments } = await supabase
+    .from('ton_payments')
+    .select('*', { count: 'exact', head: true });
+  
+  const { count: confirmedTonPayments } = await supabase
+    .from('ton_payments')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'confirmed');
+  
+  const { data: tonRevenueData } = await supabase
+    .from('ton_payments')
+    .select('amount_ton')
+    .eq('status', 'confirmed');
+  const totalTonRevenue = tonRevenueData?.reduce((sum, p) => sum + (p.amount_ton || 0), 0) || 0;
+  
+  const { count: totalStarsPayments } = await supabase
+    .from('stars_payments')
+    .select('*', { count: 'exact', head: true });
+  
+  const { count: completedStarsPayments } = await supabase
+    .from('stars_payments')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'completed');
+  
+  const { data: starsRevenueData } = await supabase
+    .from('stars_payments')
+    .select('amount_stars, amount_usd')
+    .eq('status', 'completed');
+  const totalStarsRevenue = starsRevenueData?.reduce((sum, p) => sum + (p.amount_stars || 0), 0) || 0;
+  const totalUsdRevenue = starsRevenueData?.reduce((sum, p) => sum + (p.amount_usd || 0), 0) || 0;
+  
+  // Get user info for payments
+  const userIds = [
+    ...(tonPayments?.map(p => p.user_id) || []),
+    ...(starsPayments?.map(p => p.user_id) || [])
+  ].filter(Boolean);
+  
+  const { data: users } = await supabase
+    .from('bolt_users')
+    .select('id, telegram_username, first_name')
+    .in('id', userIds);
+  
+  const userMap = new Map(users?.map(u => [u.id, u]) || []);
+  
+  return {
+    tonPayments: tonPayments?.map(p => ({
+      ...p,
+      user: userMap.get(p.user_id)
+    })) || [],
+    starsPayments: starsPayments?.map(p => ({
+      ...p,
+      user: userMap.get(p.user_id)
+    })) || [],
+    stats: {
+      totalTonPayments: totalTonPayments || 0,
+      confirmedTonPayments: confirmedTonPayments || 0,
+      totalTonRevenue,
+      totalStarsPayments: totalStarsPayments || 0,
+      completedStarsPayments: completedStarsPayments || 0,
+      totalStarsRevenue,
+      totalUsdRevenue
+    }
+  };
+}
+
 async function getRecentUsers(limit: number = 10) {
   const supabase = getSupabaseClient();
   
@@ -386,23 +470,24 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
   if (messageText === '/101' || messageText === '/101 stats') {
     const stats = await getAdminStats();
     
-    const statsMessage = `<b>Admin Panel</b>
+    const statsMessage = `<b>🔧 Admin Panel</b>
 
-<b>General Stats:</b>
-Total Users: <b>${stats.totalUsers.toLocaleString()}</b>
-Active (24h): <b>${stats.activeUsers.toLocaleString()}</b>
-Total Tokens: <b>${stats.totalTokens.toLocaleString()} BOLT</b>
-Active Mining: <b>${stats.activeSessions}</b>
+<b>📊 General Stats:</b>
+👥 Total Users: <b>${stats.totalUsers.toLocaleString()}</b>
+🟢 Active (24h): <b>${stats.activeUsers.toLocaleString()}</b>
+⚡ Total Tokens: <b>${stats.totalTokens.toLocaleString()} BOLT</b>
+⛏️ Active Mining: <b>${stats.activeSessions}</b>
 
-<b>Payments:</b>
-Transactions: <b>${stats.totalPayments}</b>
-Revenue: <b>${stats.totalTonRevenue.toFixed(2)} TON</b>
+<b>💰 Payments:</b>
+📝 Transactions: <b>${stats.totalPayments}</b>
+💎 Revenue: <b>${stats.totalTonRevenue.toFixed(2)} TON</b>
 
-<b>Active Tasks:</b> ${stats.totalTasks}
+<b>📋 Active Tasks:</b> ${stats.totalTasks}
 
-<b>Commands:</b>
+<b>📌 Commands:</b>
 /101 stats - Detailed stats
 /101 users - Recent 10 users
+/101 payments - Payment transactions
 /101 broadcast - Send message to all
 /102 - Add new task`;
 
@@ -410,23 +495,27 @@ Revenue: <b>${stats.totalTonRevenue.toFixed(2)} TON</b>
       inline_keyboard: [
         [
           {
-            text: 'Open Full Panel',
+            text: '📊 Open Full Panel',
             web_app: { url: `${WEBAPP_URL}/admin` }
           }
         ],
         [
           {
-            text: 'Recent Users',
+            text: '👥 Users',
             callback_data: 'admin_users'
           },
           {
-            text: 'Broadcast',
-            callback_data: 'admin_broadcast'
+            text: '💰 Payments',
+            callback_data: 'admin_payments'
           }
         ],
         [
           {
-            text: 'Add Task',
+            text: '📢 Broadcast',
+            callback_data: 'admin_broadcast'
+          },
+          {
+            text: '➕ Add Task',
             callback_data: 'admin_add_task'
           }
         ]
@@ -436,6 +525,52 @@ Revenue: <b>${stats.totalTonRevenue.toFixed(2)} TON</b>
     await sendTelegramMessage(chatId, statsMessage, keyboard);
     return true;
   }
+
+  // Handle /101 payments - Payment transactions
+  if (messageText === '/101 payments') {
+    const payments = await getRecentPayments(10);
+    
+    let paymentsMessage = `<b>💰 Payment Transactions</b>\n\n`;
+    
+    paymentsMessage += `<b>📊 TON Stats:</b>\n`;
+    paymentsMessage += `Total: ${payments.stats.totalTonPayments} | Confirmed: ${payments.stats.confirmedTonPayments}\n`;
+    paymentsMessage += `Revenue: <b>${payments.stats.totalTonRevenue.toFixed(2)} TON</b>\n\n`;
+    
+    paymentsMessage += `<b>⭐ Stars Stats:</b>\n`;
+    paymentsMessage += `Total: ${payments.stats.totalStarsPayments} | Completed: ${payments.stats.completedStarsPayments}\n`;
+    paymentsMessage += `Revenue: <b>${payments.stats.totalStarsRevenue} ⭐</b> (~$${payments.stats.totalUsdRevenue.toFixed(2)})\n\n`;
+    
+    paymentsMessage += `<b>📝 Recent TON Payments:</b>\n`;
+    if (payments.tonPayments.length === 0) {
+      paymentsMessage += `No TON payments yet\n\n`;
+    } else {
+      payments.tonPayments.slice(0, 5).forEach((p: any, i: number) => {
+        const username = p.user?.telegram_username ? `@${p.user.telegram_username}` : p.user?.first_name || 'Unknown';
+        const status = p.status === 'confirmed' ? '✅' : p.status === 'pending' ? '⏳' : '❌';
+        const date = new Date(p.created_at).toLocaleDateString('en-US');
+        paymentsMessage += `${i + 1}. ${status} ${p.amount_ton} TON - ${username}\n`;
+        paymentsMessage += `   ${p.product_type} | ${date}\n`;
+      });
+      paymentsMessage += `\n`;
+    }
+    
+    paymentsMessage += `<b>⭐ Recent Stars Payments:</b>\n`;
+    if (payments.starsPayments.length === 0) {
+      paymentsMessage += `No Stars payments yet\n`;
+    } else {
+      payments.starsPayments.slice(0, 5).forEach((p: any, i: number) => {
+        const username = p.user?.telegram_username ? `@${p.user.telegram_username}` : p.user?.first_name || 'Unknown';
+        const status = p.status === 'completed' ? '✅' : p.status === 'pending' ? '⏳' : '❌';
+        const date = new Date(p.created_at).toLocaleDateString('en-US');
+        paymentsMessage += `${i + 1}. ${status} ${p.amount_stars}⭐ - ${username}\n`;
+        paymentsMessage += `   ${p.product_type} | ${date}\n`;
+      });
+    }
+    
+    await sendTelegramMessage(chatId, paymentsMessage);
+    return true;
+  }
+
 
   // Handle /101 users - Recent users
   if (messageText === '/101 users') {
