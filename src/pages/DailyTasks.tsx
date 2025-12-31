@@ -103,20 +103,23 @@ const DailyTasks = () => {
     }
   }, [completedCount, totalCount]);
   const handleCompleteTask = async (taskId: string, requiredAction: string | null) => {
-    // Handle navigation for certain tasks
+    // Handle navigation for certain tasks (after successful completion)
     const navigationTasks: Record<string, string> = {
-      'visit_achievements': '/achievements',
-      'view_leaderboard': '/leaderboard',
-      'start_mining': '/',
-      'invite_friend': '/invite',
-      'lucky_spin': '/slots'
+      visit_achievements: '/achievements',
+      view_leaderboard: '/leaderboard',
+      start_mining: '/',
+      invite_friend: '/invite',
+      lucky_spin: '/slots'
     };
-    if (requiredAction && navigationTasks[requiredAction]) {
-      navigate(navigationTasks[requiredAction]);
-    }
+
     const result = await completeTask(taskId);
+
     if (result.success) {
       toast.success(`🎉 +${result.reward} BOLT!`);
+
+      if (requiredAction && navigationTasks[requiredAction]) {
+        navigate(navigationTasks[requiredAction]);
+      }
     } else {
       toast.error(result.error || 'Failed to complete task');
     }
