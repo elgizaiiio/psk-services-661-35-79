@@ -21,6 +21,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
 import { usePriceCalculator } from '@/hooks/usePriceCalculator';
+import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -127,6 +128,9 @@ const VIPSubscription = () => {
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [currentVIP, setCurrentVIP] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<string>('gold');
+  
+  // Enable Telegram back button
+  useTelegramBackButton();
 
   useEffect(() => {
     const loadVIPStatus = async () => {
