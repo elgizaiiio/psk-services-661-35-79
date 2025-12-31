@@ -105,37 +105,48 @@ const Spin: React.FC = () => {
     if (!user?.id) return;
 
     const today = new Date().toISOString().split('T')[0];
+    
+    // Use upsert to ensure record exists
     const { data, error } = await supabase
       .from('user_spin_tickets')
+      .upsert(
+        { 
+          user_id: user.id,
+          tickets_count: 0,
+          pro_tickets_count: 0,
+        }, 
+        { 
+          onConflict: 'user_id',
+          ignoreDuplicates: true 
+        }
+      )
       .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
+      .single();
 
-    if (error && error.code !== 'PGRST116') {
-      console.error('Error loading tickets:', error);
+    if (error) {
+      // If upsert failed, try to fetch existing
+      const { data: existingData } = await supabase
+        .from('user_spin_tickets')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (existingData) {
+        setNormalTickets(existingData.tickets_count || 0);
+        setProTickets(existingData.pro_tickets_count || 0);
+        const alreadyClaimedToday = existingData.free_ticket_date === today;
+        setFreeTicketAvailable(!alreadyClaimedToday);
+      } else {
+        setFreeTicketAvailable(true);
+      }
       return;
     }
 
     if (data) {
       setNormalTickets(data.tickets_count || 0);
-      setProTickets((data as any).pro_tickets_count || 0);
-      // Check if free ticket was already claimed today
+      setProTickets(data.pro_tickets_count || 0);
       const alreadyClaimedToday = data.free_ticket_date === today;
       setFreeTicketAvailable(!alreadyClaimedToday);
-    } else {
-      // Create initial record
-      const { error: insertError } = await supabase.from('user_spin_tickets').insert({
-        user_id: user.id,
-        tickets_count: 0,
-        pro_tickets_count: 0,
-        free_ticket_date: null,
-      });
-      if (insertError) {
-        console.error('Error creating ticket record:', insertError);
-      }
-      setNormalTickets(0);
-      setProTickets(0);
-      setFreeTicketAvailable(true);
     }
   }, [user?.id]);
 
