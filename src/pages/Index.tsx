@@ -83,7 +83,7 @@ const Index = () => {
             </div>
           </FadeUp>
 
-          {/* Total Balance Card */}
+          {/* Total Balance Card with Mining Progress */}
           <FadeUp>
             <motion.div className="p-6 rounded-2xl bg-card border border-border" whileHover={{ y: -2 }}>
               <p className="text-sm text-muted-foreground mb-1">Total Balance</p>
@@ -92,6 +92,21 @@ const Index = () => {
               </p>
               {stats.totalBoltPerDay > 0 && (
                 <p className="text-sm text-primary mt-2">+${((stats.totalBoltPerDay * 0.001) + stats.totalUsdtPerDay).toFixed(4)}/day</p>
+              )}
+              
+              {/* Mining Progress inside balance card */}
+              {isMining && miningProgress && (
+                <div className="mt-4 pt-4 border-t border-border space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-xs font-medium text-muted-foreground">Mining</span>
+                    <span className="text-sm font-bold text-primary">{progress}%</span>
+                  </div>
+                  <AnimatedProgress value={progress} />
+                  <div className="flex justify-between text-xs text-muted-foreground">
+                    <span>+{miningProgress.tokensMinedSoFar.toFixed(2)} BOLT</span>
+                    <span>+${(miningProgress.tokensMinedSoFar * 0.001).toFixed(4)} USDT</span>
+                  </div>
+                </div>
               )}
             </motion.div>
           </FadeUp>
@@ -156,29 +171,15 @@ const Index = () => {
             </motion.button>
           </FadeUp>
 
-          {/* Mining Button / Progress */}
-          {stats.totalServers > 0 && (
+          {/* Mining Button (only when not mining) */}
+          {stats.totalServers > 0 && !isMining && (
             <FadeUp>
-              {isMining && miningProgress ? (
-                <div className="p-4 rounded-xl bg-card border border-primary/20 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-foreground">Mining</span>
-                    <span className="text-lg font-bold text-primary">{progress}%</span>
-                  </div>
-                  <AnimatedProgress value={progress} />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>+{miningProgress.tokensMinedSoFar.toFixed(2)} BOLT</span>
-                    <span>+${(miningProgress.tokensMinedSoFar * 0.001).toFixed(4)} USDT</span>
-                  </div>
-                </div>
-              ) : (
-                <motion.div whileTap={{ scale: 0.98 }}>
-                  <Button onClick={handleStartMining} className="w-full h-14 font-semibold rounded-xl gap-2">
-                    <Play className="w-5 h-5" />
-                    Start Mining
-                  </Button>
-                </motion.div>
-              )}
+              <motion.div whileTap={{ scale: 0.98 }}>
+                <Button onClick={handleStartMining} className="w-full h-14 font-semibold rounded-xl gap-2">
+                  <Play className="w-5 h-5" />
+                  Start Mining
+                </Button>
+              </motion.div>
             </FadeUp>
           )}
 
