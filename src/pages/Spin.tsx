@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
+import { usePriceCalculator } from '@/hooks/usePriceCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Gift, Zap, Ticket, Sparkles, X, Crown, ShoppingCart } from 'lucide-react';
@@ -13,7 +14,6 @@ import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-
 interface SpinReward {
   id: string;
   label: string;
@@ -26,7 +26,6 @@ interface TicketPackage {
   id: string;
   tickets: number;
   priceTon: number;
-  priceStars: number;
 }
 
 // Normal Wheel Rewards - 10 items, well distributed (TON, BOLT, USDT, BOLT pattern)
@@ -57,20 +56,20 @@ const PRO_REWARDS: SpinReward[] = [
   { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 4 },
 ];
 
-// Normal Ticket Packages - Higher prices
+// Normal Ticket Packages - Stars calculated dynamically
 const NORMAL_PACKAGES: TicketPackage[] = [
-  { id: 'normal_3', tickets: 3, priceTon: 0.25, priceStars: 20 },
-  { id: 'normal_5', tickets: 5, priceTon: 0.4, priceStars: 32 },
-  { id: 'normal_10', tickets: 10, priceTon: 0.7, priceStars: 56 },
-  { id: 'normal_25', tickets: 25, priceTon: 1.5, priceStars: 120 },
+  { id: 'normal_3', tickets: 3, priceTon: 0.25 },
+  { id: 'normal_5', tickets: 5, priceTon: 0.4 },
+  { id: 'normal_10', tickets: 10, priceTon: 0.7 },
+  { id: 'normal_25', tickets: 25, priceTon: 1.5 },
 ];
 
-// PRO Ticket Packages - Higher prices
+// PRO Ticket Packages - Stars calculated dynamically
 const PRO_PACKAGES: TicketPackage[] = [
-  { id: 'pro_3', tickets: 3, priceTon: 0.6, priceStars: 48 },
-  { id: 'pro_5', tickets: 5, priceTon: 0.9, priceStars: 72 },
-  { id: 'pro_10', tickets: 10, priceTon: 1.6, priceStars: 128 },
-  { id: 'pro_25', tickets: 25, priceTon: 3.5, priceStars: 280 },
+  { id: 'pro_3', tickets: 3, priceTon: 0.6 },
+  { id: 'pro_5', tickets: 5, priceTon: 0.9 },
+  { id: 'pro_10', tickets: 10, priceTon: 1.6 },
+  { id: 'pro_25', tickets: 25, priceTon: 3.5 },
 ];
 
 // Wheel colors - 2 colors each
@@ -80,6 +79,7 @@ const PRO_COLORS = ['#8B5CF6', '#6D28D9']; // Purple shades
 const Spin: React.FC = () => {
   const { user: tgUser, hapticFeedback } = useTelegramAuth();
   const { user, loading: miningLoading } = useViralMining(tgUser);
+  const { tonToStars, tonToUsd, tonPrice } = usePriceCalculator();
   useTelegramBackButton();
 
   const [wheelType, setWheelType] = useState<'normal' | 'pro'>('normal');
@@ -560,27 +560,30 @@ const Spin: React.FC = () => {
                     </SheetTitle>
                   </SheetHeader>
                   <div className="grid grid-cols-2 gap-3 py-4">
-                    {packages.map((pkg) => (
-                      <button
-                        key={pkg.id}
-                        onClick={() => handleBuyPackage(pkg)}
-                        className={`p-4 rounded-xl border transition-all hover:scale-[1.02] active:scale-[0.98] ${
-                          wheelType === 'pro'
-                            ? 'bg-gradient-to-br from-purple-500/10 to-purple-700/10 border-purple-500/30 hover:border-purple-500/50'
-                            : 'bg-card border-border hover:border-primary/50'
-                        }`}
-                      >
-                        <div className="flex flex-col items-center gap-2">
-                          <span className={`text-2xl font-bold ${wheelType === 'pro' ? 'text-purple-500' : 'text-primary'}`}>{pkg.tickets}</span>
-                          <div className="flex flex-col items-center gap-0.5">
-                            <span className="text-sm font-semibold text-foreground">{pkg.priceTon} TON</span>
-                            <span className="text-xs text-muted-foreground">
-                              {pkg.priceStars} Stars
-                            </span>
+                    {packages.map((pkg) => {
+                      const priceStars = tonToStars(pkg.priceTon);
+                      return (
+                        <button
+                          key={pkg.id}
+                          onClick={() => handleBuyPackage(pkg)}
+                          className={`p-4 rounded-xl border transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                            wheelType === 'pro'
+                              ? 'bg-gradient-to-br from-purple-500/10 to-purple-700/10 border-purple-500/30 hover:border-purple-500/50'
+                              : 'bg-card border-border hover:border-primary/50'
+                          }`}
+                        >
+                          <div className="flex flex-col items-center gap-2">
+                            <span className={`text-2xl font-bold ${wheelType === 'pro' ? 'text-purple-500' : 'text-primary'}`}>{pkg.tickets}</span>
+                            <div className="flex flex-col items-center gap-0.5">
+                              <span className="text-sm font-semibold text-foreground">{pkg.priceTon} TON</span>
+                              <span className="text-xs text-muted-foreground">
+                                ⭐ {priceStars}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      </button>
-                    ))}
+                        </button>
+                      );
+                    })}
                   </div>
                 </SheetContent>
               </Sheet>
@@ -601,7 +604,6 @@ const Spin: React.FC = () => {
           description={`${selectedPackage.tickets} ${wheelType === 'pro' ? 'PRO ' : ''}Spin Tickets`}
           productType="spin_tickets"
           credits={selectedPackage.tickets}
-          starsOverride={selectedPackage.priceStars}
           onSuccess={handlePurchaseSuccess}
         />
       )}

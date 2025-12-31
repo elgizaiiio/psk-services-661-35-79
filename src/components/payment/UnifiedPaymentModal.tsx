@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Loader2, Wallet, Star, AlertCircle, X } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useUnifiedPayment, UnifiedPaymentParams } from '@/hooks/useUnifiedPayment';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { TonIcon } from '@/components/ui/currency-icons';
 
 interface UnifiedPaymentModalProps {
   isOpen: boolean;
@@ -21,10 +19,6 @@ interface UnifiedPaymentModalProps {
   starsOverride?: number;
   onSuccess?: () => void;
 }
-
-// Stars price: approximately $0.02 per star
-const TON_TO_USD = 6;
-const STAR_PRICE_USD = 0.02;
 
 export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
   isOpen,
@@ -44,13 +38,16 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
     isProcessing,
     processPayment,
     isWalletConnected,
+    calculateStarsFromTon,
+    calculateUsdFromTon,
+    tonPrice,
   } = useUnifiedPayment();
 
   const [starsLoading, setStarsLoading] = useState(false);
 
-  // Calculate stars amount from TON (or use override)
-  const tonInUsd = amount * TON_TO_USD;
-  const starsAmount = starsOverride || Math.ceil(tonInUsd / STAR_PRICE_USD);
+  // Calculate Stars and USD dynamically using real TON price
+  const usdAmount = calculateUsdFromTon(amount);
+  const starsAmount = starsOverride || calculateStarsFromTon(amount);
 
   const handleTonPayment = async () => {
     if (!isWalletConnected) {
@@ -92,7 +89,7 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
           product_type: productType,
           product_id: productId || null,
           amount_stars: starsAmount,
-          amount_usd: tonInUsd,
+          amount_usd: usdAmount,
           status: 'pending',
         })
         .select()
@@ -163,7 +160,10 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
           <DialogTitle className="text-center text-lg font-bold text-foreground">
             {description}
           </DialogTitle>
-          <p className="text-center text-2xl font-bold text-primary mt-1">{amount} TON</p>
+          <div className="text-center mt-1">
+            <p className="text-2xl font-bold text-primary">{amount} TON</p>
+            <p className="text-xs text-muted-foreground mt-0.5">≈ ${usdAmount.toFixed(2)} USD</p>
+          </div>
         </DialogHeader>
 
         <div className="space-y-3">
@@ -173,7 +173,10 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
             disabled={isProcessing || !isWalletConnected}
             className="w-full flex items-center justify-between p-4 rounded-xl border border-border bg-background hover:bg-muted/50 transition-colors disabled:opacity-50"
           >
-            <span className="font-medium text-foreground">TON Wallet</span>
+            <div className="flex flex-col items-start">
+              <span className="font-medium text-foreground">TON Wallet</span>
+              <span className="text-[10px] text-muted-foreground">~${usdAmount.toFixed(2)}</span>
+            </div>
             <span className="font-bold text-foreground">
               {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : `${amount} TON`}
             </span>
@@ -185,9 +188,12 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
             disabled={starsLoading}
             className="w-full flex items-center justify-between p-4 rounded-xl border border-yellow-500/30 bg-yellow-500/5 hover:bg-yellow-500/10 transition-colors disabled:opacity-50"
           >
-            <span className="font-medium text-foreground">Telegram Stars</span>
+            <div className="flex flex-col items-start">
+              <span className="font-medium text-foreground">Telegram Stars</span>
+              <span className="text-[10px] text-muted-foreground">~${usdAmount.toFixed(2)}</span>
+            </div>
             <span className="font-bold text-yellow-500">
-              {starsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : `${starsAmount} Stars`}
+              {starsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : `⭐ ${starsAmount}`}
             </span>
           </button>
 
@@ -198,6 +204,11 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
               </button>{' '}for TON payment
             </p>
           )}
+
+          {/* Price info */}
+          <p className="text-[10px] text-center text-muted-foreground pt-2">
+            1 TON ≈ ${tonPrice.toFixed(2)} • 1 Star = $0.02
+          </p>
         </div>
       </DialogContent>
     </Dialog>

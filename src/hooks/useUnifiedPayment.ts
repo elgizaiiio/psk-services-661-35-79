@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useDirectTonPayment } from './useDirectTonPayment';
+import { usePriceCalculator, STAR_PRICE_USD } from './usePriceCalculator';
 
 export type PaymentMethod = 'ton_connect' | 'stars';
 
@@ -26,22 +27,33 @@ export interface PaymentMethodInfo {
   currencies?: string[];
 }
 
-// Stars price configuration
-export const STAR_PRICE_USD = 0.02;
-export const TON_TO_USD = 6; // Approximate
-
-export const calculateStarsFromTon = (tonAmount: number): number => {
-  const usdAmount = tonAmount * TON_TO_USD;
-  return Math.ceil(usdAmount / STAR_PRICE_USD);
-};
+// Re-export for backwards compatibility
+export { STAR_PRICE_USD };
 
 export const useUnifiedPayment = () => {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>('ton_connect');
   const [selectedCurrency, setSelectedCurrency] = useState<string>('TON');
 
   const directTonPayment = useDirectTonPayment();
+  const { tonPrice, tonToStars, tonToUsd } = usePriceCalculator();
 
   const isProcessing = directTonPayment.isProcessing;
+
+  // Dynamic Stars calculation using real TON price
+  const calculateStarsFromTon = useCallback(
+    (tonAmount: number): number => {
+      return tonToStars(tonAmount);
+    },
+    [tonToStars]
+  );
+
+  // Get USD value for TON amount
+  const calculateUsdFromTon = useCallback(
+    (tonAmount: number): number => {
+      return tonToUsd(tonAmount);
+    },
+    [tonToUsd]
+  );
 
   const paymentMethods: PaymentMethodInfo[] = [
     {
@@ -93,5 +105,7 @@ export const useUnifiedPayment = () => {
     isWalletConnected: directTonPayment.isWalletConnected,
     destinationAddress: directTonPayment.destinationAddress,
     calculateStarsFromTon,
+    calculateUsdFromTon,
+    tonPrice,
   };
 };
