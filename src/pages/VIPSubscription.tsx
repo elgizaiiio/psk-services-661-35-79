@@ -316,15 +316,22 @@ const VIPSubscription = () => {
               <span className="text-sm text-muted-foreground">≈ {formatUsd(tonToUsd(currentPlan.priceTon))}</span>
             </div>
 
-            {/* Benefits Grid */}
-            <div className="grid grid-cols-2 gap-2 mb-5">
+            {/* Benefits List */}
+            <div className="space-y-2.5 mb-5">
               {currentPlan.benefits.map((benefit, i) => (
-                <div key={i} className="flex items-center gap-2 p-2.5 rounded-lg bg-muted/50">
-                  <span className="text-primary shrink-0">{benefit.icon}</span>
-                  <div className="min-w-0">
-                    <p className="text-[10px] text-muted-foreground truncate">{benefit.label}</p>
-                    <p className="text-xs font-medium text-foreground">{benefit.value}</p>
+                <div 
+                  key={i} 
+                  className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-border/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-lg ${currentPlan.iconBg} flex items-center justify-center`}>
+                      <span className="text-foreground">{benefit.icon}</span>
+                    </div>
+                    <span className="text-sm text-foreground">{benefit.label}</span>
                   </div>
+                  <span className={`text-sm font-bold bg-gradient-to-r ${currentPlan.gradient} bg-clip-text text-transparent`}>
+                    {benefit.value}
+                  </span>
                 </div>
               ))}
             </div>
