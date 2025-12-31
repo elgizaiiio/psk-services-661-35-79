@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState, useRef } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -13,6 +13,7 @@ import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import DailyStreakModal from '@/components/DailyStreakModal';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
+import Autoplay from 'embla-carousel-autoplay';
 
 interface QuickAction {
   id: string;
@@ -37,6 +38,10 @@ const Index = () => {
 
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
   const [currentSlide, setCurrentSlide] = useState(0);
+  
+  const autoplayPlugin = useRef(
+    Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true })
+  );
 
   const quickActions: QuickAction[] = [
     {
@@ -225,9 +230,10 @@ const Index = () => {
           <FadeUp>
             <div className="space-y-3">
               <Carousel
-                opts={{ align: "start", dragFree: true }}
+                opts={{ align: "start", dragFree: true, loop: true }}
                 className="w-full"
                 setApi={setCarouselApi}
+                plugins={[autoplayPlugin.current]}
               >
                 <CarouselContent className="-ml-3">
                   {quickActions.map((action) => (
