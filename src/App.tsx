@@ -15,7 +15,6 @@ import Index from "./pages/Index";
 import BottomNavigation from "./components/BottomNavigation";
 import SplashScreen from "./components/SplashScreen";
 import ErrorBoundary from "./components/ErrorBoundary";
-import SmartNotificationProvider from "./components/notifications/SmartNotificationProvider";
 
 // Lazy load pages for better performance
 const ServerStore = lazy(() => import("./pages/ServerStore"));
@@ -167,7 +166,6 @@ const App = () => (
         <Router>
           <TelegramTonConnectProvider>
             <LanguageProvider>
-              <SmartNotificationProvider>
                 <TooltipProvider>
                   <Toaster />
                   <Sonner />
@@ -230,7 +228,6 @@ const App = () => (
                   } />
                 </Routes>
               </TooltipProvider>
-              </SmartNotificationProvider>
             </LanguageProvider>
           </TelegramTonConnectProvider>
         </Router>
