@@ -317,7 +317,8 @@ const Spin: React.FC = () => {
     
     const targetAngle = 360 - (rewardIndex * segmentAngle) - (segmentAngle / 2);
     const fullSpins = 5 + Math.floor(Math.random() * 3);
-    const totalRotation = rotation + (fullSpins * 360) + targetAngle + Math.random() * (segmentAngle * 0.3);
+    // Keep the wheel stop deterministic inside the chosen segment to avoid visual/result mismatch
+    const totalRotation = rotation + (fullSpins * 360) + targetAngle;
     
     setRotation(totalRotation);
 
