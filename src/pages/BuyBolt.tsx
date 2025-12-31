@@ -112,29 +112,48 @@ const BuyBolt = () => {
           await new Promise<void>((resolve) => {
             (webApp as any).openInvoice(invoiceUrl, async (status: string) => {
               try {
-                if (status === 'paid') {
-                  await supabase
-                    .from('stars_payments')
-                    .update({ status: 'completed' })
-                    .eq('id', paymentRecord.id);
+                  if (status === 'paid') {
+                                  await supabase
+                                    .from('stars_payments')
+                                    .update({ status: 'completed' })
+                                    .eq('id', paymentRecord.id);
 
-                  const { data: currentUser, error: balanceError } = await supabase
-                    .from('bolt_users')
-                    .select('token_balance')
-                    .eq('id', user.id)
-                    .single();
+                                  const { data: currentUser, error: balanceError } = await supabase
+                                    .from('bolt_users')
+                                    .select('token_balance')
+                                    .eq('id', user.id)
+                                    .single();
 
-                  if (balanceError) throw balanceError;
+                                  if (balanceError) throw balanceError;
 
-                  const newBalance = (currentUser?.token_balance || 0) + totalBolts;
-                  const { error: updateError } = await supabase
-                    .from('bolt_users')
-                    .update({ token_balance: newBalance })
-                    .eq('id', user.id);
+                                  const newBalance = (currentUser?.token_balance || 0) + totalBolts;
+                                  const { error: updateError } = await supabase
+                                    .from('bolt_users')
+                                    .update({ token_balance: newBalance })
+                                    .eq('id', user.id);
 
-                  if (updateError) throw updateError;
+                                  if (updateError) throw updateError;
 
-                  toast.success(`Purchased ${totalBolts.toLocaleString()} BOLT`);
+                                  // Notify admin about Stars payment
+                                  try {
+                                    await supabase.functions.invoke('notify-admin-payment', {
+                                      body: {
+                                        userId: user.id,
+                                        username: telegramUser?.username || telegramUser?.first_name || 'Unknown',
+                                        telegramId: telegramUser?.id,
+                                        paymentMethod: 'stars',
+                                        amount: priceStars,
+                                        currency: 'Stars',
+                                        productType: 'token_purchase',
+                                        productName: `${pkg.name} Package`,
+                                        description: `${totalBolts.toLocaleString()} BOLT tokens`,
+                                      }
+                                    });
+                                  } catch (e) {
+                                    console.error('Failed to notify admin', e);
+                                  }
+
+                                  toast.success(`Purchased ${totalBolts.toLocaleString()} BOLT`);
                 } else if (status === 'cancelled') {
                   await supabase
                     .from('stars_payments')
@@ -230,6 +249,25 @@ const BuyBolt = () => {
         .from('bolt_users')
         .update({ token_balance: newBalance })
         .eq('id', user.id);
+
+      // Notify admin about TON payment
+      try {
+        await supabase.functions.invoke('notify-admin-payment', {
+          body: {
+            userId: user.id,
+            username: telegramUser?.username || telegramUser?.first_name || 'Unknown',
+            telegramId: telegramUser?.id,
+            paymentMethod: 'ton',
+            amount: pkg.priceTon,
+            currency: 'TON',
+            productType: 'token_purchase',
+            productName: `${pkg.name} Package`,
+            description: `${totalBolts.toLocaleString()} BOLT tokens`,
+          }
+        });
+      } catch (e) {
+        console.error('Failed to notify admin', e);
+      }
 
       toast.success(`Purchased ${totalBolts.toLocaleString()} BOLT`);
     } catch (error: any) {

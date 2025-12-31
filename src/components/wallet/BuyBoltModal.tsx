@@ -181,6 +181,25 @@ const BuyBoltModal: React.FC<BuyBoltModalProps> = ({
         .update({ token_balance: newBalance })
         .eq('id', userId);
 
+      // Notify admin about the payment
+      try {
+        await supabase.functions.invoke('notify-admin-payment', {
+          body: {
+            userId: userId,
+            username: tgUser?.username || tgUser?.first_name || 'Unknown',
+            telegramId: tgUser?.id,
+            paymentMethod: 'ton',
+            amount: pkg.priceTon,
+            currency: 'TON',
+            productType: 'token_purchase',
+            productName: pkg.name,
+            description: `${pkg.bolts.toLocaleString()} BOLT tokens`,
+          }
+        });
+      } catch (e) {
+        console.error('Failed to notify admin', e);
+      }
+
       toast.success(`🎉 Successfully purchased ${pkg.bolts.toLocaleString()} BOLT!`);
       onSuccess?.();
       onClose();
