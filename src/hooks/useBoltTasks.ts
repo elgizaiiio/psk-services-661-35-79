@@ -72,27 +72,46 @@ export const useBoltTasks = () => {
 
       if (existing) throw new Error('Task already completed');
 
-      // Insert completion record
-      await supabase.from('bolt_completed_tasks' as any).insert({
-        user_id: boltUser.id,
-        task_id: taskId,
-        points_earned: taskData.points,
-      });
+      // Insert completion record (and verify it succeeded)
+      const { data: insertedCompletion, error: insertError } = await supabase
+        .from('bolt_completed_tasks' as any)
+        .insert({
+          user_id: boltUser.id,
+          task_id: taskId,
+          points_earned: taskData.points,
+        })
+        .select('*')
+        .maybeSingle();
+
+      if (insertError) throw insertError;
 
       // Update user balance
-      await supabase.from('bolt_users' as any).update({
-        token_balance: (Number(boltUser.token_balance) || 0) + taskData.points,
-        updated_at: new Date().toISOString(),
-      }).eq('id', boltUser.id);
+      const { error: updateError } = await supabase
+        .from('bolt_users' as any)
+        .update({
+          token_balance: (Number(boltUser.token_balance) || 0) + taskData.points,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', boltUser.id);
 
-      // Immediately update local state for instant UI feedback
-      setCompletedTasks(prev => [...prev, {
-        id: `temp-${taskId}`,
-        task_id: taskId,
-        user_id: boltUser.id,
-        points_earned: taskData.points,
-        completed_at: new Date().toISOString(),
-      }]);
+      if (updateError) throw updateError;
+
+      // Immediately update local state for instant UI feedback (only after successful insert)
+      setCompletedTasks((prev) => {
+        const exists = prev.some((c) => c.task_id === taskId);
+        if (exists) return prev;
+        if (insertedCompletion) return [...prev, insertedCompletion as unknown as BoltCompletedTask];
+        return [
+          ...prev,
+          {
+            id: `temp-${taskId}`,
+            task_id: taskId,
+            user_id: boltUser.id,
+            points_earned: taskData.points,
+            completed_at: new Date().toISOString(),
+          } as unknown as BoltCompletedTask,
+        ];
+      });
 
       // Then refresh from backend
       await refreshTasks();
@@ -107,19 +126,23 @@ export const useBoltTasks = () => {
     if (!boltUser) return false;
 
     try {
-      await supabase
+      const { error: deleteError } = await supabase
         .from('bolt_completed_tasks' as any)
         .delete()
         .eq('user_id', boltUser.id)
         .eq('task_id', taskId);
 
+      if (deleteError) throw deleteError;
+
       const current = Number(boltUser.token_balance) || 0;
       const next = Math.max(0, current - (Number(points) || 0));
 
-      await supabase
+      const { error: updateError } = await supabase
         .from('bolt_users' as any)
         .update({ token_balance: next, updated_at: new Date().toISOString() })
         .eq('id', boltUser.id);
+
+      if (updateError) throw updateError;
 
       // Immediately update local state
       setCompletedTasks(prev => prev.filter(c => c.task_id !== taskId));

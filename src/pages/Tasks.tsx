@@ -123,8 +123,6 @@ const Tasks = () => {
         if (subscribed) {
           try {
             await completeTask(taskId);
-            // Force immediate refetch to update UI
-            await refreshTasks();
             toast.success('Task completed! Points added');
           } catch {
             toast.error('Failed to complete task');
@@ -145,8 +143,6 @@ const Tasks = () => {
       setTimeout(async () => {
         try {
           await completeTask(taskId);
-          // Force immediate refetch to update UI
-          await refreshTasks();
           toast.success('Task completed! Points added');
         } catch {
           toast.error('Failed to complete task');
