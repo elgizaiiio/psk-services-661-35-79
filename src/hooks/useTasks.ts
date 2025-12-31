@@ -115,7 +115,7 @@ export const useTasks = () => {
         .insert({
           user_id: boltUser.id,
           task_id: taskId,
-          points_earned: taskData.points
+          points_earned: taskData.points,
         });
 
       if (insertError) throw insertError;
