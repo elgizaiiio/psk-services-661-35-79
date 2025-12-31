@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 
 import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/ui/back-button";
 import { MemoryGame as MemoryGameComponent } from "@/components/games/MemoryGame";
 import { useGameData } from "@/hooks/useGameData";
 import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
@@ -32,8 +33,11 @@ const MemoryGame: React.FC = () => {
       </Helmet>
 
       {/* Header */}
-      <div className="px-4 pt-16 pb-4">
-        <h1 className="text-xl font-bold text-foreground">لعبة الذاكرة</h1>
+      <div className="px-4 pt-6 pb-4">
+        <div className="flex items-center gap-2 mb-2">
+          <BackButton />
+          <h1 className="text-xl font-bold text-foreground">لعبة الذاكرة</h1>
+        </div>
         <p className="text-sm text-muted-foreground">اعثر على الأزواج المتطابقة!</p>
       </div>
 

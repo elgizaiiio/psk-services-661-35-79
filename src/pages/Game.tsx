@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { BackButton } from "@/components/ui/back-button";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
 import { toast } from "sonner";
@@ -371,7 +372,11 @@ const Game: React.FC = () => {
         <link rel="canonical" href={`${window.location.origin}/game`} />
       </Helmet>
 
-
+      {/* Back Button Header */}
+      <div className="flex items-center gap-2 -mx-2">
+        <BackButton />
+        <h1 className="text-lg font-bold">2048 Game</h1>
+      </div>
       <Card className="p-4 space-y-3">
         <div className="flex items-center justify-between">
           <div>
