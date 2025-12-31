@@ -43,9 +43,14 @@ export const useTelegramBackButton = (customBackPath?: string) => {
 
     handlerRef.current = handleBack;
 
-    // Safely register click handler
+    // Safely register click handler (support multiple Telegram WebApp APIs)
     try {
-      webApp.BackButton.onClick(handleBack);
+      const bb = webApp.BackButton;
+      if (bb?.onClick) {
+        bb.onClick(handleBack);
+      } else if (typeof webApp?.onEvent === 'function') {
+        webApp.onEvent('backButtonClicked', handleBack);
+      }
     } catch (e) {
       // Ignore registration errors
     }
@@ -53,8 +58,13 @@ export const useTelegramBackButton = (customBackPath?: string) => {
     // Cleanup with full error protection
     return () => {
       try {
-        if (handlerRef.current && webApp?.BackButton?.offClick) {
-          webApp.BackButton.offClick(handlerRef.current);
+        const bb = webApp?.BackButton;
+        if (handlerRef.current) {
+          if (bb?.offClick) {
+            bb.offClick(handlerRef.current);
+          } else if (typeof webApp?.offEvent === 'function') {
+            webApp.offEvent('backButtonClicked', handlerRef.current);
+          }
         }
       } catch (e) {
         // Ignore cleanup errors completely
