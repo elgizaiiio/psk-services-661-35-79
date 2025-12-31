@@ -9,7 +9,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useTonConnectUI } from '@tonconnect/ui-react';
-import { useTonPrice } from '@/hooks/useTonPrice';
+import { usePriceCalculator } from '@/hooks/usePriceCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PageWrapper, FadeUp, StaggerContainer } from '@/components/ui/motion-wrapper';
@@ -19,20 +19,16 @@ interface Package {
   name: string;
   bolts: number;
   priceTon: number;
-  priceStars: number;
   bonus: number;
 }
 
-// BOLT price: $0.001 per BOLT (1000 BOLT = $1, 1 TON ≈ $6)
-// So 1 TON = 6000 BOLT at market rate
-const BOLT_PER_TON = 6000;
-
+// Packages defined by TON price - Stars calculated dynamically
 const packages: Package[] = [
-  { id: 'starter', name: 'Starter', bolts: 3000, priceTon: 0.5, priceStars: 50, bonus: 0 },
-  { id: 'basic', name: 'Basic', bolts: 6000, priceTon: 1, priceStars: 100, bonus: 5 },
-  { id: 'popular', name: 'Popular', bolts: 18000, priceTon: 3, priceStars: 300, bonus: 10 },
-  { id: 'premium', name: 'Premium', bolts: 36000, priceTon: 6, priceStars: 600, bonus: 15 },
-  { id: 'whale', name: 'Whale', bolts: 60000, priceTon: 10, priceStars: 1000, bonus: 20 },
+  { id: 'starter', name: 'Starter', bolts: 3000, priceTon: 0.5, bonus: 0 },
+  { id: 'basic', name: 'Basic', bolts: 6000, priceTon: 1, bonus: 5 },
+  { id: 'popular', name: 'Popular', bolts: 18000, priceTon: 3, bonus: 10 },
+  { id: 'premium', name: 'Premium', bolts: 36000, priceTon: 6, bonus: 15 },
+  { id: 'whale', name: 'Whale', bolts: 60000, priceTon: 10, bonus: 20 },
 ];
 
 const BuyBolt = () => {
@@ -40,7 +36,7 @@ const BuyBolt = () => {
   
   const { user } = useViralMining(telegramUser);
   const [tonConnectUI] = useTonConnectUI();
-  const { price: tonPrice } = useTonPrice();
+  const { tonPrice, tonToStars, tonToUsd } = usePriceCalculator();
   useTelegramBackButton();
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -52,6 +48,10 @@ const BuyBolt = () => {
       toast.error('User not found');
       return;
     }
+
+    // Calculate Stars dynamically based on real TON price
+    const priceStars = tonToStars(pkg.priceTon);
+    const priceUsd = tonToUsd(pkg.priceTon);
 
     if (method === 'stars') {
       if (!telegramUser?.id || !webApp) {
@@ -66,7 +66,7 @@ const BuyBolt = () => {
       setIsProcessing(true);
 
       try {
-        // 1) Create a payment record (same pattern as UnifiedPaymentModal)
+        // 1) Create a payment record
         const { data: paymentRecord, error: paymentError } = await supabase
           .from('stars_payments')
           .insert({
@@ -74,8 +74,8 @@ const BuyBolt = () => {
             telegram_id: telegramUser.id,
             product_type: 'token_purchase',
             product_id: pkg.id,
-            amount_stars: pkg.priceStars,
-            amount_usd: null,
+            amount_stars: priceStars,
+            amount_usd: priceUsd,
             status: 'pending',
           })
           .select()
@@ -95,7 +95,7 @@ const BuyBolt = () => {
               user_id: user.id,
               bolts: totalBolts,
             }),
-            amount: pkg.priceStars,
+            amount: priceStars,
           },
         });
 
@@ -147,7 +147,6 @@ const BuyBolt = () => {
                     .eq('id', paymentRecord.id);
                   toast.error('Payment failed');
                 } else {
-                  // pending / unknown
                   await supabase
                     .from('stars_payments')
                     .update({ status: 'processing' })
@@ -262,6 +261,9 @@ const BuyBolt = () => {
               <p className="text-sm text-muted-foreground mt-1">
                 Choose a package and payment method
               </p>
+              <p className="text-xs text-muted-foreground mt-2">
+                1 TON ≈ ${tonPrice.toFixed(2)} • 1 Star = $0.02
+              </p>
             </div>
           </FadeUp>
 
@@ -285,6 +287,8 @@ const BuyBolt = () => {
             {packages.map((pkg, index) => {
               const isSelected = selectedPackage === pkg.id;
               const totalBolts = pkg.bolts + Math.floor(pkg.bolts * pkg.bonus / 100);
+              const priceStars = tonToStars(pkg.priceTon);
+              const priceUsd = tonToUsd(pkg.priceTon);
 
               return (
                 <FadeUp key={pkg.id}>
@@ -307,6 +311,9 @@ const BuyBolt = () => {
                           </div>
                           <p className="text-lg font-bold text-primary mt-0.5">
                             {totalBolts.toLocaleString()} BOLT
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">
+                            ≈ ${priceUsd.toFixed(2)} USD
                           </p>
                         </div>
                         <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -344,7 +351,7 @@ const BuyBolt = () => {
                           ) : (
                             <div className="flex items-center gap-1.5">
                               <span>⭐</span>
-                              <span>{pkg.priceStars}</span>
+                              <span>{priceStars}</span>
                             </div>
                           )}
                         </Button>
