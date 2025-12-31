@@ -8,7 +8,7 @@ import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
-import { Server, ChevronRight, Loader2, Play, Gift, ShoppingCart, Trophy } from 'lucide-react';
+import { Server, ChevronRight, Loader2, Play, Gift, ShoppingCart, Trophy, Crown } from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import DailyStreakModal from '@/components/DailyStreakModal';
@@ -152,6 +152,27 @@ const Index = () => {
                 <span className="text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">Free Daily</span>
                 <ChevronRight className="w-5 h-5 text-primary" />
               </div>
+            </motion.button>
+          </FadeUp>
+
+          {/* Premium VIP Card */}
+          <FadeUp>
+            <motion.button 
+              onClick={() => navigate('/vip')} 
+              className="w-full p-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-yellow-500/5 border border-amber-500/20 flex items-center justify-between" 
+              whileTap={{ scale: 0.98 }} 
+              whileHover={{ y: -2 }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                  <Crown className="w-5 h-5 text-amber-500" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-foreground">Premium VIP</p>
+                  <p className="text-xs text-muted-foreground">Unlock all benefits</p>
+                </div>
+              </div>
+              <ChevronRight className="w-5 h-5 text-amber-500" />
             </motion.button>
           </FadeUp>
 
