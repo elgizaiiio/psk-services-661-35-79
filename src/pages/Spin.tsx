@@ -29,32 +29,32 @@ interface TicketPackage {
   priceTon: number;
 }
 
-// Normal Wheel Rewards - 10 items, well distributed (TON, BOLT, USDT, BOLT pattern)
+// Normal Wheel Rewards - TON/USDT nearly impossible (0.00000001%), BOLT gets the probability
 const NORMAL_REWARDS: SpinReward[] = [
-  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 2 },
-  { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 25 },
-  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 1.5 },
-  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 20 },
+  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 0.00000001 },
+  { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 27 },
+  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 0.00000001 },
+  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 22 },
   { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 25 },
-  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 0.5 },
+  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 0.00000001 },
   { id: 'bolt_200', label: '200', type: 'bolt', value: 200, probability: 15 },
-  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0.5 },
-  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 8 },
+  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0.00000001 },
+  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 8.5 },
   { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 2.5 },
 ];
 
-// PRO Wheel Rewards - 10 items, well distributed
+// PRO Wheel Rewards - TON/USDT nearly impossible (0.00000001%), BOLT gets the probability
 const PRO_REWARDS: SpinReward[] = [
-  { id: 'ton_3_pro', label: '3', type: 'ton', value: 3, probability: 8 },
-  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 20 },
-  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 6 },
-  { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 15 },
+  { id: 'ton_3_pro', label: '3', type: 'ton', value: 3, probability: 0.00000001 },
+  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 28 },
+  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0.00000001 },
+  { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 21 },
   { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 18 },
-  { id: 'ton_5_pro', label: '5', type: 'ton', value: 5, probability: 5 },
-  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 12 },
-  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 4 },
-  { id: 'bolt_10000', label: '10K', type: 'bolt', value: 10000, probability: 8 },
-  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 4 },
+  { id: 'ton_5_pro', label: '5', type: 'ton', value: 5, probability: 0.00000001 },
+  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 17 },
+  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 0.00000001 },
+  { id: 'bolt_10000', label: '10K', type: 'bolt', value: 10000, probability: 12 },
+  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 0.00000001 },
 ];
 
 // Normal Ticket Packages - Stars calculated dynamically
@@ -72,6 +72,13 @@ const PRO_PACKAGES: TicketPackage[] = [
   { id: 'pro_10', tickets: 10, priceTon: 1.6 },
   { id: 'pro_25', tickets: 25, priceTon: 3.5 },
 ];
+
+// Special guaranteed TON win package - pay 5 TON, guaranteed win 0.1 TON
+const SPECIAL_TON_PACKAGE = {
+  id: 'special_ton_guaranteed',
+  priceTon: 5,
+  guaranteedWinTon: 0.1,
+};
 
 // Wheel colors - 2 colors each
 const NORMAL_COLORS = ['#3B82F6', '#1E40AF']; // Blue shades
@@ -103,6 +110,8 @@ const Spin: React.FC = () => {
   const [selectedPackage, setSelectedPackage] = useState<TicketPackage | null>(null);
   const [showPackagesSheet, setShowPackagesSheet] = useState(false);
   const [rewardApplied, setRewardApplied] = useState(false);
+  const [showSpecialPayment, setShowSpecialPayment] = useState(false);
+  const [processingSpecial, setProcessingSpecial] = useState(false);
 
   const rewards = wheelType === 'normal' ? NORMAL_REWARDS : PRO_REWARDS;
   const packages = wheelType === 'normal' ? NORMAL_PACKAGES : PRO_PACKAGES;
@@ -349,6 +358,32 @@ const Spin: React.FC = () => {
     }
     toast.success(`${selectedPackage.tickets} tickets added!`);
     setSelectedPackage(null);
+  };
+
+  // Handle special guaranteed TON win package
+  const handleSpecialTonPurchaseSuccess = async () => {
+    if (!user?.id) return;
+    
+    setProcessingSpecial(true);
+    try {
+      // Award the guaranteed 0.1 TON to user's balance
+      // Since we don't have TON balance, we'll record this as a spin history entry
+      await supabase.from('spin_history').insert({
+        user_id: user.id,
+        reward_type: 'special_ton_guaranteed',
+        reward_amount: SPECIAL_TON_PACKAGE.guaranteedWinTon,
+        wheel_type: 'special',
+      });
+
+      toast.success(`🎉 You won ${SPECIAL_TON_PACKAGE.guaranteedWinTon} TON!`);
+      hapticFeedback.notification('success');
+    } catch (error) {
+      console.error('Error processing special TON:', error);
+      toast.error('Failed to process reward');
+    } finally {
+      setProcessingSpecial(false);
+      setShowSpecialPayment(false);
+    }
   };
 
   if (miningLoading) {
@@ -625,6 +660,29 @@ const Spin: React.FC = () => {
                       );
                     })}
                   </div>
+                  
+                  {/* Special Guaranteed TON Package */}
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-center text-xs text-muted-foreground mb-3">⭐ Special Offer</p>
+                    <button
+                      onClick={() => {
+                        setShowPackagesSheet(false);
+                        setShowSpecialPayment(true);
+                      }}
+                      className="w-full p-4 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-500/10 to-orange-500/10 hover:border-amber-500 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="flex items-center gap-2">
+                          <TonIcon size={24} />
+                          <span className="text-xl font-bold text-amber-500">Guaranteed Win!</span>
+                        </div>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span className="text-sm text-foreground">Pay <strong>5 TON</strong> → Win <strong>0.1 TON</strong></span>
+                          <span className="text-xs text-muted-foreground">100% Guaranteed</span>
+                        </div>
+                      </div>
+                    </button>
+                  </div>
                 </SheetContent>
               </Sheet>
             </div>
@@ -647,6 +705,17 @@ const Spin: React.FC = () => {
           onSuccess={handlePurchaseSuccess}
         />
       )}
+
+      {/* Special Guaranteed TON Payment Modal */}
+      <UnifiedPaymentModal
+        isOpen={showSpecialPayment}
+        onClose={() => setShowSpecialPayment(false)}
+        amount={SPECIAL_TON_PACKAGE.priceTon}
+        description={`Guaranteed ${SPECIAL_TON_PACKAGE.guaranteedWinTon} TON Win`}
+        productType="spin_tickets"
+        credits={1}
+        onSuccess={handleSpecialTonPurchaseSuccess}
+      />
     </PageWrapper>
   );
 };

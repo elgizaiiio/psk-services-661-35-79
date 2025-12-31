@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.complete-mining-session]
 verify_jwt = false
+
+[functions.notify-admin-withdrawal]
+verify_jwt = false

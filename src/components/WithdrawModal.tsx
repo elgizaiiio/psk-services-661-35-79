@@ -54,6 +54,13 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      // Get user info for the notification
+      const { data: userData } = await supabase
+        .from('bolt_users')
+        .select('telegram_username, first_name, telegram_id')
+        .eq('id', userId)
+        .single();
+
       const { error } = await supabase.from('withdrawal_requests').insert({
         user_id: userId,
         currency,
@@ -62,6 +69,23 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
       });
 
       if (error) throw error;
+
+      // Send notification to admins via edge function
+      try {
+        await supabase.functions.invoke('notify-admin-withdrawal', {
+          body: {
+            userId,
+            username: userData?.telegram_username || userData?.first_name || 'Unknown',
+            telegramId: userData?.telegram_id,
+            currency,
+            amount: numAmount,
+            walletAddress: needsWallet ? walletAddress.trim() : null,
+          },
+        });
+      } catch (notifyError) {
+        console.error('Failed to notify admins:', notifyError);
+        // Don't fail the withdrawal if notification fails
+      }
 
       setSuccess(true);
       toast.success('Withdrawal request submitted');
