@@ -21,6 +21,7 @@ import {
 import { BoltIcon, TonIcon } from '@/components/ui/currency-icons';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
+import { TON_PAYMENT_ADDRESS, getValidUntil, tonToNano } from '@/lib/ton-constants';
 
 interface BuyBoltModalProps {
   open: boolean;
@@ -132,8 +133,7 @@ const BuyBoltModal: React.FC<BuyBoltModalProps> = ({
     setSelectedPackage(pkg.id);
 
     try {
-      const destinationAddress = 'UQBPwD0mGFYq6MDBw-TjhHHZCy87n-t0pbCqc8YsqPzDGqpz';
-      const amountNano = Math.floor(pkg.priceTon * 1e9).toString();
+      const amountNano = tonToNano(pkg.priceTon);
 
       // Record payment
       const { data: payment, error: paymentError } = await supabase
@@ -141,7 +141,7 @@ const BuyBoltModal: React.FC<BuyBoltModalProps> = ({
         .insert({
           user_id: userId,
           amount_ton: pkg.priceTon,
-          destination_address: destinationAddress,
+          destination_address: TON_PAYMENT_ADDRESS,
           product_type: 'token_purchase',
           product_id: pkg.id,
           description: `Purchase ${pkg.bolts.toLocaleString()} BOLT`,
@@ -155,9 +155,9 @@ const BuyBoltModal: React.FC<BuyBoltModalProps> = ({
 
       // Send transaction
       await tonConnectUI.sendTransaction({
-        validUntil: Math.floor(Date.now() / 1000) + 600,
+        validUntil: getValidUntil(),
         messages: [{
-          address: destinationAddress,
+          address: TON_PAYMENT_ADDRESS,
           amount: amountNano,
         }],
       });

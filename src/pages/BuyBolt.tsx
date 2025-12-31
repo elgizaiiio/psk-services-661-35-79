@@ -13,6 +13,7 @@ import { usePriceCalculator } from '@/hooks/usePriceCalculator';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { PageWrapper, FadeUp, StaggerContainer } from '@/components/ui/motion-wrapper';
+import { TON_PAYMENT_ADDRESS, getValidUntil, tonToNano } from '@/lib/ton-constants';
 
 interface Package {
   id: string;
@@ -185,8 +186,7 @@ const BuyBolt = () => {
     setIsProcessing(true);
 
     try {
-      const destinationAddress = 'UQBPwD0mGFYq6MDBw-TjhHHZCy87n-t0pbCqc8YsqPzDGqpz';
-      const amountNano = Math.floor(pkg.priceTon * 1e9).toString();
+      const amountNano = tonToNano(pkg.priceTon);
       const totalBolts = pkg.bolts + Math.floor(pkg.bolts * pkg.bonus / 100);
 
       const { data: payment, error: paymentError } = await supabase
@@ -194,7 +194,7 @@ const BuyBolt = () => {
         .insert({
           user_id: user.id,
           amount_ton: pkg.priceTon,
-          destination_address: destinationAddress,
+          destination_address: TON_PAYMENT_ADDRESS,
           product_type: 'token_purchase',
           product_id: pkg.id,
           description: `Purchase ${pkg.name} Package`,
@@ -207,9 +207,9 @@ const BuyBolt = () => {
       if (paymentError) throw paymentError;
 
       await tonConnectUI.sendTransaction({
-        validUntil: Math.floor(Date.now() / 1000) + 600,
+        validUntil: getValidUntil(),
         messages: [{
-          address: destinationAddress,
+          address: TON_PAYMENT_ADDRESS,
           amount: amountNano,
         }],
       });

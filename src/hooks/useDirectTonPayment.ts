@@ -5,6 +5,7 @@ import { useAiUsageLimit } from './useAiUsageLimit';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from './useTelegramAuth';
 import { logger } from '@/lib/logger';
+import { TON_PAYMENT_ADDRESS, getValidUntil, tonToNano } from '@/lib/ton-constants';
 
 export interface DirectPaymentParams {
   amount: number;
@@ -16,9 +17,6 @@ export interface DirectPaymentParams {
   upgradeType?: 'power' | 'duration';
   userId?: string | null;
 }
-
-// Wallet address for receiving TON payments
-const TON_DESTINATION_ADDRESS = 'UQBJSGcoWTcjdkWFSxA4A6sLmnD5uFKoKHFEHc3LqGJvFWya';
 
 export const useDirectTonPayment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -54,9 +52,9 @@ export const useDirectTonPayment = () => {
       // Use bolt_users.id if available, otherwise use wallet address
       const userId = boltUserId || params.userId || wallet.account.address.slice(0, 32);
       
-      const amountNano = Math.floor(params.amount * 1e9);
+      const amountNano = tonToNano(params.amount);
 
-      if (amountNano <= 0) {
+      if (params.amount <= 0) {
         throw new Error('Invalid payment amount');
       }
 
@@ -69,7 +67,7 @@ export const useDirectTonPayment = () => {
           description: params.description,
           product_type: params.productType,
           product_id: params.productId,
-          destination_address: TON_DESTINATION_ADDRESS,
+          destination_address: TON_PAYMENT_ADDRESS,
           wallet_address: wallet.account.address,
           payment_method: 'ton',
           payment_currency: 'TON',
@@ -89,11 +87,11 @@ export const useDirectTonPayment = () => {
       }
 
       const transaction = {
-        validUntil: Math.floor(Date.now() / 1000) + 600,
+        validUntil: getValidUntil(),
         messages: [
           {
-            address: TON_DESTINATION_ADDRESS,
-            amount: amountNano.toString()
+            address: TON_PAYMENT_ADDRESS,
+            amount: amountNano
           }
         ]
       };
@@ -150,6 +148,6 @@ export const useDirectTonPayment = () => {
     sendDirectPayment,
     isProcessing,
     isWalletConnected: !!wallet?.account,
-    destinationAddress: TON_DESTINATION_ADDRESS
+    destinationAddress: TON_PAYMENT_ADDRESS
   };
 };

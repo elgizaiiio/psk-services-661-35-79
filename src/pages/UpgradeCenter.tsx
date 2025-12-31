@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TON_PAYMENT_ADDRESS, getValidUntil, tonToNano } from '@/lib/ton-constants';
 
 const tabVariants = {
   hidden: { opacity: 0, x: 20, scale: 0.98 },
@@ -38,8 +39,6 @@ const itemVariants = {
     transition: { duration: 0.3, ease: "easeOut" as const }
   }
 };
-
-const RECEIVER_ADDRESS = "UQALON5gUq_kQzpTq2GkPeHQABL1nOeAuWwRPGPNkzDz_lZZ";
 
 const UpgradeCenterInner = () => {
   const navigate = useNavigate();
@@ -100,12 +99,12 @@ const UpgradeCenterInner = () => {
     }
 
     try {
-      const nanotons = Math.floor(price * 1e9).toString();
+      const nanotons = tonToNano(price);
       await tcui.sendTransaction({
-        validUntil: Math.floor(Date.now() / 1000) + 300,
+        validUntil: getValidUntil(),
         messages: [
           {
-            address: RECEIVER_ADDRESS,
+            address: TON_PAYMENT_ADDRESS,
             amount: nanotons
           }
         ]
