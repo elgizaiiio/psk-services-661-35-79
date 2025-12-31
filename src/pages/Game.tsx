@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
+import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
 import { toast } from "sonner";
 import { Helmet } from "react-helmet-async";
 import { cn } from "@/lib/utils";
@@ -122,6 +123,7 @@ const tileColors: Record<string, string> = {
 
 const Game: React.FC = () => {
   const { user: tgUser } = useTelegramAuth();
+  useTelegramBackButton();
   const [player, setPlayer] = useState<Player | null>(null);
   
   const [, setSkins] = useState<Skin[]>([]);
