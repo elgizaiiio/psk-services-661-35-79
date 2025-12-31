@@ -9,7 +9,7 @@ import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { Server, Loader2, Play, Gift, ShoppingCart, Trophy, Crown, type LucideIcon } from 'lucide-react';
-import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
+import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress, LiveNumber } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import DailyStreakModal from '@/components/DailyStreakModal';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
@@ -209,7 +209,14 @@ const Index = () => {
                   <BoltIcon size={32} />
                   <span className="text-xs text-muted-foreground">BOLT</span>
                 </div>
-                <p className="text-xl font-semibold text-foreground"><AnimatedNumber value={boltBalance} decimals={0} duration={0.8} /></p>
+                <p className="text-xl font-semibold text-foreground">
+                  <LiveNumber 
+                    value={boltBalance + (miningProgress?.tokensMinedSoFar || 0)} 
+                    incrementPerSecond={isMining ? (activeMiningSession?.tokens_per_hour || 0) / 3600 : 0}
+                    isActive={!!isMining}
+                    decimals={2} 
+                  />
+                </p>
                 {stats.totalBoltPerDay > 0 && <p className="text-xs text-primary mt-1">+{stats.totalBoltPerDay}/day</p>}
               </motion.div>
             </FadeUp>
@@ -220,7 +227,14 @@ const Index = () => {
                   <UsdtIcon size={32} />
                   <span className="text-xs text-muted-foreground">USDT</span>
                 </div>
-                <p className="text-xl font-semibold text-foreground"><AnimatedNumber value={usdtBalance} decimals={2} duration={0.8} /></p>
+                <p className="text-xl font-semibold text-foreground">
+                  <LiveNumber 
+                    value={usdtBalance + ((miningProgress?.tokensMinedSoFar || 0) * 0.001)} 
+                    incrementPerSecond={isMining ? ((activeMiningSession?.tokens_per_hour || 0) / 3600) * 0.001 : 0}
+                    isActive={!!isMining}
+                    decimals={4} 
+                  />
+                </p>
                 {stats.totalUsdtPerDay > 0 && <p className="text-xs text-primary mt-1">+${stats.totalUsdtPerDay.toFixed(4)}/day</p>}
               </motion.div>
             </FadeUp>

@@ -187,13 +187,14 @@ export const useCountUp = (end: number, duration: number = 1) => {
   return count;
 };
 
-// Animated number component
+// Animated number component with pulse effect on change
 interface AnimatedNumberProps {
   value: number;
   duration?: number;
   prefix?: string;
   suffix?: string;
   decimals?: number;
+  pulseOnChange?: boolean;
 }
 
 export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
@@ -202,8 +203,22 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   prefix = '',
   suffix = '',
   decimals = 0,
+  pulseOnChange = true,
 }) => {
-  const [displayValue, setDisplayValue] = React.useState(0);
+  const [displayValue, setDisplayValue] = React.useState(value);
+  const [isIncreasing, setIsIncreasing] = React.useState(false);
+  const prevValueRef = React.useRef(value);
+
+  React.useEffect(() => {
+    // Detect if value increased
+    if (value > prevValueRef.current) {
+      setIsIncreasing(true);
+      const timer = setTimeout(() => setIsIncreasing(false), 600);
+      prevValueRef.current = value;
+      return () => clearTimeout(timer);
+    }
+    prevValueRef.current = value;
+  }, [value]);
 
   React.useEffect(() => {
     let startTime: number;
@@ -228,11 +243,75 @@ export const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
   }, [value, duration]);
 
   return (
-    <span>
+    <motion.span
+      animate={pulseOnChange && isIncreasing ? {
+        scale: [1, 1.05, 1],
+        color: ['inherit', 'hsl(var(--primary))', 'inherit'],
+      } : {}}
+      transition={{ duration: 0.4 }}
+      className="inline-block"
+    >
       {prefix}
       {displayValue.toFixed(decimals)}
       {suffix}
-    </span>
+    </motion.span>
+  );
+};
+
+// Live updating number for real-time balance changes
+interface LiveNumberProps {
+  value: number;
+  incrementPerSecond?: number;
+  prefix?: string;
+  suffix?: string;
+  decimals?: number;
+  isActive?: boolean;
+}
+
+export const LiveNumber: React.FC<LiveNumberProps> = ({
+  value,
+  incrementPerSecond = 0,
+  prefix = '',
+  suffix = '',
+  decimals = 0,
+  isActive = false,
+}) => {
+  const [displayValue, setDisplayValue] = React.useState(value);
+  const [isPulsing, setIsPulsing] = React.useState(false);
+
+  // Sync with actual value changes
+  React.useEffect(() => {
+    setDisplayValue(value);
+  }, [value]);
+
+  // Live increment when active
+  React.useEffect(() => {
+    if (!isActive || incrementPerSecond <= 0) return;
+
+    const intervalMs = 100; // Update every 100ms for smooth animation
+    const incrementPerInterval = incrementPerSecond / (1000 / intervalMs);
+
+    const interval = setInterval(() => {
+      setDisplayValue(prev => prev + incrementPerInterval);
+      setIsPulsing(true);
+      setTimeout(() => setIsPulsing(false), 200);
+    }, intervalMs);
+
+    return () => clearInterval(interval);
+  }, [isActive, incrementPerSecond]);
+
+  return (
+    <motion.span
+      animate={isPulsing ? { 
+        textShadow: ['0 0 0px transparent', '0 0 8px hsl(var(--primary))', '0 0 0px transparent']
+      } : {}}
+      transition={{ duration: 0.3 }}
+      className="inline-block tabular-nums"
+    >
+      {prefix}
+      {displayValue.toFixed(decimals)}
+      {suffix}
+    </motion.span>
   );
 };
 
