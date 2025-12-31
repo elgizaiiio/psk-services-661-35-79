@@ -23,3 +23,6 @@ verify_jwt = false
 
 [functions.notify-admin-withdrawal]
 verify_jwt = false
+
+[functions.notify-admin-payment]
+verify_jwt = false
