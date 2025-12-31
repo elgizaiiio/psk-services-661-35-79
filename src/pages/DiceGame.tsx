@@ -5,10 +5,12 @@ import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { DiceGame as DiceGameComponent } from "@/components/games/DiceGame";
 import { useGameData } from "@/hooks/useGameData";
+import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
 
 const DiceGame: React.FC = () => {
   const navigate = useNavigate();
   const { player, submitScore, useEnergy } = useGameData();
+  useTelegramBackButton();
 
   const handleWin = async (amount: number) => {
     if (amount > 0) {

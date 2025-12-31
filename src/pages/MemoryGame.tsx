@@ -5,10 +5,12 @@ import { Helmet } from "react-helmet-async";
 import { Button } from "@/components/ui/button";
 import { MemoryGame as MemoryGameComponent } from "@/components/games/MemoryGame";
 import { useGameData } from "@/hooks/useGameData";
+import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
 
 const MemoryGame: React.FC = () => {
   const navigate = useNavigate();
   const { player, submitScore, useEnergy } = useGameData();
+  useTelegramBackButton();
 
   const handleWin = async (amount: number) => {
     if (amount > 0) {
