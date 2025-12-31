@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TON_PAYMENT_ADDRESS, getValidUntil, tonToNano } from '@/lib/ton-constants';
 
 interface LuckyBox {
   id: string;
@@ -86,10 +87,10 @@ export const LuckySpinModal = ({ userId, onReward }: LuckySpinModalProps) => {
     try {
       if (!isFree) {
         const transaction = {
-          validUntil: Math.floor(Date.now() / 1000) + 600,
+          validUntil: getValidUntil(),
           messages: [{
-            address: 'UQALON5gUq_kQzpTq2GkPeHQABL1nOeAuWwRPGPNkzDz_lZZ',
-            amount: (box.price_ton * 1e9).toString()
+            address: TON_PAYMENT_ADDRESS,
+            amount: tonToNano(box.price_ton)
           }]
         };
         await tonConnectUI.sendTransaction(transaction);

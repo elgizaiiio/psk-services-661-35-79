@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TON_PAYMENT_ADDRESS, getValidUntil, tonToNano } from '@/lib/ton-constants';
 
 interface DailyStreakWidgetProps {
   userId: string;
@@ -146,10 +147,10 @@ export const DailyStreakWidget = ({ userId, onStreakClaimed }: DailyStreakWidget
   const restoreStreak = async () => {
     try {
       const transaction = {
-        validUntil: Math.floor(Date.now() / 1000) + 600,
+        validUntil: getValidUntil(),
         messages: [{
-          address: 'UQALON5gUq_kQzpTq2GkPeHQABL1nOeAuWwRPGPNkzDz_lZZ',
-          amount: (RESTORE_COST * 1e9).toString()
+          address: TON_PAYMENT_ADDRESS,
+          amount: tonToNano(RESTORE_COST)
         }]
       };
 

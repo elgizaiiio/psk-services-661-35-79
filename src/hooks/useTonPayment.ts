@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { useTelegramAuth } from './useTelegramAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { TON_PAYMENT_ADDRESS } from '@/lib/ton-constants';
 
 export interface TonPaymentParams {
   amount: number;
@@ -18,9 +19,6 @@ export interface PaymentResult {
   amount: number;
   status: 'pending' | 'confirmed' | 'failed';
 }
-
-// Wallet address for receiving TON payments
-const TON_DESTINATION_ADDRESS = 'UQBJSGcoWTcjdkWFSxA4A6sLmnD5uFKoKHFEHc3LqGJvFWya';
 
 export const useTonPayment = () => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -42,7 +40,7 @@ export const useTonPayment = () => {
           product_type: params.productType,
           product_id: params.productId,
           status: 'pending',
-          destination_address: TON_DESTINATION_ADDRESS,
+          destination_address: TON_PAYMENT_ADDRESS,
           payment_method: 'ton',
           payment_currency: 'TON',
           metadata: {
@@ -64,7 +62,7 @@ export const useTonPayment = () => {
 
       const result: PaymentResult = {
         paymentId: paymentData.id,
-        destinationAddress: TON_DESTINATION_ADDRESS,
+        destinationAddress: TON_PAYMENT_ADDRESS,
         amount: params.amount,
         status: 'pending'
       };
@@ -137,6 +135,6 @@ export const useTonPayment = () => {
     verifyPayment,
     checkPaymentStatus,
     isProcessing,
-    destinationAddress: TON_DESTINATION_ADDRESS
+    destinationAddress: TON_PAYMENT_ADDRESS
   };
 };

@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { TON_PAYMENT_ADDRESS, getValidUntil, tonToNano } from '@/lib/ton-constants';
 
 interface VIPStatusCardProps {
   userId: string;
@@ -99,10 +100,10 @@ export const VIPStatusCard = ({ userId, totalSpent = 0 }: VIPStatusCardProps) =>
     setIsPurchasing(true);
     try {
       const transaction = {
-        validUntil: Math.floor(Date.now() / 1000) + 600,
+        validUntil: getValidUntil(),
         messages: [{
-          address: 'UQALON5gUq_kQzpTq2GkPeHQABL1nOeAuWwRPGPNkzDz_lZZ',
-          amount: (tier.price * 1e9).toString()
+          address: TON_PAYMENT_ADDRESS,
+          amount: tonToNano(tier.price)
         }]
       };
 

@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { TON_PAYMENT_ADDRESS, getValidUntil, tonToNano } from '@/lib/ton-constants';
 
 interface FlashOffer {
   id: string;
@@ -81,10 +82,10 @@ export const FlashOfferBanner = ({ userId, onPurchase }: FlashOfferBannerProps) 
     setIsPurchasing(true);
     try {
       const transaction = {
-        validUntil: Math.floor(Date.now() / 1000) + 600,
+        validUntil: getValidUntil(),
         messages: [{
-          address: 'UQALON5gUq_kQzpTq2GkPeHQABL1nOeAuWwRPGPNkzDz_lZZ',
-          amount: (offer.discounted_price * 1e9).toString()
+          address: TON_PAYMENT_ADDRESS,
+          amount: tonToNano(offer.discounted_price)
         }]
       };
 
