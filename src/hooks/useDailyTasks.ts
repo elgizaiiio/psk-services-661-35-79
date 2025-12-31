@@ -125,14 +125,21 @@ export const useDailyTasks = (userId: string | null) => {
           .eq('id', userId);
       }
 
-      await fetchTasks();
+      // Update task state locally instead of refetching to prevent flicker
+      setTasks(prevTasks => 
+        prevTasks.map(t => 
+          t.id === taskId ? { ...t, is_completed: true } : t
+        )
+      );
+      setCompletedCount(prev => prev + 1);
+      setTodayEarned(prev => prev + task.reward_tokens);
 
       return { success: true, reward: task.reward_tokens };
     } catch (error) {
       logger.error('Error completing task', error);
       return { success: false, error: 'Failed to complete task' };
     }
-  }, [userId, tasks, fetchTasks]);
+  }, [userId, tasks]);
 
   return {
     tasks,
