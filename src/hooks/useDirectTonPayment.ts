@@ -121,6 +121,25 @@ export const useDirectTonPayment = () => {
         } else if (params.productType === 'subscription') {
           activateSubscription();
         }
+
+        // Notify admin about the payment
+        try {
+          await supabase.functions.invoke('notify-admin-payment', {
+            body: {
+              userId: userId,
+              username: telegramUser?.username || telegramUser?.first_name || 'Unknown',
+              telegramId: telegramUser?.id,
+              paymentMethod: 'ton',
+              amount: params.amount,
+              currency: 'TON',
+              productType: params.productType,
+              productName: params.description,
+              description: params.description,
+            }
+          });
+        } catch (notifyError) {
+          logger.error('Failed to notify admin', notifyError);
+        }
         
         toast.success('Payment successful! 🎉');
         return true;
