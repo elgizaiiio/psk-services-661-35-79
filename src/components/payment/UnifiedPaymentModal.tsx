@@ -49,6 +49,26 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
   const usdAmount = calculateUsdFromTon(amount);
   const starsAmount = starsOverride || calculateStarsFromTon(amount);
 
+  const notifyAdminPayment = async (paymentMethod: string, paymentAmount: number, currency: string) => {
+    try {
+      await supabase.functions.invoke('notify-admin-payment', {
+        body: {
+          userId: user?.id,
+          username: tgUser?.username || tgUser?.first_name || 'Unknown',
+          telegramId: tgUser?.id,
+          paymentMethod,
+          amount: paymentAmount,
+          currency,
+          productType,
+          productName: description,
+          description,
+        },
+      });
+    } catch (error) {
+      console.error('Failed to notify admin:', error);
+    }
+  };
+
   const handleTonPayment = async () => {
     if (!isWalletConnected) {
       toast.error('Please connect your wallet first');
@@ -67,6 +87,8 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
 
     const success = await processPayment(params);
     if (success) {
+      // Notify admins about the payment
+      await notifyAdminPayment('ton', amount, 'TON');
       onSuccess?.();
       onClose();
     }
@@ -124,6 +146,9 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
               .from('stars_payments')
               .update({ status: 'completed' })
               .eq('id', paymentRecord.id);
+
+            // Notify admins about the Stars payment
+            await notifyAdminPayment('stars', starsAmount, 'Stars');
 
             onSuccess?.();
             onClose();
