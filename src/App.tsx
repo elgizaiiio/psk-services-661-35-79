@@ -15,6 +15,7 @@ import Index from "./pages/Index";
 import BottomNavigation from "./components/BottomNavigation";
 import SplashScreen from "./components/SplashScreen";
 import ErrorBoundary from "./components/ErrorBoundary";
+import SmartNotificationProvider from "./components/notifications/SmartNotificationProvider";
 
 // Lazy load pages for better performance
 const ServerStore = lazy(() => import("./pages/ServerStore"));
@@ -166,10 +167,11 @@ const App = () => (
         <Router>
           <TelegramTonConnectProvider>
             <LanguageProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <Analytics />
+              <SmartNotificationProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <Analytics />
                 <SpeedInsights />
                 <Routes>
                   {/* Auth page - outside Telegram wrapper */}
@@ -228,6 +230,7 @@ const App = () => (
                   } />
                 </Routes>
               </TooltipProvider>
+              </SmartNotificationProvider>
             </LanguageProvider>
           </TelegramTonConnectProvider>
         </Router>
