@@ -12,11 +12,8 @@ import {
   Rocket,
   Gift,
   Ticket,
-  Percent,
   Clock,
-  TrendingUp,
   Users,
-  Ban,
   Headphones
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -43,7 +40,6 @@ interface VIPPlan {
   dailyBonus: number;
   weeklySpinTickets: number;
   referralBonus: number;
-  withdrawalDiscount: number;
   miningDurationBonus: number;
   gradient: string;
   iconBg: string;
@@ -62,7 +58,6 @@ const vipPlans: VIPPlan[] = [
     dailyBonus: 100,
     weeklySpinTickets: 3,
     referralBonus: 20,
-    withdrawalDiscount: 10,
     miningDurationBonus: 2,
     gradient: 'from-slate-400 to-slate-500',
     iconBg: 'bg-slate-500/20',
@@ -72,7 +67,6 @@ const vipPlans: VIPPlan[] = [
       { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '100 BOLT' },
       { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '3/week' },
       { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+20%' },
-      { icon: <Percent className="w-4 h-4" />, label: 'Withdrawal Fee', value: '-10%' },
       { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+2 hours' },
     ]
   },
@@ -86,7 +80,6 @@ const vipPlans: VIPPlan[] = [
     dailyBonus: 300,
     weeklySpinTickets: 10,
     referralBonus: 50,
-    withdrawalDiscount: 25,
     miningDurationBonus: 4,
     gradient: 'from-amber-400 to-orange-500',
     iconBg: 'bg-amber-500/20',
@@ -96,10 +89,8 @@ const vipPlans: VIPPlan[] = [
       { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '300 BOLT' },
       { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '10/week' },
       { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+50%' },
-      { icon: <Percent className="w-4 h-4" />, label: 'Withdrawal Fee', value: '-25%' },
       { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+4 hours' },
-      { icon: <TrendingUp className="w-4 h-4" />, label: 'Early Access', value: 'Enabled' },
-      { icon: <Headphones className="w-4 h-4" />, label: 'Priority Support', value: 'Enabled' },
+      { icon: <Headphones className="w-4 h-4" />, label: 'Support', value: 'Priority' },
     ]
   },
   {
@@ -112,7 +103,6 @@ const vipPlans: VIPPlan[] = [
     dailyBonus: 700,
     weeklySpinTickets: 25,
     referralBonus: 100,
-    withdrawalDiscount: 50,
     miningDurationBonus: 8,
     gradient: 'from-violet-400 to-purple-600',
     iconBg: 'bg-violet-500/20',
@@ -122,11 +112,8 @@ const vipPlans: VIPPlan[] = [
       { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '700 BOLT' },
       { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '25/week' },
       { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+100%' },
-      { icon: <Percent className="w-4 h-4" />, label: 'Withdrawal Fee', value: '-50%' },
       { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+8 hours' },
-      { icon: <TrendingUp className="w-4 h-4" />, label: 'Early Access', value: 'Enabled' },
-      { icon: <Headphones className="w-4 h-4" />, label: 'VIP Support', value: '24/7' },
-      { icon: <Ban className="w-4 h-4" />, label: 'Ads', value: 'Removed' },
+      { icon: <Headphones className="w-4 h-4" />, label: 'Support', value: 'VIP 24/7' },
     ]
   }
 ];
@@ -214,7 +201,6 @@ const VIPSubscription = () => {
           dailyBonus: plan.dailyBonus,
           weeklySpinTickets: plan.weeklySpinTickets,
           referralBonus: plan.referralBonus,
-          withdrawalDiscount: plan.withdrawalDiscount,
           miningDurationBonus: plan.miningDurationBonus
         };
 
