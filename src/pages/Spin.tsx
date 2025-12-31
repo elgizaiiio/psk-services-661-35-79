@@ -5,6 +5,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { usePriceCalculator } from '@/hooks/usePriceCalculator';
+import { useVipSpins } from '@/hooks/useVipSpins';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Gift, Zap, Ticket, Sparkles, X, Crown, ShoppingCart } from 'lucide-react';
@@ -80,6 +81,15 @@ const Spin: React.FC = () => {
   const { user: tgUser, hapticFeedback } = useTelegramAuth();
   const { user, loading: miningLoading } = useViralMining(tgUser);
   const { tonToStars, tonToUsd, tonPrice } = usePriceCalculator();
+  const { 
+    isVip, 
+    vipTier, 
+    vipSpinsAvailable, 
+    vipSpinsClaimed, 
+    claimVipSpins,
+    dailySpinsForTier,
+    refresh: refreshVipSpins 
+  } = useVipSpins(user?.id);
   useTelegramBackButton();
 
   const [wheelType, setWheelType] = useState<'normal' | 'pro'>('normal');
@@ -247,6 +257,23 @@ const Spin: React.FC = () => {
     } catch (err) {
       console.error('Error claiming free ticket:', err);
       toast.error('Failed to claim free ticket');
+    }
+  };
+
+  // Claim VIP daily spins
+  const handleClaimVipSpins = async () => {
+    if (!user?.id || vipSpinsClaimed || vipSpinsAvailable === 0) return;
+
+    try {
+      const spinsAdded = await claimVipSpins();
+      if (spinsAdded > 0) {
+        setNormalTickets(prev => prev + spinsAdded);
+        hapticFeedback.notification('success');
+        toast.success(`${spinsAdded} VIP spins claimed!`);
+      }
+    } catch (err) {
+      console.error('Error claiming VIP spins:', err);
+      toast.error('Failed to claim VIP spins');
     }
   };
 
@@ -528,7 +555,7 @@ const Spin: React.FC = () => {
 
           {/* Action Buttons */}
           <FadeUp>
-            <div className={`grid gap-2 ${wheelType === 'normal' ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <div className={`grid gap-2 ${wheelType === 'normal' && (freeTicketAvailable || (isVip && !vipSpinsClaimed)) ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {/* Free Ticket - Normal only */}
               {wheelType === 'normal' && (
                 <Button
@@ -539,6 +566,19 @@ const Spin: React.FC = () => {
                 >
                   <Gift className="w-4 h-4 mr-2" />
                   {freeTicketAvailable ? 'Free Ticket' : 'Claimed'}
+                </Button>
+              )}
+              
+              {/* VIP Daily Spins - Normal only */}
+              {wheelType === 'normal' && isVip && (
+                <Button
+                  onClick={handleClaimVipSpins}
+                  disabled={vipSpinsClaimed || vipSpinsAvailable === 0}
+                  variant={!vipSpinsClaimed && vipSpinsAvailable > 0 ? "default" : "secondary"}
+                  className={`h-10 ${!vipSpinsClaimed && vipSpinsAvailable > 0 ? 'bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white' : ''}`}
+                >
+                  <Crown className="w-4 h-4 mr-2" />
+                  {vipSpinsClaimed ? 'VIP Claimed' : `VIP +${dailySpinsForTier}`}
                 </Button>
               )}
               
