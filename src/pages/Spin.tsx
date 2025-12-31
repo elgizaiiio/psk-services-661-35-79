@@ -198,25 +198,45 @@ const Spin: React.FC = () => {
 
     const today = new Date().toISOString().split('T')[0];
     
-    // Use upsert to handle both insert and update cases
-    const { error } = await supabase
-      .from('user_spin_tickets')
-      .upsert({ 
-        user_id: user.id,
-        tickets_count: normalTickets + 1,
-        free_ticket_date: today,
-      }, { onConflict: 'user_id' });
+    try {
+      // First check if already claimed today
+      const { data: existing } = await supabase
+        .from('user_spin_tickets')
+        .select('free_ticket_date, tickets_count')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (existing?.free_ticket_date === today) {
+        setFreeTicketAvailable(false);
+        toast.error('Already claimed today!');
+        return;
+      }
+      
+      const currentTickets = existing?.tickets_count || 0;
+      
+      // Use upsert to handle both insert and update cases
+      const { error } = await supabase
+        .from('user_spin_tickets')
+        .upsert({ 
+          user_id: user.id,
+          tickets_count: currentTickets + 1,
+          free_ticket_date: today,
+        }, { onConflict: 'user_id' });
 
-    if (error) {
-      console.error('Error claiming free ticket:', error);
+      if (error) {
+        console.error('Error claiming free ticket:', error);
+        toast.error('Failed to claim free ticket');
+        return;
+      }
+
+      setNormalTickets(currentTickets + 1);
+      setFreeTicketAvailable(false);
+      hapticFeedback.notification('success');
+      toast.success('Free ticket claimed!');
+    } catch (err) {
+      console.error('Error claiming free ticket:', err);
       toast.error('Failed to claim free ticket');
-      return;
     }
-
-    setNormalTickets(prev => prev + 1);
-    setFreeTicketAvailable(false);
-    hapticFeedback.notification('success');
-    toast.success('Free ticket claimed!');
   };
 
   // Handle spin
