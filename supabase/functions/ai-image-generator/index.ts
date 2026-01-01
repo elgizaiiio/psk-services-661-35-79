@@ -294,12 +294,13 @@ serve(async (req) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Image generation error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An error occurred while generating the image';
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'An error occurred while generating the image',
+        error: errorMessage,
         success: false 
       }),
       { 

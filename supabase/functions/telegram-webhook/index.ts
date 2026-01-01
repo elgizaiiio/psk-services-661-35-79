@@ -12,42 +12,46 @@ const WEBAPP_URL = 'https://bolts.elgiza.site';
 // Admin Telegram IDs that can use /101 and /102 commands
 const ADMIN_IDS = [102, 6090594286, 6657246146, 7018562521];
 
+interface SuccessfulPayment {
+  currency: string;
+  total_amount: number;
+  invoice_payload: string;
+  telegram_payment_charge_id: string;
+  provider_payment_charge_id: string;
+}
+
+interface TelegramMessage {
+  message_id: number;
+  from: {
+    id: number;
+    first_name: string;
+    last_name?: string;
+    username?: string;
+  };
+  chat: {
+    id: number;
+    type: string;
+  };
+  text?: string;
+  photo?: Array<{
+    file_id: string;
+    file_unique_id: string;
+    width: number;
+    height: number;
+  }>;
+  date: number;
+  successful_payment?: SuccessfulPayment;
+}
+
 interface TelegramUpdate {
   update_id: number;
-  message?: {
-    message_id: number;
-    from: {
-      id: number;
-      first_name: string;
-      last_name?: string;
-      username?: string;
-    };
-    chat: {
-      id: number;
-      type: string;
-    };
-    text?: string;
-    photo?: Array<{
-      file_id: string;
-      file_unique_id: string;
-      width: number;
-      height: number;
-    }>;
-    date: number;
-  };
+  message?: TelegramMessage;
   pre_checkout_query?: {
     id: string;
     from: { id: number };
     currency: string;
     total_amount: number;
     invoice_payload: string;
-  };
-  successful_payment?: {
-    currency: string;
-    total_amount: number;
-    invoice_payload: string;
-    telegram_payment_charge_id: string;
-    provider_payment_charge_id: string;
   };
 }
 
@@ -741,8 +745,9 @@ URL: ${state.task_url}
 Reward: ${reward} points
 
 ID: ${task.id}`);
-          } catch (error) {
-            await sendTelegramMessage(chatId, `Error creating task: ${error.message}`);
+        } catch (error: unknown) {
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+            await sendTelegramMessage(chatId, `Error creating task: ${errorMessage}`);
           }
           return true;
       }
@@ -1196,9 +1201,10 @@ Extend mining duration for longer sessions`;
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error processing webhook:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

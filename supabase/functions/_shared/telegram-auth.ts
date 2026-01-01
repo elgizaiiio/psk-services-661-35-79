@@ -1,5 +1,4 @@
 // Telegram initData validation utilities
-import { createHmac } from "https://deno.land/std@0.168.0/node/crypto.ts";
 
 interface TelegramUser {
   id: number;
@@ -18,10 +17,10 @@ interface ParsedInitData {
 }
 
 /**
- * Validate Telegram WebApp initData
+ * Validate Telegram WebApp initData using Web Crypto API
  * @see https://core.telegram.org/bots/webapps#validating-data-received-via-the-mini-app
  */
-export function validateInitData(initData: string, botToken: string): ParsedInitData | null {
+export async function validateInitData(initData: string, botToken: string): Promise<ParsedInitData | null> {
   try {
     const params = new URLSearchParams(initData);
     const hash = params.get('hash');
@@ -40,15 +39,41 @@ export function validateInitData(initData: string, botToken: string): ParsedInit
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
 
-    // Create secret key from bot token
-    const secretKey = createHmac('sha256', 'WebAppData')
-      .update(botToken)
-      .digest();
+    const encoder = new TextEncoder();
+    
+    // Create secret key from bot token using WebAppData
+    const webAppDataKey = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode('WebAppData'),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const secretKeyBuffer = await crypto.subtle.sign(
+      'HMAC',
+      webAppDataKey,
+      encoder.encode(botToken)
+    );
 
     // Calculate HMAC-SHA256
-    const calculatedHash = createHmac('sha256', secretKey)
-      .update(sortedParams)
-      .digest('hex');
+    const secretKey = await crypto.subtle.importKey(
+      'raw',
+      secretKeyBuffer,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign(
+      'HMAC',
+      secretKey,
+      encoder.encode(sortedParams)
+    );
+    
+    const calculatedHash = Array.from(new Uint8Array(signatureBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
 
     if (calculatedHash !== hash) {
       console.error('Hash mismatch - invalid initData');
@@ -100,7 +125,7 @@ export async function extractTelegramUser(
 
     // If we have initData and bot token, validate
     if (initData && botToken) {
-      const parsed = validateInitData(initData, botToken);
+      const parsed = await validateInitData(initData, botToken);
       if (parsed) {
         return { user: parsed.user, validated: true };
       }
@@ -157,13 +182,3 @@ export function checkRateLimit(
     resetIn: Math.ceil((entry.resetTime - now) / 1000) 
   };
 }
-
-// Cleanup old entries periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitStore.entries()) {
-    if (now > entry.resetTime) {
-      rateLimitStore.delete(key);
-    }
-  }
-}, 60000);

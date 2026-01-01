@@ -99,12 +99,13 @@ serve(async (req) => {
       }
     );
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Stripe payment creation error:", error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ 
         error: "Failed to create payment session",
-        details: error.message 
+        details: errorMessage 
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
