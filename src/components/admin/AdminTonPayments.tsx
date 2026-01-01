@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import { RefreshCw, Trash2, ExternalLink, AlertTriangle, CheckCircle, Clock, XCircle } from "lucide-react";
+import { RefreshCw, Trash2, ExternalLink, AlertTriangle, CheckCircle, Clock, XCircle, Bell, BellRing } from "lucide-react";
 
 interface TonPayment {
   id: string;
@@ -48,6 +48,8 @@ const AdminTonPayments: React.FC = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<TonPayment | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const [newSuspiciousCount, setNewSuspiciousCount] = useState(0);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const loadPayments = async () => {
     setLoading(true);
@@ -60,6 +62,7 @@ const AdminTonPayments: React.FC = () => {
 
       if (error) throw error;
       setPayments((data || []) as unknown as TonPayment[]);
+      setNewSuspiciousCount(0);
     } catch (error) {
       console.error("Error loading payments:", error);
       toast.error("فشل في تحميل التحويلات");
@@ -67,6 +70,82 @@ const AdminTonPayments: React.FC = () => {
       setLoading(false);
     }
   };
+
+  // Subscribe to realtime updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('ton-payments-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'ton_payments'
+        },
+        (payload) => {
+          console.log('Payment change detected:', payload);
+          
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const newPayment = payload.new as TonPayment;
+            
+            // Check if it's a suspicious payment (confirmed without tx_hash)
+            const isSuspicious = newPayment.status === 'confirmed' && !newPayment.tx_hash;
+            
+            if (isSuspicious && notificationsEnabled) {
+              setNewSuspiciousCount(prev => prev + 1);
+              
+              // Play notification sound
+              try {
+                const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2teleAAAAAA=');
+                audio.volume = 0.3;
+                audio.play().catch(() => {});
+              } catch {}
+              
+              // Show toast notification
+              toast.error(
+                <div className="flex flex-col gap-1">
+                  <div className="font-bold flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" />
+                    تحويل مشبوه جديد!
+                  </div>
+                  <div className="text-sm">
+                    المبلغ: {Number(newPayment.amount_ton).toFixed(2)} TON
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {newPayment.product_type} - بدون TX Hash
+                  </div>
+                </div>,
+                {
+                  duration: 10000,
+                  action: {
+                    label: "عرض",
+                    onClick: () => loadPayments(),
+                  },
+                }
+              );
+            }
+            
+            // Update the payments list
+            setPayments(prev => {
+              const exists = prev.find(p => p.id === newPayment.id);
+              if (exists) {
+                return prev.map(p => p.id === newPayment.id ? newPayment : p);
+              }
+              return [newPayment, ...prev].slice(0, 100);
+            });
+          }
+          
+          if (payload.eventType === 'DELETE') {
+            setPayments(prev => prev.filter(p => p.id !== (payload.old as TonPayment).id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [notificationsEnabled]);
 
   useEffect(() => {
     loadPayments();
@@ -219,11 +298,32 @@ const AdminTonPayments: React.FC = () => {
       {/* Payments Table */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">جميع التحويلات</CardTitle>
-          <Button onClick={loadPayments} variant="outline" size="sm">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            تحديث
-          </Button>
+          <div className="flex items-center gap-3">
+            <CardTitle className="text-lg">جميع التحويلات</CardTitle>
+            {newSuspiciousCount > 0 && (
+              <Badge variant="destructive" className="animate-pulse">
+                {newSuspiciousCount} جديد
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+              variant="ghost"
+              size="sm"
+              className={notificationsEnabled ? "text-primary" : "text-muted-foreground"}
+            >
+              {notificationsEnabled ? (
+                <BellRing className="w-4 h-4" />
+              ) : (
+                <Bell className="w-4 h-4" />
+              )}
+            </Button>
+            <Button onClick={loadPayments} variant="outline" size="sm">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              تحديث
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
