@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.notify-suspicious-payment]
 verify_jwt = false
+
+[functions.notify-admin-cancellation]
+verify_jwt = false
