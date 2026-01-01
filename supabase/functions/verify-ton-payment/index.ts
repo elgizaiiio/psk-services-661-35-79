@@ -246,11 +246,6 @@ serve(async (req) => {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
-    // No txHash provided - payment not yet confirmed
-    return new Response(JSON.stringify({ ok: false, status: "pending" }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-
   } catch (e: unknown) {
     const errorMessage = e instanceof Error ? e.message : "Unknown error";
     console.error("verify-ton-payment error:", e);
