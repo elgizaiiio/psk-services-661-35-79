@@ -6,9 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-telegram-init-data, x-telegram-id',
 };
 
-// Telegram initData validation (inline to avoid import issues)
-import { createHmac } from "https://deno.land/std@0.168.0/node/crypto.ts";
-
 interface TelegramUser {
   id: number;
   first_name: string;
@@ -17,7 +14,7 @@ interface TelegramUser {
   photo_url?: string;
 }
 
-function validateInitData(initData: string, botToken: string): TelegramUser | null {
+async function validateInitData(initData: string, botToken: string): Promise<TelegramUser | null> {
   try {
     const params = new URLSearchParams(initData);
     const hash = params.get('hash');
@@ -31,13 +28,40 @@ function validateInitData(initData: string, botToken: string): TelegramUser | nu
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
 
-    const secretKey = createHmac('sha256', 'WebAppData')
-      .update(botToken)
-      .digest();
+    const encoder = new TextEncoder();
+    
+    // Create secret key from bot token using WebAppData
+    const webAppDataKey = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode('WebAppData'),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const secretKeyBuffer = await crypto.subtle.sign(
+      'HMAC',
+      webAppDataKey,
+      encoder.encode(botToken)
+    );
 
-    const calculatedHash = createHmac('sha256', secretKey)
-      .update(sortedParams)
-      .digest('hex');
+    const secretKey = await crypto.subtle.importKey(
+      'raw',
+      secretKeyBuffer,
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    
+    const signatureBuffer = await crypto.subtle.sign(
+      'HMAC',
+      secretKey,
+      encoder.encode(sortedParams)
+    );
+    
+    const calculatedHash = Array.from(new Uint8Array(signatureBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
 
     if (calculatedHash !== hash) return null;
 
@@ -75,7 +99,7 @@ serve(async (req) => {
     
     // Try to validate initData first
     if (initData && botToken) {
-      telegramUser = validateInitData(initData, botToken);
+      telegramUser = await validateInitData(initData, botToken);
     }
     
     // Fallback: try to get from body (for dev/testing)

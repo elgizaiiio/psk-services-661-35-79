@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createHmac } from "https://deno.land/std@0.168.0/crypto/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -51,6 +50,26 @@ function sortObject(obj: Record<string, unknown>): Record<string, unknown> {
     }, {});
 }
 
+// HMAC-SHA512 using Web Crypto API
+async function createHmacSha512(key: string, data: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(key);
+  const dataBuffer = encoder.encode(data);
+  
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    keyData,
+    { name: 'HMAC', hash: 'SHA-512' },
+    false,
+    ['sign']
+  );
+  
+  const signature = await crypto.subtle.sign('HMAC', cryptoKey, dataBuffer);
+  return Array.from(new Uint8Array(signature))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -66,11 +85,7 @@ serve(async (req) => {
     // Verify signature if IPN secret is configured
     if (ipnSecret && signature) {
       const sortedData = JSON.stringify(sortObject(JSON.parse(body)));
-      const hmac = createHmac('sha512', ipnSecret);
-      hmac.update(new TextEncoder().encode(sortedData));
-      const calculatedSig = Array.from(hmac.digest())
-        .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
+      const calculatedSig = await createHmacSha512(ipnSecret, sortedData);
 
       if (calculatedSig !== signature) {
         console.error('Invalid webhook signature');
