@@ -85,11 +85,11 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
       credits,
     };
 
-    const success = await processPayment(params);
-    if (success) {
-      // Notify admins about the payment
-      await notifyAdminPayment('ton', amount, 'TON');
-      onSuccess?.();
+    const result = await processPayment(params);
+    if (result.ok) {
+      if (result.status === 'confirmed') {
+        onSuccess?.();
+      }
       onClose();
     }
   };
