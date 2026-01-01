@@ -10,12 +10,27 @@ import { TON_PAYMENT_ADDRESS, getValidUntil, tonToNano } from '@/lib/ton-constan
 export interface DirectPaymentParams {
   amount: number;
   description: string;
-  productType: 'ai_credits' | 'game_powerup' | 'subscription' | 'server_hosting' | 'mining_upgrade' | 'token_purchase' | 'spin_tickets';
+  productType:
+    | 'ai_credits'
+    | 'game_powerup'
+    | 'subscription'
+    | 'server_hosting'
+    | 'mining_upgrade'
+    | 'token_purchase'
+    | 'spin_tickets';
   productId?: string;
   credits?: number;
   serverName?: string;
   upgradeType?: 'power' | 'duration';
   userId?: string | null;
+}
+
+export type DirectPaymentStatus = 'pending' | 'confirmed' | 'failed';
+
+export interface DirectPaymentResult {
+  ok: boolean;
+  status: DirectPaymentStatus;
+  paymentId?: string;
 }
 
 export const useDirectTonPayment = () => {
@@ -25,25 +40,25 @@ export const useDirectTonPayment = () => {
   const { addCredits, activateSubscription } = useAiUsageLimit();
   const { user: telegramUser } = useTelegramAuth();
 
-  const sendDirectPayment = async (params: DirectPaymentParams): Promise<boolean> => {
+  const sendDirectPayment = async (params: DirectPaymentParams): Promise<DirectPaymentResult> => {
     if (!wallet?.account) {
       toast.error('Please connect your TON wallet first');
-      return false;
+      return { ok: false, status: 'failed' };
     }
 
     setIsProcessing(true);
-    
+
     try {
       // Get the bolt_users id using telegram_id
       let boltUserId: string | null = null;
-      
+
       if (telegramUser?.id) {
         const { data: boltUser } = await supabase
           .from('bolt_users')
           .select('id')
           .eq('telegram_id', telegramUser.id)
           .maybeSingle();
-        
+
         if (boltUser) {
           boltUserId = boltUser.id;
         }
@@ -51,7 +66,7 @@ export const useDirectTonPayment = () => {
 
       // Use bolt_users.id if available, otherwise use wallet address
       const userId = boltUserId || params.userId || wallet.account.address.slice(0, 32);
-      
+
       const amountNano = tonToNano(params.amount);
 
       if (params.amount <= 0) {
@@ -76,14 +91,16 @@ export const useDirectTonPayment = () => {
             credits: params.credits,
             server_name: params.serverName,
             upgrade_type: params.upgradeType,
-            bolt_user_id: boltUserId
-          }
+            bolt_user_id: boltUserId,
+          },
         })
         .select()
         .single();
 
-      if (paymentError) {
+      if (paymentError || !paymentData) {
         logger.error('Payment record error', paymentError);
+        toast.error('فشل إنشاء الدفع');
+        return { ok: false, status: 'failed' };
       }
 
       const transaction = {
@@ -91,76 +108,64 @@ export const useDirectTonPayment = () => {
         messages: [
           {
             address: TON_PAYMENT_ADDRESS,
-            amount: amountNano
-          }
-        ]
+            amount: amountNano,
+          },
+        ],
       };
 
       logger.debug('Sending TON transaction', { amount: params.amount });
-      
+
       const result = await tonConnectUI.sendTransaction(transaction);
-      
-      if (result) {
-        logger.info('Transaction sent', { boc: result.boc?.slice(0, 20) + '...' });
-        
-        // Update payment with BOC - but keep as PENDING until verified
-        if (paymentData) {
-          await supabase
-            .from('ton_payments')
-            .update({
-              status: 'pending', // Keep pending until blockchain verification
-              tx_hash: result.boc,
-              metadata: { 
-                boc_submitted: true, 
-                submitted_at: new Date().toISOString(),
-              wallet_address: wallet.account.address
-              }
-            })
-            .eq('id', paymentData.id);
-          
-          // Start verification process
-          toast.info('Verifying transaction on blockchain...');
-          
-          // Wait a few seconds for the transaction to propagate
-          await new Promise(resolve => setTimeout(resolve, 5000));
-          
-          // Try to verify the payment
-          const verifyResult = await supabase.functions.invoke('verify-ton-payment', {
-            body: {
-              paymentId: paymentData.id,
-              txHash: result.boc,
-              walletAddress: wallet.account.address
-            }
-          });
-          
-          if (verifyResult.error || !verifyResult.data?.ok) {
-            logger.warn('Payment sent but verification pending', verifyResult);
-            toast.warning('Payment sent! Verification may take a few minutes.');
-            // Don't return false - the payment was sent, just not verified yet
-          } else {
-            logger.info('Payment verified successfully');
-            // Update to confirmed
-            await supabase
-              .from('ton_payments')
-              .update({
-                status: 'confirmed',
-                confirmed_at: new Date().toISOString()
-              })
-              .eq('id', paymentData.id);
-          }
+
+      if (!result) {
+        throw new Error('Transaction failed - no result returned');
+      }
+
+      logger.info('Transaction sent', { boc: result.boc?.slice(0, 20) + '...' });
+
+      // Store the BOC in tx_hash temporarily (will be replaced with real chain tx hash upon verification)
+      await supabase
+        .from('ton_payments')
+        .update({
+          status: 'pending',
+          tx_hash: result.boc,
+          metadata: {
+            ...(paymentData.metadata || {}),
+            boc_submitted: true,
+            submitted_at: new Date().toISOString(),
+            wallet_address: wallet.account.address,
+          },
+        })
+        .eq('id', paymentData.id);
+
+      toast.info('تم إرسال التحويل... جاري التأكيد على الشبكة');
+
+      // Poll for confirmation (up to ~2 minutes)
+      let confirmed = false;
+      for (let attempt = 0; attempt < 12; attempt++) {
+        await new Promise((resolve) => setTimeout(resolve, 10_000));
+
+        const verifyResult = await supabase.functions.invoke('verify-ton-payment', {
+          body: { paymentId: paymentData.id },
+        });
+
+        if (!verifyResult.error && verifyResult.data?.ok && (verifyResult.data?.status === 'confirmed' || verifyResult.data?.status === 'already_confirmed')) {
+          confirmed = true;
+          break;
         }
-        
-        // Handle credits or subscription
+      }
+
+      if (confirmed) {
+        // Handle credits or subscription ONLY after confirmation
         if (params.productType === 'ai_credits' && params.credits) {
           addCredits(params.credits);
         } else if (params.productType === 'subscription') {
           activateSubscription();
         }
 
-        // Notify admin about the payment
+        // Notify admin about the confirmed payment
         try {
-          console.log('Sending admin notification for payment...');
-          const notifyResult = await supabase.functions.invoke('notify-admin-payment', {
+          await supabase.functions.invoke('notify-admin-payment', {
             body: {
               userId: userId,
               username: telegramUser?.username || telegramUser?.first_name || 'Unknown',
@@ -171,23 +176,23 @@ export const useDirectTonPayment = () => {
               productType: params.productType,
               productName: params.description,
               description: params.description,
-            }
+            },
           });
-          console.log('Admin notification result:', notifyResult);
         } catch (notifyError) {
           console.error('Failed to notify admin:', notifyError);
           logger.error('Failed to notify admin', notifyError);
         }
-        
-        toast.success('Payment successful! 🎉');
-        return true;
-      } else {
-        throw new Error('Transaction failed - no result returned');
+
+        toast.success('تم تأكيد الدفع بنجاح');
+        return { ok: true, status: 'confirmed', paymentId: paymentData.id };
       }
+
+      toast.warning('تم إرسال التحويل، لكن لم يتم تأكيده بعد. قد يستغرق ذلك عدة دقائق.');
+      return { ok: true, status: 'pending', paymentId: paymentData.id };
 
     } catch (error: any) {
       logger.error('Payment error', error);
-      
+
       if (error.message?.includes('User declined') || error.message?.includes('cancelled')) {
         toast.error('Transaction cancelled');
       } else if (error.message?.includes('Insufficient funds')) {
@@ -195,7 +200,7 @@ export const useDirectTonPayment = () => {
       } else {
         toast.error('Payment failed. Check wallet connection and try again.');
       }
-      return false;
+      return { ok: false, status: 'failed' };
     } finally {
       setIsProcessing(false);
     }
@@ -205,6 +210,7 @@ export const useDirectTonPayment = () => {
     sendDirectPayment,
     isProcessing,
     isWalletConnected: !!wallet?.account,
-    destinationAddress: TON_PAYMENT_ADDRESS
+    destinationAddress: TON_PAYMENT_ADDRESS,
   };
 };
+

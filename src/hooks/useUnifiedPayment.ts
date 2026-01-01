@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useDirectTonPayment } from './useDirectTonPayment';
+import { useDirectTonPayment, type DirectPaymentResult } from './useDirectTonPayment';
 import { usePriceCalculator, STAR_PRICE_USD } from './usePriceCalculator';
 
 export type PaymentMethod = 'ton_connect' | 'stars';
@@ -78,7 +78,7 @@ export const useUnifiedPayment = () => {
     },
   ];
 
-  const processPayment = useCallback(async (params: UnifiedPaymentParams): Promise<boolean> => {
+  const processPayment = useCallback(async (params: UnifiedPaymentParams): Promise<DirectPaymentResult> => {
     try {
       return await directTonPayment.sendDirectPayment({
         amount: params.amount,
@@ -90,7 +90,7 @@ export const useUnifiedPayment = () => {
     } catch (error) {
       console.error('Payment error:', error);
       toast.error('Payment failed');
-      return false;
+      return { ok: false, status: 'failed' };
     }
   }, [directTonPayment]);
 
