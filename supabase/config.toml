@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.notify-admin-payment]
 verify_jwt = false
+
+[functions.notify-suspicious-payment]
+verify_jwt = false
