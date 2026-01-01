@@ -71,6 +71,33 @@ const AdminTonPayments: React.FC = () => {
     }
   };
 
+  // Send Telegram notification for suspicious payment
+  const sendSuspiciousPaymentAlert = async (payment: TonPayment) => {
+    try {
+      const response = await supabase.functions.invoke('notify-suspicious-payment', {
+        body: {
+          paymentId: payment.id,
+          userId: payment.user_id,
+          amount: payment.amount_ton,
+          productType: payment.product_type,
+          description: payment.description,
+          walletAddress: payment.wallet_address,
+          txHash: payment.tx_hash,
+          createdAt: payment.created_at,
+          reason: 'no_tx_hash'
+        }
+      });
+      
+      if (response.error) {
+        console.error('Failed to send Telegram alert:', response.error);
+      } else {
+        console.log('Telegram alert sent successfully:', response.data);
+      }
+    } catch (error) {
+      console.error('Error sending Telegram alert:', error);
+    }
+  };
+
   // Subscribe to realtime updates
   useEffect(() => {
     const channel = supabase
@@ -93,6 +120,9 @@ const AdminTonPayments: React.FC = () => {
             
             if (isSuspicious && notificationsEnabled) {
               setNewSuspiciousCount(prev => prev + 1);
+              
+              // Send Telegram notification to admins
+              sendSuspiciousPaymentAlert(newPayment);
               
               // Play notification sound
               try {
