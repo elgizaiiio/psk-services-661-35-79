@@ -101,18 +101,53 @@ export const useDirectTonPayment = () => {
       const result = await tonConnectUI.sendTransaction(transaction);
       
       if (result) {
-        logger.info('Transaction successful', { boc: result.boc?.slice(0, 20) + '...' });
+        logger.info('Transaction sent', { boc: result.boc?.slice(0, 20) + '...' });
         
-        // Update payment status in database
+        // Update payment with BOC - but keep as PENDING until verified
         if (paymentData) {
           await supabase
             .from('ton_payments')
             .update({
-              status: 'confirmed',
+              status: 'pending', // Keep pending until blockchain verification
               tx_hash: result.boc,
-              confirmed_at: new Date().toISOString()
+              metadata: { 
+                boc_submitted: true, 
+                submitted_at: new Date().toISOString(),
+              wallet_address: wallet.account.address
+              }
             })
             .eq('id', paymentData.id);
+          
+          // Start verification process
+          toast.info('Verifying transaction on blockchain...');
+          
+          // Wait a few seconds for the transaction to propagate
+          await new Promise(resolve => setTimeout(resolve, 5000));
+          
+          // Try to verify the payment
+          const verifyResult = await supabase.functions.invoke('verify-ton-payment', {
+            body: {
+              paymentId: paymentData.id,
+              txHash: result.boc,
+              walletAddress: wallet.account.address
+            }
+          });
+          
+          if (verifyResult.error || !verifyResult.data?.ok) {
+            logger.warn('Payment sent but verification pending', verifyResult);
+            toast.warning('Payment sent! Verification may take a few minutes.');
+            // Don't return false - the payment was sent, just not verified yet
+          } else {
+            logger.info('Payment verified successfully');
+            // Update to confirmed
+            await supabase
+              .from('ton_payments')
+              .update({
+                status: 'confirmed',
+                confirmed_at: new Date().toISOString()
+              })
+              .eq('id', paymentData.id);
+          }
         }
         
         // Handle credits or subscription

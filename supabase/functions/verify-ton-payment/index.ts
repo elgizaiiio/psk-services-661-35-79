@@ -121,26 +121,62 @@ serve(async (req) => {
         });
       }
 
-      // Validate txHash format (TON transaction hashes are 64 hex characters)
-      if (!/^[a-fA-F0-9]{64}$/.test(txHash)) {
-        console.error('Invalid txHash format:', txHash);
-        return new Response(JSON.stringify({ error: "Invalid transaction hash format" }), {
-          status: 400,
+      // Verify transaction on TON blockchain
+      const destinationAddress = payment.destination_address;
+      const expectedAmount = payment.amount_ton;
+      
+      // Try to verify using TON API
+      let isVerified = false;
+      
+      try {
+        // Get recent transactions for the destination address
+        const tonApiUrl = `https://tonapi.io/v2/blockchain/accounts/${destinationAddress}/transactions?limit=20`;
+        const response = await fetch(tonApiUrl, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const txData = await response.json();
+          const transactions = txData.transactions || [];
+          
+          // Look for a matching transaction
+          for (const tx of transactions) {
+            // Check if this transaction matches our payment
+            const inMsgs = tx.in_msg || [];
+            const outMsgs = tx.out_msgs || [];
+            
+            // Check incoming value
+            const inValue = tx.in_msg?.value ? Number(tx.in_msg.value) / 1e9 : 0;
+            const txTimestamp = tx.utime || 0;
+            const paymentTimestamp = new Date(payment.created_at).getTime() / 1000;
+            
+            // Transaction should be within 10 minutes of payment creation
+            const timeDiff = Math.abs(txTimestamp - paymentTimestamp);
+            
+            if (timeDiff < 600 && Math.abs(inValue - expectedAmount) < 0.01) {
+              isVerified = true;
+              console.log('Transaction verified on blockchain:', tx.hash);
+              break;
+            }
+          }
+        }
+      } catch (verifyError) {
+        console.error('Error verifying on blockchain:', verifyError);
+        // Continue without verification - will mark as pending
+      }
+
+      if (!isVerified) {
+        console.log('Transaction not yet found on blockchain, keeping as pending');
+        return new Response(JSON.stringify({ 
+          ok: false, 
+          status: "pending",
+          message: "Transaction not yet confirmed on blockchain"
+        }), {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-
-      // TODO: For production, verify the transaction on-chain using TON API
-      // const tonApiKey = Deno.env.get('TON_API_KEY');
-      // if (tonApiKey) {
-      //   const txVerified = await verifyTonTransaction(txHash, payment.destination_address, payment.amount_ton, tonApiKey);
-      //   if (!txVerified) {
-      //     return new Response(JSON.stringify({ error: "Transaction verification failed" }), {
-      //       status: 400,
-      //       headers: { ...corsHeaders, "Content-Type": "application/json" },
-      //     });
-      //   }
-      // }
 
       // Mark txHash as processed
       processedTxHashes.add(txHash);
