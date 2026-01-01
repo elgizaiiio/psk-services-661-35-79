@@ -95,155 +95,154 @@ serve(async (req) => {
       });
     }
 
-    // Always try to verify on-chain (even if txHash/boc is not provided)
-    // NOTE: txHash here is usually a BOC from TonConnect; we will store the real chain hash in tx_hash when confirmed.
-    const providedBoc = txHash;
-
-    // Verify transaction on TON blockchain by scanning destination transactions
-    const destinationAddress = payment.destination_address;
-    const expectedAmount = Number(payment.amount_ton);
-
-    const expectedSender = walletAddress || payment.wallet_address || payment.metadata?.wallet_address;
-
-    let matchedChainHash: string | null = null;
-
-    try {
-      const tonApiUrl = `https://tonapi.io/v2/blockchain/accounts/${destinationAddress}/transactions?limit=50`;
-      const response = await fetch(tonApiUrl, {
-        headers: {
-          Accept: 'application/json',
-        },
-      });
-
-      if (response.ok) {
-        const txData = await response.json();
-        const transactions = txData.transactions || [];
-
-        for (const tx of transactions) {
-          const inValue = tx.in_msg?.value ? Number(tx.in_msg.value) / 1e9 : 0;
-          const txTimestamp = tx.utime || 0;
-          const paymentTimestamp = new Date(payment.created_at).getTime() / 1000;
-
-          // Transaction should be within 30 minutes of payment creation
-          const timeDiff = Math.abs(txTimestamp - paymentTimestamp);
-          const amountMatches = Math.abs(inValue - expectedAmount) < 0.01;
-
-          // If we have a sender address, try to match it too (best-effort)
-          const sourceAddr = tx.in_msg?.source?.address;
-          const senderMatches = expectedSender ? (sourceAddr === expectedSender) : true;
-
-          if (timeDiff < 1800 && amountMatches && senderMatches) {
-            matchedChainHash = tx.hash || tx.transaction_id?.hash || null;
-            console.log('Transaction matched on blockchain:', matchedChainHash);
-            break;
-          }
-        }
+    if (txHash) {
+      // SECURITY: Check for duplicate txHash (prevents replay attacks)
+      if (processedTxHashes.has(txHash)) {
+        console.error('Duplicate txHash detected:', txHash);
+        return new Response(JSON.stringify({ error: "Transaction already processed" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-    } catch (verifyError) {
-      console.error('Error verifying on blockchain:', verifyError);
-    }
 
-    if (!matchedChainHash) {
-      console.log('Transaction not yet found on blockchain, keeping as pending');
-      return new Response(
-        JSON.stringify({
-          ok: false,
-          status: 'pending',
-          message: 'Transaction not yet confirmed on blockchain',
-        }),
-        {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        }
-      );
-    }
-
-    // SECURITY: Check for duplicate chain tx hash
-    if (processedTxHashes.has(matchedChainHash)) {
-      console.error('Duplicate chain tx hash detected:', matchedChainHash);
-      return new Response(JSON.stringify({ error: 'Transaction already processed' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    const { data: existingTx } = await supabaseClient
-      .from('ton_payments')
-      .select('id')
-      .eq('tx_hash', matchedChainHash)
-      .neq('id', paymentId)
-      .maybeSingle();
-
-    if (existingTx) {
-      console.error('chain tx hash already used by another payment:', matchedChainHash);
-      return new Response(JSON.stringify({ error: 'Transaction already used' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    processedTxHashes.add(matchedChainHash);
-
-    const nextWalletAddress = expectedSender || walletAddress || payment.wallet_address || null;
-
-    const nextMetadata = {
-      ...(payment.metadata ?? {}),
-      verified_by: 'tonapi',
-      verified_at: new Date().toISOString(),
-      chain_tx_hash: matchedChainHash,
-      ...(providedBoc ? { boc: providedBoc } : {}),
-    };
-
-    const { data: updated, error: updErr } = await supabaseClient
-      .from('ton_payments')
-      .update({
-        status: 'confirmed',
-        tx_hash: matchedChainHash,
-        confirmed_at: new Date().toISOString(),
-        wallet_address: nextWalletAddress,
-        metadata: nextMetadata,
-      })
-      .eq('id', paymentId)
-      .eq('status', 'pending')
-      .select()
-      .single();
-
-    if (updErr || !updated) {
-      processedTxHashes.delete(matchedChainHash);
-      console.error('Failed to update payment:', updErr);
-      return new Response(JSON.stringify({ error: 'Payment may have already been processed' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
-    // Update linked server purchase
-    await supabaseClient
-      .from('server_purchases')
-      .update({ status: 'paid', activated_at: new Date().toISOString() })
-      .eq('payment_id', paymentId);
-
-    // Handle product-specific rewards
-    if (payment.product_type === 'ai_credits' && payment.metadata?.credits) {
-      const credits = Number(payment.metadata.credits) || 0;
-
-      const { data: user } = await supabaseClient
-        .from('bolt_users')
-        .select('id, token_balance')
-        .eq('telegram_id', parseInt(payment.user_id, 10))
+      // Check if txHash is already used in database
+      const { data: existingTx } = await supabaseClient
+        .from("ton_payments")
+        .select("id")
+        .eq("tx_hash", txHash)
+        .neq("id", paymentId)
         .single();
 
-      if (user) {
-        await supabaseClient
-          .from('bolt_users')
-          .update({ token_balance: (user.token_balance || 0) + credits })
-          .eq('id', user.id);
+      if (existingTx) {
+        console.error('txHash already used by another payment:', txHash);
+        return new Response(JSON.stringify({ error: "Transaction already used" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
+
+      // Verify transaction on TON blockchain
+      const destinationAddress = payment.destination_address;
+      const expectedAmount = payment.amount_ton;
+      
+      // Try to verify using TON API
+      let isVerified = false;
+      
+      try {
+        // Get recent transactions for the destination address
+        const tonApiUrl = `https://tonapi.io/v2/blockchain/accounts/${destinationAddress}/transactions?limit=20`;
+        const response = await fetch(tonApiUrl, {
+          headers: {
+            'Accept': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          const txData = await response.json();
+          const transactions = txData.transactions || [];
+          
+          // Look for a matching transaction
+          for (const tx of transactions) {
+            // Check if this transaction matches our payment
+            const inMsgs = tx.in_msg || [];
+            const outMsgs = tx.out_msgs || [];
+            
+            // Check incoming value
+            const inValue = tx.in_msg?.value ? Number(tx.in_msg.value) / 1e9 : 0;
+            const txTimestamp = tx.utime || 0;
+            const paymentTimestamp = new Date(payment.created_at).getTime() / 1000;
+            
+            // Transaction should be within 10 minutes of payment creation
+            const timeDiff = Math.abs(txTimestamp - paymentTimestamp);
+            
+            if (timeDiff < 600 && Math.abs(inValue - expectedAmount) < 0.01) {
+              isVerified = true;
+              console.log('Transaction verified on blockchain:', tx.hash);
+              break;
+            }
+          }
+        }
+      } catch (verifyError) {
+        console.error('Error verifying on blockchain:', verifyError);
+        // Continue without verification - will mark as pending
+      }
+
+      if (!isVerified) {
+        console.log('Transaction not yet found on blockchain, keeping as pending');
+        return new Response(JSON.stringify({ 
+          ok: false, 
+          status: "pending",
+          message: "Transaction not yet confirmed on blockchain"
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Mark txHash as processed
+      processedTxHashes.add(txHash);
+
+      const { data: updated, error: updErr } = await supabaseClient
+        .from("ton_payments")
+        .update({
+          status: "confirmed",
+          tx_hash: txHash,
+          confirmed_at: new Date().toISOString(),
+          wallet_address: walletAddress,
+          metadata: { 
+            verified_by: "ton_connect", 
+            wallet_address: walletAddress,
+            verified_at: new Date().toISOString()
+          }
+        })
+        .eq("id", paymentId)
+        .eq("status", "pending") // Only update if still pending
+        .select()
+        .single();
+
+      if (updErr || !updated) {
+        processedTxHashes.delete(txHash); // Rollback
+        console.error("Failed to update payment:", updErr);
+        return new Response(JSON.stringify({ error: "Payment may have already been processed" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // Update linked server purchase
+      await supabaseClient
+        .from("server_purchases")
+        .update({ status: "paid", activated_at: new Date().toISOString() })
+        .eq("payment_id", paymentId);
+
+      // Handle product-specific rewards
+      if (payment.product_type === 'ai_credits' && payment.metadata?.credits) {
+        const credits = Number(payment.metadata.credits) || 0;
+        
+        // Get user by telegram_id (user_id in ton_payments is telegram_id string)
+        const { data: user } = await supabaseClient
+          .from('bolt_users')
+          .select('id, token_balance')
+          .eq('telegram_id', parseInt(payment.user_id, 10))
+          .single();
+        
+        if (user) {
+          await supabaseClient
+            .from('bolt_users')
+            .update({ token_balance: (user.token_balance || 0) + credits })
+            .eq('id', user.id);
+        }
+      }
+
+      console.log(`Payment ${paymentId} confirmed with txHash: ${txHash}`);
+
+      return new Response(JSON.stringify({ ok: true, status: "confirmed", payment: updated }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    console.log(`Payment ${paymentId} confirmed with chain tx hash: ${matchedChainHash}`);
-
-    return new Response(JSON.stringify({ ok: true, status: 'confirmed', payment: updated }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // No txHash provided - payment not yet confirmed
+    return new Response(JSON.stringify({ ok: false, status: "pending" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (e: unknown) {

@@ -221,32 +221,6 @@ const AdminTonPayments: React.FC = () => {
     }
   };
 
-  // Send cancellation notification to admins
-  const sendCancellationNotification = async (payment: TonPayment) => {
-    try {
-      const response = await supabase.functions.invoke('notify-admin-cancellation', {
-        body: {
-          paymentId: payment.id,
-          userId: payment.user_id,
-          amount: payment.amount_ton,
-          productType: payment.product_type,
-          description: payment.description,
-          walletAddress: payment.wallet_address,
-          txHash: payment.tx_hash,
-          paymentMethod: payment.payment_method || 'TON',
-        }
-      });
-      
-      if (response.error) {
-        console.error('Failed to send cancellation notification:', response.error);
-      } else {
-        console.log('Cancellation notification sent:', response.data);
-      }
-    } catch (error) {
-      console.error('Error sending cancellation notification:', error);
-    }
-  };
-
   const handleCancelPayment = async () => {
     if (!selectedPayment) return;
 
@@ -265,9 +239,6 @@ const AdminTonPayments: React.FC = () => {
         .eq("id", selectedPayment.id);
 
       if (error) throw error;
-
-      // Send notification to admins
-      await sendCancellationNotification(selectedPayment);
 
       toast.success("تم إلغاء التحويل بنجاح");
       setDeleteDialogOpen(false);
