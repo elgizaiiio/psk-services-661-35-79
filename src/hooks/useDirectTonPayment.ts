@@ -124,13 +124,17 @@ export const useDirectTonPayment = () => {
       logger.info('Transaction sent', { boc: result.boc?.slice(0, 20) + '...' });
 
       // Store the BOC in tx_hash temporarily (will be replaced with real chain tx hash upon verification)
+      const existingMetadata = typeof paymentData.metadata === 'object' && paymentData.metadata !== null 
+        ? paymentData.metadata as Record<string, unknown>
+        : {};
+      
       await supabase
         .from('ton_payments')
         .update({
           status: 'pending',
           tx_hash: result.boc,
           metadata: {
-            ...(paymentData.metadata || {}),
+            ...existingMetadata,
             boc_submitted: true,
             submitted_at: new Date().toISOString(),
             wallet_address: wallet.account.address,
