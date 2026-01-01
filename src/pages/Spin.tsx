@@ -29,32 +29,32 @@ interface TicketPackage {
   priceTon: number;
 }
 
-// Normal Wheel Rewards - TON/USDT virtually impossible (0.0000000000000001%), BOLT gets the probability
+// Normal Wheel Rewards - TON/USDT probability is 0 (impossible to win)
 const NORMAL_REWARDS: SpinReward[] = [
-  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 0.0000000000000001 },
+  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 0 },
   { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 27 },
-  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 0.0000000000000001 },
+  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 0 },
   { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 22 },
   { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 25 },
-  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 0.0000000000000001 },
+  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 0 },
   { id: 'bolt_200', label: '200', type: 'bolt', value: 200, probability: 15 },
-  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0.0000000000000001 },
+  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0 },
   { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 8.5 },
   { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 2.5 },
 ];
 
-// PRO Wheel Rewards - TON/USDT virtually impossible (0.0000000000000001%), BOLT gets the probability
+// PRO Wheel Rewards - TON/USDT probability is 0 (impossible to win)
 const PRO_REWARDS: SpinReward[] = [
-  { id: 'ton_3_pro', label: '3', type: 'ton', value: 3, probability: 0.0000000000000001 },
+  { id: 'ton_3_pro', label: '3', type: 'ton', value: 3, probability: 0 },
   { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 28 },
-  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0.0000000000000001 },
+  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0 },
   { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 21 },
   { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 18 },
-  { id: 'ton_5_pro', label: '5', type: 'ton', value: 5, probability: 0.0000000000000001 },
+  { id: 'ton_5_pro', label: '5', type: 'ton', value: 5, probability: 0 },
   { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 17 },
-  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 0.0000000000000001 },
+  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 0 },
   { id: 'bolt_10000', label: '10K', type: 'bolt', value: 10000, probability: 12 },
-  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 0.0000000000000001 },
+  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 0 },
 ];
 
 // Normal Ticket Packages - Stars calculated dynamically
