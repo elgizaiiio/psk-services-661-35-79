@@ -3,7 +3,7 @@ import { useCallback, useMemo } from 'react';
 
 // Fixed prices
 export const STAR_PRICE_USD = 0.02; // $0.02 per Star
-export const BOLT_PRICE_USD = 0.001; // $0.001 per BOLT (1000 BOLT = $1)
+export const BOLT_PRICE_USD = 0.0001; // $0.0001 per BOLT (10000 BOLT = $1)
 
 export const usePriceCalculator = () => {
   const { price: tonPrice, isLoading, error, refetch } = useTonPrice();
