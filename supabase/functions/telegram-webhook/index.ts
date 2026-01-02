@@ -978,10 +978,6 @@ Click the button below to start mining!`;
             {
               text: '📢 Join Channel',
               url: 'https://t.me/boltcomm'
-            },
-            {
-              text: '💬 Join Group',
-              url: 'https://t.me/boltaiok'
             }
           ]
         ]
@@ -1185,10 +1181,6 @@ Extend mining duration for longer sessions`;
             {
               text: '📢 Join Channel',
               url: 'https://t.me/boltcomm'
-            },
-            {
-              text: '💬 Join Group',
-              url: 'https://t.me/boltaiok'
             }
           ]
         ]
