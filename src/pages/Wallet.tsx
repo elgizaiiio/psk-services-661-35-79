@@ -26,6 +26,7 @@ const Wallet: React.FC = () => {
 
   const boltBalance = user?.token_balance ?? 0;
   const usdtBalance = (user as any)?.usdt_balance ?? 0;
+  const tonBalance = (user as any)?.ton_balance ?? 0;
 
   useEffect(() => {
     fetch("https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd")
@@ -131,7 +132,7 @@ const Wallet: React.FC = () => {
 
           {[
             { name: 'BOLT', balance: boltBalance, value: 0, icon: <BoltIcon size={40} /> },
-            { name: 'TON', balance: 0, value: 0, icon: <TonIcon size={40} /> },
+            { name: 'TON', balance: tonBalance, value: tonBalance * (tonPrice || 0), icon: <TonIcon size={40} /> },
             { name: 'USDT', balance: usdtBalance, value: usdtBalance, icon: <UsdtIcon size={40} /> },
           ].map((asset) => (
             <FadeUp key={asset.name}>
@@ -160,7 +161,7 @@ const Wallet: React.FC = () => {
           setWithdrawSelectOpen(false);
           setWithdrawModal({ open: true, currency });
         }}
-        tonBalance={0}
+        tonBalance={tonBalance}
         usdtBalance={usdtBalance}
       />
 
@@ -171,7 +172,7 @@ const Wallet: React.FC = () => {
           onClose={() => setWithdrawModal(null)}
           userId={user.id}
           currency={withdrawModal.currency}
-          balance={withdrawModal.currency === 'USDT' ? usdtBalance : 0}
+          balance={withdrawModal.currency === 'USDT' ? usdtBalance : withdrawModal.currency === 'TON' ? tonBalance : 0}
         />
       )}
     </PageWrapper>

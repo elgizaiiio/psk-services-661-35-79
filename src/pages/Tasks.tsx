@@ -5,10 +5,12 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltTasks } from '@/hooks/useBoltTasks';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useChannelSubscription } from '@/hooks/useChannelSubscription';
+import { useViralMining } from '@/hooks/useViralMining';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Target, Check, ExternalLink, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
+import ReferralMilestonesSection from '@/components/tasks/ReferralMilestonesSection';
 
 const extractTelegramUsername = (urlOrUsername: string) => {
   const raw = (urlOrUsername || '').trim();
@@ -32,6 +34,7 @@ const isJoinTask = (taskTitle: string, taskUrl?: string | null) => {
 
 const Tasks = () => {
   const { user: tgUser, hapticFeedback } = useTelegramAuth();
+  const { user: boltUser } = useViralMining(tgUser);
   const { allTasks, completedTasks, loading, completeTask, revokeTaskCompletion, refreshTasks } = useBoltTasks();
   const { checkSubscription, isChecking } = useChannelSubscription('boltcomm');
   const [activeTab, setActiveTab] = useState('social');
@@ -210,6 +213,11 @@ const Tasks = () => {
               </div>
               <AnimatedProgress value={progress} />
             </div>
+          </FadeUp>
+
+          {/* Referral Milestones Section */}
+          <FadeUp>
+            <ReferralMilestonesSection userId={boltUser?.id} />
           </FadeUp>
 
           <FadeUp>
