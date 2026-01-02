@@ -20,7 +20,7 @@ interface WithdrawModalProps {
 
 const MIN_WITHDRAWALS = {
   TON: 1,
-  USDT: 1,
+  USDT: 5,
   BOLT: 5000,
 };
 

@@ -337,7 +337,7 @@ Deno.serve(async (req) => {
     // Give referrer bonus - update token_balance, total_referrals, and referral_bonus
     const { data: currentReferrer } = await supabase
       .from('bolt_users')
-      .select('token_balance, total_referrals, referral_bonus')
+      .select('token_balance, total_referrals, referral_bonus, ton_balance, usdt_balance')
       .eq('id', referrer.id)
       .single()
 
@@ -346,7 +346,7 @@ Deno.serve(async (req) => {
       let totalBonus = REFERRAL_BONUS
       let milestoneBonus = 0
 
-      // Check for milestone bonuses
+      // Check for old milestone bonuses (BOLT)
       if (newTotalReferrals === 5) {
         milestoneBonus = 500
         totalBonus += milestoneBonus
@@ -357,12 +357,50 @@ Deno.serve(async (req) => {
         console.log(`🏆 Milestone reached: 10 friends! Adding +1500 BOLT bonus`)
       }
 
+      // NEW: Check for TON/USDT milestones
+      let tonReward = 0
+      let usdtReward = 0
+
+      // Milestone: 3 friends = 0.1 TON
+      if (newTotalReferrals === 3) {
+        tonReward = 0.1
+        console.log(`🎉 Milestone reached: 3 friends! Adding +0.1 TON reward`)
+        
+        // Record milestone
+        await supabase.from('referral_milestone_rewards').upsert({
+          user_id: referrer.id,
+          milestone_type: 'invite_3',
+          reward_currency: 'TON',
+          reward_amount: tonReward,
+          claimed: true,
+          claimed_at: new Date().toISOString()
+        }, { onConflict: 'user_id,milestone_type' })
+      }
+
+      // Milestone: 10 friends = 1 USDT
+      if (newTotalReferrals === 10) {
+        usdtReward = 1
+        console.log(`🎉 Milestone reached: 10 friends! Adding +1 USDT reward`)
+        
+        // Record milestone
+        await supabase.from('referral_milestone_rewards').upsert({
+          user_id: referrer.id,
+          milestone_type: 'invite_10',
+          reward_currency: 'USDT',
+          reward_amount: usdtReward,
+          claimed: true,
+          claimed_at: new Date().toISOString()
+        }, { onConflict: 'user_id,milestone_type' })
+      }
+
       const { error: updateError } = await supabase
         .from('bolt_users')
         .update({
           token_balance: (currentReferrer.token_balance || 0) + totalBonus,
           total_referrals: newTotalReferrals,
           referral_bonus: (currentReferrer.referral_bonus || 0) + totalBonus,
+          ton_balance: (currentReferrer.ton_balance || 0) + tonReward,
+          usdt_balance: (currentReferrer.usdt_balance || 0) + usdtReward,
           updated_at: new Date().toISOString()
         })
         .eq('id', referrer.id)
@@ -371,6 +409,8 @@ Deno.serve(async (req) => {
         console.error('❌ Error updating referrer:', updateError)
       } else {
         console.log(`💰 Bonus of ${totalBonus} tokens given to referrer: ${referrer.id}`)
+        if (tonReward > 0) console.log(`💎 TON reward of ${tonReward} given to referrer`)
+        if (usdtReward > 0) console.log(`💵 USDT reward of ${usdtReward} given to referrer`)
       }
 
       // Send Telegram notification to referrer
@@ -380,6 +420,14 @@ Deno.serve(async (req) => {
         
         if (milestoneBonus > 0) {
           notificationText += `\n\n🏆 <b>Milestone Bonus!</b>\nYou reached ${newTotalReferrals} friends!\n💎 Extra reward: <b>+${milestoneBonus.toLocaleString()} BOLT</b>`
+        }
+
+        // Add TON/USDT milestone notifications
+        if (tonReward > 0) {
+          notificationText += `\n\n🎁 <b>Special Reward!</b>\n3 friends milestone!\n💎 <b>+${tonReward} TON</b> added to your balance!`
+        }
+        if (usdtReward > 0) {
+          notificationText += `\n\n🎁 <b>Special Reward!</b>\n10 friends milestone!\n💵 <b>+${usdtReward} USDT</b> added to your balance!`
         }
         
         notificationText += `\n\n👥 Total friends: <b>${newTotalReferrals}</b>`

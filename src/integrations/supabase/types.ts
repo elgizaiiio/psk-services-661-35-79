@@ -101,6 +101,114 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_dynamic_offers: {
+        Row: {
+          bonus_multiplier: number | null
+          created_at: string | null
+          created_by_ai: boolean | null
+          description: string | null
+          description_ar: string | null
+          discount_percent: number | null
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          metadata: Json | null
+          min_purchase: number | null
+          offer_type: string
+          priority: number | null
+          title: string
+          title_ar: string | null
+        }
+        Insert: {
+          bonus_multiplier?: number | null
+          created_at?: string | null
+          created_by_ai?: boolean | null
+          description?: string | null
+          description_ar?: string | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          min_purchase?: number | null
+          offer_type: string
+          priority?: number | null
+          title: string
+          title_ar?: string | null
+        }
+        Update: {
+          bonus_multiplier?: number | null
+          created_at?: string | null
+          created_by_ai?: boolean | null
+          description?: string | null
+          description_ar?: string | null
+          discount_percent?: number | null
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          metadata?: Json | null
+          min_purchase?: number | null
+          offer_type?: string
+          priority?: number | null
+          title?: string
+          title_ar?: string | null
+        }
+        Relationships: []
+      }
+      ai_scheduled_notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          message_text: string
+          message_text_ar: string | null
+          notification_type: string | null
+          scheduled_for: string | null
+          sent: boolean | null
+          sent_at: string | null
+          target_all_users: boolean | null
+          target_user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message_text: string
+          message_text_ar?: string | null
+          notification_type?: string | null
+          scheduled_for?: string | null
+          sent?: boolean | null
+          sent_at?: string | null
+          target_all_users?: boolean | null
+          target_user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message_text?: string
+          message_text_ar?: string | null
+          notification_type?: string | null
+          scheduled_for?: string | null
+          sent?: boolean | null
+          sent_at?: string | null
+          target_all_users?: boolean | null
+          target_user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_scheduled_notifications_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_scheduled_notifications_target_user_id_fkey"
+            columns: ["target_user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bolt_completed_tasks: {
         Row: {
           completed_at: string
@@ -677,6 +785,7 @@ export type Database = {
           telegram_id: number
           telegram_username: string | null
           token_balance: number
+          ton_balance: number | null
           total_referrals: number
           updated_at: string
           usdt_balance: number
@@ -694,6 +803,7 @@ export type Database = {
           telegram_id: number
           telegram_username?: string | null
           token_balance?: number
+          ton_balance?: number | null
           total_referrals?: number
           updated_at?: string
           usdt_balance?: number
@@ -711,6 +821,7 @@ export type Database = {
           telegram_id?: number
           telegram_username?: string | null
           token_balance?: number
+          ton_balance?: number | null
           total_referrals?: number
           updated_at?: string
           usdt_balance?: number
@@ -1403,6 +1514,54 @@ export type Database = {
           status?: string
         }
         Relationships: []
+      }
+      referral_milestone_rewards: {
+        Row: {
+          claimed: boolean | null
+          claimed_at: string | null
+          created_at: string | null
+          id: string
+          milestone_type: string
+          reward_amount: number
+          reward_currency: string
+          user_id: string
+        }
+        Insert: {
+          claimed?: boolean | null
+          claimed_at?: string | null
+          created_at?: string | null
+          id?: string
+          milestone_type: string
+          reward_amount: number
+          reward_currency: string
+          user_id: string
+        }
+        Update: {
+          claimed?: boolean | null
+          claimed_at?: string | null
+          created_at?: string | null
+          id?: string
+          milestone_type?: string
+          reward_amount?: number
+          reward_currency?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_milestone_rewards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_milestone_rewards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       server_inventory: {
         Row: {
