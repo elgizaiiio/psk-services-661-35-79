@@ -46,7 +46,7 @@ serve(async (req) => {
       txHash?: string;
       walletAddress?: string;
     };
-    const telegramId = req.headers.get('x-telegram-id');
+    const telegramIdHeader = req.headers.get('x-telegram-id');
 
     if (!paymentId) {
       return new Response(JSON.stringify({ error: "paymentId is required" }), {
@@ -55,15 +55,30 @@ serve(async (req) => {
       });
     }
 
+    if (!telegramIdHeader) {
+      return new Response(JSON.stringify({ error: "x-telegram-id header is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const telegramId = Number(telegramIdHeader);
+    if (!Number.isFinite(telegramId) || telegramId <= 0) {
+      return new Response(JSON.stringify({ error: "Invalid x-telegram-id" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     // Rate limiting
-    if (telegramId && !checkRateLimit(telegramId)) {
+    if (!checkRateLimit(telegramIdHeader)) {
       return new Response(JSON.stringify({ error: "Too many verification attempts" }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log("Verifying payment:", paymentId, "txHash:", txHash);
+    console.log("Verifying payment:", paymentId, "txHash:", txHash, "telegramId:", telegramId);
 
     // Get the payment record
     const { data: payment, error: payErr } = await supabaseClient
@@ -80,9 +95,23 @@ serve(async (req) => {
       });
     }
 
-    // SECURITY: Verify the payment belongs to the requesting user
-    if (telegramId && payment.user_id !== telegramId) {
-      console.error('User mismatch on payment verification');
+    // SECURITY: Verify the payment belongs to the requesting Telegram user
+    const { data: requester, error: requesterErr } = await supabaseClient
+      .from('bolt_users')
+      .select('id')
+      .eq('telegram_id', telegramId)
+      .maybeSingle();
+
+    if (requesterErr || !requester) {
+      console.error('Requester not found for telegram_id:', telegramId, requesterErr);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    if (payment.user_id !== requester.id) {
+      console.error('User mismatch on payment verification', { paymentUserId: payment.user_id, requesterId: requester.id });
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
