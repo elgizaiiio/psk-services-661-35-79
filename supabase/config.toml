@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.ai-admin-controller]
 verify_jwt = false
+
+[functions.daily-notifications]
+verify_jwt = false

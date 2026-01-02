@@ -161,36 +161,42 @@ export type Database = {
           id: string
           message_text: string
           message_text_ar: string | null
+          notification_date: string | null
           notification_type: string | null
           scheduled_for: string | null
           sent: boolean | null
           sent_at: string | null
           target_all_users: boolean | null
           target_user_id: string | null
+          time_slot: string | null
         }
         Insert: {
           created_at?: string | null
           id?: string
           message_text: string
           message_text_ar?: string | null
+          notification_date?: string | null
           notification_type?: string | null
           scheduled_for?: string | null
           sent?: boolean | null
           sent_at?: string | null
           target_all_users?: boolean | null
           target_user_id?: string | null
+          time_slot?: string | null
         }
         Update: {
           created_at?: string | null
           id?: string
           message_text?: string
           message_text_ar?: string | null
+          notification_date?: string | null
           notification_type?: string | null
           scheduled_for?: string | null
           sent?: boolean | null
           sent_at?: string | null
           target_all_users?: boolean | null
           target_user_id?: string | null
+          time_slot?: string | null
         }
         Relationships: [
           {
@@ -1467,6 +1473,33 @@ export type Database = {
           price_tokens?: number
           price_ton?: number
           tier?: string
+        }
+        Relationships: []
+      }
+      notification_templates: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          prompt_context: string
+          theme: string
+          time_slot: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          prompt_context: string
+          theme: string
+          time_slot: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          prompt_context?: string
+          theme?: string
+          time_slot?: string
         }
         Relationships: []
       }
