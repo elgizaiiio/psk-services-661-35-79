@@ -11,6 +11,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useDailyTasks } from '@/hooks/useDailyTasks';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import ReferralMilestonesSection from '@/components/tasks/ReferralMilestonesSection';
 const iconMap: Record<string, React.ReactNode> = {
   zap: <Zap className="w-5 h-5" />,
   flame: <Flame className="w-5 h-5" />,
@@ -431,6 +432,16 @@ const DailyTasks = () => {
                 </Card>
               </motion.div>)}
           </div>}
+
+        {/* Referral Milestones Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
+          className="mt-6"
+        >
+          <ReferralMilestonesSection userId={userId || undefined} />
+        </motion.div>
 
         {/* Completion Bonus Card */}
         {completedCount === totalCount && totalCount > 0 && <motion.div initial={{
