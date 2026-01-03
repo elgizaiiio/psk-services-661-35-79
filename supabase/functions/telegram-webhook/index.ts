@@ -12,13 +12,7 @@ const WEBAPP_URL = 'https://bolts.elgiza.site';
 // Admin Telegram ID that can use /101 and /102 commands
 const ADMIN_IDS = [6657246146];
 
-interface SuccessfulPayment {
-  currency: string;
-  total_amount: number;
-  invoice_payload: string;
-  telegram_payment_charge_id: string;
-  provider_payment_charge_id: string;
-}
+// Stars payment interfaces removed - using TON payments only
 
 interface TelegramMessage {
   message_id: number;
@@ -40,7 +34,6 @@ interface TelegramMessage {
     height: number;
   }>;
   date: number;
-  successful_payment?: SuccessfulPayment;
 }
 
 interface TelegramUpdate {
@@ -51,13 +44,6 @@ interface TelegramUpdate {
     from: { id: number; username?: string; first_name: string };
     data: string;
     message?: { chat: { id: number } };
-  };
-  pre_checkout_query?: {
-    id: string;
-    from: { id: number };
-    currency: string;
-    total_amount: number;
-    invoice_payload: string;
   };
 }
 
@@ -135,24 +121,7 @@ async function answerCallbackQuery(callbackQueryId: string, text?: string) {
   });
 }
 
-async function answerPreCheckoutQuery(queryId: string, ok: boolean, errorMessage?: string) {
-  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerPreCheckoutQuery`;
-  
-  const body: Record<string, unknown> = {
-    pre_checkout_query_id: queryId,
-    ok: ok,
-  };
-
-  if (!ok && errorMessage) {
-    body.error_message = errorMessage;
-  }
-
-  await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-}
+// answerPreCheckoutQuery removed - Stars payments disabled
 
 async function getFileUrl(fileId: string): Promise<string | null> {
   try {
@@ -1329,160 +1298,8 @@ serve(async (req) => {
       });
     }
 
-    // Handle pre_checkout_query for Stars payments
-    if (update.pre_checkout_query) {
-      console.log('Processing pre_checkout_query:', update.pre_checkout_query);
-      await answerPreCheckoutQuery(update.pre_checkout_query.id, true);
-      return new Response(JSON.stringify({ ok: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
+    // Stars payments removed - using TON payments only
 
-    // Handle successful_payment for Stars payments
-    if (update.message?.successful_payment) {
-      console.log('Processing successful_payment:', update.message.successful_payment);
-      const payment = update.message.successful_payment;
-      const telegramId = update.message.from.id;
-      
-      try {
-        // Decode the payload
-        let payloadData: any = {};
-        try {
-          const decodedPayload = atob(payment.invoice_payload);
-          payloadData = JSON.parse(decodedPayload);
-          console.log('Decoded payload:', payloadData);
-        } catch (e) {
-          console.error('Error decoding payload:', e);
-          payloadData = { raw: payment.invoice_payload };
-        }
-
-        const supabase = getSupabaseClient();
-        
-        // Find the pending payment and update it
-        const { data: pendingPayment, error: findError } = await supabase
-          .from('stars_payments')
-          .select('*')
-          .eq('telegram_id', telegramId)
-          .eq('status', 'pending')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (findError || !pendingPayment) {
-          console.log('No pending payment found, creating new record');
-          // Create new payment record
-          await supabase
-            .from('stars_payments')
-            .insert({
-              telegram_id: telegramId,
-              user_id: payloadData.user_id || null,
-              product_type: payloadData.product_type || 'unknown',
-              product_id: payloadData.product_id || null,
-              amount_stars: payment.total_amount,
-              amount_usd: payment.total_amount * 0.02, // Approximate conversion
-              status: 'completed',
-              telegram_payment_id: payment.telegram_payment_charge_id
-            });
-        } else {
-          console.log('Found pending payment:', pendingPayment.id);
-          // Update existing payment
-          const { error: updateError } = await supabase
-            .from('stars_payments')
-            .update({
-              status: 'completed',
-              telegram_payment_id: payment.telegram_payment_charge_id
-            })
-            .eq('id', pendingPayment.id);
-
-          if (updateError) {
-            console.error('Error updating payment:', updateError);
-          } else {
-            console.log('Payment updated successfully');
-            
-            // Apply the reward based on product type
-            if (pendingPayment.product_type === 'token_purchase') {
-              // Add tokens to user balance
-              const tokensToAdd = Math.floor(pendingPayment.amount_stars * 50); // 50 tokens per star
-              await supabase
-                .from('bolt_users')
-                .update({ 
-                  token_balance: supabase.rpc('increment', { value: tokensToAdd })
-                })
-                .eq('id', pendingPayment.user_id);
-              
-              // Alternative: direct update
-              const { data: user } = await supabase
-                .from('bolt_users')
-                .select('token_balance')
-                .eq('id', pendingPayment.user_id)
-                .single();
-              
-              if (user) {
-                await supabase
-                  .from('bolt_users')
-                  .update({ token_balance: user.token_balance + tokensToAdd })
-                  .eq('id', pendingPayment.user_id);
-              }
-              
-              console.log(`Added ${tokensToAdd} tokens to user ${pendingPayment.user_id}`);
-            } else if (pendingPayment.product_type === 'spin_tickets') {
-              // Add spin tickets
-              const ticketsToAdd = payloadData.quantity || Math.floor(pendingPayment.amount_stars / 21);
-              const { data: existing } = await supabase
-                .from('user_spin_tickets')
-                .select('*')
-                .eq('user_id', pendingPayment.user_id)
-                .single();
-              
-              if (existing) {
-                await supabase
-                  .from('user_spin_tickets')
-                  .update({ 
-                    tickets_count: existing.tickets_count + ticketsToAdd 
-                  })
-                  .eq('user_id', pendingPayment.user_id);
-              } else {
-                await supabase
-                  .from('user_spin_tickets')
-                  .insert({
-                    user_id: pendingPayment.user_id,
-                    tickets_count: ticketsToAdd
-                  });
-              }
-              
-              console.log(`Added ${ticketsToAdd} spin tickets to user ${pendingPayment.user_id}`);
-            }
-            
-            // Update ad_clicks if this user came from an ad
-            const amountUsd = pendingPayment.amount_usd || (pendingPayment.amount_stars * 0.02);
-            await supabase
-              .from('ad_clicks')
-              .update({ 
-                paid: true, 
-                paid_amount: amountUsd,
-                user_id: pendingPayment.user_id
-              })
-              .eq('telegram_id', telegramId)
-              .eq('paid', false);
-            
-            console.log(`Updated ad_clicks for telegram_id ${telegramId}`);
-          }
-        }
-        
-        // Send confirmation message to user
-        await sendTelegramMessage(
-          update.message.chat.id,
-          `✅ <b>Payment Successful!</b>\n\nThank you for your purchase!\nAmount: <b>${payment.total_amount} ⭐</b>\n\nYour rewards have been added to your account.`
-        );
-        
-      } catch (error) {
-        console.error('Error processing successful payment:', error);
-      }
-      
-      return new Response(JSON.stringify({ ok: true }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
 
     const messageText = update.message?.text || '';
     const chatId = update.message?.chat.id;
@@ -1540,7 +1357,7 @@ Send /cancel to cancel`);
       const user = await getUserStats(telegramId);
       
       const referralCode = user?.telegram_username || telegramId;
-      const referralLink = `https://t.me/boltrsbot?start=${referralCode}`;
+      const referralLink = `https://t.me/Boltminingbot?start=${referralCode}`;
       
       let statsMessage = `📊 <b>Your Partnership Statistics</b>
 
@@ -1686,7 +1503,7 @@ Use /start to begin your journey.`;
         await sendTelegramMessage(chatId, notFoundMessage);
       } else {
         const referralCode = user.telegram_username || telegramId;
-        const referralLink = `https://t.me/boltrsbot?start=${referralCode}`;
+        const referralLink = `https://t.me/Boltminingbot?start=${referralCode}`;
         
         const referralMessage = `<b>Your Referral Link</b>
 
