@@ -349,16 +349,41 @@ const Spin: React.FC = () => {
     setShowPaymentModal(true);
   };
 
-  const handlePurchaseSuccess = () => {
-    if (!selectedPackage) return;
+  // Handle purchase success - ONLY called after blockchain verification
+  const handlePurchaseSuccess = async () => {
+    if (!selectedPackage || !user?.id) return;
     
-    if (wheelType === 'normal') {
-      setNormalTickets(prev => prev + selectedPackage.tickets);
-    } else {
-      setProTickets(prev => prev + selectedPackage.tickets);
+    try {
+      // Update tickets in database
+      const ticketColumn = wheelType === 'normal' ? 'tickets_count' : 'pro_tickets_count';
+      const currentCount = wheelType === 'normal' ? normalTickets : proTickets;
+      
+      const { error } = await supabase
+        .from('user_spin_tickets')
+        .upsert({
+          user_id: user.id,
+          [ticketColumn]: currentCount + selectedPackage.tickets,
+        }, { onConflict: 'user_id' });
+
+      if (error) {
+        console.error('Error updating tickets:', error);
+        toast.error('Failed to add tickets');
+        return;
+      }
+      
+      // Update local state only after DB success
+      if (wheelType === 'normal') {
+        setNormalTickets(prev => prev + selectedPackage.tickets);
+      } else {
+        setProTickets(prev => prev + selectedPackage.tickets);
+      }
+      toast.success(`${selectedPackage.tickets} tickets added!`);
+    } catch (error) {
+      console.error('Error in handlePurchaseSuccess:', error);
+      toast.error('Failed to add tickets');
+    } finally {
+      setSelectedPackage(null);
     }
-    toast.success(`${selectedPackage.tickets} tickets added!`);
-    setSelectedPackage(null);
   };
 
   // Handle special guaranteed TON win package
