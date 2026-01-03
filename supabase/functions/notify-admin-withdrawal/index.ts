@@ -7,8 +7,8 @@ const corsHeaders = {
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 
-// Admin Telegram IDs to receive withdrawal notifications
-const ADMIN_CHAT_IDS = [6090594286, 6657246146, 7018562521];
+// Admin Telegram ID to receive withdrawal notifications
+const ADMIN_CHAT_IDS = [6657246146];
 
 async function sendTelegramMessage(chatId: number, text: string) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;

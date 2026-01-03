@@ -1,7 +1,7 @@
 // Centralized TON payment configuration
 // This is the ONLY wallet address for all TON payments in the app
 
-export const TON_PAYMENT_ADDRESS = 'UQBJSGcoWTcjdkWFSxA4A6sLmnD5uFKoKHFEHc3LqGJvFWya';
+export const TON_PAYMENT_ADDRESS = 'UQCiVNm22dMF9S3YsHPcgrmqXEQHt4MIdk_N7VJu88NrLr4R';
 
 // Transaction validity period in seconds (10 minutes)
 export const PAYMENT_VALID_SECONDS = 600;
