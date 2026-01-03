@@ -183,44 +183,46 @@ const App = () => (
                     <TelegramWebAppWrapper>
                       <div className="tg-webapp-container min-h-screen bg-background relative">
                         <div className="pt-6 relative z-10">
-                          <Suspense fallback={<PageLoader />}>
-                            <Routes>
-                              <Route path="/" element={<Index />} />
-                              <Route path="/mining" element={<Mining />} />
-                              <Route path="/apps" element={<Apps />} />
-                              <Route path="/ai-generator" element={<AiGenerator />} />
-                              <Route path="/profile" element={<Profile />} />
-                              <Route path="/skins" element={<Skins />} />
-                              <Route path="/tasks" element={<Tasks />} />
-                              <Route path="/invite" element={<Invite />} />
-                              <Route path="/wallet" element={<Wallet />} />
-                              <Route path="/server-store" element={<ServerStore />} />
-                              <Route path="/upgrade-center" element={<UpgradeCenter />} />
-                              <Route path="/premium-packages" element={<PremiumPackages />} />
-                              <Route path="/elite-addons" element={<EliteAddOns />} />
-                              <Route path="/upgrade-matrix" element={<UpgradeMatrix />} />
-                              <Route path="/legendary-servers" element={<LegendaryServers />} />
-                              <Route path="/ai-subscription" element={<AiSubscription />} />
-                              <Route path="/mining-servers" element={<MiningServers />} />
-                              <Route path="/events" element={<Events />} />
-                              <Route path="/ai-image-store" element={<AiImageStore />} />
-                              <Route path="/giveaways" element={<Giveaways />} />
-                              <Route path="/admin" element={<Admin />} />
-                              <Route path="/create-task" element={<CreateTask />} />
-                              <Route path="/chat-ai" element={<ChatAI />} />
-                              <Route path="/slots" element={<Slots />} />
-                              <Route path="/game-2048-store" element={<Game2048Store />} />
-                              <Route path="/challenges" element={<Challenges />} />
-                              <Route path="/achievements" element={<Achievements />} />
-                              <Route path="/vip" element={<VIPSubscription />} />
-                              <Route path="/token-store" element={<TokenStore />} />
-                              <Route path="/daily-tasks" element={<DailyTasks />} />
-                              <Route path="/game" element={<KrunkerGame />} />
-                              <Route path="/contest" element={<Contest />} />
-                              <Route path="/spin" element={<Spin />} />
-                              <Route path="/buy-bolt" element={<BuyBolt />} />
-                            </Routes>
-                          </Suspense>
+                          <ErrorBoundary>
+                            <Suspense fallback={<PageLoader />}>
+                              <Routes>
+                                <Route path="/" element={<Index />} />
+                                <Route path="/mining" element={<Mining />} />
+                                <Route path="/apps" element={<Apps />} />
+                                <Route path="/ai-generator" element={<AiGenerator />} />
+                                <Route path="/profile" element={<Profile />} />
+                                <Route path="/skins" element={<Skins />} />
+                                <Route path="/tasks" element={<Tasks />} />
+                                <Route path="/invite" element={<Invite />} />
+                                <Route path="/wallet" element={<Wallet />} />
+                                <Route path="/server-store" element={<ServerStore />} />
+                                <Route path="/upgrade-center" element={<UpgradeCenter />} />
+                                <Route path="/premium-packages" element={<PremiumPackages />} />
+                                <Route path="/elite-addons" element={<EliteAddOns />} />
+                                <Route path="/upgrade-matrix" element={<UpgradeMatrix />} />
+                                <Route path="/legendary-servers" element={<LegendaryServers />} />
+                                <Route path="/ai-subscription" element={<AiSubscription />} />
+                                <Route path="/mining-servers" element={<MiningServers />} />
+                                <Route path="/events" element={<Events />} />
+                                <Route path="/ai-image-store" element={<AiImageStore />} />
+                                <Route path="/giveaways" element={<Giveaways />} />
+                                <Route path="/admin" element={<Admin />} />
+                                <Route path="/create-task" element={<CreateTask />} />
+                                <Route path="/chat-ai" element={<ChatAI />} />
+                                <Route path="/slots" element={<Slots />} />
+                                <Route path="/game-2048-store" element={<Game2048Store />} />
+                                <Route path="/challenges" element={<Challenges />} />
+                                <Route path="/achievements" element={<Achievements />} />
+                                <Route path="/vip" element={<VIPSubscription />} />
+                                <Route path="/token-store" element={<TokenStore />} />
+                                <Route path="/daily-tasks" element={<DailyTasks />} />
+                                <Route path="/game" element={<KrunkerGame />} />
+                                <Route path="/contest" element={<Contest />} />
+                                <Route path="/spin" element={<Spin />} />
+                                <Route path="/buy-bolt" element={<BuyBolt />} />
+                              </Routes>
+                            </Suspense>
+                          </ErrorBoundary>
                           <BottomNavigation />
                         </div>
                       </div>

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { TelegramUser } from '@/types/telegram';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('TelegramAuth');
@@ -104,8 +103,6 @@ export const useTelegramAuth = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
   const [hasWebApp, setHasWebApp] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
 
   useEffect(() => {
     let retryCount = 0;
