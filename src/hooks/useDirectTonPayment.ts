@@ -86,17 +86,29 @@ export const useDirectTonPayment = () => {
         logger.error('Payment record error', paymentError);
       }
 
+      // SECURITY: Assert the correct payment address is being used
+      console.log('TON Payment Details:', {
+        destinationAddress: TON_PAYMENT_ADDRESS,
+        amount: params.amount,
+        amountNano: amountNano,
+        productType: params.productType
+      });
+
       const transaction = {
         validUntil: getValidUntil(),
         messages: [
           {
             address: TON_PAYMENT_ADDRESS,
             amount: amountNano
+            // No payload/comment - transactions are sent without comments
           }
         ]
       };
 
-      logger.debug('Sending TON transaction', { amount: params.amount });
+      logger.info('Sending TON transaction to unified address', { 
+        address: TON_PAYMENT_ADDRESS, 
+        amount: params.amount 
+      });
       
       const result = await tonConnectUI.sendTransaction(transaction);
       

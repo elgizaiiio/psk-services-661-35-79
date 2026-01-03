@@ -16,6 +16,8 @@ import AdminUpgrades from "@/components/admin/AdminUpgrades";
 import AdminStarsPayments from "@/components/admin/AdminStarsPayments";
 import AdminTonPayments from "@/components/admin/AdminTonPayments";
 import { BoltUser, BoltTask, BoltMiningSession, BoltDailyCode } from "@/types/bolt";
+import { useTelegramAuth } from "@/hooks/useTelegramAuth";
+import { isAdmin, ADMIN_TELEGRAM_ID } from "@/lib/admin-constants";
 
 type Upgrade = {
   id: string;
@@ -29,6 +31,7 @@ type Upgrade = {
 
 const Admin: React.FC = () => {
   const navigate = useNavigate();
+  const { user: telegramUser, isLoading: authLoading } = useTelegramAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [tasks, setTasks] = useState<BoltTask[]>([]);
   const [codes, setCodes] = useState<Partial<BoltDailyCode> | null>(null);
@@ -38,9 +41,18 @@ const Admin: React.FC = () => {
   const [upgrades, setUpgrades] = useState<Upgrade[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Check admin access using Telegram ID
   useEffect(() => {
-    setIsAuthenticated(true);
-  }, []);
+    if (!authLoading && telegramUser) {
+      const hasAccess = isAdmin(telegramUser.id);
+      setIsAuthenticated(hasAccess);
+      
+      if (!hasAccess) {
+        toast.error('Access denied. Admin only.');
+        navigate('/');
+      }
+    }
+  }, [telegramUser, authLoading, navigate]);
 
   const loadTasks = async () => {
     const { data } = await supabase.from("bolt_tasks" as any).select("*").order("created_at", { ascending: false });
