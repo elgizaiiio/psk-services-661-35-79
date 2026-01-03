@@ -99,17 +99,6 @@ export const useTasks = () => {
       if (taskError) throw taskError;
       const taskData = task as unknown as BoltTask;
 
-      const { data: existing } = await supabase
-        .from('bolt_completed_tasks')
-        .select('*')
-        .eq('user_id', boltUser.id)
-        .eq('task_id', taskId)
-        .maybeSingle();
-
-      if (existing) {
-        throw new Error('Task already completed');
-      }
-
       const { error: insertError } = await supabase
         .from('bolt_completed_tasks')
         .insert({
