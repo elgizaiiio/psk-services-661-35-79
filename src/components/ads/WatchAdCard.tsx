@@ -81,7 +81,7 @@ export const WatchAdCard: React.FC<WatchAdCardProps> = ({
         toast.success(`+${REWARD_BOLT} BOLT +${REWARD_USDT} USDT!`);
         onRewardClaimed?.();
       } else {
-        toast.info('Watch the full ad to earn rewards');
+        toast.info('Click on the ad to complete and earn rewards');
       }
     } catch (err) {
       console.error('Error watching ad:', err);
@@ -117,7 +117,7 @@ export const WatchAdCard: React.FC<WatchAdCardProps> = ({
           </div>
           <div>
             <p className="font-medium text-foreground">Watch Ads</p>
-            <p className="text-xs text-muted-foreground">Earn rewards</p>
+            <p className="text-xs text-muted-foreground">Click on ad to earn</p>
           </div>
         </div>
         <div className="text-right">
