@@ -225,7 +225,7 @@ const BuyBolt = () => {
 
       if (paymentError) throw paymentError;
 
-      await tonConnectUI.sendTransaction({
+      const result = await tonConnectUI.sendTransaction({
         validUntil: getValidUntil(),
         messages: [{
           address: TON_PAYMENT_ADDRESS,
@@ -233,43 +233,76 @@ const BuyBolt = () => {
         }],
       });
 
+      // Save tx_hash but keep as PENDING - don't confirm yet!
       await supabase
         .from('ton_payments')
-        .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+        .update({ 
+          tx_hash: result.boc,
+          wallet_address: tonConnectUI.wallet?.account?.address || null,
+          metadata: { 
+            bolts: totalBolts, 
+            package: pkg.name,
+            boc_submitted: true,
+            submitted_at: new Date().toISOString()
+          }
+        })
         .eq('id', payment.id);
 
-      const { data: currentUser } = await supabase
-        .from('bolt_users')
-        .select('token_balance')
-        .eq('id', user.id)
-        .single();
+      toast.info('Verifying transaction on blockchain...');
 
-      const newBalance = (currentUser?.token_balance || 0) + totalBolts;
-      await supabase
-        .from('bolt_users')
-        .update({ token_balance: newBalance })
-        .eq('id', user.id);
+      // Wait for transaction to propagate
+      await new Promise(resolve => setTimeout(resolve, 6000));
 
-      // Notify admin about TON payment
-      try {
-        await supabase.functions.invoke('notify-admin-payment', {
-          body: {
-            userId: user.id,
-            username: telegramUser?.username || telegramUser?.first_name || 'Unknown',
-            telegramId: telegramUser?.id,
-            paymentMethod: 'ton',
-            amount: pkg.priceTon,
-            currency: 'TON',
-            productType: 'token_purchase',
-            productName: `${pkg.name} Package`,
-            description: `${totalBolts.toLocaleString()} BOLT tokens`,
-          }
-        });
-      } catch (e) {
-        console.error('Failed to notify admin', e);
+      // Verify the payment on blockchain
+      const verifyResult = await supabase.functions.invoke('verify-ton-payment', {
+        body: {
+          paymentId: payment.id,
+          txHash: result.boc,
+          walletAddress: tonConnectUI.wallet?.account?.address
+        },
+        headers: {
+          'x-telegram-id': String(telegramUser?.id)
+        }
+      });
+
+      if (verifyResult.error || !verifyResult.data?.ok) {
+        console.warn('Payment sent but verification pending:', verifyResult);
+        toast.warning('Payment sent! Verification may take a few minutes. Tokens will be credited once confirmed.');
+      } else {
+        // Only credit tokens AFTER successful blockchain verification
+        const { data: currentUser } = await supabase
+          .from('bolt_users')
+          .select('token_balance')
+          .eq('id', user.id)
+          .single();
+
+        const newBalance = (currentUser?.token_balance || 0) + totalBolts;
+        await supabase
+          .from('bolt_users')
+          .update({ token_balance: newBalance })
+          .eq('id', user.id);
+
+        // Notify admin about verified TON payment
+        try {
+          await supabase.functions.invoke('notify-admin-payment', {
+            body: {
+              userId: user.id,
+              username: telegramUser?.username || telegramUser?.first_name || 'Unknown',
+              telegramId: telegramUser?.id,
+              paymentMethod: 'ton',
+              amount: pkg.priceTon,
+              currency: 'TON',
+              productType: 'token_purchase',
+              productName: `${pkg.name} Package`,
+              description: `${totalBolts.toLocaleString()} BOLT tokens (verified)`,
+            }
+          });
+        } catch (e) {
+          console.error('Failed to notify admin', e);
+        }
+
+        toast.success(`Purchased ${totalBolts.toLocaleString()} BOLT`);
       }
-
-      toast.success(`Purchased ${totalBolts.toLocaleString()} BOLT`);
     } catch (error: any) {
       console.error('Purchase error:', error);
       if (error?.message?.includes('cancel')) {
