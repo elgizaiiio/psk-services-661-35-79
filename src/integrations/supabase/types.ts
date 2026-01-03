@@ -62,6 +62,51 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_views: {
+        Row: {
+          ad_type: string
+          created_at: string | null
+          id: string
+          reward_bolt: number | null
+          reward_usdt: number | null
+          telegram_id: number
+          user_id: string | null
+        }
+        Insert: {
+          ad_type?: string
+          created_at?: string | null
+          id?: string
+          reward_bolt?: number | null
+          reward_usdt?: number | null
+          telegram_id: number
+          user_id?: string | null
+        }
+        Update: {
+          ad_type?: string
+          created_at?: string | null
+          id?: string
+          reward_bolt?: number | null
+          reward_usdt?: number | null
+          telegram_id?: number
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_views_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_views_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_task_creation_state: {
         Row: {
           action_type: string | null

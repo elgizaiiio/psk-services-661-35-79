@@ -38,3 +38,6 @@ verify_jwt = false
 
 [functions.daily-notifications]
 verify_jwt = false
+
+[functions.adsgram-reward]
+verify_jwt = false
