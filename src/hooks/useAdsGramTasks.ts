@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// AdsGram Block ID for Tasks (Partner Tasks)
-const ADSGRAM_TASKS_BLOCK_ID = 'int-20515';
+// AdsGram Block ID for Tasks (Partner Tasks) - just the number
+const ADSGRAM_TASKS_BLOCK_ID = '20515';
 
 declare global {
   interface Window {
@@ -28,31 +28,45 @@ export const useAdsGramTasks = (): UseAdsGramTasksReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AdController | null>(null);
+  const initAttempted = useRef(false);
 
   useEffect(() => {
+    if (initAttempted.current) return;
+    
     const checkAdsGram = () => {
-      if (window.Adsgram) {
-        try {
+      if (initAttempted.current) return;
+      
+      try {
+        if (window.Adsgram) {
+          initAttempted.current = true;
           controllerRef.current = window.Adsgram.init({
             blockId: ADSGRAM_TASKS_BLOCK_ID,
             debug: false,
           });
           setIsReady(true);
           console.log('AdsGram Tasks initialized successfully');
-        } catch (err) {
-          console.error('Failed to initialize AdsGram Tasks:', err);
-          setError('Failed to initialize ads');
         }
+      } catch (err) {
+        console.error('Failed to initialize AdsGram Tasks:', err);
+        setError('Failed to initialize ads');
+        initAttempted.current = true;
       }
     };
 
+    // Check immediately
     checkAdsGram();
+    
+    // Also check after a delay in case SDK loads late
     const timeout = setTimeout(checkAdsGram, 2000);
 
     return () => {
       clearTimeout(timeout);
-      if (controllerRef.current) {
-        controllerRef.current.destroy();
+      try {
+        if (controllerRef.current) {
+          controllerRef.current.destroy();
+        }
+      } catch (e) {
+        // Ignore destroy errors
       }
     };
   }, []);
