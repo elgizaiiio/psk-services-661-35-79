@@ -285,26 +285,46 @@ const Tasks = () => {
 
   const progress = stats.totalTasks > 0 ? (stats.completed / stats.totalTasks) * 100 : 0;
 
-  // Show message if user is outside Telegram
-  if (!authLoading && !tgUser) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
-        <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
-        <p className="text-lg text-muted-foreground text-center">
-          Please open the app from Telegram
-        </p>
-      </div>
-    );
-  }
-
-  // Show loading spinner while data is being fetched
-  if (loading || authLoading) {
+  // Show loading spinner while Telegram auth is loading
+  if (authLoading) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
           <Loader2 className="w-8 h-8 text-primary" />
         </motion.div>
         <p className="mt-3 text-sm text-muted-foreground">Loading your account...</p>
+      </div>
+    );
+  }
+
+  // Show message if user is outside Telegram (after auth loading is done)
+  if (!tgUser?.id) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+        <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
+        <p className="text-lg text-muted-foreground text-center mb-4">
+          Please open the app from Telegram
+        </p>
+        <a 
+          href="https://t.me/BoltMiningBot" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium"
+        >
+          Open in Telegram
+        </a>
+      </div>
+    );
+  }
+
+  // Show loading spinner while tasks data is being fetched
+  if (loading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+          <Loader2 className="w-8 h-8 text-primary" />
+        </motion.div>
+        <p className="mt-3 text-sm text-muted-foreground">Loading tasks...</p>
       </div>
     );
   }

@@ -117,7 +117,37 @@ const Index = () => {
     await startMining();
   };
 
-  if (authLoading || loading) {
+  if (authLoading) {
+    return (
+      <main className="min-h-screen bg-background flex items-center justify-center">
+        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
+          <Loader2 className="w-8 h-8 text-primary" />
+        </motion.div>
+      </main>
+    );
+  }
+
+  // Show message if user is outside Telegram
+  if (!telegramUser?.id) {
+    return (
+      <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <Loader2 className="w-12 h-12 text-muted-foreground mb-4" />
+        <p className="text-lg text-muted-foreground text-center mb-4">
+          Please open the app from Telegram
+        </p>
+        <a 
+          href="https://t.me/BoltMiningBot" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium"
+        >
+          Open in Telegram
+        </a>
+      </main>
+    );
+  }
+
+  if (loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
