@@ -21,4 +21,6 @@ export interface DuckCharacter {
   descriptionAr: string;
   rarity: DuckRarity;
   stats: DuckStats;
+  stickerId: string;
+  stickerUrl: string;
 }

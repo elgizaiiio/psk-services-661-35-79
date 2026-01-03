@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Zap, Gauge, Sparkles, Star } from 'lucide-react';
 import { DuckCharacter } from '@/types/duck-characters';
 import { getRarityColor, getRarityBorder } from '@/data/duckCharacters';
+import { AnimatedDuckSticker } from './AnimatedDuckSticker';
 import { Button } from '@/components/ui/button';
 
 interface DuckDetailModalProps {
@@ -56,25 +57,19 @@ const DuckDetailModal: React.FC<DuckDetailModalProps> = ({ duck, isOpen, onClose
 
               {/* Content */}
               <div className="relative">
-                {/* Duck avatar */}
+                {/* Animated Duck Sticker */}
                 <motion.div
                   className="flex justify-center mb-4"
                   animate={{ 
                     y: [0, -10, 0],
-                    rotate: [0, -3, 3, 0]
                   }}
-                  transition={{ duration: 3, repeat: Infinity }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
                 >
-                  <div 
-                    className="w-28 h-28 rounded-full flex items-center justify-center text-7xl shadow-xl"
-                    style={{ 
-                      backgroundColor: `${duck.color}20`, 
-                      border: `4px solid ${duck.color}`,
-                      boxShadow: `0 0 30px ${duck.color}40`
-                    }}
-                  >
-                    {duck.emoji}
-                  </div>
+                  <AnimatedDuckSticker 
+                    stickerUrl={duck.stickerUrl} 
+                    alt={duck.name}
+                    size="xl"
+                  />
                 </motion.div>
 
                 {/* Rarity badge */}

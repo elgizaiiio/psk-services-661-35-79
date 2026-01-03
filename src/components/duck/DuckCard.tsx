@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { DuckCharacter } from '@/types/duck-characters';
 import { getRarityColor, getRarityBorder, getRarityGlow } from '@/data/duckCharacters';
+import { AnimatedDuckSticker } from './AnimatedDuckSticker';
 import { Zap, Gauge, Sparkles } from 'lucide-react';
 
 interface DuckCardProps {
@@ -32,18 +33,17 @@ const DuckCard: React.FC<DuckCardProps> = ({ duck, onClick, isSelected }) => {
         {duck.rarity}
       </div>
 
-      {/* Duck emoji/avatar */}
+      {/* Animated Duck Sticker */}
       <motion.div
         className="flex justify-center mb-3"
-        animate={{ rotate: [0, -5, 5, -5, 0] }}
-        transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+        animate={{ y: [0, -5, 0] }}
+        transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
       >
-        <div 
-          className="w-20 h-20 rounded-full flex items-center justify-center text-5xl shadow-inner"
-          style={{ backgroundColor: `${duck.color}20`, border: `3px solid ${duck.color}` }}
-        >
-          {duck.emoji}
-        </div>
+        <AnimatedDuckSticker 
+          stickerUrl={duck.stickerUrl} 
+          alt={duck.name}
+          size="md"
+        />
       </motion.div>
 
       {/* Name */}
