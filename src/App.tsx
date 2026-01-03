@@ -40,7 +40,7 @@ const CreateTask = lazy(() => import("./pages/CreateTask"));
 const Admin = lazy(() => import("./pages/Admin"));
 const ChatAI = lazy(() => import("./pages/ChatAI"));
 const Slots = lazy(() => import("./pages/Slots"));
-const Settings = lazy(() => import("./pages/Settings"));
+const Game2048Store = lazy(() => import("./pages/Game2048Store"));
 const Challenges = lazy(() => import("./pages/Challenges"));
 const Achievements = lazy(() => import("./pages/Achievements"));
 const VIPSubscription = lazy(() => import("./pages/VIPSubscription"));
@@ -209,7 +209,7 @@ const App = () => (
                               <Route path="/create-task" element={<CreateTask />} />
                               <Route path="/chat-ai" element={<ChatAI />} />
                               <Route path="/slots" element={<Slots />} />
-                              <Route path="/settings" element={<Settings />} />
+                              <Route path="/game-2048-store" element={<Game2048Store />} />
                               <Route path="/challenges" element={<Challenges />} />
                               <Route path="/achievements" element={<Achievements />} />
                               <Route path="/vip" element={<VIPSubscription />} />
