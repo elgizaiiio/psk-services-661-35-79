@@ -2,20 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Switch } from "@/components/ui/switch";
 import { 
   Zap,
   Clock,
   Users,
   Target,
-  Moon,
-  Sun,
-  Globe,
-  Bell,
-  Volume2,
-  VolumeX,
   Share2,
-  HelpCircle,
+  MessageCircle,
   ChevronRight,
   Copy,
   Check,
@@ -28,63 +21,18 @@ import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
 import { useTasks } from "@/hooks/useTasks";
 import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
-import { useLanguage, languageNames } from "@/contexts/LanguageContext";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
 import { BoltIcon, UsdtIcon } from "@/components/ui/currency-icons";
-
-type Language = 'en' | 'ru';
 
 const Profile: React.FC = () => {
   const { user: tgUser, hapticFeedback } = useTelegramAuth();
   const { user: vmUser, loading: miningLoading } = useViralMining(tgUser);
   const { completedTasks, loading: tasksLoading } = useTasks();
-  const { language, setLanguage } = useLanguage();
   const currentUrl = typeof window !== "undefined" ? window.location.href : "";
   useTelegramBackButton();
 
   const [copiedId, setCopiedId] = useState(false);
-  const [showLanguages, setShowLanguages] = useState(false);
-  
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    return localStorage.getItem('theme') === 'dark' || 
-      (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  });
-  const [soundEnabled, setSoundEnabled] = useState(() => {
-    return localStorage.getItem('sound-enabled') !== 'false';
-  });
-  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
-    return localStorage.getItem('notifications-enabled') !== 'false';
-  });
-
-  useEffect(() => {
-    if (isDarkMode) {
-      document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDarkMode]);
-
-  const handleSoundToggle = (enabled: boolean) => {
-    setSoundEnabled(enabled);
-    localStorage.setItem('sound-enabled', String(enabled));
-    hapticFeedback?.impact?.('light');
-  };
-
-  const handleNotificationsToggle = (enabled: boolean) => {
-    setNotificationsEnabled(enabled);
-    localStorage.setItem('notifications-enabled', String(enabled));
-    hapticFeedback?.impact?.('light');
-  };
-
-  const handleLanguageChange = (lang: Language) => {
-    setLanguage(lang);
-    setShowLanguages(false);
-    hapticFeedback?.impact?.('light');
-    toast.success('Language updated');
-  };
 
   const handleCopyId = async () => {
     if (tgUser?.id) {
@@ -98,7 +46,8 @@ const Profile: React.FC = () => {
 
   const handleShare = async () => {
     const botUsername = 'BoltMiningBot';
-    const shareUrl = `https://t.me/${botUsername}`;
+    const referralCode = vmUser?.id || tgUser?.id || '';
+    const shareUrl = `https://t.me/${botUsername}?start=${referralCode}`;
     const shareText = 'Join me on Bolt Mining and start earning BOLT tokens! 🚀';
     
     const tg = (window as any).Telegram?.WebApp;
@@ -115,17 +64,27 @@ const Profile: React.FC = () => {
         });
       } catch {
         await navigator.clipboard.writeText(shareUrl);
-        toast.success('Link copied!');
+        toast.success('Referral link copied!');
       }
     } else {
       await navigator.clipboard.writeText(shareUrl);
-      toast.success('Link copied!');
+      toast.success('Referral link copied!');
     }
+    
+    hapticFeedback?.impact?.('medium');
+  };
+
+  const handleOpenCommunity = () => {
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg?.openTelegramLink) {
+      tg.openTelegramLink('https://t.me/boltcomm');
+    } else {
+      window.open('https://t.me/boltcomm', '_blank');
+    }
+    hapticFeedback?.impact?.('light');
   };
 
   const totalTasksCompleted = completedTasks.length;
-  const languages = Object.entries(languageNames) as [Language, { name: string; nativeName: string; flag: string }][];
-  const currentLang = languageNames[language];
 
   if (miningLoading || tasksLoading) {
     return (
@@ -145,7 +104,7 @@ const Profile: React.FC = () => {
       </Helmet>
 
       <div className="min-h-screen bg-background pb-28">
-        <div className="max-w-md mx-auto px-4 pt-6 space-y-5">
+        <div className="max-w-md mx-auto px-4 pt-16 space-y-5">
           
           {/* Hero Profile Card */}
           <motion.div
@@ -236,34 +195,22 @@ const Profile: React.FC = () => {
             transition={{ delay: 0.15 }}
             className="grid grid-cols-2 gap-3"
           >
-            <div className="p-4 rounded-2xl bg-card border border-border hover:border-amber-500/30 transition-colors group">
-              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Zap className="w-5 h-5 text-amber-500" />
-              </div>
+            <div className="p-4 rounded-2xl bg-card border border-border">
               <p className="text-xs text-muted-foreground mb-1">Mining Power</p>
               <p className="text-xl font-bold text-foreground">×{vmUser?.mining_power || 1}</p>
             </div>
             
-            <div className="p-4 rounded-2xl bg-card border border-border hover:border-blue-500/30 transition-colors group">
-              <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Clock className="w-5 h-5 text-blue-500" />
-              </div>
+            <div className="p-4 rounded-2xl bg-card border border-border">
               <p className="text-xs text-muted-foreground mb-1">Duration</p>
               <p className="text-xl font-bold text-foreground">{vmUser?.mining_duration_hours || 4}h</p>
             </div>
             
-            <div className="p-4 rounded-2xl bg-card border border-border hover:border-purple-500/30 transition-colors group">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Users className="w-5 h-5 text-purple-500" />
-              </div>
+            <div className="p-4 rounded-2xl bg-card border border-border">
               <p className="text-xs text-muted-foreground mb-1">Referrals</p>
               <p className="text-xl font-bold text-foreground">{vmUser?.total_referrals || 0}</p>
             </div>
             
-            <div className="p-4 rounded-2xl bg-card border border-border hover:border-emerald-500/30 transition-colors group">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-                <Target className="w-5 h-5 text-emerald-500" />
-              </div>
+            <div className="p-4 rounded-2xl bg-card border border-border">
               <p className="text-xs text-muted-foreground mb-1">Tasks Done</p>
               <p className="text-xl font-bold text-foreground">{totalTasksCompleted}</p>
             </div>
@@ -290,112 +237,15 @@ const Profile: React.FC = () => {
             </div>
           </motion.div>
 
-          {/* Settings Section */}
+          {/* Actions */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
             className="space-y-3"
           >
-            <h2 className="text-sm font-semibold text-muted-foreground px-1 uppercase tracking-wider">Settings</h2>
-            
             <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
-              {/* Dark Mode */}
-              <div className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
-                    {isDarkMode ? <Moon className="w-5 h-5 text-indigo-400" /> : <Sun className="w-5 h-5 text-amber-500" />}
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">Dark Mode</span>
-                    <p className="text-xs text-muted-foreground">{isDarkMode ? 'On' : 'Off'}</p>
-                  </div>
-                </div>
-                <Switch checked={isDarkMode} onCheckedChange={setIsDarkMode} />
-              </div>
-              
-              {/* Sound */}
-              <div className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center">
-                    {soundEnabled ? <Volume2 className="w-5 h-5 text-green-500" /> : <VolumeX className="w-5 h-5 text-muted-foreground" />}
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">Sound Effects</span>
-                    <p className="text-xs text-muted-foreground">{soundEnabled ? 'Enabled' : 'Disabled'}</p>
-                  </div>
-                </div>
-                <Switch checked={soundEnabled} onCheckedChange={handleSoundToggle} />
-              </div>
-              
-              {/* Notifications */}
-              <div className="flex items-center justify-between p-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/20 to-orange-500/20 flex items-center justify-center">
-                    <Bell className="w-5 h-5 text-orange-500" />
-                  </div>
-                  <div>
-                    <span className="font-medium text-foreground">Notifications</span>
-                    <p className="text-xs text-muted-foreground">{notificationsEnabled ? 'Enabled' : 'Disabled'}</p>
-                  </div>
-                </div>
-                <Switch checked={notificationsEnabled} onCheckedChange={handleNotificationsToggle} />
-              </div>
-              
-              {/* Language */}
-              <button 
-                onClick={() => setShowLanguages(!showLanguages)}
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center">
-                    <Globe className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div className="text-left">
-                    <span className="font-medium text-foreground">Language</span>
-                    <p className="text-xs text-muted-foreground">{currentLang.flag} {currentLang.nativeName}</p>
-                  </div>
-                </div>
-                <ChevronRight className={`w-5 h-5 text-muted-foreground transition-transform duration-200 ${showLanguages ? 'rotate-90' : ''}`} />
-              </button>
-              
-              {showLanguages && (
-                <motion.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="p-2 bg-muted/20"
-                >
-                  {languages.map(([langCode, langInfo]) => (
-                    <button
-                      key={langCode}
-                      onClick={() => handleLanguageChange(langCode)}
-                      className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
-                        language === langCode 
-                          ? 'bg-primary/20 text-primary' 
-                          : 'hover:bg-muted/50 text-foreground'
-                      }`}
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className="text-xl">{langInfo.flag}</span>
-                        <span className="text-sm font-medium">{langInfo.nativeName}</span>
-                      </span>
-                      {language === langCode && <Check className="w-4 h-4" />}
-                    </button>
-                  ))}
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
-
-          {/* Actions */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="space-y-3"
-          >
-            <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
-              {/* Share */}
+              {/* Share Referral Link */}
               <button 
                 onClick={handleShare}
                 className="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group"
@@ -405,32 +255,25 @@ const Profile: React.FC = () => {
                     <Share2 className="w-5 h-5 text-primary" />
                   </div>
                   <div className="text-left">
-                    <span className="font-medium text-foreground">Share App</span>
+                    <span className="font-medium text-foreground">Share Referral Link</span>
                     <p className="text-xs text-muted-foreground">Invite friends & earn rewards</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
               </button>
               
-              {/* Help */}
+              {/* Community */}
               <button 
-                onClick={() => {
-                  const tg = (window as any).Telegram?.WebApp;
-                  if (tg?.openTelegramLink) {
-                    tg.openTelegramLink('https://t.me/boltcomm');
-                  } else {
-                    window.open('https://t.me/boltcomm', '_blank');
-                  }
-                }}
+                onClick={handleOpenCommunity}
                 className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors group"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <HelpCircle className="w-5 h-5 text-muted-foreground" />
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <MessageCircle className="w-5 h-5 text-blue-500" />
                   </div>
                   <div className="text-left">
-                    <span className="font-medium text-foreground">Help & Support</span>
-                    <p className="text-xs text-muted-foreground">Get help from our team</p>
+                    <span className="font-medium text-foreground">Community</span>
+                    <p className="text-xs text-muted-foreground">Join our Telegram community</p>
                   </div>
                 </div>
                 <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
@@ -442,7 +285,7 @@ const Profile: React.FC = () => {
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.35 }}
+            transition={{ delay: 0.3 }}
             className="text-center text-xs text-muted-foreground py-4"
           >
             BOLT Mining v1.0.0
