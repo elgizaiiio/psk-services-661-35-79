@@ -1414,8 +1414,41 @@ Use /partnership to submit a new task.`;
       
       console.log('Start command received, referral param:', referralParam);
 
+      // Check if this is an ad click tracking parameter
+      if (referralParam && referralParam.startsWith('adclick_')) {
+        const clickId = referralParam.replace('adclick_', '');
+        console.log('Ad click detected, click_id:', clickId);
+        
+        const supabase = getSupabaseClient();
+        
+        // Link the telegram user to this ad click
+        const { error: updateError } = await supabase
+          .from('ad_clicks')
+          .update({ 
+            telegram_id: telegramId,
+          })
+          .eq('click_id', clickId);
+        
+        if (updateError) {
+          console.error('Error linking ad click to user:', updateError);
+        } else {
+          console.log('Successfully linked ad click to telegram_id:', telegramId);
+          
+          // Notify admin about new ad click conversion
+          for (const adminId of ADMIN_IDS) {
+            await sendTelegramMessage(adminId, `📢 <b>New Ad Click!</b>
+            
+👤 User: ${firstName} ${username ? `(@${username})` : ''}
+🆔 Telegram ID: ${telegramId}
+🔗 Click ID: ${clickId}
+
+User joined from AdsGram ad!`);
+          }
+        }
+      }
+
       let webAppUrl = WEBAPP_URL;
-      if (referralParam) {
+      if (referralParam && !referralParam.startsWith('adclick_')) {
         webAppUrl = `${WEBAPP_URL}?ref=${encodeURIComponent(referralParam)}`;
       }
 
