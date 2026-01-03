@@ -46,7 +46,6 @@ const Achievements = lazy(() => import("./pages/Achievements"));
 const VIPSubscription = lazy(() => import("./pages/VIPSubscription"));
 const TokenStore = lazy(() => import("./pages/TokenStore"));
 const DailyTasks = lazy(() => import("./pages/DailyTasks"));
-const KrunkerGame = lazy(() => import("./pages/KrunkerGame"));
 const Contest = lazy(() => import("./pages/Contest"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Spin = lazy(() => import("./pages/Spin"));
@@ -219,7 +218,6 @@ const App = () => (
                                 <Route path="/vip" element={<VIPSubscription />} />
                                 <Route path="/token-store" element={<TokenStore />} />
                                 <Route path="/daily-tasks" element={<DailyTasks />} />
-                                <Route path="/game" element={<KrunkerGame />} />
                                 <Route path="/contest" element={<Contest />} />
                                 <Route path="/spin" element={<Spin />} />
                                 <Route path="/buy-bolt" element={<BuyBolt />} />

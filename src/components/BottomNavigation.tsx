@@ -15,7 +15,6 @@ const BottomNavigation = () => {
     { icon: ListTodo, label: 'Tasks', path: '/tasks' },
     { icon: Users, label: 'Invite', path: '/invite' },
     { icon: Wallet, label: 'Wallet', path: '/wallet' },
-    { icon: Gamepad2, label: 'Game', path: '/game' },
   ];
 
   const handleNavigation = (path: string) => {
@@ -23,7 +22,7 @@ const BottomNavigation = () => {
     navigate(path);
   };
 
-  const hideNavigationPaths = ['/runner-game', '/chat-ai', '/krunker', '/game'];
+  const hideNavigationPaths = ['/runner-game', '/chat-ai'];
   
   if (hideNavigationPaths.includes(location.pathname)) {
     return null;
