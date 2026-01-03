@@ -83,12 +83,7 @@ const BottomNavigation = () => {
           {/* Center Spin Button */}
           <motion.button
             onClick={() => handleNavigation('/spin')}
-            className={cn(
-              "relative -mt-8 flex items-center justify-center w-16 h-16 rounded-full shadow-lg transition-all",
-              isSpinActive 
-                ? "bg-primary text-primary-foreground shadow-primary/40" 
-                : "bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-orange-500/40"
-            )}
+            className="relative -mt-8 flex items-center justify-center w-16 h-16 rounded-full shadow-lg transition-all bg-primary text-primary-foreground shadow-primary/40"
             whileTap={{ scale: 0.9, rotate: 180 }}
             whileHover={{ scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 400, damping: 17 }}
@@ -113,12 +108,7 @@ const BottomNavigation = () => {
               </svg>
             </motion.div>
             {/* Glow effect */}
-            <div className={cn(
-              "absolute inset-0 rounded-full blur-lg opacity-50 -z-10",
-              isSpinActive 
-                ? "bg-primary" 
-                : "bg-gradient-to-br from-amber-500 to-orange-600"
-            )} />
+            <div className="absolute inset-0 rounded-full blur-lg opacity-50 -z-10 bg-primary" />
           </motion.button>
           
           {/* Right nav items */}
