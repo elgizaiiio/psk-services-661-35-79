@@ -137,7 +137,7 @@ const Index = () => {
           Please open the app from Telegram
         </p>
         <a 
-          href="https://t.me/BoltMiningBot" 
+          href="https://t.me/Boltminingbot" 
           target="_blank" 
           rel="noopener noreferrer"
           className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium"

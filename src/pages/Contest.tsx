@@ -20,7 +20,7 @@ const Contest = () => {
 
   const referralLink = useMemo(() => {
     if (!tgUser?.id) return '';
-    return `https://t.me/BoltMiningBot?start=ref_${tgUser.id}`;
+    return `https://t.me/Boltminingbot?start=ref_${tgUser.id}`;
   }, [tgUser?.id]);
 
   const handleCopy = async () => {
