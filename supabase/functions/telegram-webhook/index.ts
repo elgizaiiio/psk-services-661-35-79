@@ -53,6 +53,110 @@ function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
+// Register user in bolt_users on /start command
+async function registerUser(
+  telegramId: number,
+  firstName: string | null,
+  lastName: string | null,
+  username: string | null,
+  referralCode: string | null
+) {
+  const supabase = getSupabaseClient();
+  
+  // Check if user already exists
+  const { data: existingUser, error: checkError } = await supabase
+    .from('bolt_users')
+    .select('id')
+    .eq('telegram_id', telegramId)
+    .single();
+  
+  if (existingUser) {
+    console.log('User already exists:', telegramId);
+    return existingUser;
+  }
+  
+  // Find referrer if referral code provided
+  let referrerId: string | null = null;
+  if (referralCode && !referralCode.startsWith('adclick_')) {
+    // Try to find by username first
+    const { data: referrerByUsername } = await supabase
+      .from('bolt_users')
+      .select('id')
+      .eq('telegram_username', referralCode)
+      .single();
+    
+    if (referrerByUsername) {
+      referrerId = referrerByUsername.id;
+    } else {
+      // Try to find by telegram_id
+      const { data: referrerById } = await supabase
+        .from('bolt_users')
+        .select('id')
+        .eq('telegram_id', parseInt(referralCode))
+        .single();
+      
+      if (referrerById) {
+        referrerId = referrerById.id;
+      }
+    }
+  }
+  
+  // Create new user
+  const { data: newUser, error: insertError } = await supabase
+    .from('bolt_users')
+    .insert({
+      telegram_id: telegramId,
+      first_name: firstName?.substring(0, 256) || null,
+      last_name: lastName?.substring(0, 256) || null,
+      telegram_username: username?.substring(0, 256) || null,
+      token_balance: 0,
+      mining_power: 1,
+      mining_duration_hours: 3,
+      total_referrals: 0,
+      referral_bonus: 0,
+      referred_by: referrerId,
+      notifications_enabled: true,
+    })
+    .select('id')
+    .single();
+  
+  if (insertError) {
+    console.error('Error creating user:', insertError);
+    return null;
+  }
+  
+  console.log('New user registered:', telegramId, newUser?.id);
+  
+  // Process referral if exists
+  if (referrerId && newUser) {
+    // Create referral record
+    await supabase.from('bolt_referrals').insert({
+      referrer_id: referrerId,
+      referred_id: newUser.id,
+      bonus_earned: 100,
+      status: 'completed'
+    });
+    
+    // Update referrer stats
+    await supabase.rpc('increment_referral_stats', {
+      referrer_uuid: referrerId,
+      bonus_amount: 100
+    }).catch(() => {
+      // Fallback if RPC doesn't exist
+      supabase
+        .from('bolt_users')
+        .update({
+          total_referrals: supabase.rpc('increment', { x: 1 }),
+          referral_bonus: supabase.rpc('increment', { x: 100 }),
+          token_balance: supabase.rpc('increment', { x: 100 })
+        })
+        .eq('id', referrerId);
+    });
+  }
+  
+  return newUser;
+}
+
 async function sendTelegramMessage(chatId: number, text: string, replyMarkup?: object) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
   
@@ -1570,6 +1674,11 @@ Use /partnership to submit a new task.`;
       const referralParam = parts.length > 1 ? parts.slice(1).join(' ').trim() : null;
       
       console.log('Start command received, referral param:', referralParam);
+
+      // IMPORTANT: Register user immediately on /start
+      const lastName = update.message?.from.last_name || null;
+      await registerUser(telegramId, firstName, lastName, username || null, referralParam);
+      console.log('User registered/verified on /start:', telegramId);
 
       // Check if this is an ad click tracking parameter
       if (referralParam && referralParam.startsWith('adclick_')) {
