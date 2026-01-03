@@ -30,7 +30,7 @@ const Profile: React.FC = () => {
   };
 
   const handleShare = async () => {
-    const botUsername = 'BoltMiningBot';
+    const botUsername = 'Boltminingbot';
     const referralCode = vmUser?.id || tgUser?.id || '';
     const shareUrl = `https://t.me/${botUsername}?start=${referralCode}`;
     const shareText = 'Join me on Bolt Mining and start earning BOLT tokens! 🚀';
