@@ -6,7 +6,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltTasks } from '@/hooks/useBoltTasks';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useChannelSubscription } from '@/hooks/useChannelSubscription';
-import { useAdsGramRewarded } from '@/hooks/useAdsGramRewarded';
+import { useAdsGramTasks } from '@/hooks/useAdsGramTasks';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Target, Check, ExternalLink, Loader2, AlertCircle, Home, Users, Calendar, Pickaxe, UserPlus, Play } from 'lucide-react';
 import { toast } from 'sonner';
@@ -151,7 +151,7 @@ const Tasks = () => {
   } = useBoltTasks();
   const loading = tasksLoading || userLoading;
   const { checkSubscription, isChecking } = useChannelSubscription('boltcomm');
-  const { showAd: showTaskAd, isReady: taskAdReady, isLoading: taskAdLoading } = useAdsGramRewarded();
+  const { showAd: showTaskAd, isReady: taskAdReady, isLoading: taskAdLoading } = useAdsGramTasks();
   const [activeTab, setActiveTab] = useState('main');
   const [processingTask, setProcessingTask] = useState<string | null>(null);
   const [showingTaskAd, setShowingTaskAd] = useState(false);
