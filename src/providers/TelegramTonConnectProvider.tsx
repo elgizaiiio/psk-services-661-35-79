@@ -24,7 +24,7 @@ export const TelegramTonConnectProvider: React.FC<TelegramTonConnectProviderProp
     <TonConnectUIProvider
       manifestUrl={manifestUrl}
       actionsConfiguration={{
-        twaReturnUrl: webApp ? 'https://t.me/Vlralbot?startapp' : undefined,
+        twaReturnUrl: webApp ? 'https://t.me/Boltminingbot?startapp' : undefined,
         skipRedirectToWallet: 'never',
       }}
     >
