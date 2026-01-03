@@ -91,6 +91,31 @@ async function sendTelegramMessage(chatId: number, text: string, replyMarkup?: o
   return result;
 }
 
+async function sendTelegramPhoto(chatId: number, photoUrl: string, caption: string, replyMarkup?: object) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+  
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    photo: photoUrl,
+    caption: caption,
+    parse_mode: 'HTML',
+  };
+
+  if (replyMarkup) {
+    body.reply_markup = replyMarkup;
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const result = await response.json();
+  console.log('Telegram Photo API response:', result);
+  return result;
+}
+
 async function answerCallbackQuery(callbackQueryId: string, text?: string) {
   const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`;
   await fetch(url, {
@@ -1447,18 +1472,18 @@ Use /partnership to submit a new task.`;
         webAppUrl = `${WEBAPP_URL}?ref=${encodeURIComponent(referralParam)}`;
       }
 
-      const welcomeMessage = `💰⚡🚨 <b>Welcome ${firstName}!</b>
+      const welcomeMessage = `<b>Welcome ${firstName}!</b>
 
-🔥 Your chance to win BIG is here! Don't miss your <b>FREE spin</b>! 
+Your chance to win BIG is here! Don't miss your <b>FREE spin</b>! 
 
-⛏️ Mine BOLT tokens <b>24/7</b> - even while you sleep!
-🎁 Complete daily tasks for <b>BONUS rewards</b>
-👥 Invite friends and earn <b>0.1 TON</b> per referral!
+Mine BOLT tokens <b>24/7</b> - even while you sleep!
+Complete daily tasks for <b>BONUS rewards</b>
+Invite friends and earn <b>0.1 TON</b> per referral!
 
-🏆 <b>$10,000 Referral Contest LIVE!</b>
-Top inviters win MASSIVE prizes! 🚀
+<b>$10,000 Referral Contest LIVE!</b>
+Top inviters win MASSIVE prizes!
 
-⏰ Tap below before it's gone for good!`;
+Tap below before it's gone for good!`;
 
       const keyboard = {
         inline_keyboard: [
@@ -1476,15 +1501,16 @@ Top inviters win MASSIVE prizes! 🚀
           ],
           [
             {
-              text: '📢 Join Channel',
+              text: 'Join Channel',
               url: 'https://t.me/boltcomm'
             }
           ]
         ]
       };
 
-      await sendTelegramMessage(chatId, welcomeMessage, keyboard);
-      console.log('Welcome message sent with webAppUrl:', webAppUrl);
+      const photoUrl = 'https://bolts.elgiza.site/images/bolt-start.jpeg';
+      await sendTelegramPhoto(chatId, photoUrl, welcomeMessage, keyboard);
+      console.log('Welcome photo sent with webAppUrl:', webAppUrl);
     }
 
     // Handle /balance command
