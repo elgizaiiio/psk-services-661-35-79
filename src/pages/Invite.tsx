@@ -21,7 +21,7 @@ const Invite: React.FC = () => {
   useTelegramBackButton();
 
   const referralCode = useMemo(() => tgUser?.username || tgUser?.id?.toString() || "guest", [tgUser]);
-  const referralLink = useMemo(() => `https://t.me/boltrsbot?start=${encodeURIComponent(referralCode)}`, [referralCode]);
+  const referralLink = useMemo(() => `https://t.me/Boltminingbot?start=${encodeURIComponent(referralCode)}`, [referralCode]);
 
   const copyLink = async () => {
     try {

@@ -6,7 +6,7 @@ import BoltIcon from "@/components/ui/bolt-icon";
 import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
-  const telegramBotUrl = "https://t.me/boltrsbot?start=mining";
+  const telegramBotUrl = "https://t.me/Boltminingbot?start=mining";
   const navigate = useNavigate();
 
   // Check for preview mode via URL param or localStorage
@@ -96,7 +96,7 @@ const Auth = () => {
                 rel="noopener noreferrer"
                 className="text-primary hover:underline text-sm font-medium"
               >
-                @boltrsbot
+                @Boltminingbot
               </a>
             </div>
           </CardContent>
