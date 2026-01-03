@@ -1447,18 +1447,18 @@ Use /partnership to submit a new task.`;
         webAppUrl = `${WEBAPP_URL}?ref=${encodeURIComponent(referralParam)}`;
       }
 
-      const welcomeMessage = `<b>Welcome ${firstName}!</b>
+      const welcomeMessage = `💰⚡🚨 <b>Welcome ${firstName}!</b>
 
-Welcome to Bolt Mining - Smart Mining Platform!
+🔥 Your chance to win BIG is here! Don't miss your <b>FREE spin</b>! 
 
-Start now and earn BOLT tokens for FREE
-Complete daily tasks to boost your earnings
-Invite friends and get extra rewards
+⛏️ Mine BOLT tokens <b>24/7</b> - even while you sleep!
+🎁 Complete daily tasks for <b>BONUS rewards</b>
+👥 Invite friends and earn <b>0.1 TON</b> per referral!
 
-$10,000 Referral Contest Active!
-Invite friends to compete for amazing prizes!
+🏆 <b>$10,000 Referral Contest LIVE!</b>
+Top inviters win MASSIVE prizes! 🚀
 
-Click the button below to start mining!`;
+⏰ Tap below before it's gone for good!`;
 
       const keyboard = {
         inline_keyboard: [

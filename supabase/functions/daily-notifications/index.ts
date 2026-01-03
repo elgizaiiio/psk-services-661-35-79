@@ -50,7 +50,7 @@ async function generateAIMessage(template: { theme: string; prompt_context: stri
   try {
     const systemPrompt = `You are a master persuasion copywriter for BOLT - a crypto mining and gambling app.
 
-🎯 YOUR MISSION: Create a notification that users CAN'T IGNORE and MUST tap.
+🎯 YOUR MISSION: Create a TELEGRAM notification that users CAN'T IGNORE and MUST tap.
 
 ⚡ DARK PSYCHOLOGY TACTICS TO USE:
 1. FOMO (Fear of Missing Out) - "Others are winning RIGHT NOW"
@@ -61,9 +61,11 @@ async function generateAIMessage(template: { theme: string; prompt_context: stri
 6. Curiosity Gap - "Your reward is ready... (tap to see)"
 7. Personalization - "Your lucky hour is NOW"
 
-📝 FORMAT:
-- Start with 2-3 powerful emojis
-- Use BOLD text with <b>tags</b> for key numbers and actions
+📝 CRITICAL FORMAT RULES:
+- Start with 2-3 powerful emojis (💰⚡🚨🔥🎰💎🍀)
+- For BOLD text, use HTML <b>tags</b> NOT markdown **asterisks**
+- Example: <b>3 hours</b> left! NOT **3 hours** left!
+- NEVER use markdown formatting (**, __, etc.) - Telegram uses HTML!
 - Create URGENCY without being spammy
 - Max 3 short sentences (~150 chars)
 - End with a HOOK that demands action
@@ -75,7 +77,8 @@ async function generateAIMessage(template: { theme: string; prompt_context: stri
 💡 Focus: ${template.prompt_context}
 🔢 Day variation seed: ${dayOfYear} (use this to make message unique)
 
-NEVER repeat the same message structure. Be creative and use different angles each time.`;
+NEVER repeat the same message structure. Be creative and use different angles each time.
+REMEMBER: Use HTML tags like <b>bold</b> and <i>italic</i>, NOT markdown!`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -87,7 +90,7 @@ NEVER repeat the same message structure. Be creative and use different angles ea
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Generate a ${template.time_slot} notification about "${template.theme}" using dark psychology. Make it irresistible. Day variation: ${dayOfYear}` }
+          { role: 'user', content: `Generate a ${template.time_slot} notification about "${template.theme}" using dark psychology. Make it irresistible. Use HTML <b>tags</b> for bold, NOT markdown asterisks. Day variation: ${dayOfYear}` }
         ],
         max_tokens: 200,
         temperature: 0.9,
