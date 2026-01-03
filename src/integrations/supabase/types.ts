@@ -888,6 +888,50 @@ export type Database = {
         }
         Relationships: []
       }
+      campaign_analytics: {
+        Row: {
+          campaign_id: string | null
+          conversions: number | null
+          created_at: string | null
+          date: string
+          id: string
+          messages_clicked: number | null
+          messages_delivered: number | null
+          messages_opened: number | null
+          messages_sent: number | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          conversions?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          messages_clicked?: number | null
+          messages_delivered?: number | null
+          messages_opened?: number | null
+          messages_sent?: number | null
+        }
+        Update: {
+          campaign_id?: string | null
+          conversions?: number | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          messages_clicked?: number | null
+          messages_delivered?: number | null
+          messages_opened?: number | null
+          messages_sent?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_analytics_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       character_upgrades: {
         Row: {
           bonus_value: number
@@ -1286,6 +1330,139 @@ export type Database = {
           rarity?: string
         }
         Relationships: []
+      }
+      marketing_campaigns: {
+        Row: {
+          ai_prompt_context: string | null
+          campaign_type: string
+          cooldown_hours: number | null
+          created_at: string | null
+          description: string | null
+          description_ar: string | null
+          end_date: string | null
+          id: string
+          is_active: boolean | null
+          message_template: string | null
+          message_template_ar: string | null
+          name: string
+          name_ar: string | null
+          priority: number | null
+          send_hour: number | null
+          start_date: string | null
+          target_segment: string
+          trigger_conditions: Json | null
+          trigger_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          ai_prompt_context?: string | null
+          campaign_type?: string
+          cooldown_hours?: number | null
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          message_template?: string | null
+          message_template_ar?: string | null
+          name: string
+          name_ar?: string | null
+          priority?: number | null
+          send_hour?: number | null
+          start_date?: string | null
+          target_segment?: string
+          trigger_conditions?: Json | null
+          trigger_type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          ai_prompt_context?: string | null
+          campaign_type?: string
+          cooldown_hours?: number | null
+          created_at?: string | null
+          description?: string | null
+          description_ar?: string | null
+          end_date?: string | null
+          id?: string
+          is_active?: boolean | null
+          message_template?: string | null
+          message_template_ar?: string | null
+          name?: string
+          name_ar?: string | null
+          priority?: number | null
+          send_hour?: number | null
+          start_date?: string | null
+          target_segment?: string
+          trigger_conditions?: Json | null
+          trigger_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      marketing_events: {
+        Row: {
+          campaign_id: string | null
+          clicked_at: string | null
+          created_at: string | null
+          delivery_status: string | null
+          event_data: Json | null
+          event_type: string
+          id: string
+          message_sent: string | null
+          opened_at: string | null
+          sent_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          campaign_id?: string | null
+          clicked_at?: string | null
+          created_at?: string | null
+          delivery_status?: string | null
+          event_data?: Json | null
+          event_type: string
+          id?: string
+          message_sent?: string | null
+          opened_at?: string | null
+          sent_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          campaign_id?: string | null
+          clicked_at?: string | null
+          created_at?: string | null
+          delivery_status?: string | null
+          event_data?: Json | null
+          event_type?: string
+          id?: string
+          message_sent?: string | null
+          opened_at?: string | null
+          sent_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_events_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       marketplace_listings: {
         Row: {
@@ -2066,6 +2243,48 @@ export type Database = {
           total_spins?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_segments: {
+        Row: {
+          auto_update: boolean | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          last_updated: string | null
+          name: string
+          name_ar: string | null
+          rules: Json
+          segment_key: string
+          user_count: number | null
+        }
+        Insert: {
+          auto_update?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_updated?: string | null
+          name: string
+          name_ar?: string | null
+          rules?: Json
+          segment_key: string
+          user_count?: number | null
+        }
+        Update: {
+          auto_update?: boolean | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_updated?: string | null
+          name?: string
+          name_ar?: string | null
+          rules?: Json
+          segment_key?: string
+          user_count?: number | null
         }
         Relationships: []
       }
