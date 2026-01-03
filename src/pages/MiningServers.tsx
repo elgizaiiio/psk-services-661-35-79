@@ -112,19 +112,25 @@ const MiningServers = () => {
   useTelegramBackButton();
 
   const isReady = !isTelegramLoading && !isMiningUserLoading;
+  const canClaimFreeServer = (user?.total_referrals ?? 0) >= 1;
 
   const handleBuyClick = async (server: MiningServer) => {
     if (!isReady || !user?.id) return;
-    
+
     hapticFeedback?.impact?.('medium');
-    
+
     const stock = getStock(server.id);
     if (stock.soldOut) {
       toast.error('Sold out!');
       return;
     }
-    
+
     if (server.priceTon === 0) {
+      if (!canClaimFreeServer) {
+        toast.error('Invite 1 friend to unlock the free server');
+        return;
+      }
+
       await purchaseServer(
         server.id,
         server.tier,
@@ -136,7 +142,7 @@ const MiningServers = () => {
       toast.success('Free server claimed!');
       return;
     }
-    
+
     setSelectedServer(server);
     setIsPaymentOpen(true);
   };
@@ -169,8 +175,12 @@ const MiningServers = () => {
   return (
     <PageWrapper className="min-h-screen bg-background pb-32">
       <Helmet>
-        <title>Mining Servers</title>
-        <meta name="description" content="Buy mining servers to earn daily rewards." />
+        <title>Mining Servers | Passive Income</title>
+        <meta name="description" content="Buy mining servers to earn daily BOLT and USDT rewards." />
+        <link rel="canonical" href={`${typeof window !== 'undefined' ? window.location.origin : ''}/mining-servers`} />
+        <meta property="og:title" content="Mining Servers" />
+        <meta property="og:description" content="Buy mining servers to earn daily rewards." />
+        <meta property="og:type" content="website" />
       </Helmet>
 
       <div className="max-w-md mx-auto px-4 pt-6">
@@ -244,9 +254,14 @@ const MiningServers = () => {
                               {server.tier}
                             </span>
                           </div>
-                          
-                          <p className="text-xs text-muted-foreground mb-3">{server.hashRate}</p>
-                          
+
+                          <p className="text-xs text-muted-foreground mb-1">{server.hashRate}</p>
+                          {server.id === 'free-starter' && (
+                            <p className="text-[11px] text-muted-foreground mb-3">
+                              متاحة لأول 100 مستخدم فقط • تتفعل بعد إحالة صديق واحد
+                            </p>
+                          )}
+
                           {/* Earnings */}
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10">
@@ -279,12 +294,17 @@ const MiningServers = () => {
                           ) : stock.soldOut ? (
                             <span className="text-xs text-muted-foreground">Sold Out</span>
                           ) : (
-                            <Button 
-                              onClick={() => handleBuyClick(server)} 
+                            <Button
+                              onClick={() => handleBuyClick(server)}
                               size="sm"
                               className="h-8 px-4 font-bold text-xs"
+                              disabled={server.priceTon === 0 && !canClaimFreeServer}
                             >
-                              {server.priceTon === 0 ? 'Claim' : 'Buy'}
+                              {server.priceTon === 0
+                                ? canClaimFreeServer
+                                  ? 'Claim'
+                                  : 'Invite 1 friend'
+                                : 'Buy'}
                             </Button>
                           )}
                         </div>
