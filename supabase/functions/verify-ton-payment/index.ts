@@ -6,6 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-telegram-id",
 };
 
+// The ONLY valid TON payment address
+const EXPECTED_TON_ADDRESS = 'UQCiVNm22dMF9S3YsHPcgrmqXEQHt4MIdk_N7VJu88NrLr4R';
+
 // In-memory deduplication for txHash (prevents double-spending)
 const processedTxHashes = new Set<string>();
 
@@ -153,6 +156,21 @@ serve(async (req) => {
       // Verify transaction on TON blockchain
       const destinationAddress = payment.destination_address;
       const expectedAmount = payment.amount_ton;
+      
+      // SECURITY: Verify the payment is going to the correct address
+      if (destinationAddress !== EXPECTED_TON_ADDRESS) {
+        console.error('SECURITY ALERT: Payment destination mismatch!', {
+          expected: EXPECTED_TON_ADDRESS,
+          actual: destinationAddress,
+          paymentId: paymentId
+        });
+        return new Response(JSON.stringify({ error: "Invalid payment destination" }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      
+      console.log('Payment destination verified:', destinationAddress);
       
       // Try to verify using TON API
       let isVerified = false;
