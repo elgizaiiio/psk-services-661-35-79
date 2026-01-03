@@ -618,7 +618,7 @@ async function getRecentUsers(limit: number = 10) {
   return data || [];
 }
 
-async function broadcastMessage(message: string): Promise<{ sent: number; failed: number }> {
+async function broadcastMessage(message: string, photoUrl?: string): Promise<{ sent: number; failed: number }> {
   const supabase = getSupabaseClient();
   
   const { data: users } = await supabase
@@ -634,16 +634,34 @@ async function broadcastMessage(message: string): Promise<{ sent: number; failed
   
   for (const user of users) {
     try {
-      const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: user.telegram_id,
-          text: message,
-          parse_mode: 'HTML'
-        }),
-      });
+      let response;
+      
+      if (photoUrl) {
+        // Send photo with caption
+        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+        response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: user.telegram_id,
+            photo: photoUrl,
+            caption: message,
+            parse_mode: 'HTML'
+          }),
+        });
+      } else {
+        // Send text only
+        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+        response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: user.telegram_id,
+            text: message,
+            parse_mode: 'HTML'
+          }),
+        });
+      }
       
       const result = await response.json();
       if (result.ok) {
@@ -955,9 +973,9 @@ Date: ${date}\n\n`;
   // Handle /101 broadcast - Start broadcast
   if (messageText === '/101 broadcast') {
     await setAdminState(telegramId, 'broadcast_message', { action_type: 'broadcast' });
-    await sendTelegramMessage(chatId, `<b>Broadcast Message</b>
+    await sendTelegramMessage(chatId, `<b>📢 Broadcast Message</b>
 
-Enter the message to send to all users:
+<b>Step 1/2:</b> Enter the message to send to all users:
 
 You can use HTML formatting:
 <code>&lt;b&gt;text&lt;/b&gt;</code> for bold
@@ -996,39 +1014,88 @@ Send /cancel to cancel`);
 
   // Handle ongoing admin state
   if (state) {
-    // Handle broadcast confirmation
+    // Handle broadcast flow
     if (state.action_type === 'broadcast') {
+      // Step 1: Receive message text
       if (state.step === 'broadcast_message') {
-        await setAdminState(telegramId, 'broadcast_confirm', { 
+        await setAdminState(telegramId, 'broadcast_image', { 
           action_type: 'broadcast',
           broadcast_message: messageText 
         });
         
+        await sendTelegramMessage(chatId, `✅ Message saved!
+
+<b>Step 2/2:</b> Send an image (photo) to include with the message.
+
+Or send <b>skip</b> to send without image.
+
+Send /cancel to cancel`);
+        return true;
+      }
+      
+      // Step 2: Receive image or skip
+      if (state.step === 'broadcast_image') {
+        let imageUrl: string | undefined;
+        
+        // Check if user sent a photo
+        if (photo && photo.length > 0) {
+          const fileId = photo[photo.length - 1].file_id;
+          const fileResponse = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`);
+          const fileData = await fileResponse.json();
+          if (fileData.ok && fileData.result.file_path) {
+            imageUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${fileData.result.file_path}`;
+          }
+        }
+        // Check if user sent an image URL
+        else if (messageText.startsWith('http') && (messageText.includes('.jpg') || messageText.includes('.png') || messageText.includes('.jpeg') || messageText.includes('.gif') || messageText.includes('.webp'))) {
+          imageUrl = messageText;
+        }
+        // Check if user wants to skip
+        else if (messageText.toLowerCase() === 'skip') {
+          imageUrl = undefined;
+        }
+        // Invalid input
+        else {
+          await sendTelegramMessage(chatId, `⚠️ Please send a photo, an image URL, or type <b>skip</b> to continue without image.`);
+          return true;
+        }
+        
+        // Move to confirmation
+        await setAdminState(telegramId, 'broadcast_confirm', { 
+          action_type: 'broadcast',
+          broadcast_message: state.broadcast_message,
+          task_image: imageUrl || null
+        });
+        
         const stats = await getAdminStats();
-        await sendTelegramMessage(chatId, `<b>Confirm Send</b>
+        const imageNote = imageUrl ? '\n📷 With attached image' : '\n📝 Text only (no image)';
+        
+        await sendTelegramMessage(chatId, `<b>✅ Confirm Broadcast</b>
 
 Message will be sent to <b>${stats.totalUsers}</b> users:
 
-<blockquote>${messageText}</blockquote>
+<blockquote>${state.broadcast_message}</blockquote>
+${imageNote}
 
 Send <b>yes</b> to confirm or /cancel to cancel`);
         return true;
       }
       
+      // Step 3: Confirmation
       if (state.step === 'broadcast_confirm') {
         if (messageText.toLowerCase() === 'yes') {
-          await sendTelegramMessage(chatId, 'Sending message...');
+          await sendTelegramMessage(chatId, '📤 Sending message to all users...');
           
-          const result = await broadcastMessage(state.broadcast_message!);
+          const result = await broadcastMessage(state.broadcast_message!, state.task_image || undefined);
           await clearAdminState(telegramId);
           
-          await sendTelegramMessage(chatId, `<b>Message Sent!</b>
+          await sendTelegramMessage(chatId, `<b>✅ Broadcast Complete!</b>
 
-Sent: <b>${result.sent}</b>
-Failed: <b>${result.failed}</b>`);
+✅ Sent: <b>${result.sent}</b>
+❌ Failed: <b>${result.failed}</b>`);
         } else {
           await clearAdminState(telegramId);
-          await sendTelegramMessage(chatId, 'Broadcast cancelled');
+          await sendTelegramMessage(chatId, '❌ Broadcast cancelled');
         }
         return true;
       }
