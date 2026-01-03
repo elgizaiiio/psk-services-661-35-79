@@ -8,10 +8,11 @@ import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
-import { Server, Loader2, Play, Gift, ShoppingCart, Trophy, Crown, type LucideIcon } from 'lucide-react';
+import { Server, Loader2, Play, Gift, ShoppingCart, Trophy, Crown, User, type LucideIcon } from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress, LiveNumber } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import DailyStreakModal from '@/components/DailyStreakModal';
+import UserAvatar from '@/components/UserAvatar';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
 
@@ -185,9 +186,18 @@ const Index = () => {
           {/* Header */}
           <FadeUp>
             <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-xl font-semibold text-foreground">Hey, {telegramUser?.first_name || 'Miner'}</h1>
-                <p className="text-sm text-muted-foreground">Welcome back</p>
+              <div className="flex items-center gap-3">
+                <motion.button
+                  onClick={() => navigate('/profile')}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative"
+                >
+                  <UserAvatar user={telegramUser} size="md" />
+                </motion.button>
+                <div>
+                  <h1 className="text-xl font-semibold text-foreground">Hey, {telegramUser?.first_name || 'Miner'}</h1>
+                  <p className="text-sm text-muted-foreground">Welcome back</p>
+                </div>
               </div>
               {!isConnected ? (
                 <motion.div whileTap={{ scale: 0.95 }}>
@@ -196,8 +206,11 @@ const Index = () => {
                   </Button>
                 </motion.div>
               ) : (
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="h-9 px-3 flex items-center rounded-lg bg-primary/10 text-primary text-xs font-medium">
-                  Connected
+                <motion.div whileTap={{ scale: 0.95 }}>
+                  <Button onClick={() => navigate('/profile')} size="sm" variant="outline" className="text-xs h-9 gap-1">
+                    <User className="w-3.5 h-3.5" />
+                    Profile
+                  </Button>
                 </motion.div>
               )}
             </div>
