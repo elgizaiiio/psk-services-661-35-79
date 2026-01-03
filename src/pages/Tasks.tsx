@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltTasks } from '@/hooks/useBoltTasks';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
@@ -136,6 +137,7 @@ const getTaskIcon = (task: BoltTask) => {
 };
 
 const Tasks = () => {
+  const navigate = useNavigate();
   const { user: tgUser, hapticFeedback, isLoading: authLoading } = useTelegramAuth();
   const { 
     allTasks, 
@@ -299,7 +301,7 @@ const Tasks = () => {
         toast.error(`You need ${required} referrals. You have ${totalReferrals}.`);
         
         if (taskUrl?.startsWith('/')) {
-          window.location.href = taskUrl;
+          navigate(taskUrl);
         }
       }
       setProcessingTask(null);
@@ -321,7 +323,7 @@ const Tasks = () => {
         toast.error('Complete the required mining action first');
         
         if (taskUrl?.startsWith('/')) {
-          window.location.href = taskUrl;
+          navigate(taskUrl);
         }
       }
       setProcessingTask(null);
@@ -330,7 +332,7 @@ const Tasks = () => {
 
     // Generic task flow (fallback)
     if (taskUrl) {
-      if (taskUrl.startsWith('/')) window.location.href = taskUrl;
+      if (taskUrl.startsWith('/')) navigate(taskUrl);
       else window.open(taskUrl, '_blank');
     }
     setProcessingTask(null);
