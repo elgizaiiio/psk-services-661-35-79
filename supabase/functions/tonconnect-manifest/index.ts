@@ -37,13 +37,13 @@ serve(async (req) => {
     
     // Fallback manifest
     const fallbackManifest = {
-      url: "https://psk-viral-mining.lovable.app",
+      url: "https://viral.elgiza.site",
       name: "BOLT Mining",
-      iconUrl: "https://psk-viral-mining.lovable.app/favicon.ico",
+      iconUrl: "https://viral.elgiza.site/favicon.ico",
       description: "BOLT Mining - Connect your TON wallet to start mining BOLT tokens and earn rewards",
-      image: "https://psk-viral-mining.lovable.app/og-image.png",
-      termsOfUseUrl: "https://psk-viral-mining.lovable.app/terms",
-      privacyPolicyUrl: "https://psk-viral-mining.lovable.app/privacy"
+      image: "https://viral.elgiza.site/og-image.png",
+      termsOfUseUrl: "https://viral.elgiza.site/terms",
+      privacyPolicyUrl: "https://viral.elgiza.site/privacy"
     };
 
     return new Response(JSON.stringify(fallbackManifest, null, 2), {
