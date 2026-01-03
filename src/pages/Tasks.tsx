@@ -164,10 +164,18 @@ const Tasks = () => {
     return allTasks.filter((t) => !completed.has(t.id));
   }, [allTasks, completedTasks]);
 
-  // Categorize tasks into Main, Partners, Daily
+  // Categorize tasks into Main, Partners, Daily (excluding mining tasks)
   const isDailyTabTask = (task: BoltTask) => {
     const category = (task.category || '').toLowerCase();
-    return category === 'daily' || category === 'mining' || category === 'referral';
+    // Only daily and referral, NOT mining
+    return category === 'daily' || category === 'referral';
+  };
+
+  // Check if task is a mining task (to exclude)
+  const isMiningTask = (task: BoltTask) => {
+    const category = (task.category || '').toLowerCase();
+    const title = (task.title || '').toLowerCase();
+    return category === 'mining' || title.includes('mining') || title.includes('mine');
   };
 
   const mainTasks = useMemo(() => {
@@ -176,15 +184,15 @@ const Tasks = () => {
   }, [availableTasks]);
 
   const partnerTasks = useMemo(() => {
-    // Partner tab: everything else (excluding our channel + Daily tab tasks + ads category)
+    // Partner tab: everything else (excluding our channel + Daily tab tasks + ads category + mining tasks)
     return availableTasks.filter(
-      (task) => !isOurChannelTask(task) && !isDailyTabTask(task) && (task.category || '').toLowerCase() !== 'ads'
+      (task) => !isOurChannelTask(task) && !isDailyTabTask(task) && !isMiningTask(task) && (task.category || '').toLowerCase() !== 'ads'
     );
   }, [availableTasks]);
 
   const dailyTasks = useMemo(() => {
-    // Daily tab includes daily + mining + referral tasks
-    return availableTasks.filter(isDailyTabTask);
+    // Daily tab includes daily + referral tasks (NOT mining)
+    return availableTasks.filter((task) => isDailyTabTask(task) && !isMiningTask(task));
   }, [availableTasks]);
 
   const stats = useMemo(() => {
@@ -437,19 +445,19 @@ const Tasks = () => {
     );
   };
 
-  // Ad Task Card for Partners tab
+  // Ad Task Card for Partners tab - same style as other tasks
   const renderAdTaskCard = () => (
     <motion.button
       onClick={handleWatchTaskAd}
       disabled={!taskAdReady || showingTaskAd || taskAdLoading}
-      className="w-full p-4 rounded-xl border text-left transition-all bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-500/50"
+      className="w-full p-4 rounded-xl border text-left transition-all bg-card border-border hover:border-primary/30"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       whileTap={{ scale: 0.98 }}
     >
       <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-amber-500/20">
-          <Play className="w-6 h-6 text-amber-500" />
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-muted">
+          <Play className="w-6 h-6 text-muted-foreground" />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -461,9 +469,9 @@ const Tasks = () => {
         </div>
 
         {showingTaskAd || taskAdLoading ? (
-          <Loader2 className="w-5 h-5 text-amber-500 animate-spin" />
+          <Loader2 className="w-5 h-5 text-primary animate-spin" />
         ) : (
-          <Play className="w-5 h-5 text-amber-500" />
+          <ExternalLink className="w-5 h-5 text-muted-foreground" />
         )}
       </div>
     </motion.button>
