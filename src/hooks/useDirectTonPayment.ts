@@ -159,39 +159,39 @@ export const useDirectTonPayment = () => {
                 confirmed_at: new Date().toISOString()
               })
               .eq('id', paymentData.id);
+            
+            // Only handle credits or subscription AFTER successful verification
+            if (params.productType === 'ai_credits' && params.credits) {
+              addCredits(params.credits);
+            } else if (params.productType === 'subscription') {
+              activateSubscription();
+            }
+
+            // Notify admin about verified payment
+            try {
+              console.log('Sending admin notification for verified payment...');
+              const notifyResult = await supabase.functions.invoke('notify-admin-payment', {
+                body: {
+                  userId: userId,
+                  username: telegramUser?.username || telegramUser?.first_name || 'Unknown',
+                  telegramId: telegramUser?.id,
+                  paymentMethod: 'ton',
+                  amount: params.amount,
+                  currency: 'TON',
+                  productType: params.productType,
+                  productName: params.description,
+                  description: `${params.description} (verified)`,
+                }
+              });
+              console.log('Admin notification result:', notifyResult);
+            } catch (notifyError) {
+              console.error('Failed to notify admin:', notifyError);
+              logger.error('Failed to notify admin', notifyError);
+            }
+            
+            toast.success('Payment verified successfully! 🎉');
           }
         }
-        
-        // Handle credits or subscription
-        if (params.productType === 'ai_credits' && params.credits) {
-          addCredits(params.credits);
-        } else if (params.productType === 'subscription') {
-          activateSubscription();
-        }
-
-        // Notify admin about the payment
-        try {
-          console.log('Sending admin notification for payment...');
-          const notifyResult = await supabase.functions.invoke('notify-admin-payment', {
-            body: {
-              userId: userId,
-              username: telegramUser?.username || telegramUser?.first_name || 'Unknown',
-              telegramId: telegramUser?.id,
-              paymentMethod: 'ton',
-              amount: params.amount,
-              currency: 'TON',
-              productType: params.productType,
-              productName: params.description,
-              description: params.description,
-            }
-          });
-          console.log('Admin notification result:', notifyResult);
-        } catch (notifyError) {
-          console.error('Failed to notify admin:', notifyError);
-          logger.error('Failed to notify admin', notifyError);
-        }
-        
-        toast.success('Payment successful! 🎉');
         return true;
       } else {
         throw new Error('Transaction failed - no result returned');
