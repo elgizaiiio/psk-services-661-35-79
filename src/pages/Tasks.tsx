@@ -10,7 +10,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Target, Check, ExternalLink, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
-import ReferralMilestonesSection from '@/components/tasks/ReferralMilestonesSection';
 
 const extractTelegramUsername = (urlOrUsername: string) => {
   const raw = (urlOrUsername || '').trim();
@@ -222,11 +221,6 @@ const Tasks = () => {
               </div>
               <AnimatedProgress value={progress} />
             </div>
-          </FadeUp>
-
-          {/* Referral Milestones Section */}
-          <FadeUp>
-            <ReferralMilestonesSection userId={boltUser?.id} />
           </FadeUp>
 
           <FadeUp>
