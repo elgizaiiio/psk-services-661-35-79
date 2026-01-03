@@ -200,6 +200,8 @@ export const useBoltTasks = () => {
     completedTasks,
     loading,
     error,
+    user: boltUser,
+    userLoading: !boltUser && !error && !!telegramUser,
     completeTask,
     revokeTaskCompletion,
     clearError: () => setError(null),

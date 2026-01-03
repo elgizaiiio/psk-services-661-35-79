@@ -5,9 +5,8 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltTasks } from '@/hooks/useBoltTasks';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useChannelSubscription } from '@/hooks/useChannelSubscription';
-import { useViralMining } from '@/hooks/useViralMining';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Target, Check, ExternalLink, Loader2 } from 'lucide-react';
+import { Target, Check, ExternalLink, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { TonIcon, UsdtIcon, BoltIcon } from '@/components/ui/currency-icons';
@@ -105,9 +104,18 @@ const checkMiningRequirement = async (title: string, userId: string): Promise<bo
 };
 
 const Tasks = () => {
-  const { user: tgUser, hapticFeedback } = useTelegramAuth();
-  const { user: boltUser } = useViralMining(tgUser);
-  const { allTasks, completedTasks, loading, completeTask, revokeTaskCompletion, refreshTasks } = useBoltTasks();
+  const { user: tgUser, hapticFeedback, isLoading: authLoading } = useTelegramAuth();
+  const { 
+    allTasks, 
+    completedTasks, 
+    loading: tasksLoading, 
+    completeTask, 
+    revokeTaskCompletion, 
+    refreshTasks,
+    user: boltUser,
+    userLoading
+  } = useBoltTasks();
+  const loading = tasksLoading || userLoading;
   const { checkSubscription, isChecking } = useChannelSubscription('boltcomm');
   const [activeTab, setActiveTab] = useState('social');
   const [processingTask, setProcessingTask] = useState<string | null>(null);
@@ -277,12 +285,26 @@ const Tasks = () => {
 
   const progress = stats.totalTasks > 0 ? (stats.completed / stats.totalTasks) * 100 : 0;
 
-  if (loading) {
+  // Show message if user is outside Telegram
+  if (!authLoading && !tgUser) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+        <AlertCircle className="w-12 h-12 text-muted-foreground mb-4" />
+        <p className="text-lg text-muted-foreground text-center">
+          Please open the app from Telegram
+        </p>
+      </div>
+    );
+  }
+
+  // Show loading spinner while data is being fetched
+  if (loading || authLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
           <Loader2 className="w-8 h-8 text-primary" />
         </motion.div>
+        <p className="mt-3 text-sm text-muted-foreground">Loading your account...</p>
       </div>
     );
   }
