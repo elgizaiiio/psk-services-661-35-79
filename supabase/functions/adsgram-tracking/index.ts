@@ -19,7 +19,7 @@ serve(async (req) => {
     const campaignId = url.searchParams.get('cid') || url.searchParams.get('campaign_id');
     const bannerId = url.searchParams.get('bid') || url.searchParams.get('banner_id');
     const publisherId = url.searchParams.get('pid') || url.searchParams.get('publisher_id');
-    const clickId = url.searchParams.get('click_id');
+    const clickId = url.searchParams.get('click_id') || `adsgram_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const recordData = url.searchParams.get('record_data');
     
     console.log('AdsGram tracking received:', {
@@ -36,30 +36,30 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Store the click data
-    if (clickId) {
-      const { error } = await supabase
-        .from('ad_clicks')
-        .upsert({
-          campaign_id: campaignId,
-          banner_id: bannerId,
-          publisher_id: publisherId,
-          click_id: clickId,
-        }, {
-          onConflict: 'click_id'
-        });
+    const { error } = await supabase
+      .from('ad_clicks')
+      .upsert({
+        campaign_id: campaignId,
+        banner_id: bannerId,
+        publisher_id: publisherId,
+        click_id: clickId,
+      }, {
+        onConflict: 'click_id'
+      });
 
-      if (error) {
-        console.error('Error storing ad click:', error);
-      } else {
-        console.log('Ad click stored successfully');
-      }
+    if (error) {
+      console.error('Error storing ad click:', error);
+    } else {
+      console.log('Ad click stored successfully with click_id:', clickId);
     }
 
     // Get the bot username from environment or use default
-    const botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'BoltMiningBot';
+    const botUsername = Deno.env.get('TELEGRAM_BOT_USERNAME') || 'Boltminingbot';
     
-    // Redirect to Telegram bot
-    const redirectUrl = `https://t.me/${botUsername}`;
+    // Redirect to Telegram bot with click_id as start parameter for tracking
+    const redirectUrl = `https://t.me/${botUsername}?start=adclick_${clickId}`;
+    
+    console.log('Redirecting to:', redirectUrl);
     
     return new Response(null, {
       status: 302,
@@ -77,7 +77,7 @@ serve(async (req) => {
       status: 302,
       headers: {
         ...corsHeaders,
-        'Location': 'https://t.me/BoltMiningBot',
+        'Location': 'https://t.me/Boltminingbot',
       },
     });
   }
