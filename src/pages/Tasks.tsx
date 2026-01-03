@@ -165,21 +165,26 @@ const Tasks = () => {
   }, [allTasks, completedTasks]);
 
   // Categorize tasks into Main, Partners, Daily
+  const isDailyTabTask = (task: BoltTask) => {
+    const category = (task.category || '').toLowerCase();
+    return category === 'daily' || category === 'mining' || category === 'referral';
+  };
+
   const mainTasks = useMemo(() => {
-    return availableTasks.filter(task => isOurChannelTask(task));
+    // Main tab should only contain our channel join task(s)
+    return availableTasks.filter((task) => isOurChannelTask(task) && isJoinTask(task.title, task.task_url));
   }, [availableTasks]);
 
   const partnerTasks = useMemo(() => {
-    // All tasks except our main channel, daily tasks, and ads category
-    return availableTasks.filter(task => 
-      !isOurChannelTask(task) && 
-      task.category !== 'daily' &&
-      task.category !== 'ads'
+    // Partner tab: everything else (excluding our channel + Daily tab tasks + ads category)
+    return availableTasks.filter(
+      (task) => !isOurChannelTask(task) && !isDailyTabTask(task) && (task.category || '').toLowerCase() !== 'ads'
     );
   }, [availableTasks]);
 
   const dailyTasks = useMemo(() => {
-    return availableTasks.filter(task => task.category === 'daily');
+    // Daily tab includes daily + mining + referral tasks
+    return availableTasks.filter(isDailyTabTask);
   }, [availableTasks]);
 
   const stats = useMemo(() => {
