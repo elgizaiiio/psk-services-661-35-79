@@ -3,7 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Crown, Star, Gem, Zap, Gift, Shield, Sparkles } from 'lucide-react';
+import { Crown, Star, Gem, Zap, Gift, Shield, Sparkles, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { toast } from 'sonner';
@@ -99,6 +99,26 @@ export const VIPStatusCard = ({ userId, totalSpent = 0 }: VIPStatusCardProps) =>
   const purchaseVIP = async (tier: typeof VIP_TIERS[0]) => {
     setIsPurchasing(true);
     try {
+      // Create payment record FIRST with pending status
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('ton_payments')
+        .insert({
+          user_id: userId,
+          amount_ton: tier.price,
+          description: `VIP Upgrade: ${tier.name}`,
+          product_type: 'subscription',
+          product_id: tier.tier,
+          destination_address: TON_PAYMENT_ADDRESS,
+          status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (paymentError) {
+        toast.error('Failed to create payment record');
+        return;
+      }
+
       const transaction = {
         validUntil: getValidUntil(),
         messages: [{
@@ -107,42 +127,79 @@ export const VIPStatusCard = ({ userId, totalSpent = 0 }: VIPStatusCardProps) =>
         }]
       };
 
-      await tonConnectUI.sendTransaction(transaction);
+      const result = await tonConnectUI.sendTransaction(transaction);
 
-      // Update VIP status
-      const expiresAt = new Date();
-      expiresAt.setDate(expiresAt.getDate() + 30); // 30 days VIP
+      if (result?.boc) {
+        // Save tx_hash but keep as PENDING
+        await supabase
+          .from('ton_payments')
+          .update({ 
+            tx_hash: result.boc,
+            status: 'pending'
+          })
+          .eq('id', paymentData.id);
 
-      await supabase
-        .from('bolt_vip_tiers' as any)
-        .upsert({
-          user_id: userId,
-          tier: tier.tier,
-          benefits: tier.benefits,
-          total_spent: (vipData?.total_spent || 0) + tier.price,
-          expires_at: expiresAt.toISOString()
+        toast.info('Verifying transaction on blockchain...');
+
+        // Wait for blockchain confirmation
+        await new Promise(resolve => setTimeout(resolve, 6000));
+
+        // Call verify-ton-payment to confirm
+        const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
+          body: {
+            paymentId: paymentData.id,
+            txHash: result.boc,
+          },
+          headers: {
+            'x-telegram-id': userId,
+          }
         });
 
-      // Record purchase
-      await supabase.from('bolt_upgrade_purchases' as any).insert({
-        user_id: userId,
-        upgrade_type: `vip_${tier.tier}`,
-        amount_paid: tier.price
-      });
+        if (verifyError || verifyData?.status !== 'confirmed') {
+          toast.warning('Payment pending verification. VIP will be activated once confirmed.');
+          return;
+        }
 
-      // Add social notification
-      await supabase.from('bolt_social_notifications' as any).insert({
-        user_id: userId,
-        username: 'Someone',
-        action_type: 'vip_purchase',
-        amount: tier.price,
-        product_name: tier.name
-      });
+        // Only update AFTER blockchain confirmation
+        await supabase
+          .from('ton_payments')
+          .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+          .eq('id', paymentData.id);
 
-      toast.success(`👑 Welcome to ${tier.name}! Enjoy your exclusive benefits!`);
-      loadVIPStatus();
+        // Now activate VIP
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 30);
+
+        await supabase
+          .from('bolt_vip_tiers' as any)
+          .upsert({
+            user_id: userId,
+            tier: tier.tier,
+            benefits: tier.benefits,
+            total_spent: (vipData?.total_spent || 0) + tier.price,
+            expires_at: expiresAt.toISOString()
+          });
+
+        await supabase.from('bolt_upgrade_purchases' as any).insert({
+          user_id: userId,
+          upgrade_type: `vip_${tier.tier}`,
+          amount_paid: tier.price
+        });
+
+        await supabase.from('bolt_social_notifications' as any).insert({
+          user_id: userId,
+          username: 'Someone',
+          action_type: 'vip_purchase',
+          amount: tier.price,
+          product_name: tier.name
+        });
+
+        toast.success(`👑 Welcome to ${tier.name}! Enjoy your exclusive benefits!`);
+        loadVIPStatus();
+      }
     } catch (error) {
       console.error('Error purchasing VIP:', error);
+      toast.error('Transaction failed or cancelled');
     } finally {
       setIsPurchasing(false);
     }

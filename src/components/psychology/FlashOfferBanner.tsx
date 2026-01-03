@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Zap, Clock, Users, TrendingUp } from 'lucide-react';
+import { Zap, Clock, Users, TrendingUp, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { toast } from 'sonner';
@@ -81,6 +81,26 @@ export const FlashOfferBanner = ({ userId, onPurchase }: FlashOfferBannerProps) 
   const purchaseOffer = async (offer: FlashOffer) => {
     setIsPurchasing(true);
     try {
+      // Create payment record FIRST with pending status
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('ton_payments')
+        .insert({
+          user_id: userId,
+          amount_ton: offer.discounted_price,
+          description: `Flash Offer: ${offer.title}`,
+          product_type: 'flash_offer',
+          product_id: offer.id,
+          destination_address: TON_PAYMENT_ADDRESS,
+          status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (paymentError) {
+        toast.error('Failed to create payment record');
+        return;
+      }
+
       const transaction = {
         validUntil: getValidUntil(),
         messages: [{
@@ -89,35 +109,72 @@ export const FlashOfferBanner = ({ userId, onPurchase }: FlashOfferBannerProps) 
         }]
       };
 
-      await tonConnectUI.sendTransaction(transaction);
+      const result = await tonConnectUI.sendTransaction(transaction);
 
-      // Update offer claims
-      await supabase
-        .from('bolt_flash_offers' as any)
-        .update({ current_claims: offer.current_claims + 1 })
-        .eq('id', offer.id);
+      if (result?.boc) {
+        // Save tx_hash but keep as PENDING
+        await supabase
+          .from('ton_payments')
+          .update({ 
+            tx_hash: result.boc,
+            status: 'pending'
+          })
+          .eq('id', paymentData.id);
 
-      // Record purchase
-      await supabase.from('bolt_upgrade_purchases' as any).insert({
-        user_id: userId,
-        upgrade_type: offer.product_type,
-        amount_paid: offer.discounted_price
-      });
+        toast.info('Verifying transaction on blockchain...');
 
-      // Add social notification
-      await supabase.from('bolt_social_notifications' as any).insert({
-        user_id: userId,
-        username: 'Someone',
-        action_type: 'flash_purchase',
-        amount: offer.discounted_price,
-        product_name: offer.title
-      });
+        // Wait for blockchain confirmation
+        await new Promise(resolve => setTimeout(resolve, 6000));
 
-      toast.success(`🎉 ${offer.title} purchased! You saved ${offer.discount_percent}%!`);
-      onPurchase?.();
-      loadOffers();
+        // Call verify-ton-payment to confirm
+        const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
+          body: {
+            paymentId: paymentData.id,
+            txHash: result.boc,
+          },
+          headers: {
+            'x-telegram-id': userId,
+          }
+        });
+
+        if (verifyError || verifyData?.status !== 'confirmed') {
+          toast.warning('Payment pending verification. Benefits will be applied once confirmed.');
+          return;
+        }
+
+        // Only update AFTER blockchain confirmation
+        await supabase
+          .from('ton_payments')
+          .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+          .eq('id', paymentData.id);
+
+        // Now apply the benefits
+        await supabase
+          .from('bolt_flash_offers' as any)
+          .update({ current_claims: offer.current_claims + 1 })
+          .eq('id', offer.id);
+
+        await supabase.from('bolt_upgrade_purchases' as any).insert({
+          user_id: userId,
+          upgrade_type: offer.product_type,
+          amount_paid: offer.discounted_price
+        });
+
+        await supabase.from('bolt_social_notifications' as any).insert({
+          user_id: userId,
+          username: 'Someone',
+          action_type: 'flash_purchase',
+          amount: offer.discounted_price,
+          product_name: offer.title
+        });
+
+        toast.success(`🎉 ${offer.title} purchased! You saved ${offer.discount_percent}%!`);
+        onPurchase?.();
+        loadOffers();
+      }
     } catch (error) {
       console.error('Error purchasing offer:', error);
+      toast.error('Transaction failed or cancelled');
     } finally {
       setIsPurchasing(false);
     }
