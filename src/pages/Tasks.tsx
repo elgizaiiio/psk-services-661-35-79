@@ -259,9 +259,13 @@ const Tasks = () => {
     hapticFeedback?.impact?.('medium');
     setProcessingTask(taskId);
 
-    // Social join tasks - verify Telegram subscription
+    // Find the task to check if it's our channel or partner task
+    const task = allTasks.find(t => t.id === taskId);
+    const isOurChannel = task ? isOurChannelTask(task) : false;
+
+    // Only verify subscription for OUR channel tasks, not partner tasks
     const joinTask = isJoinTask(taskTitle, taskUrl);
-    if (joinTask && tgUser?.id) {
+    if (joinTask && tgUser?.id && isOurChannel) {
       if (taskUrl) window.open(taskUrl, '_blank');
 
       setTimeout(async () => {
@@ -280,6 +284,20 @@ const Tasks = () => {
         }
         setProcessingTask(null);
       }, 3000);
+      return;
+    }
+
+    // Partner tasks - open link and complete immediately without verification
+    if (joinTask && !isOurChannel) {
+      if (taskUrl) window.open(taskUrl, '_blank');
+      
+      try {
+        await completeTask(taskId);
+        toast.success('Task completed! Reward added');
+      } catch {
+        toast.error('Failed to complete task');
+      }
+      setProcessingTask(null);
       return;
     }
 
@@ -410,7 +428,7 @@ const Tasks = () => {
 
   // Render task item
   const renderTaskItem = (task: BoltTask, index: number) => {
-    const isProcessing = processingTask === task.id || isChecking;
+    const isProcessing = processingTask === task.id;
     const reward = getRewardDisplay(task);
     
     return (
