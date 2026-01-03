@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // AdsGram Block ID
-const ADSGRAM_BLOCK_ID = '20515';
+const ADSGRAM_BLOCK_ID = '20527';
 
 declare global {
   interface Window {

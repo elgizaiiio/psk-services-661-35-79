@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // AdsGram Block ID for Rewarded Ads (Watch Ad for rewards, Spin double)
-const ADSGRAM_REWARDED_BLOCK_ID = '20517';
+const ADSGRAM_REWARDED_BLOCK_ID = '20527';
 
 declare global {
   interface Window {
