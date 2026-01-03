@@ -35,16 +35,43 @@ export const useAdsGramTasks = (): UseAdsGramTasksReturn => {
     
     const checkAdsGram = () => {
       if (initAttempted.current) return;
-      
+
       try {
         if (window.Adsgram) {
           initAttempted.current = true;
-          controllerRef.current = window.Adsgram.init({
-            blockId: ADSGRAM_TASKS_BLOCK_ID,
-            debug: false,
-          });
-          setIsReady(true);
-          console.log('AdsGram Tasks initialized successfully');
+
+          const candidatesRaw = [
+            ADSGRAM_TASKS_BLOCK_ID,
+            ADSGRAM_TASKS_BLOCK_ID.replace(/^task-/, '').replace(/^int-/, ''),
+            ADSGRAM_TASKS_BLOCK_ID.startsWith('task-')
+              ? `int-${ADSGRAM_TASKS_BLOCK_ID.slice(5)}`
+              : `task-${ADSGRAM_TASKS_BLOCK_ID}`,
+            ADSGRAM_TASKS_BLOCK_ID.startsWith('int-')
+              ? `task-${ADSGRAM_TASKS_BLOCK_ID.slice(4)}`
+              : `int-${ADSGRAM_TASKS_BLOCK_ID}`,
+          ];
+
+          const candidates = Array.from(
+            new Set(candidatesRaw.map((v) => (v || '').trim()).filter(Boolean))
+          );
+
+          let lastErr: unknown = null;
+          for (const blockId of candidates) {
+            try {
+              controllerRef.current = window.Adsgram.init({
+                blockId,
+                debug: false,
+              });
+              setIsReady(true);
+              console.log('AdsGram Tasks initialized successfully with blockId:', blockId);
+              return;
+            } catch (e) {
+              lastErr = e;
+            }
+          }
+
+          console.error('Failed to initialize AdsGram Tasks with all candidates:', candidates, lastErr);
+          setError('Failed to initialize ads');
         }
       } catch (err) {
         console.error('Failed to initialize AdsGram Tasks:', err);
