@@ -1066,7 +1066,7 @@ Send /cancel to cancel`);
         });
         
         const stats = await getAdminStats();
-        const imageNote = imageUrl ? '\n📷 With attached image' : '\n📝 Text only (no image)';
+        const imageNote = imageData ? '\n📷 With attached image' : '\n📝 Text only (no image)';
         
         await sendTelegramMessage(chatId, `<b>✅ Confirm Broadcast</b>
 
