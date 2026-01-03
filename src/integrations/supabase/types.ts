@@ -659,6 +659,8 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean
+          partner_telegram_id: number | null
+          partnership_id: string | null
           points: number
           reward_ton: number | null
           reward_usdt: number | null
@@ -672,6 +674,8 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          partner_telegram_id?: number | null
+          partnership_id?: string | null
           points?: number
           reward_ton?: number | null
           reward_usdt?: number | null
@@ -685,13 +689,23 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          partner_telegram_id?: number | null
+          partnership_id?: string | null
           points?: number
           reward_ton?: number | null
           reward_usdt?: number | null
           task_url?: string | null
           title?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "bolt_tasks_partnership_id_fkey"
+            columns: ["partnership_id"]
+            isOneToOne: false
+            referencedRelation: "partnership_requests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bolt_upgrade_purchases: {
         Row: {
@@ -1685,6 +1699,62 @@ export type Database = {
           time_slot?: string
         }
         Relationships: []
+      }
+      partnership_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: number | null
+          created_at: string | null
+          id: string
+          points: number | null
+          rejected_reason: string | null
+          status: string | null
+          task_id: string | null
+          task_image: string | null
+          task_title: string
+          task_url: string
+          telegram_id: number
+          telegram_username: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: number | null
+          created_at?: string | null
+          id?: string
+          points?: number | null
+          rejected_reason?: string | null
+          status?: string | null
+          task_id?: string | null
+          task_image?: string | null
+          task_title: string
+          task_url: string
+          telegram_id: number
+          telegram_username?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: number | null
+          created_at?: string | null
+          id?: string
+          points?: number | null
+          rejected_reason?: string | null
+          status?: string | null
+          task_id?: string | null
+          task_image?: string | null
+          task_title?: string
+          task_url?: string
+          telegram_id?: number
+          telegram_username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partnership_requests_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referral_contests: {
         Row: {

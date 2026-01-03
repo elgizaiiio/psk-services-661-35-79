@@ -46,6 +46,12 @@ interface TelegramMessage {
 interface TelegramUpdate {
   update_id: number;
   message?: TelegramMessage;
+  callback_query?: {
+    id: string;
+    from: { id: number; username?: string; first_name: string };
+    data: string;
+    message?: { chat: { id: number } };
+  };
   pre_checkout_query?: {
     id: string;
     from: { id: number };
@@ -83,6 +89,18 @@ async function sendTelegramMessage(chatId: number, text: string, replyMarkup?: o
   const result = await response.json();
   console.log('Telegram API response:', result);
   return result;
+}
+
+async function answerCallbackQuery(callbackQueryId: string, text?: string) {
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/answerCallbackQuery`;
+  await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      callback_query_id: callbackQueryId,
+      text: text || 'Processing...'
+    }),
+  });
 }
 
 async function answerPreCheckoutQuery(queryId: string, ok: boolean, errorMessage?: string) {
@@ -241,7 +259,7 @@ async function clearAdminState(telegramId: number) {
     .eq('telegram_id', telegramId);
 }
 
-async function createTask(title: string, url: string, image: string, reward: number) {
+async function createTask(title: string, url: string, image: string, reward: number, partnershipId?: string, partnerTelegramId?: number) {
   const supabase = getSupabaseClient();
   const { data, error } = await supabase
     .from('bolt_tasks')
@@ -251,7 +269,9 @@ async function createTask(title: string, url: string, image: string, reward: num
       icon: image,
       points: reward,
       category: 'social',
-      is_active: true
+      is_active: true,
+      partnership_id: partnershipId || null,
+      partner_telegram_id: partnerTelegramId || null
     })
     .select()
     .single();
@@ -261,6 +281,156 @@ async function createTask(title: string, url: string, image: string, reward: num
     throw error;
   }
   return data;
+}
+
+// Partnership functions
+async function createPartnershipRequest(telegramId: number, username: string | undefined, title: string, url: string, image: string) {
+  const supabase = getSupabaseClient();
+  const { data, error } = await supabase
+    .from('partnership_requests')
+    .insert({
+      telegram_id: telegramId,
+      telegram_username: username || null,
+      task_title: title,
+      task_url: url,
+      task_image: image,
+      points: 10,
+      status: 'pending'
+    })
+    .select()
+    .single();
+  
+  if (error) {
+    console.error('Error creating partnership request:', error);
+    throw error;
+  }
+  return data;
+}
+
+async function getPendingPartnerships() {
+  const supabase = getSupabaseClient();
+  const { data } = await supabase
+    .from('partnership_requests')
+    .select('*')
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+  return data || [];
+}
+
+async function approvePartnership(requestId: string, adminTelegramId: number) {
+  const supabase = getSupabaseClient();
+  
+  // Get the partnership request
+  const { data: request, error: fetchError } = await supabase
+    .from('partnership_requests')
+    .select('*')
+    .eq('id', requestId)
+    .single();
+  
+  if (fetchError || !request) {
+    throw new Error('Partnership request not found');
+  }
+  
+  // Create the task
+  const task = await createTask(
+    request.task_title,
+    request.task_url,
+    request.task_image || '',
+    request.points,
+    request.id,
+    request.telegram_id
+  );
+  
+  // Update the partnership request
+  await supabase
+    .from('partnership_requests')
+    .update({
+      status: 'approved',
+      approved_by: adminTelegramId,
+      approved_at: new Date().toISOString(),
+      task_id: task.id
+    })
+    .eq('id', requestId);
+  
+  return { request, task };
+}
+
+async function rejectPartnership(requestId: string, reason?: string) {
+  const supabase = getSupabaseClient();
+  
+  const { data: request } = await supabase
+    .from('partnership_requests')
+    .select('*')
+    .eq('id', requestId)
+    .single();
+  
+  await supabase
+    .from('partnership_requests')
+    .update({
+      status: 'rejected',
+      rejected_reason: reason || null
+    })
+    .eq('id', requestId);
+  
+  return request;
+}
+
+async function getPartnershipStats(telegramId: number) {
+  const supabase = getSupabaseClient();
+  
+  // Get the user
+  const { data: user } = await supabase
+    .from('bolt_users')
+    .select('id')
+    .eq('telegram_id', telegramId)
+    .single();
+  
+  // Count referrals they brought to us
+  let referralsToUs = 0;
+  if (user) {
+    const { count } = await supabase
+      .from('bolt_referrals')
+      .select('*', { count: 'exact', head: true })
+      .eq('referrer_id', user.id);
+    referralsToUs = count || 0;
+  }
+  
+  // Get their partnership tasks and count completions
+  const { data: partnerTasks } = await supabase
+    .from('bolt_tasks')
+    .select('id, title')
+    .eq('partner_telegram_id', telegramId)
+    .eq('is_active', true);
+  
+  let referralsToThem = 0;
+  const tasksWithCompletions: { title: string; completions: number }[] = [];
+  
+  if (partnerTasks && partnerTasks.length > 0) {
+    for (const task of partnerTasks) {
+      const { count } = await supabase
+        .from('bolt_completed_tasks')
+        .select('*', { count: 'exact', head: true })
+        .eq('task_id', task.id);
+      
+      const completions = count || 0;
+      referralsToThem += completions;
+      tasksWithCompletions.push({ title: task.title, completions });
+    }
+  }
+  
+  // Get partnership request history
+  const { data: requests } = await supabase
+    .from('partnership_requests')
+    .select('*')
+    .eq('telegram_id', telegramId)
+    .order('created_at', { ascending: false });
+  
+  return {
+    referralsToUs,
+    referralsToThem,
+    tasks: tasksWithCompletions,
+    requests: requests || []
+  };
 }
 
 // Admin Panel Functions
@@ -303,6 +473,11 @@ async function getAdminStats() {
     .select('*', { count: 'exact', head: true })
     .eq('is_active', true);
   
+  const { count: pendingPartnerships } = await supabase
+    .from('partnership_requests')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending');
+  
   return {
     totalUsers: totalUsers || 0,
     activeUsers: activeUsers || 0,
@@ -310,7 +485,8 @@ async function getAdminStats() {
     activeSessions: activeSessions || 0,
     totalPayments: totalPayments || 0,
     totalTonRevenue,
-    totalTasks: totalTasks || 0
+    totalTasks: totalTasks || 0,
+    pendingPartnerships: pendingPartnerships || 0
   };
 }
 
@@ -455,6 +631,102 @@ async function broadcastMessage(message: string): Promise<{ sent: number; failed
   return { sent, failed };
 }
 
+// Handle partnership flow for any user
+async function handlePartnershipFlow(chatId: number, telegramId: number, username: string | undefined, messageText: string, photo?: any[]) {
+  const state = await getAdminState(telegramId);
+  
+  if (!state || state.action_type !== 'partnership') {
+    return false;
+  }
+  
+  switch (state.step) {
+    case 'partnership_title':
+      await setAdminState(telegramId, 'partnership_url', { 
+        action_type: 'partnership',
+        task_title: messageText 
+      });
+      await sendTelegramMessage(chatId, `✅ Task title saved: <b>${messageText}</b>
+
+<b>Step 2/3:</b> Enter the task URL:`);
+      return true;
+
+    case 'partnership_url':
+      if (!messageText.startsWith('http')) {
+        await sendTelegramMessage(chatId, '⚠️ Please enter a valid URL starting with http or https');
+        return true;
+      }
+      await setAdminState(telegramId, 'partnership_image', { 
+        action_type: 'partnership',
+        task_title: state.task_title,
+        task_url: messageText 
+      });
+      await sendTelegramMessage(chatId, `✅ URL saved
+
+<b>Step 3/3:</b> Send the task image (photo or URL):`);
+      return true;
+
+    case 'partnership_image':
+      let imageUrl = messageText;
+      
+      if (photo && photo.length > 0) {
+        const largestPhoto = photo[photo.length - 1];
+        imageUrl = await getFileUrl(largestPhoto.file_id) || messageText;
+      }
+      
+      try {
+        // Create the partnership request
+        const request = await createPartnershipRequest(
+          telegramId,
+          username,
+          state.task_title!,
+          state.task_url!,
+          imageUrl
+        );
+        
+        await clearAdminState(telegramId);
+        
+        // Notify the user
+        await sendTelegramMessage(chatId, `✅ <b>Partnership Request Submitted!</b>
+
+<b>Task:</b> ${state.task_title}
+<b>URL:</b> ${state.task_url}
+<b>Reward:</b> 10 BOLT
+
+Your request is pending review. You'll be notified once it's approved.
+
+Use /statistics to check your partnership stats.`);
+        
+        // Notify admin(s)
+        for (const adminId of ADMIN_IDS) {
+          const adminMessage = `🤝 <b>New Partnership Request!</b>
+
+<b>From:</b> ${username ? `@${username}` : 'Unknown'} (ID: ${telegramId})
+<b>Task:</b> ${state.task_title}
+<b>URL:</b> ${state.task_url}
+<b>Reward:</b> 10 BOLT`;
+
+          const keyboard = {
+            inline_keyboard: [
+              [
+                { text: '✅ Approve', callback_data: `approve_partnership_${request.id}` },
+                { text: '❌ Reject', callback_data: `reject_partnership_${request.id}` }
+              ]
+            ]
+          };
+          
+          await sendTelegramMessage(adminId, adminMessage, keyboard);
+        }
+        
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        await sendTelegramMessage(chatId, `❌ Error submitting request: ${errorMessage}`);
+      }
+      return true;
+  }
+  
+  return false;
+}
+
 async function handleAdminCommand(chatId: number, telegramId: number, messageText: string, photo?: any[]) {
   // Check if user is admin FIRST before anything else
   if (!ADMIN_IDS.includes(telegramId)) {
@@ -487,11 +759,13 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
 💎 Revenue: <b>${stats.totalTonRevenue.toFixed(2)} TON</b>
 
 <b>📋 Active Tasks:</b> ${stats.totalTasks}
+<b>🤝 Pending Partnerships:</b> ${stats.pendingPartnerships}
 
 <b>📌 Commands:</b>
 /101 stats - Detailed stats
 /101 users - Recent 10 users
 /101 payments - Payment transactions
+/101 partnerships - View pending partnerships
 /101 broadcast - Send message to all
 /102 - Add new task`;
 
@@ -515,18 +789,71 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
         ],
         [
           {
-            text: '📢 Broadcast',
-            callback_data: 'admin_broadcast'
+            text: '🤝 Partnerships',
+            callback_data: 'admin_partnerships'
           },
           {
             text: '➕ Add Task',
             callback_data: 'admin_add_task'
+          }
+        ],
+        [
+          {
+            text: '📢 Broadcast',
+            callback_data: 'admin_broadcast'
           }
         ]
       ]
     };
 
     await sendTelegramMessage(chatId, statsMessage, keyboard);
+    return true;
+  }
+
+  // Handle /101 partnerships - View pending partnerships
+  if (messageText === '/101 partnerships') {
+    const pending = await getPendingPartnerships();
+    
+    if (pending.length === 0) {
+      await sendTelegramMessage(chatId, `<b>🤝 Partnership Requests</b>
+
+No pending partnership requests.`);
+      return true;
+    }
+    
+    let message = `<b>🤝 Pending Partnership Requests (${pending.length})</b>\n\n`;
+    
+    for (const req of pending.slice(0, 5)) {
+      const username = req.telegram_username ? `@${req.telegram_username}` : `ID: ${req.telegram_id}`;
+      const date = new Date(req.created_at).toLocaleDateString('en-US');
+      message += `<b>${req.task_title}</b>
+From: ${username}
+URL: ${req.task_url}
+Date: ${date}\n\n`;
+    }
+    
+    if (pending.length > 5) {
+      message += `...and ${pending.length - 5} more\n`;
+    }
+    
+    // Create inline keyboards for each pending request
+    const keyboards = pending.slice(0, 5).map(req => ({
+      inline_keyboard: [
+        [
+          { text: `✅ Approve: ${req.task_title.slice(0, 20)}...`, callback_data: `approve_partnership_${req.id}` },
+          { text: '❌', callback_data: `reject_partnership_${req.id}` }
+        ]
+      ]
+    }));
+    
+    await sendTelegramMessage(chatId, message);
+    
+    // Send individual approval buttons
+    for (let i = 0; i < Math.min(pending.length, 5); i++) {
+      const req = pending[i];
+      await sendTelegramMessage(chatId, `<b>${req.task_title}</b>`, keyboards[i]);
+    }
+    
     return true;
   }
 
@@ -757,6 +1084,85 @@ ID: ${task.id}`);
   return false;
 }
 
+// Handle callback queries (button clicks)
+async function handleCallbackQuery(callbackQuery: any) {
+  const callbackQueryId = callbackQuery.id;
+  const data = callbackQuery.data;
+  const chatId = callbackQuery.message?.chat?.id;
+  const telegramId = callbackQuery.from.id;
+  
+  if (!chatId) return;
+  
+  // Handle partnership approval
+  if (data.startsWith('approve_partnership_')) {
+    if (!ADMIN_IDS.includes(telegramId)) {
+      await answerCallbackQuery(callbackQueryId, 'Not authorized');
+      return;
+    }
+    
+    const requestId = data.replace('approve_partnership_', '');
+    
+    try {
+      const { request, task } = await approvePartnership(requestId, telegramId);
+      
+      await answerCallbackQuery(callbackQueryId, 'Partnership approved!');
+      await sendTelegramMessage(chatId, `✅ <b>Partnership Approved!</b>
+
+Task "${request.task_title}" has been added.
+Task ID: ${task.id}`);
+      
+      // Notify the partner
+      await sendTelegramMessage(request.telegram_id, `🎉 <b>Partnership Approved!</b>
+
+Your task "<b>${request.task_title}</b>" has been approved and is now live!
+
+Users can now complete your task and you'll start receiving referrals.
+
+Use /statistics to track your partnership performance.`);
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await answerCallbackQuery(callbackQueryId, 'Error approving');
+      await sendTelegramMessage(chatId, `❌ Error: ${errorMessage}`);
+    }
+    return;
+  }
+  
+  // Handle partnership rejection
+  if (data.startsWith('reject_partnership_')) {
+    if (!ADMIN_IDS.includes(telegramId)) {
+      await answerCallbackQuery(callbackQueryId, 'Not authorized');
+      return;
+    }
+    
+    const requestId = data.replace('reject_partnership_', '');
+    
+    try {
+      const request = await rejectPartnership(requestId);
+      
+      await answerCallbackQuery(callbackQueryId, 'Partnership rejected');
+      await sendTelegramMessage(chatId, `❌ Partnership request rejected.`);
+      
+      // Notify the partner
+      if (request) {
+        await sendTelegramMessage(request.telegram_id, `❌ <b>Partnership Request Rejected</b>
+
+Unfortunately, your task "<b>${request.task_title}</b>" was not approved.
+
+You can submit a new request with /partnership.`);
+      }
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await answerCallbackQuery(callbackQueryId, 'Error rejecting');
+      await sendTelegramMessage(chatId, `❌ Error: ${errorMessage}`);
+    }
+    return;
+  }
+  
+  await answerCallbackQuery(callbackQueryId);
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -773,6 +1179,14 @@ serve(async (req) => {
 
     const update: TelegramUpdate = await req.json();
     console.log('Received Telegram update:', JSON.stringify(update));
+
+    // Handle callback queries (button clicks)
+    if (update.callback_query) {
+      await handleCallbackQuery(update.callback_query);
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Handle pre_checkout_query for Stars payments
     if (update.pre_checkout_query) {
@@ -919,6 +1333,7 @@ serve(async (req) => {
     const chatId = update.message?.chat.id;
     const firstName = update.message?.from.first_name || 'User';
     const telegramId = update.message?.from.id;
+    const username = update.message?.from.username;
     const photo = update.message?.photo;
 
     if (!chatId || !telegramId) {
@@ -927,12 +1342,97 @@ serve(async (req) => {
       });
     }
 
-    // Check for admin commands first
+    // Check for ongoing partnership flow first (for any user)
+    const partnershipHandled = await handlePartnershipFlow(chatId, telegramId, username, messageText, photo);
+    if (partnershipHandled) {
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Check for admin commands
     const handledByAdmin = await handleAdminCommand(chatId, telegramId, messageText, photo);
     if (handledByAdmin) {
       return new Response(JSON.stringify({ ok: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
+    }
+
+    // Handle /partnership command - for any user
+    if (messageText === '/partnership') {
+      await setAdminState(telegramId, 'partnership_title', { 
+        action_type: 'partnership',
+        task_title: null, 
+        task_url: null, 
+        task_image: null 
+      });
+      await sendTelegramMessage(chatId, `🤝 <b>Partnership Request</b>
+
+Submit your task for cross-promotion partnership.
+Reward will be set to <b>10 BOLT</b> automatically.
+
+<b>Step 1/3:</b> Enter the task title:
+
+Send /cancel to cancel`);
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle /statistics command - for any user
+    if (messageText === '/statistics') {
+      const stats = await getPartnershipStats(telegramId);
+      const user = await getUserStats(telegramId);
+      
+      const referralCode = user?.telegram_username || telegramId;
+      const referralLink = `https://t.me/boltrsbot?start=${referralCode}`;
+      
+      let statsMessage = `📊 <b>Your Partnership Statistics</b>
+
+━━━━━━━━━━━━━━━━━━━━━━
+👥 <b>You referred to us:</b> ${stats.referralsToUs} users
+👥 <b>We referred to you:</b> ${stats.referralsToThem} users
+━━━━━━━━━━━━━━━━━━━━━━`;
+
+      if (stats.tasks.length > 0) {
+        statsMessage += `\n\n📋 <b>Your Active Tasks:</b>`;
+        stats.tasks.forEach(t => {
+          statsMessage += `\n• ${t.title}: ${t.completions} clicks ✅`;
+        });
+      }
+      
+      if (stats.requests.length > 0) {
+        const pending = stats.requests.filter(r => r.status === 'pending');
+        const approved = stats.requests.filter(r => r.status === 'approved');
+        const rejected = stats.requests.filter(r => r.status === 'rejected');
+        
+        statsMessage += `\n\n📝 <b>Request History:</b>`;
+        statsMessage += `\n✅ Approved: ${approved.length}`;
+        statsMessage += `\n⏳ Pending: ${pending.length}`;
+        statsMessage += `\n❌ Rejected: ${rejected.length}`;
+      }
+      
+      statsMessage += `\n\n🔗 <b>Your Referral Link:</b>
+<code>${referralLink}</code>
+
+Use /partnership to submit a new task.`;
+
+      await sendTelegramMessage(chatId, statsMessage);
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    // Handle /cancel command for any user
+    if (messageText === '/cancel') {
+      const state = await getAdminState(telegramId);
+      if (state) {
+        await clearAdminState(telegramId);
+        await sendTelegramMessage(chatId, '❌ Operation cancelled');
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     // Handle /start command
@@ -1150,6 +1650,8 @@ Invite friends to climb the leaderboard!`;
 /balance - Check your BOLT balance and stats
 /referral - Get your referral link
 /contest - View contest info and leaderboard
+/partnership - Submit a partnership task request
+/statistics - View your partnership statistics
 /help - Show this help message
 
 <b>Quick Actions:</b>
