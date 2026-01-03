@@ -58,6 +58,22 @@ const PRO_REWARDS: SpinReward[] = [
   { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 0 },
 ];
 
+// USDT Premium Wheel - Always wins 1 USDT (100% probability)
+const USDT_REWARDS: SpinReward[] = [
+  { id: 'usdt_1_premium', label: '1', type: 'usdt', value: 1, probability: 100 },
+  { id: 'usdt_5_premium', label: '5', type: 'usdt', value: 5, probability: 0 },
+  { id: 'usdt_10_premium', label: '10', type: 'usdt', value: 10, probability: 0 },
+  { id: 'usdt_25_premium', label: '25', type: 'usdt', value: 25, probability: 0 },
+  { id: 'usdt_50_premium', label: '50', type: 'usdt', value: 50, probability: 0 },
+  { id: 'usdt_100_premium', label: '100', type: 'usdt', value: 100, probability: 0 },
+  { id: 'usdt_250_premium', label: '250', type: 'usdt', value: 250, probability: 0 },
+  { id: 'usdt_500_premium', label: '500', type: 'usdt', value: 500, probability: 0 },
+  { id: 'usdt_777_premium', label: '777', type: 'usdt', value: 777, probability: 0 },
+];
+
+// USDT Wheel Price
+const USDT_SPIN_PRICE_TON = 5;
+
 // Normal Ticket Packages - Stars calculated dynamically
 const NORMAL_PACKAGES: TicketPackage[] = [
   { id: 'normal_3', tickets: 3, priceTon: 0.25 },
@@ -84,6 +100,7 @@ const SPECIAL_TON_PACKAGE = {
 // Wheel colors - 2 colors each
 const NORMAL_COLORS = ['#3B82F6', '#1E40AF']; // Blue shades
 const PRO_COLORS = ['#8B5CF6', '#6D28D9']; // Purple shades
+const USDT_COLORS = ['#22C55E', '#16A34A']; // Green shades for USDT
 
 const Spin: React.FC = () => {
   const { user: tgUser, hapticFeedback } = useTelegramAuth();
@@ -101,7 +118,7 @@ const Spin: React.FC = () => {
   const { showAd, isReady: adReady, isLoading: adLoading } = useAdsGramRewarded();
   useTelegramBackButton();
 
-  const [wheelType, setWheelType] = useState<'normal' | 'pro'>('normal');
+  const [wheelType, setWheelType] = useState<'normal' | 'pro' | 'usdt'>('normal');
   const [isSpinning, setIsSpinning] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [result, setResult] = useState<SpinReward | null>(null);
@@ -116,10 +133,12 @@ const Spin: React.FC = () => {
   const [processingSpecial, setProcessingSpecial] = useState(false);
   const [hasMultiplier, setHasMultiplier] = useState(false);
   const [watchingAd, setWatchingAd] = useState(false);
+  const [showUsdtSpinPayment, setShowUsdtSpinPayment] = useState(false);
+  const [processingUsdtSpin, setProcessingUsdtSpin] = useState(false);
 
-  const rewards = wheelType === 'normal' ? NORMAL_REWARDS : PRO_REWARDS;
+  const rewards = wheelType === 'usdt' ? USDT_REWARDS : wheelType === 'pro' ? PRO_REWARDS : NORMAL_REWARDS;
   const packages = wheelType === 'normal' ? NORMAL_PACKAGES : PRO_PACKAGES;
-  const wheelColors = wheelType === 'normal' ? NORMAL_COLORS : PRO_COLORS;
+  const wheelColors = wheelType === 'usdt' ? USDT_COLORS : wheelType === 'pro' ? PRO_COLORS : NORMAL_COLORS;
   const currentTickets = wheelType === 'normal' ? normalTickets : proTickets;
   const segmentAngle = 360 / rewards.length;
 
@@ -178,21 +197,21 @@ const Spin: React.FC = () => {
   }, [loadTickets]);
 
   // Get random reward based on probability
-  const getRandomReward = (): SpinReward => {
+  const getRandomReward = (rewardsList: SpinReward[] = rewards): SpinReward => {
     const random = Math.random() * 100;
     let cumulative = 0;
     
-    for (const reward of rewards) {
+    for (const reward of rewardsList) {
       cumulative += reward.probability;
       if (random <= cumulative) {
         return reward;
       }
     }
-    return rewards[0];
+    return rewardsList[0];
   };
 
   // Apply reward to user (with optional multiplier)
-  const applyReward = async (reward: SpinReward, multiplier: number = 1) => {
+  const applyReward = async (reward: SpinReward, multiplier: number = 1, wheelTypeUsed: string = wheelType) => {
     if (!user?.id) return;
 
     const finalValue = reward.type === 'bolt' ? reward.value * multiplier : reward.value;
@@ -202,7 +221,7 @@ const Spin: React.FC = () => {
         user_id: user.id,
         reward_type: reward.id,
         reward_amount: finalValue,
-        wheel_type: wheelType,
+        wheel_type: wheelTypeUsed,
       });
 
       if (reward.type === 'bolt') {
@@ -447,6 +466,46 @@ const Spin: React.FC = () => {
     }
   };
 
+  // Handle USDT wheel spin after payment
+  const handleUsdtSpinAfterPayment = async () => {
+    if (!user?.id) return;
+    
+    setProcessingUsdtSpin(true);
+    setShowUsdtSpinPayment(false);
+    
+    hapticFeedback.impact('heavy');
+    setIsSpinning(true);
+    setResult(null);
+
+    // Always get the 1 USDT reward (100% probability)
+    const reward = getRandomReward(USDT_REWARDS);
+    const rewardIndex = USDT_REWARDS.findIndex(r => r.id === reward.id);
+    
+    const usdtSegmentAngle = 360 / USDT_REWARDS.length;
+    const targetAngle = 360 - (rewardIndex * usdtSegmentAngle) - (usdtSegmentAngle / 2);
+    const fullSpins = 5 + Math.floor(Math.random() * 3);
+    const totalRotation = rotation + (fullSpins * 360) + targetAngle;
+    
+    setRotation(totalRotation);
+
+    let hasAppliedReward = false;
+
+    setTimeout(async () => {
+      if (hasAppliedReward) return;
+      hasAppliedReward = true;
+      
+      setIsSpinning(false);
+      setResult(reward);
+      hapticFeedback.notification('success');
+
+      await applyReward(reward, 1, 'usdt');
+      toast.success(`🎉 You won ${reward.value} USDT!`);
+      
+      setProcessingUsdtSpin(false);
+    }, 5000);
+  };
+
+
   if (miningLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -464,30 +523,41 @@ const Spin: React.FC = () => {
       <div className="max-w-md mx-auto px-4 pt-10">
         <div className="space-y-6">
 
-          {/* Header with Tickets Count */}
+          {/* Header with Tickets Count - Hide for USDT wheel */}
           <FadeUp>
             <div className="flex items-center justify-between">
               <h1 className="text-lg font-bold text-foreground">Lucky Spin</h1>
-              <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${
-                wheelType === 'pro' 
-                  ? 'bg-amber-500/20 text-amber-500' 
-                  : 'bg-primary/20 text-primary'
-              }`}>
-                <Ticket className="w-4 h-4" />
-                <span>{currentTickets}</span>
-              </div>
+              {wheelType !== 'usdt' && (
+                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${
+                  wheelType === 'pro' 
+                    ? 'bg-amber-500/20 text-amber-500' 
+                    : 'bg-primary/20 text-primary'
+                }`}>
+                  <Ticket className="w-4 h-4" />
+                  <span>{currentTickets}</span>
+                </div>
+              )}
+              {wheelType === 'usdt' && (
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold bg-emerald-500/20 text-emerald-500">
+                  <UsdtIcon size={16} />
+                  <span>5 TON/Spin</span>
+                </div>
+              )}
             </div>
           </FadeUp>
 
           {/* Wheel Type Tabs */}
           <FadeUp>
-            <Tabs value={wheelType} onValueChange={(v) => setWheelType(v as 'normal' | 'pro')} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 h-10">
+            <Tabs value={wheelType} onValueChange={(v) => setWheelType(v as 'normal' | 'pro' | 'usdt')} className="w-full">
+              <TabsList className="grid w-full grid-cols-3 h-10">
                 <TabsTrigger value="normal" className="text-sm font-medium">
                   Normal
                 </TabsTrigger>
                 <TabsTrigger value="pro" className="text-sm font-medium">
                   PRO
+                </TabsTrigger>
+                <TabsTrigger value="usdt" className="text-sm font-medium text-emerald-500 data-[state=active]:text-emerald-600">
+                  💰 USDT
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -499,7 +569,7 @@ const Spin: React.FC = () => {
               {/* Pointer */}
               <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
                 <div className={`w-0 h-0 border-l-[18px] border-r-[18px] border-t-[32px] border-l-transparent border-r-transparent ${
-                  wheelType === 'pro' ? 'border-t-purple-500' : 'border-t-primary'
+                  wheelType === 'usdt' ? 'border-t-emerald-500' : wheelType === 'pro' ? 'border-t-purple-500' : 'border-t-primary'
                 } drop-shadow-lg`} />
               </div>
 
@@ -508,7 +578,9 @@ const Spin: React.FC = () => {
                 <motion.div
                   className="relative w-full h-full rounded-full shadow-2xl"
                   style={{ 
-                    boxShadow: wheelType === 'pro'
+                    boxShadow: wheelType === 'usdt'
+                      ? '0 0 0 6px rgb(34 197 94), 0 0 40px rgba(34, 197, 94, 0.4)'
+                      : wheelType === 'pro'
                       ? '0 0 0 6px rgb(139 92 246), 0 0 40px rgba(139, 92, 246, 0.4)'
                       : '0 0 0 6px hsl(var(--primary)), 0 0 30px hsl(var(--primary)/0.3)'
                   }}
@@ -576,11 +648,17 @@ const Spin: React.FC = () => {
                   {/* Center */}
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                     <div className={`w-14 h-14 rounded-full border-4 flex items-center justify-center shadow-xl ${
-                      wheelType === 'pro'
+                      wheelType === 'usdt'
+                        ? 'bg-gradient-to-br from-emerald-500 to-emerald-700 border-emerald-300'
+                        : wheelType === 'pro'
                         ? 'bg-gradient-to-br from-purple-500 to-purple-700 border-purple-300'
                         : 'bg-gradient-to-br from-blue-500 to-blue-700 border-blue-300'
                     }`}>
-                      <span className="text-white font-bold text-sm">SPIN</span>
+                      {wheelType === 'usdt' ? (
+                        <UsdtIcon size={20} />
+                      ) : (
+                        <span className="text-white font-bold text-sm">SPIN</span>
+                      )}
                     </div>
                   </div>
                 </motion.div>
@@ -611,7 +689,7 @@ const Spin: React.FC = () => {
                   {result.type === 'nothing' && <X className="w-5 h-5 text-muted-foreground" />}
                   <span className={`text-lg font-bold ${
                     result.type !== 'nothing' 
-                      ? wheelType === 'pro' ? 'text-purple-500' : 'text-primary' 
+                      ? wheelType === 'usdt' ? 'text-emerald-500' : wheelType === 'pro' ? 'text-purple-500' : 'text-primary' 
                       : 'text-muted-foreground'
                   }`}>
                     {result.type === 'bolt' ? `${result.value} BOLT` : 
@@ -626,31 +704,52 @@ const Spin: React.FC = () => {
 
           {/* Spin Button */}
           <FadeUp>
-            <Button
-              onClick={handleSpin}
-              disabled={isSpinning || currentTickets <= 0}
-              className={`w-full h-12 text-base font-bold rounded-xl ${
-                wheelType === 'pro' 
-                  ? 'bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white' 
-                  : ''
-              }`}
-              size="lg"
-            >
-              {isSpinning ? (
-                <>
-                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Spinning...
-                </>
-              ) : currentTickets > 0 ? (
-                'SPIN NOW'
-              ) : (
-                'No Tickets'
-              )}
-            </Button>
+            {wheelType === 'usdt' ? (
+              <Button
+                onClick={() => setShowUsdtSpinPayment(true)}
+                disabled={isSpinning || processingUsdtSpin}
+                className="w-full h-12 text-base font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white"
+                size="lg"
+              >
+                {isSpinning || processingUsdtSpin ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Spinning...
+                  </>
+                ) : (
+                  <>
+                    <UsdtIcon size={20} className="mr-2" />
+                    SPIN for 5 TON
+                  </>
+                )}
+              </Button>
+            ) : (
+              <Button
+                onClick={handleSpin}
+                disabled={isSpinning || currentTickets <= 0}
+                className={`w-full h-12 text-base font-bold rounded-xl ${
+                  wheelType === 'pro' 
+                    ? 'bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white' 
+                    : ''
+                }`}
+                size="lg"
+              >
+                {isSpinning ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Spinning...
+                  </>
+                ) : currentTickets > 0 ? (
+                  'SPIN NOW'
+                ) : (
+                  'No Tickets'
+                )}
+              </Button>
+            )}
           </FadeUp>
 
-          {/* 2x Multiplier Ad Button */}
-          {adReady && !hasMultiplier && currentTickets > 0 && (
+          {/* 2x Multiplier Ad Button - Hide for USDT wheel */}
+          {wheelType !== 'usdt' && adReady && !hasMultiplier && currentTickets > 0 && (
             <FadeUp>
               <Button
                 onClick={handleWatchAdForMultiplier}
@@ -685,7 +784,8 @@ const Spin: React.FC = () => {
             </FadeUp>
           )}
 
-          {/* Action Buttons */}
+          {/* Action Buttons - Hide for USDT wheel */}
+          {wheelType !== 'usdt' && (
           <FadeUp>
           <div className={`grid gap-2 ${wheelType === 'normal' && (freeTicketAvailable || (isVip && !vipSpinsClaimed)) ? 'grid-cols-2' : 'grid-cols-1'}`}>
               {/* Free Ticket - Normal only */}
@@ -784,6 +884,7 @@ const Spin: React.FC = () => {
               </Sheet>
             </div>
           </FadeUp>
+          )}
         </div>
       </div>
 
@@ -812,6 +913,17 @@ const Spin: React.FC = () => {
         productType="spin_tickets"
         credits={1}
         onSuccess={handleSpecialTonPurchaseSuccess}
+      />
+
+      {/* USDT Premium Wheel Payment Modal */}
+      <UnifiedPaymentModal
+        isOpen={showUsdtSpinPayment}
+        onClose={() => setShowUsdtSpinPayment(false)}
+        amount={USDT_SPIN_PRICE_TON}
+        description="USDT Premium Spin - Win up to 777 USDT!"
+        productType="spin_tickets"
+        credits={1}
+        onSuccess={handleUsdtSpinAfterPayment}
       />
     </PageWrapper>
   );
