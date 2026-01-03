@@ -99,8 +99,28 @@ const UpgradeCenterInner = () => {
     }
 
     try {
+      // Create payment record FIRST with pending status
+      const { data: paymentData, error: paymentError } = await supabase
+        .from('ton_payments')
+        .insert({
+          user_id: userId,
+          amount_ton: price,
+          description: `Upgrade: ${upgradeName}`,
+          product_type: 'mining_upgrade',
+          product_id: upgradeName,
+          destination_address: TON_PAYMENT_ADDRESS,
+          status: 'pending',
+        })
+        .select()
+        .single();
+
+      if (paymentError) {
+        toast.error('Failed to create payment record');
+        return;
+      }
+
       const nanotons = tonToNano(price);
-      await tcui.sendTransaction({
+      const result = await tcui.sendTransaction({
         validUntil: getValidUntil(),
         messages: [
           {
@@ -110,16 +130,55 @@ const UpgradeCenterInner = () => {
         ]
       });
       
-      await supabase.from('bolt_social_notifications' as any).insert({
-        user_id: userId,
-        username: 'Someone',
-        action_type: 'upgrade',
-        amount: price,
-        product_name: upgradeName
-      });
-      
-      toast.success(`${upgradeName} upgraded successfully`);
-      handleUpgrade();
+      if (result?.boc) {
+        // Save tx_hash but keep as PENDING
+        await supabase
+          .from('ton_payments')
+          .update({ 
+            tx_hash: result.boc,
+            status: 'pending'
+          })
+          .eq('id', paymentData.id);
+
+        toast.info('Verifying transaction on blockchain...');
+
+        // Wait for blockchain confirmation
+        await new Promise(resolve => setTimeout(resolve, 6000));
+
+        // Call verify-ton-payment to confirm
+        const { data: verifyData, error: verifyError } = await supabase.functions.invoke('verify-ton-payment', {
+          body: {
+            paymentId: paymentData.id,
+            txHash: result.boc,
+          },
+          headers: {
+            'x-telegram-id': userId,
+          }
+        });
+
+        if (verifyError || verifyData?.status !== 'confirmed') {
+          toast.warning('Payment pending verification. Upgrade will be applied once confirmed.');
+          return;
+        }
+
+        // Only update AFTER blockchain confirmation
+        await supabase
+          .from('ton_payments')
+          .update({ status: 'confirmed', confirmed_at: new Date().toISOString() })
+          .eq('id', paymentData.id);
+
+        // Now apply the upgrade
+        await supabase.from('bolt_social_notifications' as any).insert({
+          user_id: userId,
+          username: 'Someone',
+          action_type: 'upgrade',
+          amount: price,
+          product_name: upgradeName
+        });
+        
+        toast.success(`${upgradeName} upgraded successfully`);
+        handleUpgrade();
+      }
     } catch (e: any) {
       console.error("Upgrade failed:", e);
       if (e.message?.includes('User rejects')) {
