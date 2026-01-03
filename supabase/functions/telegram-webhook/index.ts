@@ -1017,6 +1017,75 @@ Send /cancel to cancel`);
     return true;
   }
 
+  // Handle /111 command - Task Management (View & Delete)
+  if (messageText === '/111') {
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      // Get all active tasks with completion counts
+      const { data: tasks, error } = await supabase
+        .from('bolt_tasks')
+        .select('id, title, points, icon, category, created_at, is_active')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(20);
+      
+      if (error) throw error;
+      
+      if (!tasks || tasks.length === 0) {
+        await sendTelegramMessage(chatId, `📋 <b>Task Management</b>
+
+No active tasks found.
+
+Use /102 to create a new task.`);
+        return true;
+      }
+      
+      // Get completion counts for each task
+      const taskIds = tasks.map(t => t.id);
+      const { data: completions } = await supabase
+        .from('bolt_completed_tasks')
+        .select('task_id')
+        .in('task_id', taskIds);
+      
+      const completionCounts: Record<string, number> = {};
+      completions?.forEach(c => {
+        completionCounts[c.task_id] = (completionCounts[c.task_id] || 0) + 1;
+      });
+      
+      let message = `📋 <b>Task Management</b> (${tasks.length} active)\n\n`;
+      
+      tasks.forEach((task, index) => {
+        const count = completionCounts[task.id] || 0;
+        const icon = task.icon || '📌';
+        message += `${index + 1}. ${icon} <b>${task.title}</b>\n`;
+        message += `   💰 ${task.points} BOLT | ✅ ${count} completions\n\n`;
+      });
+      
+      message += `\n<b>📌 Actions:</b>\nClick a button below to delete a task`;
+      
+      // Create inline keyboard with delete buttons (max 5 at a time)
+      const keyboard = {
+        inline_keyboard: tasks.slice(0, 10).map((task, index) => [
+          { 
+            text: `🗑️ ${index + 1}. ${task.title.slice(0, 25)}${task.title.length > 25 ? '...' : ''}`, 
+            callback_data: `delete_task_${task.id}` 
+          }
+        ])
+      };
+      
+      await sendTelegramMessage(chatId, message, keyboard);
+      return true;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await sendTelegramMessage(chatId, `❌ Error loading tasks: ${errorMessage}`);
+      return true;
+    }
+  }
+
   // Handle /cancel command
   if (messageText === '/cancel') {
     if (state) {
@@ -1267,6 +1336,94 @@ You can submit a new request with /partnership.`);
       await answerCallbackQuery(callbackQueryId, 'Error rejecting');
       await sendTelegramMessage(chatId, `❌ Error: ${errorMessage}`);
     }
+    return;
+  }
+  
+  // Handle task deletion
+  if (data.startsWith('delete_task_')) {
+    if (!ADMIN_IDS.includes(telegramId)) {
+      await answerCallbackQuery(callbackQueryId, 'Not authorized');
+      return;
+    }
+    
+    const taskId = data.replace('delete_task_', '');
+    
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      
+      // Get task details first
+      const { data: task, error: fetchError } = await supabase
+        .from('bolt_tasks')
+        .select('id, title, points')
+        .eq('id', taskId)
+        .single();
+      
+      if (fetchError || !task) {
+        await answerCallbackQuery(callbackQueryId, 'Task not found');
+        return;
+      }
+      
+      // Soft delete: set is_active to false
+      const { error: deleteError } = await supabase
+        .from('bolt_tasks')
+        .update({ is_active: false })
+        .eq('id', taskId);
+      
+      if (deleteError) throw deleteError;
+      
+      await answerCallbackQuery(callbackQueryId, 'Task deleted!');
+      await sendTelegramMessage(chatId, `🗑️ <b>Task Deleted</b>
+
+<b>Title:</b> ${task.title}
+<b>Reward:</b> ${task.points} BOLT
+
+The task has been deactivated and will no longer appear to users.
+
+Use /111 to view remaining tasks.`);
+      
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await answerCallbackQuery(callbackQueryId, 'Error deleting');
+      await sendTelegramMessage(chatId, `❌ Error: ${errorMessage}`);
+    }
+    return;
+  }
+  
+  // Handle confirm task deletion
+  if (data.startsWith('confirm_delete_task_')) {
+    if (!ADMIN_IDS.includes(telegramId)) {
+      await answerCallbackQuery(callbackQueryId, 'Not authorized');
+      return;
+    }
+    
+    const taskId = data.replace('confirm_delete_task_', '');
+    
+    // Ask for confirmation
+    const keyboard = {
+      inline_keyboard: [
+        [
+          { text: '✅ Yes, delete', callback_data: `delete_task_${taskId}` },
+          { text: '❌ Cancel', callback_data: 'cancel_delete' }
+        ]
+      ]
+    };
+    
+    await answerCallbackQuery(callbackQueryId);
+    await sendTelegramMessage(chatId, `⚠️ <b>Confirm Deletion</b>
+
+Are you sure you want to delete this task?
+
+This action cannot be undone.`, keyboard);
+    return;
+  }
+  
+  // Handle cancel delete
+  if (data === 'cancel_delete') {
+    await answerCallbackQuery(callbackQueryId, 'Deletion cancelled');
+    await sendTelegramMessage(chatId, '✅ Deletion cancelled. Use /111 to view tasks.');
     return;
   }
   
