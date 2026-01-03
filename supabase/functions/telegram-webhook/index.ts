@@ -1481,16 +1481,23 @@ Use /partnership to submit a new task.`;
 
       const welcomeMessage = `<b>Welcome ${firstName}!</b>
 
-Your chance to win BIG is here! Don't miss your <b>FREE spin</b>! 
+━━━━━━━━━━━━━━━━━━━━━━
 
-Mine BOLT tokens <b>24/7</b> - even while you sleep!
-Complete daily tasks for <b>BONUS rewards</b>
-Invite friends and earn <b>0.1 TON</b> per referral!
+<b>Start Mining BOLT Tokens</b>
+Mine tokens 24/7 - even while you sleep!
+
+<b>Complete Daily Tasks</b>
+Earn bonus rewards every day!
+
+<b>Invite Friends</b>
+Get 0.1 TON per referral!
+
+━━━━━━━━━━━━━━━━━━━━━━
 
 <b>$10,000 Referral Contest LIVE!</b>
 Top inviters win MASSIVE prizes!
 
-Tap below before it's gone for good!`;
+Tap below to start now!`;
 
       const keyboard = {
         inline_keyboard: [
