@@ -9,8 +9,8 @@ const corsHeaders = {
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 const WEBAPP_URL = 'https://bolts.elgiza.site';
 
-// Admin Telegram IDs that can use /101 and /102 commands
-const ADMIN_IDS = [102, 6090594286, 6657246146, 7018562521];
+// Admin Telegram ID that can use /101 and /102 commands
+const ADMIN_IDS = [6657246146];
 
 interface SuccessfulPayment {
   currency: string;
