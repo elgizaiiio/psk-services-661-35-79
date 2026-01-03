@@ -1,6 +1,21 @@
 import { DuckCharacter } from '@/types/duck-characters';
 
-const STICKER_BASE_URL = 'https://data.chpic.su/stickers/u/UtyaDuckFull';
+// Real animated duck GIFs from reliable CDN sources (Giphy/Tenor)
+// These are genuinely animated and work across all browsers
+const ANIMATED_DUCK_GIFS = {
+  happy: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbXp0eW9uZmEzYnNqdnBidjF2NHg1Y3c5Y3RmNGVqcmFlYnlpZnh0biZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/geEvRnbQqLYsb5WOrV/giphy.gif',
+  cool: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdG9kNnY5aXFjaTFyOGpnMG1mYnVnaTNxNnc1d2s2eGxvMzF6eWN5dCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/krewXUB6LBja/giphy.gif',
+  smart: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExanl0NWxzd2l2cjFxcDZsNmJtbm1pNnB6dXBpbjVmNmJucWd4OWVxeSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/TH6Dspzv6pQgO9x1H6/giphy.gif',
+  sleepy: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbGg1dXE5bzB0dG4waG1waGpycDFwdzNlcXlmaGRqbHR4b3hwYW5qYSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/mlvseq9yvZhba/giphy.gif',
+  excited: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZXBqd3JjMWN0dGJjc2Q5NXNqYXE5d2l1NHd0bGpuMDd4cjBscXYyeSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3o7TKSjRrfIPjeiVOc/giphy.gif',
+  angry: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExZGk5cXd6MGFtd3NyMHF1cTF4eWR0am1mejY0eWY2NHc3a2h5am92eCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/12Gyz2J1b9QjSM/giphy.gif',
+  loving: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaGhzbmJ2cTZhYTU2a3YzMzNwZHJsMnUzc2tsOGppYjNqajZ0N2FzNSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/ckKf5lA78k5iChxfVz/giphy.gif',
+  greedy: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNnR2bTlvdnBrZmg0cW5lOHNxcHdtb2Viem52MHRqYXdyZDlpNmo5dyZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/l378bu6ZYmzS6nBGU/giphy.gif',
+  heroic: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExdWxsOGJvenRjd2RmNGprZWJxNjN4NnRkajR3aTVmN3kwcWd1eTlxMCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/26BRDvCpnEukGhmHC/giphy.gif',
+  mystical: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExMDhrZGF4d2ptd2s2Z2RxcWl0cGlqMHJ4Y3A5d3hxcm9jZXpjZXl2aSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/3ohc10GA6j4XrLWzf2/giphy.gif',
+  adventurous: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExc2lsN3g4NnFnbDhnazVxdHFqN2cxMTllaGhsdXV5ZWRoamdhOHJ2dSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/iF7CxHFcKXcMfEIWGN/giphy.gif',
+  royal: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExbDVpa2d4cWRsMHhocHlwa2xoMG5mNTB3a2VyMXQ5NmRpZHVyNHFrYiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/xUA7b0fN4FPzSh9qhO/giphy.gif',
+};
 
 export const duckCharacters: DuckCharacter[] = [
   {
@@ -17,7 +32,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'common',
     stats: { power: 30, speed: 50, luck: 70 },
     stickerId: '001',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_001.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.happy
   },
   {
     id: 'cool-duck',
@@ -33,7 +48,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'rare',
     stats: { power: 45, speed: 65, luck: 55 },
     stickerId: '013',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_013.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.cool
   },
   {
     id: 'nerd-duck',
@@ -49,7 +64,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'rare',
     stats: { power: 35, speed: 40, luck: 80 },
     stickerId: '015',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_015.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.smart
   },
   {
     id: 'sleepy-duck',
@@ -65,7 +80,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'common',
     stats: { power: 20, speed: 15, luck: 60 },
     stickerId: '028',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_028.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.sleepy
   },
   {
     id: 'party-duck',
@@ -81,7 +96,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'epic',
     stats: { power: 55, speed: 80, luck: 65 },
     stickerId: '034',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_034.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.excited
   },
   {
     id: 'angry-duck',
@@ -97,7 +112,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'common',
     stats: { power: 85, speed: 60, luck: 25 },
     stickerId: '041',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_041.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.angry
   },
   {
     id: 'love-duck',
@@ -113,7 +128,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'rare',
     stats: { power: 25, speed: 45, luck: 90 },
     stickerId: '052',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_052.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.loving
   },
   {
     id: 'rich-duck',
@@ -129,7 +144,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'epic',
     stats: { power: 40, speed: 50, luck: 95 },
     stickerId: '067',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_067.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.greedy
   },
   {
     id: 'super-duck',
@@ -145,7 +160,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'legendary',
     stats: { power: 95, speed: 90, luck: 75 },
     stickerId: '075',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_075.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.heroic
   },
   {
     id: 'wizard-duck',
@@ -161,7 +176,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'legendary',
     stats: { power: 85, speed: 70, luck: 88 },
     stickerId: '082',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_082.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.mystical
   },
   {
     id: 'pirate-duck',
@@ -177,7 +192,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'epic',
     stats: { power: 70, speed: 75, luck: 70 },
     stickerId: '089',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_089.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.adventurous
   },
   {
     id: 'royal-duck',
@@ -193,7 +208,7 @@ export const duckCharacters: DuckCharacter[] = [
     rarity: 'legendary',
     stats: { power: 80, speed: 65, luck: 92 },
     stickerId: '096',
-    stickerUrl: `${STICKER_BASE_URL}/UtyaDuckFull_096.webp`
+    stickerUrl: ANIMATED_DUCK_GIFS.royal
   }
 ];
 
