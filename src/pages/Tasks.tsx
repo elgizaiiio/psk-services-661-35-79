@@ -40,6 +40,7 @@ const Tasks = () => {
   const [activeTab, setActiveTab] = useState('social');
   const [processingTask, setProcessingTask] = useState<string | null>(null);
   const didRecheckRef = useRef(false);
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
   useTelegramBackButton();
 
   const isTaskCompleted = (taskId: string) => completedTasks.some(ct => ct.task_id === taskId);
@@ -52,8 +53,9 @@ const Tasks = () => {
   const getTasksByCategory = (category: string) => availableTasks.filter(task => task.category === category);
 
   const categories = useMemo(() => {
-    const cats = [...new Set(availableTasks.map(t => t.category))];
-    return cats.length > 0 ? cats : ['social', 'mining', 'referral'];
+    // Always show core tabs even if there are no tasks yet in a category.
+    const base = ['social', 'mining', 'referral'];
+    return [...new Set([...base, ...availableTasks.map((t) => t.category)])];
   }, [availableTasks]);
 
   const stats = useMemo(() => {
@@ -179,7 +181,14 @@ const Tasks = () => {
   return (
     <PageWrapper className="min-h-screen bg-background pb-28">
       <div className="max-w-md mx-auto px-5 pt-6">
-        <Helmet><title>Tasks</title></Helmet>
+        <Helmet>
+          <title>Tasks | Earn BOLT Rewards</title>
+          <meta name="description" content="Complete social, mining, and referral tasks to earn BOLT rewards." />
+          <link rel="canonical" href={`${origin}/tasks`} />
+          <meta property="og:title" content="Tasks" />
+          <meta property="og:description" content="Complete tasks to earn BOLT rewards." />
+          <meta property="og:type" content="website" />
+        </Helmet>
         <StaggerContainer className="space-y-6">
           <FadeUp>
             <h1 className="text-xl font-semibold text-foreground">Tasks</h1>
