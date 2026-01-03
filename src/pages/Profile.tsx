@@ -1,29 +1,14 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { 
-  Zap,
-  Clock,
-  Users,
-  Target,
-  Share2,
-  MessageCircle,
-  ChevronRight,
-  Copy,
-  Check,
-  Loader2,
-  Sparkles,
-  TrendingUp,
-  Crown
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
 import { useTasks } from "@/hooks/useTasks";
 import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
 import { formatDistanceToNow } from "date-fns";
 import { toast } from "sonner";
-import { BoltIcon, UsdtIcon } from "@/components/ui/currency-icons";
 
 const Profile: React.FC = () => {
   const { user: tgUser, hapticFeedback } = useTelegramAuth();
@@ -104,181 +89,125 @@ const Profile: React.FC = () => {
       </Helmet>
 
       <div className="min-h-screen bg-background pb-28">
-        <div className="max-w-md mx-auto px-4 pt-16 space-y-5">
+        <div className="max-w-md mx-auto px-4 pt-16 space-y-6">
           
-          {/* Hero Profile Card */}
+          {/* Profile Header */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary/20 via-primary/10 to-background border border-primary/20 p-6"
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col items-center text-center"
           >
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl" />
+            <Avatar className="w-24 h-24 ring-4 ring-primary/20 shadow-xl mb-4">
+              <AvatarImage src={tgUser?.photo_url} />
+              <AvatarFallback className="bg-primary text-primary-foreground text-3xl font-bold">
+                {tgUser?.first_name?.[0] || 'U'}
+              </AvatarFallback>
+            </Avatar>
             
-            <div className="relative flex items-start gap-4">
-              <div className="relative">
-                <Avatar className="w-20 h-20 ring-4 ring-primary/30 shadow-2xl">
-                  <AvatarImage src={tgUser?.photo_url} />
-                  <AvatarFallback className="bg-primary text-primary-foreground text-2xl font-bold">
-                    {tgUser?.first_name?.[0] || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary rounded-full flex items-center justify-center shadow-lg">
-                  <Crown className="w-4 h-4 text-primary-foreground" />
-                </div>
-              </div>
-              
-              <div className="flex-1 min-w-0">
-                <h1 className="text-xl font-bold text-foreground truncate">
-                  {tgUser?.first_name} {tgUser?.last_name}
-                </h1>
-                
-                {tgUser?.username && (
-                  <p className="text-primary text-sm font-medium">@{tgUser.username}</p>
-                )}
-                
-                <p className="text-xs text-muted-foreground mt-1">
-                  Joined {vmUser ? formatDistanceToNow(new Date(vmUser.created_at), { addSuffix: true }) : 'recently'}
-                </p>
-                
-                <button 
-                  onClick={handleCopyId}
-                  className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 rounded-full bg-background/80 backdrop-blur-sm text-xs text-muted-foreground hover:bg-background transition-colors border border-border/50"
-                >
-                  ID: {tgUser?.id}
-                  {copiedId ? (
-                    <Check className="w-3 h-3 text-emerald-500" />
-                  ) : (
-                    <Copy className="w-3 h-3" />
-                  )}
-                </button>
-              </div>
-            </div>
+            <h1 className="text-2xl font-bold text-foreground">
+              {tgUser?.first_name} {tgUser?.last_name}
+            </h1>
+            
+            {tgUser?.username && (
+              <p className="text-primary text-sm font-medium mt-1">@{tgUser.username}</p>
+            )}
+            
+            <p className="text-xs text-muted-foreground mt-2">
+              Joined {vmUser ? formatDistanceToNow(new Date(vmUser.created_at), { addSuffix: true }) : 'recently'}
+            </p>
+            
+            <button 
+              onClick={handleCopyId}
+              className="mt-3 px-4 py-2 rounded-full bg-muted text-xs text-muted-foreground hover:bg-muted/80 transition-colors"
+            >
+              {copiedId ? 'Copied!' : `ID: ${tgUser?.id}`}
+            </button>
           </motion.div>
 
-          {/* Main Balance Card */}
+          {/* Balance Section */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-primary to-primary/80 p-5 shadow-lg"
+            className="rounded-2xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-6"
           >
-            <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            
-            <div className="relative">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-5 h-5 text-primary-foreground/80" />
-                <span className="text-primary-foreground/80 text-sm font-medium">Total Balance</span>
-              </div>
-              
-              <div className="flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-primary-foreground">
-                  {vmUser?.token_balance?.toFixed(2) || '0.00'}
-                </span>
-                <span className="text-primary-foreground/70 font-medium">BOLT</span>
-              </div>
-              
-              <div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/20">
-                <UsdtIcon size={16} />
-                <span className="text-primary-foreground/90 text-sm">
-                  ${(vmUser as any)?.usdt_balance?.toFixed(2) || '0.00'} USDT
-                </span>
-              </div>
+            <p className="text-sm text-muted-foreground text-center mb-2">Total Balance</p>
+            <p className="text-4xl font-bold text-center text-foreground">
+              {vmUser?.token_balance?.toFixed(2) || '0.00'}
+              <span className="text-lg font-medium text-muted-foreground ml-2">BOLT</span>
+            </p>
+            <div className="flex justify-center mt-3 pt-3 border-t border-border">
+              <p className="text-sm text-muted-foreground">
+                ${(vmUser as any)?.usdt_balance?.toFixed(2) || '0.00'} USDT
+              </p>
             </div>
           </motion.div>
 
-          {/* Stats Grid */}
+          {/* Stats */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15 }}
-            className="grid grid-cols-2 gap-3"
+            className="grid grid-cols-2 gap-4"
           >
-            <div className="p-4 rounded-2xl bg-card border border-border">
-              <p className="text-xs text-muted-foreground mb-1">Mining Power</p>
-              <p className="text-xl font-bold text-foreground">×{vmUser?.mining_power || 1}</p>
+            <div className="p-5 rounded-2xl bg-card border border-border text-center">
+              <p className="text-3xl font-bold text-foreground">×{vmUser?.mining_power || 1}</p>
+              <p className="text-xs text-muted-foreground mt-1">Mining Power</p>
             </div>
             
-            <div className="p-4 rounded-2xl bg-card border border-border">
-              <p className="text-xs text-muted-foreground mb-1">Duration</p>
-              <p className="text-xl font-bold text-foreground">{vmUser?.mining_duration_hours || 4}h</p>
+            <div className="p-5 rounded-2xl bg-card border border-border text-center">
+              <p className="text-3xl font-bold text-foreground">{vmUser?.mining_duration_hours || 4}h</p>
+              <p className="text-xs text-muted-foreground mt-1">Duration</p>
             </div>
             
-            <div className="p-4 rounded-2xl bg-card border border-border">
-              <p className="text-xs text-muted-foreground mb-1">Referrals</p>
-              <p className="text-xl font-bold text-foreground">{vmUser?.total_referrals || 0}</p>
+            <div className="p-5 rounded-2xl bg-card border border-border text-center">
+              <p className="text-3xl font-bold text-foreground">{vmUser?.total_referrals || 0}</p>
+              <p className="text-xs text-muted-foreground mt-1">Referrals</p>
             </div>
             
-            <div className="p-4 rounded-2xl bg-card border border-border">
-              <p className="text-xs text-muted-foreground mb-1">Tasks Done</p>
-              <p className="text-xl font-bold text-foreground">{totalTasksCompleted}</p>
+            <div className="p-5 rounded-2xl bg-card border border-border text-center">
+              <p className="text-3xl font-bold text-foreground">{totalTasksCompleted}</p>
+              <p className="text-xs text-muted-foreground mt-1">Tasks Done</p>
             </div>
           </motion.div>
 
-          {/* Earnings Summary */}
+          {/* Referral Bonus */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="p-4 rounded-2xl bg-card border border-border"
+            className="p-5 rounded-2xl bg-card border border-border"
           >
-            <div className="flex items-center gap-2 mb-4">
-              <TrendingUp className="w-5 h-5 text-primary" />
-              <h3 className="font-semibold text-foreground">Referral Bonus</h3>
-            </div>
-            
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground text-sm">Total earned from referrals</span>
-              <div className="flex items-center gap-1.5">
-                <BoltIcon size={16} />
-                <span className="font-bold text-primary">{vmUser?.referral_bonus?.toFixed(2) || '0.00'}</span>
+              <div>
+                <p className="text-sm text-muted-foreground">Referral Bonus</p>
+                <p className="text-2xl font-bold text-foreground mt-1">
+                  {vmUser?.referral_bonus?.toFixed(2) || '0.00'} BOLT
+                </p>
               </div>
             </div>
           </motion.div>
 
-          {/* Actions */}
+          {/* Action Buttons */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.25 }}
             className="space-y-3"
           >
-            <div className="bg-card rounded-2xl border border-border overflow-hidden divide-y divide-border">
-              {/* Share Referral Link */}
-              <button 
-                onClick={handleShare}
-                className="w-full flex items-center justify-between p-4 hover:bg-primary/5 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/30 to-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <Share2 className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="text-left">
-                    <span className="font-medium text-foreground">Share Referral Link</span>
-                    <p className="text-xs text-muted-foreground">Invite friends & earn rewards</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </button>
-              
-              {/* Community */}
-              <button 
-                onClick={handleOpenCommunity}
-                className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors group"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                    <MessageCircle className="w-5 h-5 text-blue-500" />
-                  </div>
-                  <div className="text-left">
-                    <span className="font-medium text-foreground">Community</span>
-                    <p className="text-xs text-muted-foreground">Join our Telegram community</p>
-                  </div>
-                </div>
-                <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
+            <button 
+              onClick={handleShare}
+              className="w-full p-4 rounded-2xl bg-primary text-primary-foreground font-semibold text-center hover:bg-primary/90 transition-colors"
+            >
+              Share Referral Link
+            </button>
+            
+            <button 
+              onClick={handleOpenCommunity}
+              className="w-full p-4 rounded-2xl bg-card border border-border text-foreground font-medium text-center hover:bg-muted/50 transition-colors"
+            >
+              Join Community
+            </button>
           </motion.div>
 
           {/* App Version */}

@@ -557,7 +557,6 @@ const Spin: React.FC = () => {
                   PRO
                 </TabsTrigger>
                 <TabsTrigger value="usdt" className="text-sm font-medium text-amber-500 data-[state=active]:text-amber-600">
-                  <Sparkles className="w-3 h-3 mr-1" />
                   777
                 </TabsTrigger>
               </TabsList>
