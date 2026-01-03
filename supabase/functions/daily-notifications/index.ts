@@ -41,20 +41,41 @@ async function sendTelegramMessage(chatId: number, text: string): Promise<boolea
   }
 }
 
-async function generateAIMessage(template: { theme: string; prompt_context: string; time_slot: string }): Promise<string> {
+async function generateAIMessage(template: { theme: string; prompt_context: string; time_slot: string }, dayOfYear: number): Promise<string> {
   if (!LOVABLE_API_KEY) {
     console.error('LOVABLE_API_KEY not configured');
-    return getDefaultMessage(template.time_slot, template.theme);
+    return getDefaultMessage(template.time_slot, template.theme, dayOfYear);
   }
 
   try {
-    const systemPrompt = `You are a friendly notification bot for a crypto mining and gaming app called BOLT.
-Generate a SHORT, engaging notification message (max 2 sentences, ~100 characters).
-Use 1-2 relevant emojis. Be enthusiastic but not spammy.
-The app has: spin/slots games, mining rewards, referral program (earn TON/USDT).
-Time of day: ${template.time_slot}
-Theme: ${template.theme}
-Context: ${template.prompt_context}`;
+    const systemPrompt = `You are a master persuasion copywriter for BOLT - a crypto mining and gambling app.
+
+🎯 YOUR MISSION: Create a notification that users CAN'T IGNORE and MUST tap.
+
+⚡ DARK PSYCHOLOGY TACTICS TO USE:
+1. FOMO (Fear of Missing Out) - "Others are winning RIGHT NOW"
+2. Scarcity - "Only 2 hours left", "Limited spins remaining"
+3. Social Proof - "10,000 users already claimed today"
+4. Loss Aversion - "Don't lose your streak", "You're leaving money on the table"
+5. Urgency - "Expires at midnight", "Your bonus is waiting"
+6. Curiosity Gap - "Your reward is ready... (tap to see)"
+7. Personalization - "Your lucky hour is NOW"
+
+📝 FORMAT:
+- Start with 2-3 powerful emojis
+- Use BOLD text with <b>tags</b> for key numbers and actions
+- Create URGENCY without being spammy
+- Max 3 short sentences (~150 chars)
+- End with a HOOK that demands action
+
+🎰 APP FEATURES: Lucky Spin (free daily), Mining Servers (earn BOLT/USDT), Referral (earn TON), VIP Rewards
+
+⏰ Time: ${template.time_slot}
+📌 Theme: ${template.theme}
+💡 Focus: ${template.prompt_context}
+🔢 Day variation seed: ${dayOfYear} (use this to make message unique)
+
+NEVER repeat the same message structure. Be creative and use different angles each time.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -66,15 +87,16 @@ Context: ${template.prompt_context}`;
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Generate a ${template.time_slot} notification about ${template.theme}. Keep it under 100 characters.` }
+          { role: 'user', content: `Generate a ${template.time_slot} notification about "${template.theme}" using dark psychology. Make it irresistible. Day variation: ${dayOfYear}` }
         ],
-        max_tokens: 100,
+        max_tokens: 200,
+        temperature: 0.9,
       }),
     });
 
     if (!response.ok) {
       console.error('AI API error:', response.status);
-      return getDefaultMessage(template.time_slot, template.theme);
+      return getDefaultMessage(template.time_slot, template.theme, dayOfYear);
     }
 
     const data = await response.json();
@@ -85,36 +107,65 @@ Context: ${template.prompt_context}`;
       return message;
     }
     
-    return getDefaultMessage(template.time_slot, template.theme);
+    return getDefaultMessage(template.time_slot, template.theme, dayOfYear);
   } catch (error) {
     console.error('AI generation error:', error);
-    return getDefaultMessage(template.time_slot, template.theme);
+    return getDefaultMessage(template.time_slot, template.theme, dayOfYear);
   }
 }
 
-function getDefaultMessage(timeSlot: string, theme: string): string {
-  const defaults: Record<string, Record<string, string>> = {
-    morning: {
-      spin: "🌅 Good morning! Start your day with a lucky spin! 🎰",
-      mining: "☀️ Rise and shine! Check your mining rewards! ⛏️",
-      referral: "🌞 Morning! Invite friends today and earn TON! 💎",
-      general: "🌤️ Good morning! Your BOLT rewards await! 🚀"
-    },
-    afternoon: {
-      spin: "🎯 Afternoon break? Perfect time for a spin! 🎰",
-      mining: "⚡ Afternoon check! Your miners are working hard! ⛏️",
-      referral: "🤝 Invite a friend this afternoon, earn 0.1 TON! 💰",
-      general: "🔥 Don't forget your daily tasks! Rewards waiting! 🎁"
-    },
-    evening: {
-      spin: "🌙 End your day with one more lucky spin! 🍀",
-      mining: "🌃 Evening check! Claim your mining rewards! 💎",
-      referral: "✨ Share your link tonight, earn while you sleep! 💤",
-      general: "🌟 Before you rest, grab your rewards! 🎁"
-    }
+function getDefaultMessage(timeSlot: string, theme: string, dayOfYear: number): string {
+  const spinMessages = [
+    "🎰🔥 <b>JACKPOT ALERT!</b> Someone just won 500 USDT! Your turn is next... Spin NOW before midnight! ⏰",
+    "💎😱 You're missing out! <b>3,847 users</b> already spun today. Your FREE spin expires in hours!",
+    "🍀⚡ Your lucky window is OPEN! <b>Last chance</b> for today's free spin. Don't regret it tomorrow!",
+    "🎲🤑 WARNING: Unclaimed reward detected! <b>Spin now</b> or lose it forever at midnight!",
+    "🌟💰 TOP SECRET: Lucky hour activated! <b>2x rewards</b> for the next 60 minutes. GO GO GO!",
+    "🎯🔥 Your streak is at risk! <b>Don't break it now</b>. One spin keeps your rewards alive!",
+    "⭐😮 BREAKING: Spin rewards <b>doubled</b> for early birds! Limited to first 1000 spins today!"
+  ];
+  
+  const miningMessages = [
+    "⛏️💎 While you slept, your miners earned <b>+247 BOLT</b>! Claim before it resets! 🚨",
+    "🔥⚡ URGENT: Mining session ending! <b>Claim NOW</b> or lose 8 hours of earnings! 💸",
+    "💰🏆 Top miners are pulling <b>10x your rate</b>. Upgrade power and catch up! Time's ticking!",
+    "⏰😤 Your mining is at <b>32%</b> capacity! Max it out NOW before others take your spot!",
+    "🚀💎 SECRET: <b>Bonus mining hour</b> active! Start session NOW for extra rewards! ⚡",
+    "📈🔥 Your competitors upgraded! You're falling behind. <b>Boost your power</b> TODAY!",
+    "⛏️💸 <b>8 hours of BOLT</b> waiting for you! Don't let them expire. CLAIM NOW!"
+  ];
+  
+  const referralMessages = [
+    "👥💰 Your friend just earned <b>0.5 TON</b> from referrals! Where's YOUR share? Share link NOW!",
+    "🤑🔥 LEAK: Top referrer earned <b>$500 this week</b>! Your link = passive income. Share it!",
+    "💎👀 <b>5 friends = 0.5 TON</b> FREE! You're leaving real money on the table. ACT NOW!",
+    "🚀💸 While you wait, others are earning <b>TON daily</b>! Share your link, retire early! 🏖️",
+    "⚡🤝 SECRET BONUS: Next 3 referrals get <b>DOUBLE rewards</b>! Limited time only!",
+    "💰😱 You could've earned <b>$50 today</b> from referrals! Don't miss tomorrow. SHARE NOW!",
+    "🎁🔥 Your referral earnings: <b>$0</b>. Fix that TODAY! One share = passive income!"
+  ];
+  
+  const generalMessages = [
+    "🚨💰 ALERT: <b>Unclaimed rewards</b> detected in your account! Expires at MIDNIGHT! 🕛",
+    "🔥😱 You're in the top 20%! But <b>3 daily tasks</b> away from VIP rewards. Complete NOW!",
+    "💎⚡ BREAKING: <b>Flash bonus</b> activated! Log in next 2 hours for surprise reward!",
+    "🎯🏆 <b>Your rank is dropping!</b> Complete tasks NOW to stay in the prize pool!",
+    "✨🤑 SECRET: <b>Hidden achievements</b> unlocked today! Check app for free rewards!",
+    "⏰💸 <b>Daily reset in 3 hours!</b> You still haven't claimed all your rewards! HURRY!",
+    "🚀🔥 VIP users earned <b>5x more</b> today! Upgrade now before prices increase!"
+  ];
+
+  const messages: Record<string, string[]> = {
+    spin: spinMessages,
+    mining: miningMessages,
+    referral: referralMessages,
+    general: generalMessages
   };
 
-  return defaults[timeSlot]?.[theme] || defaults[timeSlot]?.general || "🎮 Check out BOLT for exciting rewards! 🚀";
+  const themeMessages = messages[theme] || messages.general;
+  const messageIndex = dayOfYear % themeMessages.length;
+  
+  return themeMessages[messageIndex];
 }
 
 serve(async (req) => {
@@ -165,16 +216,19 @@ serve(async (req) => {
       );
     }
 
-    // Select random template
-    const template = templates[Math.floor(Math.random() * templates.length)];
-    console.log('Selected template:', template.theme, template.prompt_context);
+    // Select random template based on day
+    const now = new Date();
+    const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+    const templateIndex = dayOfYear % templates.length;
+    const template = templates[templateIndex];
+    console.log('Selected template:', template.theme, template.prompt_context, 'dayOfYear:', dayOfYear);
 
-    // Generate AI message
+    // Generate AI message with day variation
     const message = await generateAIMessage({
       theme: template.theme,
       prompt_context: template.prompt_context,
       time_slot: time_slot
-    });
+    }, dayOfYear);
 
     console.log('Generated message:', message);
 
