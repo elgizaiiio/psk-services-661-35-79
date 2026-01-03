@@ -159,19 +159,54 @@ Make each message unique - random seed: ${randomSeed}`
 }
 
 function getDefaultMessage(context: string): string {
-  if (context.includes('Welcome') || context.includes('onboarding')) {
-    return "⚡ Welcome to BOLT Mining! Start mining now and earn rewards daily. Tap to begin your journey! 🚀";
+  if (context.includes('Welcome') || context.includes('onboarding') || context.includes('never started')) {
+    return "Hey! You signed up but haven't started mining yet. You're missing FREE daily rewards! Tap now to start earning BOLT tokens 24/7";
   }
   if (context.includes('inactive') || context.includes('3 days')) {
-    return "👋 We miss you! Your mining rewards are waiting. Come back and claim them before they expire! ⏰";
+    return "We miss you! Your mining rewards are waiting. Come back and claim them before they expire!";
   }
   if (context.includes('7 days') || context.includes('week')) {
-    return "🎁 Special comeback bonus waiting for you! We've added extra rewards to your account. Claim now! 💎";
+    return "Special comeback bonus waiting for you! We've added extra rewards to your account. Claim now!";
   }
   if (context.includes('referral')) {
-    return "🤝 Invite friends & earn 500 BOLT per referral! Share your link now and watch your earnings grow! 💰";
+    return "Invite friends & earn 500 BOLT per referral! Share your link now and watch your earnings grow!";
   }
-  return "⚡ Don't forget to claim your daily mining rewards! Every hour counts. Start mining now! 🔥";
+  return "Don't forget to claim your daily mining rewards! Every hour counts. Start mining now!";
+}
+
+async function getNewInactiveUsers(supabase: ReturnType<typeof createClient>): Promise<User[]> {
+  // Get users who signed up at least 1 hour ago but have no mining sessions
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  
+  // Get all users with 0 token balance registered more than 1 hour ago
+  const { data: users, error: usersError } = await supabase
+    .from('bolt_users')
+    .select('*')
+    .not('telegram_id', 'is', null)
+    .neq('notifications_enabled', false)
+    .neq('bot_blocked', true)
+    .eq('token_balance', 0)
+    .lte('created_at', oneHourAgo);
+
+  if (usersError || !users?.length) {
+    console.log('No new inactive users found');
+    return [];
+  }
+
+  // Check which users have no mining sessions
+  const userIds = users.map(u => u.id);
+  const { data: sessionsData } = await supabase
+    .from('bolt_mining_sessions')
+    .select('user_id')
+    .in('user_id', userIds);
+
+  const usersWithSessions = new Set(sessionsData?.map(s => s.user_id) || []);
+  
+  // Filter to only users with no sessions
+  const inactiveUsers = users.filter(u => !usersWithSessions.has(u.id));
+  
+  console.log(`Found ${inactiveUsers.length} users who never started mining`);
+  return inactiveUsers;
 }
 
 async function getUsersInSegment(
@@ -179,6 +214,11 @@ async function getUsersInSegment(
   segmentKey: string,
   rules: UserSegmentRules
 ): Promise<User[]> {
+  // Special handling for new_inactive_users segment
+  if (segmentKey === 'new_inactive_users') {
+    return getNewInactiveUsers(supabase);
+  }
+
   let query = supabase
     .from('bolt_users')
     .select('*')
