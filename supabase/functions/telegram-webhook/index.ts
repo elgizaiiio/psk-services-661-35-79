@@ -618,7 +618,7 @@ async function getRecentUsers(limit: number = 10) {
   return data || [];
 }
 
-async function broadcastMessage(message: string, photoUrl?: string): Promise<{ sent: number; failed: number }> {
+async function broadcastMessage(message: string, photoFileIdOrUrl?: string): Promise<{ sent: number; failed: number }> {
   const supabase = getSupabaseClient();
   
   const { data: users } = await supabase
@@ -636,15 +636,16 @@ async function broadcastMessage(message: string, photoUrl?: string): Promise<{ s
     try {
       let response;
       
-      if (photoUrl) {
-        // Send photo with caption
+      if (photoFileIdOrUrl) {
+        // Send photo with caption - works with both file_id and URL
+        // file_id is preferred as it's permanent and can be reused
         const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
         response = await fetch(url, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             chat_id: user.telegram_id,
-            photo: photoUrl,
+            photo: photoFileIdOrUrl,
             caption: message,
             parse_mode: 'HTML'
           }),
@@ -668,10 +669,11 @@ async function broadcastMessage(message: string, photoUrl?: string): Promise<{ s
         sent++;
       } else {
         failed++;
-        console.log(`Failed to send to ${user.telegram_id}:`, result);
+        console.log(`Failed to send to ${user.telegram_id}:`, result.description || result);
       }
       
-      await new Promise(resolve => setTimeout(resolve, 50));
+      // Small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 35));
     } catch (error) {
       failed++;
       console.error(`Error sending to ${user.telegram_id}:`, error);
@@ -1035,24 +1037,20 @@ Send /cancel to cancel`);
       
       // Step 2: Receive image or skip
       if (state.step === 'broadcast_image') {
-        let imageUrl: string | undefined;
+        let imageData: string | undefined;
         
-        // Check if user sent a photo
+        // Check if user sent a photo - use file_id directly (more reliable for broadcasting)
         if (photo && photo.length > 0) {
-          const fileId = photo[photo.length - 1].file_id;
-          const fileResponse = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/getFile?file_id=${fileId}`);
-          const fileData = await fileResponse.json();
-          if (fileData.ok && fileData.result.file_path) {
-            imageUrl = `https://api.telegram.org/file/bot${TELEGRAM_BOT_TOKEN}/${fileData.result.file_path}`;
-          }
+          // Use file_id directly - Telegram allows reusing file_id for sending to multiple users
+          imageData = photo[photo.length - 1].file_id;
         }
         // Check if user sent an image URL
         else if (messageText.startsWith('http') && (messageText.includes('.jpg') || messageText.includes('.png') || messageText.includes('.jpeg') || messageText.includes('.gif') || messageText.includes('.webp'))) {
-          imageUrl = messageText;
+          imageData = messageText;
         }
         // Check if user wants to skip
         else if (messageText.toLowerCase() === 'skip') {
-          imageUrl = undefined;
+          imageData = undefined;
         }
         // Invalid input
         else {
@@ -1064,7 +1062,7 @@ Send /cancel to cancel`);
         await setAdminState(telegramId, 'broadcast_confirm', { 
           action_type: 'broadcast',
           broadcast_message: state.broadcast_message,
-          task_image: imageUrl || null
+          task_image: imageData || null
         });
         
         const stats = await getAdminStats();
