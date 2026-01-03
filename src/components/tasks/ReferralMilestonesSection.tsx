@@ -4,7 +4,8 @@ import { useReferralMilestones, ReferralMilestone } from '@/hooks/useReferralMil
 import { Users, Check, Gift, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
-import { AnimatedProgress } from '@/components/ui/motion-wrapper';
+import { Progress } from '@/components/ui/progress';
+import { Card } from '@/components/ui/card';
 
 interface ReferralMilestonesSectionProps {
   userId: string | undefined;
@@ -33,12 +34,12 @@ const MilestoneCard: React.FC<{
 
   return (
     <motion.div
-      className={`p-4 rounded-xl border transition-all ${
+      className={`p-4 rounded-xl border transition-all cursor-pointer ${
         milestone.claimed
           ? 'bg-green-500/10 border-green-500/30'
           : milestone.completed
-          ? 'bg-primary/10 border-primary/30'
-          : 'bg-card border-border'
+          ? 'bg-primary/10 border-primary/30 hover:border-primary/50'
+          : 'bg-card border-border hover:border-border/80'
       }`}
       whileTap={milestone.completed && !milestone.claimed ? { scale: 0.98 } : undefined}
       onClick={handleClaim}
@@ -78,7 +79,7 @@ const MilestoneCard: React.FC<{
           </div>
           {!milestone.claimed && (
             <div className="mt-2">
-              <AnimatedProgress value={progressPercent} className="h-1.5" />
+              <Progress value={progressPercent} className="h-1.5" />
               <p className="text-xs text-muted-foreground mt-1">
                 {milestone.progress}/{milestone.requiredReferrals} friends
               </p>
@@ -94,7 +95,7 @@ const MilestoneCard: React.FC<{
         ) : milestone.completed ? (
           <button
             disabled={claiming}
-            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium flex items-center gap-1"
+            className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium flex items-center gap-1 hover:bg-primary/90 transition-colors"
           >
             {claiming ? (
               <Loader2 className="w-3 h-3 animate-spin" />
@@ -120,32 +121,38 @@ const ReferralMilestonesSection: React.FC<ReferralMilestonesSectionProps> = ({ u
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="w-6 h-6 text-primary animate-spin" />
-      </div>
+      <Card className="p-6">
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="w-6 h-6 text-primary animate-spin" />
+        </div>
+      </Card>
     );
   }
 
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between mb-2">
+    <Card className="p-4 bg-gradient-to-br from-orange-500/10 to-amber-500/10 border-orange-500/20">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-primary" />
-          <span className="text-sm font-medium text-foreground">Referral Milestones</span>
+          <div className="w-8 h-8 rounded-lg bg-orange-500/20 flex items-center justify-center">
+            <Users className="w-4 h-4 text-orange-500" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground">Referral Milestones</h3>
+            <p className="text-xs text-muted-foreground">{totalReferrals} friends invited</p>
+          </div>
         </div>
-        <span className="text-xs text-muted-foreground">
-          {totalReferrals} friends invited
-        </span>
       </div>
 
-      {milestones.map((milestone) => (
-        <MilestoneCard
-          key={milestone.id}
-          milestone={milestone}
-          onClaim={claimMilestone}
-        />
-      ))}
-    </div>
+      <div className="space-y-3">
+        {milestones.map((milestone) => (
+          <MilestoneCard
+            key={milestone.id}
+            milestone={milestone}
+            onClaim={claimMilestone}
+          />
+        ))}
+      </div>
+    </Card>
   );
 };
 
