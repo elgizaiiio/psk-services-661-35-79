@@ -10,6 +10,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Target, Check, ExternalLink, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
+import { TonIcon, UsdtIcon, BoltIcon } from '@/components/ui/currency-icons';
+import { BoltTask } from '@/types/bolt';
+
+const getRewardDisplay = (task: BoltTask) => {
+  if (task.reward_ton && task.reward_ton > 0) {
+    return { text: `+${task.reward_ton} TON`, icon: <TonIcon size={14} />, color: 'text-blue-400' };
+  }
+  if (task.reward_usdt && task.reward_usdt > 0) {
+    return { text: `+${task.reward_usdt} USDT`, icon: <UsdtIcon size={14} />, color: 'text-emerald-400' };
+  }
+  return { text: `+${task.points} BOLT`, icon: <BoltIcon size={14} />, color: 'text-primary' };
+};
 
 const extractTelegramUsername = (urlOrUsername: string) => {
   const raw = (urlOrUsername || '').trim();
@@ -272,7 +284,15 @@ const Tasks = () => {
 
                             <div className="flex-1 min-w-0">
                               <p className="font-medium truncate text-foreground">{task.title}</p>
-                              <p className="text-xs text-muted-foreground">+{task.points} BOLT</p>
+                              {(() => {
+                                const reward = getRewardDisplay(task);
+                                return (
+                                  <p className={`text-xs flex items-center gap-1 ${reward.color}`}>
+                                    {reward.icon}
+                                    {reward.text}
+                                  </p>
+                                );
+                              })()}
                             </div>
 
                             {isProcessing ? (

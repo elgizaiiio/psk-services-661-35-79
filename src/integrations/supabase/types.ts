@@ -660,6 +660,8 @@ export type Database = {
           id: string
           is_active: boolean
           points: number
+          reward_ton: number | null
+          reward_usdt: number | null
           task_url: string | null
           title: string
         }
@@ -671,6 +673,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           points?: number
+          reward_ton?: number | null
+          reward_usdt?: number | null
           task_url?: string | null
           title: string
         }
@@ -682,6 +686,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           points?: number
+          reward_ton?: number | null
+          reward_usdt?: number | null
           task_url?: string | null
           title?: string
         }
