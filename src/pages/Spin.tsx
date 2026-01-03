@@ -6,9 +6,10 @@ import { useViralMining } from '@/hooks/useViralMining';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { usePriceCalculator } from '@/hooks/usePriceCalculator';
 import { useVipSpins } from '@/hooks/useVipSpins';
+import { useAdsGram } from '@/hooks/useAdsGram';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Gift, Zap, Ticket, Sparkles, X, Crown, ShoppingCart } from 'lucide-react';
+import { Loader2, Gift, Zap, Ticket, Sparkles, X, Crown, ShoppingCart, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
@@ -97,6 +98,7 @@ const Spin: React.FC = () => {
     dailySpinsForTier,
     refresh: refreshVipSpins 
   } = useVipSpins(user?.id);
+  const { showAd, isReady: adReady, isLoading: adLoading } = useAdsGram();
   useTelegramBackButton();
 
   const [wheelType, setWheelType] = useState<'normal' | 'pro'>('normal');
@@ -112,6 +114,8 @@ const Spin: React.FC = () => {
   const [rewardApplied, setRewardApplied] = useState(false);
   const [showSpecialPayment, setShowSpecialPayment] = useState(false);
   const [processingSpecial, setProcessingSpecial] = useState(false);
+  const [hasMultiplier, setHasMultiplier] = useState(false);
+  const [watchingAd, setWatchingAd] = useState(false);
 
   const rewards = wheelType === 'normal' ? NORMAL_REWARDS : PRO_REWARDS;
   const packages = wheelType === 'normal' ? NORMAL_PACKAGES : PRO_PACKAGES;
@@ -187,22 +191,24 @@ const Spin: React.FC = () => {
     return rewards[0];
   };
 
-  // Apply reward to user
-  const applyReward = async (reward: SpinReward) => {
+  // Apply reward to user (with optional multiplier)
+  const applyReward = async (reward: SpinReward, multiplier: number = 1) => {
     if (!user?.id) return;
+
+    const finalValue = reward.type === 'bolt' ? reward.value * multiplier : reward.value;
 
     try {
       await supabase.from('spin_history').insert({
         user_id: user.id,
         reward_type: reward.id,
-        reward_amount: reward.value,
+        reward_amount: finalValue,
         wheel_type: wheelType,
       });
 
       if (reward.type === 'bolt') {
         await supabase
           .from('bolt_users')
-          .update({ token_balance: (user.token_balance || 0) + reward.value })
+          .update({ token_balance: (user.token_balance || 0) + finalValue })
           .eq('id', user.id);
       } else if (reward.type === 'usdt') {
         await supabase
@@ -219,6 +225,28 @@ const Spin: React.FC = () => {
       }
     } catch (error) {
       console.error('Error applying reward:', error);
+    }
+  };
+
+  // Watch ad for 2x multiplier
+  const handleWatchAdForMultiplier = async () => {
+    if (!adReady || hasMultiplier) return;
+
+    setWatchingAd(true);
+    try {
+      const completed = await showAd();
+      if (completed) {
+        setHasMultiplier(true);
+        hapticFeedback.notification('success');
+        toast.success('2x Multiplier activated for next spin!');
+      } else {
+        toast.info('Watch the full ad to get 2x multiplier');
+      }
+    } catch (err) {
+      console.error('Error watching ad:', err);
+      toast.error('Failed to load ad');
+    } finally {
+      setWatchingAd(false);
     }
   };
 
@@ -334,10 +362,17 @@ const Spin: React.FC = () => {
       hapticFeedback.notification('success');
 
       if (reward.type !== 'nothing') {
-        await applyReward(reward);
-        toast.success(`You won ${reward.label} ${reward.type.toUpperCase()}!`);
+        const multiplier = hasMultiplier ? 2 : 1;
+        await applyReward(reward, multiplier);
+        const displayValue = reward.type === 'bolt' ? reward.value * multiplier : reward.value;
+        const multiplierText = hasMultiplier && reward.type === 'bolt' ? ' (2x!)' : '';
+        toast.success(`You won ${displayValue} ${reward.type.toUpperCase()}!${multiplierText}`);
+        // Reset multiplier after use
+        setHasMultiplier(false);
       } else {
         toast.info('Better luck next time!');
+        // Reset multiplier even on nothing
+        setHasMultiplier(false);
       }
     }, 5000);
   };
@@ -613,6 +648,42 @@ const Spin: React.FC = () => {
               )}
             </Button>
           </FadeUp>
+
+          {/* 2x Multiplier Ad Button */}
+          {adReady && !hasMultiplier && currentTickets > 0 && (
+            <FadeUp>
+              <Button
+                onClick={handleWatchAdForMultiplier}
+                disabled={watchingAd || adLoading || hasMultiplier}
+                className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold"
+              >
+                {watchingAd || adLoading ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Loading Ad...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-5 h-5 mr-2" />
+                    Watch Ad for 2x Reward
+                  </>
+                )}
+              </Button>
+            </FadeUp>
+          )}
+
+          {/* Active Multiplier Indicator */}
+          {hasMultiplier && (
+            <FadeUp>
+              <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <Zap className="w-5 h-5 text-emerald-400" />
+                  <span className="font-bold text-emerald-400">2x Multiplier Active!</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Your next BOLT win will be doubled</p>
+              </div>
+            </FadeUp>
+          )}
 
           {/* Action Buttons */}
           <FadeUp>

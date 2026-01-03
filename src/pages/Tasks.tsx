@@ -12,6 +12,7 @@ import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress
 import { TonIcon, UsdtIcon, BoltIcon } from '@/components/ui/currency-icons';
 import { BoltTask } from '@/types/bolt';
 import { supabase } from '@/integrations/supabase/client';
+import { WatchAdCard } from '@/components/ads/WatchAdCard';
 
 const getRewardDisplay = (task: BoltTask) => {
   if (task.reward_ton && task.reward_ton > 0) {
@@ -117,7 +118,7 @@ const Tasks = () => {
   } = useBoltTasks();
   const loading = tasksLoading || userLoading;
   const { checkSubscription, isChecking } = useChannelSubscription('boltcomm');
-  const [activeTab, setActiveTab] = useState('social');
+  const [activeTab, setActiveTab] = useState('ads');
   const [processingTask, setProcessingTask] = useState<string | null>(null);
   const didRecheckRef = useRef(false);
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
@@ -134,7 +135,7 @@ const Tasks = () => {
 
   const categories = useMemo(() => {
     // Always show core tabs even if there are no tasks yet in a category.
-    const base = ['social', 'mining', 'referral'];
+    const base = ['ads', 'social', 'mining', 'referral'];
     return [...new Set([...base, ...availableTasks.map((t) => t.category)])];
   }, [availableTasks]);
 
@@ -330,6 +331,7 @@ const Tasks = () => {
   }
 
   const categoryLabels: Record<string, string> = {
+    ads: 'Ads',
     social: 'Social',
     mining: 'Mining',
     referral: 'Referral',
@@ -399,7 +401,17 @@ const Tasks = () => {
               <AnimatePresence mode="wait">
                 {categories.map(cat => (
                   <TabsContent key={cat} value={cat} className="space-y-3 mt-0">
-                    {getTasksByCategory(cat).map((task, i) => {
+                    {/* Special Ads Tab with WatchAdCard */}
+                    {cat === 'ads' && (
+                      <WatchAdCard 
+                        userId={boltUser?.id} 
+                        telegramId={tgUser?.id}
+                        onRewardClaimed={refreshTasks}
+                      />
+                    )}
+
+                    {/* Regular tasks for non-ads categories */}
+                    {cat !== 'ads' && getTasksByCategory(cat).map((task, i) => {
                       const isProcessing = processingTask === task.id || isChecking;
                       return (
                         <motion.button
@@ -452,7 +464,7 @@ const Tasks = () => {
                       );
                     })}
 
-                    {getTasksByCategory(cat).length === 0 && (
+                    {cat !== 'ads' && getTasksByCategory(cat).length === 0 && (
                       <div className="text-center py-12">
                         <Target className="w-12 h-12 mx-auto text-muted-foreground/30 mb-3" />
                         <p className="text-sm text-muted-foreground">No tasks available</p>
