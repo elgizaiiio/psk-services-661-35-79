@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // AdsGram Block ID for Tasks (Partner Tasks)
-const ADSGRAM_TASKS_BLOCK_ID = 'task-20515';
+const ADSGRAM_TASKS_BLOCK_ID = 'int-20515';
 
 declare global {
   interface Window {
