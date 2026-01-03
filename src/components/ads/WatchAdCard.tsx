@@ -70,6 +70,11 @@ export const WatchAdCard: React.FC<WatchAdCardProps> = ({
 
     setIsProcessing(true);
 
+    // Show instruction toast before ad loads
+    toast.info('👆 Click on the ad to complete and earn rewards!', {
+      duration: 5000,
+    });
+
     try {
       // Show the ad
       const adCompleted = await showAd();
