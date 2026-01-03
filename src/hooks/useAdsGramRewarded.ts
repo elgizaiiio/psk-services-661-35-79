@@ -28,31 +28,45 @@ export const useAdsGramRewarded = (): UseAdsGramRewardedReturn => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AdController | null>(null);
+  const initAttempted = useRef(false);
 
   useEffect(() => {
+    if (initAttempted.current) return;
+    
     const checkAdsGram = () => {
-      if (window.Adsgram) {
-        try {
+      if (initAttempted.current) return;
+      
+      try {
+        if (window.Adsgram) {
+          initAttempted.current = true;
           controllerRef.current = window.Adsgram.init({
             blockId: ADSGRAM_REWARDED_BLOCK_ID,
             debug: false,
           });
           setIsReady(true);
           console.log('AdsGram Rewarded initialized successfully');
-        } catch (err) {
-          console.error('Failed to initialize AdsGram Rewarded:', err);
-          setError('Failed to initialize ads');
         }
+      } catch (err) {
+        console.error('Failed to initialize AdsGram Rewarded:', err);
+        setError('Failed to initialize ads');
+        initAttempted.current = true;
       }
     };
 
+    // Check immediately
     checkAdsGram();
+    
+    // Also check after a delay in case SDK loads late
     const timeout = setTimeout(checkAdsGram, 2000);
 
     return () => {
       clearTimeout(timeout);
-      if (controllerRef.current) {
-        controllerRef.current.destroy();
+      try {
+        if (controllerRef.current) {
+          controllerRef.current.destroy();
+        }
+      } catch (e) {
+        // Ignore destroy errors
       }
     };
   }, []);
