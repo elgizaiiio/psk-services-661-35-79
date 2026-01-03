@@ -6,7 +6,7 @@ import { useViralMining } from '@/hooks/useViralMining';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { usePriceCalculator } from '@/hooks/usePriceCalculator';
 import { useVipSpins } from '@/hooks/useVipSpins';
-import { useAdsGram } from '@/hooks/useAdsGram';
+import { useAdsGramRewarded } from '@/hooks/useAdsGramRewarded';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Loader2, Gift, Zap, Ticket, Sparkles, X, Crown, ShoppingCart, Play } from 'lucide-react';
@@ -98,7 +98,7 @@ const Spin: React.FC = () => {
     dailySpinsForTier,
     refresh: refreshVipSpins 
   } = useVipSpins(user?.id);
-  const { showAd, isReady: adReady, isLoading: adLoading } = useAdsGram();
+  const { showAd, isReady: adReady, isLoading: adLoading } = useAdsGramRewarded();
   useTelegramBackButton();
 
   const [wheelType, setWheelType] = useState<'normal' | 'pro'>('normal');
