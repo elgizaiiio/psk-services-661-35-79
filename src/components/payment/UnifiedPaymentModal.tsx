@@ -85,13 +85,16 @@ export const UnifiedPaymentModal: React.FC<UnifiedPaymentModalProps> = ({
       credits,
     };
 
+    // processPayment now only returns true after blockchain verification
     const success = await processPayment(params);
     if (success) {
-      // Notify admins about the payment
+      // Only notify and call onSuccess AFTER successful blockchain verification
       await notifyAdminPayment('ton', amount, 'TON');
+      toast.success('Payment verified on blockchain!');
       onSuccess?.();
       onClose();
     }
+    // If not successful, the hook already shows appropriate error/warning toasts
   };
 
   const handleStarsPayment = async () => {
