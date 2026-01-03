@@ -113,6 +113,13 @@ async function sendTelegramPhoto(chatId: number, photoUrl: string, caption: stri
 
   const result = await response.json();
   console.log('Telegram Photo API response:', result);
+  
+  // If photo fails, fallback to text message
+  if (!result.ok) {
+    console.log('Photo failed, falling back to text message');
+    return sendTelegramMessage(chatId, caption, replyMarkup);
+  }
+  
   return result;
 }
 
