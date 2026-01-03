@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, ListTodo, Wallet, Users } from 'lucide-react';
+import { Home, ListTodo, Wallet, Users, RotateCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 
@@ -10,12 +10,10 @@ const BottomNavigation = () => {
   const navigate = useNavigate();
   const { hapticFeedback } = useTelegramAuth();
 
-  const leftNavItems = [
+  const navItems = [
     { icon: Home, label: 'Home', path: '/' },
     { icon: ListTodo, label: 'Tasks', path: '/tasks' },
-  ];
-
-  const rightNavItems = [
+    { icon: RotateCw, label: 'Spin', path: '/spin' },
     { icon: Users, label: 'Invite', path: '/invite' },
     { icon: Wallet, label: 'Wallet', path: '/wallet' },
   ];
@@ -31,11 +29,7 @@ const BottomNavigation = () => {
     return null;
   }
 
-  const allNavItems = [...leftNavItems, ...rightNavItems];
-  const activeIndex = allNavItems.findIndex(item => item.path === location.pathname);
-  const isSpinActive = location.pathname === '/spin';
-
-  const renderNavItem = (item: typeof leftNavItems[0], index: number) => {
+  const renderNavItem = (item: typeof navItems[0], index: number) => {
     const isActive = item.path === location.pathname;
     const Icon = item.icon;
     
@@ -75,55 +69,10 @@ const BottomNavigation = () => {
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
     >
-      <div className="bg-card border border-border rounded-2xl max-w-md mx-auto relative">
+      <div className="bg-card border border-border rounded-2xl max-w-md mx-auto">
         <div className="flex items-center justify-around py-2">
-          {/* Left nav items */}
-          {leftNavItems.map((item, index) => renderNavItem(item, index))}
-          
-          {/* Center Spin Button */}
-          <motion.button
-            onClick={() => handleNavigation('/spin')}
-            className="relative -mt-8 flex items-center justify-center w-16 h-16 rounded-full shadow-lg transition-all bg-primary text-primary-foreground shadow-primary/40"
-            whileTap={{ scale: 0.9, rotate: 180 }}
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 17 }}
-          >
-            <motion.div
-              animate={isSpinActive ? { rotate: 360 } : { rotate: 0 }}
-              transition={{ duration: 0.5 }}
-              className="flex flex-col items-center"
-            >
-              <svg 
-                className="w-7 h-7" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                strokeWidth="2.5" 
-                strokeLinecap="round" 
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 2a10 10 0 0 1 0 20" />
-                <path d="M12 6v6l4 2" />
-              </svg>
-            </motion.div>
-            {/* Glow effect */}
-            <div className="absolute inset-0 rounded-full blur-lg opacity-50 -z-10 bg-primary" />
-          </motion.button>
-          
-          {/* Right nav items */}
-          {rightNavItems.map((item, index) => renderNavItem(item, index + 2))}
+          {navItems.map((item, index) => renderNavItem(item, index))}
         </div>
-        
-        {/* Spin label below the button */}
-        <motion.span 
-          className={cn(
-            "absolute left-1/2 -translate-x-1/2 bottom-1 text-[10px] font-semibold",
-            isSpinActive ? "text-primary" : "text-amber-500"
-          )}
-        >
-          Spin
-        </motion.span>
       </div>
     </motion.div>
   );
