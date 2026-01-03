@@ -1452,31 +1452,31 @@ User joined from AdsGram ad!`);
         webAppUrl = `${WEBAPP_URL}?ref=${encodeURIComponent(referralParam)}`;
       }
 
-      const welcomeMessage = `⚡ <b>Welcome ${firstName}!</b>
+      const welcomeMessage = `<b>Welcome ${firstName}!</b>
 
-🔋 Mine BOLT 24/7 | Daily Tasks | Earn 0.1 TON/referral
+Mine BOLT 24/7 | Daily Tasks | Earn 0.1 TON/referral
 
-🏆 <b>$10,000 Contest LIVE!</b>
+<b>$10,000 Contest LIVE!</b>
 
-👇 Tap below to start!`;
+Tap below to start!`;
 
       const keyboard = {
         inline_keyboard: [
           [
             {
-              text: '⚡ Start Mining Now',
+              text: 'Start Mining Now',
               web_app: { url: webAppUrl }
             }
           ],
           [
             {
-              text: '🏆 View Contest',
+              text: 'View Contest',
               web_app: { url: `${WEBAPP_URL}/contest` }
             }
           ],
           [
             {
-              text: '📢 Join Channel',
+              text: 'Join Channel',
               url: 'https://t.me/boltcomm'
             }
           ]
