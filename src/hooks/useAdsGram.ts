@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-// AdsGram Block ID - Replace with your actual Block ID
-const ADSGRAM_BLOCK_ID = '7598'; // Default test block ID
+// AdsGram Block ID
+const ADSGRAM_BLOCK_ID = 'task-20515';
 
 declare global {
   interface Window {
