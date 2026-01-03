@@ -411,13 +411,13 @@ export const LevelProgressCard = ({ userId, tokenBalance, onLevelReward }: Level
                   
                   {/* Total Rewards Summary */}
                   <div className="mt-4 p-3 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg border border-yellow-500/20">
-                    <h4 className="text-sm font-bold text-yellow-400 mb-2 text-center">إجمالي المكافآت المتاحة</h4>
+                    <h4 className="text-sm font-bold text-yellow-400 mb-2 text-center">Total Available Rewards</h4>
                     <div className="flex justify-center gap-6">
                       <div className="text-center">
                         <p className="text-2xl font-bold text-green-400">
                           {RANKS.reduce((sum, r) => sum + r.reward.spins, 0)}
                         </p>
-                        <p className="text-xs text-muted-foreground">🎰 سبينات</p>
+                        <p className="text-xs text-muted-foreground">🎰 Spins</p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-blue-400">

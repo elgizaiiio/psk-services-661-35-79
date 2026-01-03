@@ -258,7 +258,7 @@ const MiningServers = () => {
                           <p className="text-xs text-muted-foreground mb-1">{server.hashRate}</p>
                           {server.id === 'free-starter' && (
                             <p className="text-[11px] text-muted-foreground mb-3">
-                              متاحة لأول 100 مستخدم فقط • تتفعل بعد إحالة صديق واحد
+                              Available for first 100 users only • Unlocks after 1 referral
                             </p>
                           )}
 

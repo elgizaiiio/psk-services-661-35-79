@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { TonIcon, UsdtIcon, BoltIcon } from '@/components/ui/currency-icons';
 import { BoltTask } from '@/types/bolt';
+import { supabase } from '@/integrations/supabase/client';
 
 const getRewardDisplay = (task: BoltTask) => {
   if (task.reward_ton && task.reward_ton > 0) {
@@ -41,6 +42,66 @@ const isJoinTask = (taskTitle: string, taskUrl?: string | null) => {
     title.includes('group') ||
     url.includes('t.me/')
   );
+};
+
+// Helper to check referral requirements
+const checkReferralRequirement = (title: string, totalReferrals: number): boolean => {
+  const lowerTitle = title.toLowerCase();
+  if (lowerTitle.includes('invite 1')) return totalReferrals >= 1;
+  if (lowerTitle.includes('invite 3')) return totalReferrals >= 3;
+  if (lowerTitle.includes('invite 5')) return totalReferrals >= 5;
+  if (lowerTitle.includes('invite 10')) return totalReferrals >= 10;
+  return false;
+};
+
+// Helper to check mining requirements
+const checkMiningRequirement = async (title: string, userId: string): Promise<boolean> => {
+  const lowerTitle = title.toLowerCase();
+  
+  if (lowerTitle.includes('start mining')) {
+    // Check if user has started at least one mining session
+    const { count } = await supabase
+      .from('bolt_mining_sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId);
+    return (count || 0) >= 1;
+  }
+  
+  if (lowerTitle.includes('mine for 1 hour') || lowerTitle.includes('1 hour')) {
+    // Check if user has completed at least one mining session
+    const { count } = await supabase
+      .from('bolt_mining_sessions')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('is_active', false)
+      .not('completed_at', 'is', null);
+    return (count || 0) >= 1;
+  }
+  
+  if (lowerTitle.includes('upgrade mining power') || lowerTitle.includes('upgrade')) {
+    // Check if user has mining_power > 1 (default is 1)
+    const { data } = await supabase
+      .from('bolt_users')
+      .select('mining_power')
+      .eq('id', userId)
+      .single();
+    return (data?.mining_power || 1) > 1;
+  }
+  
+  if (lowerTitle.includes('claim mining') || lowerTitle.includes('claim rewards')) {
+    // Check if user has claimed any mining rewards (completed sessions with tokens)
+    const { data } = await supabase
+      .from('bolt_mining_sessions')
+      .select('total_mined')
+      .eq('user_id', userId)
+      .eq('is_active', false)
+      .not('completed_at', 'is', null)
+      .gt('total_mined', 0)
+      .limit(1);
+    return (data?.length || 0) >= 1;
+  }
+  
+  return false;
 };
 
 const Tasks = () => {
@@ -118,17 +179,22 @@ const Tasks = () => {
     run();
   }, [allTasks, completedTasks, tgUser?.id, loading, checkSubscription, revokeTaskCompletion]);
 
-  const handleTaskComplete = async (taskId: string, taskUrl: string, taskTitle: string) => {
+  const handleTaskComplete = async (taskId: string, taskUrl: string, taskTitle: string, taskCategory: string) => {
     if (isTaskCompleted(taskId)) {
       toast.info('Task already completed');
+      return;
+    }
+
+    if (!boltUser?.id) {
+      toast.error('Please wait for your account to load');
       return;
     }
 
     hapticFeedback?.impact?.('medium');
     setProcessingTask(taskId);
 
+    // Social join tasks - verify Telegram subscription
     const joinTask = isJoinTask(taskTitle, taskUrl);
-
     if (joinTask && tgUser?.id) {
       if (taskUrl) window.open(taskUrl, '_blank');
 
@@ -139,7 +205,7 @@ const Tasks = () => {
         if (subscribed) {
           try {
             await completeTask(taskId);
-            toast.success('Task completed! Points added');
+            toast.success('Task completed! Reward added');
           } catch {
             toast.error('Failed to complete task');
           }
@@ -151,23 +217,62 @@ const Tasks = () => {
       return;
     }
 
-    // Regular task flow
-    if (taskUrl) {
-      if (taskUrl.startsWith('/')) window.location.href = taskUrl;
-      else window.open(taskUrl, '_blank');
+    // Referral tasks - verify actual referral count
+    if (taskCategory === 'referral') {
+      const totalReferrals = boltUser.total_referrals || 0;
+      const hasEnoughReferrals = checkReferralRequirement(taskTitle, totalReferrals);
 
-      setTimeout(async () => {
+      if (hasEnoughReferrals) {
         try {
           await completeTask(taskId);
-          toast.success('Task completed! Points added');
+          toast.success('Referral task completed! Reward added');
         } catch {
           toast.error('Failed to complete task');
         }
-        setProcessingTask(null);
-      }, 3000);
-    } else {
+      } else {
+        // Extract required number from title
+        const match = taskTitle.match(/invite\s+(\d+)/i);
+        const required = match ? parseInt(match[1], 10) : 1;
+        toast.error(`You need ${required} referrals. You have ${totalReferrals}.`);
+        
+        // Navigate to invite page
+        if (taskUrl?.startsWith('/')) {
+          window.location.href = taskUrl;
+        }
+      }
       setProcessingTask(null);
+      return;
     }
+
+    // Mining tasks - verify mining activity
+    if (taskCategory === 'mining') {
+      const miningVerified = await checkMiningRequirement(taskTitle, boltUser.id);
+
+      if (miningVerified) {
+        try {
+          await completeTask(taskId);
+          toast.success('Mining task completed! Reward added');
+        } catch {
+          toast.error('Failed to complete task');
+        }
+      } else {
+        toast.error('Complete the required mining action first');
+        
+        // Navigate to mining/upgrade page
+        if (taskUrl?.startsWith('/')) {
+          window.location.href = taskUrl;
+        }
+      }
+      setProcessingTask(null);
+      return;
+    }
+
+    // Generic task flow (fallback)
+    if (taskUrl) {
+      if (taskUrl.startsWith('/')) window.location.href = taskUrl;
+      else window.open(taskUrl, '_blank');
+    }
+    setProcessingTask(null);
   };
 
   const progress = stats.totalTasks > 0 ? (stats.completed / stats.totalTasks) * 100 : 0;
@@ -257,7 +362,7 @@ const Tasks = () => {
                       return (
                         <motion.button
                           key={task.id}
-                          onClick={() => handleTaskComplete(task.id, task.task_url || '', task.title)}
+                          onClick={() => handleTaskComplete(task.id, task.task_url || '', task.title, task.category)}
                           disabled={isProcessing}
                           className="w-full p-4 rounded-xl border text-left transition-all bg-card border-border hover:border-primary/30"
                           initial={{ opacity: 0, y: 10 }}

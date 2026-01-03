@@ -17,20 +17,20 @@ const WelcomeModal = ({ isOpen, onClose, userName }: WelcomeModalProps) => {
   const features = [
     {
       icon: Zap,
-      title: 'ابدأ التعدين',
-      description: 'اربح عملات Bolt كل ساعة بالتعدين المجاني',
+      title: 'Start Mining',
+      description: 'Earn Bolt coins every hour with free mining',
       color: 'text-yellow-400',
     },
     {
       icon: Gift,
-      title: 'مهام يومية',
-      description: 'أكمل المهام واحصل على مكافآت إضافية',
+      title: 'Daily Tasks',
+      description: 'Complete tasks and earn extra rewards',
       color: 'text-emerald-400',
     },
     {
       icon: Users,
-      title: 'ادعُ أصدقاءك',
-      description: 'احصل على 500 عملة لكل صديق ينضم',
+      title: 'Invite Friends',
+      description: 'Get 500 coins for every friend who joins',
       color: 'text-blue-400',
     },
   ];
