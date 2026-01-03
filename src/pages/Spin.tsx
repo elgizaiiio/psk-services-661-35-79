@@ -556,8 +556,9 @@ const Spin: React.FC = () => {
                 <TabsTrigger value="pro" className="text-sm font-medium">
                   PRO
                 </TabsTrigger>
-                <TabsTrigger value="usdt" className="text-sm font-medium text-emerald-500 data-[state=active]:text-emerald-600">
-                  💰 USDT
+                <TabsTrigger value="usdt" className="text-sm font-medium text-amber-500 data-[state=active]:text-amber-600">
+                  <Sparkles className="w-3 h-3 mr-1" />
+                  777
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -718,7 +719,7 @@ const Spin: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <UsdtIcon size={20} className="mr-2" />
+                    <TonIcon size={20} className="mr-2" />
                     SPIN for 5 TON
                   </>
                 )}
