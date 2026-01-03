@@ -62,6 +62,60 @@ export type Database = {
         }
         Relationships: []
       }
+      ad_clicks: {
+        Row: {
+          banner_id: string | null
+          campaign_id: string | null
+          click_id: string | null
+          created_at: string | null
+          id: string
+          paid: boolean | null
+          paid_amount: number | null
+          publisher_id: string | null
+          telegram_id: number | null
+          user_id: string | null
+        }
+        Insert: {
+          banner_id?: string | null
+          campaign_id?: string | null
+          click_id?: string | null
+          created_at?: string | null
+          id?: string
+          paid?: boolean | null
+          paid_amount?: number | null
+          publisher_id?: string | null
+          telegram_id?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          banner_id?: string | null
+          campaign_id?: string | null
+          click_id?: string | null
+          created_at?: string | null
+          id?: string
+          paid?: boolean | null
+          paid_amount?: number | null
+          publisher_id?: string | null
+          telegram_id?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_clicks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_clicks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ad_views: {
         Row: {
           ad_type: string

@@ -41,3 +41,6 @@ verify_jwt = false
 
 [functions.adsgram-reward]
 verify_jwt = false
+
+[functions.adsgram-tracking]
+verify_jwt = false

@@ -185,6 +185,50 @@ async function getUserStats(telegramId: number) {
   return user;
 }
 
+// Get ad statistics for /ads command
+async function getAdStats() {
+  const supabase = getSupabaseClient();
+  
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  
+  // Today's stats
+  const { data: todayClicks } = await supabase
+    .from('ad_clicks')
+    .select('id, telegram_id, paid, paid_amount')
+    .gte('created_at', todayStart);
+  
+  // Last 7 days stats
+  const { data: weekClicks } = await supabase
+    .from('ad_clicks')
+    .select('id, telegram_id, paid, paid_amount')
+    .gte('created_at', weekAgo);
+  
+  // All time stats
+  const { data: allClicks } = await supabase
+    .from('ad_clicks')
+    .select('id, telegram_id, paid, paid_amount');
+  
+  const calculateStats = (clicks: any[] | null) => {
+    if (!clicks) return { total: 0, unique: 0, payers: 0, revenue: 0, conversion: 0 };
+    
+    const total = clicks.length;
+    const uniqueUsers = new Set(clicks.filter(c => c.telegram_id).map(c => c.telegram_id)).size;
+    const payers = clicks.filter(c => c.paid).length;
+    const revenue = clicks.filter(c => c.paid).reduce((sum, c) => sum + (c.paid_amount || 0), 0);
+    const conversion = total > 0 ? ((payers / total) * 100).toFixed(1) : '0';
+    
+    return { total, unique: uniqueUsers, payers, revenue, conversion };
+  };
+  
+  return {
+    today: calculateStats(todayClicks),
+    week: calculateStats(weekClicks),
+    allTime: calculateStats(allClicks)
+  };
+}
+
 async function getContestInfo(userId?: string) {
   const supabase = getSupabaseClient();
 
@@ -1408,6 +1452,20 @@ serve(async (req) => {
               
               console.log(`Added ${ticketsToAdd} spin tickets to user ${pendingPayment.user_id}`);
             }
+            
+            // Update ad_clicks if this user came from an ad
+            const amountUsd = pendingPayment.amount_usd || (pendingPayment.amount_stars * 0.02);
+            await supabase
+              .from('ad_clicks')
+              .update({ 
+                paid: true, 
+                paid_amount: amountUsd,
+                user_id: pendingPayment.user_id
+              })
+              .eq('telegram_id', telegramId)
+              .eq('paid', false);
+            
+            console.log(`Updated ad_clicks for telegram_id ${telegramId}`);
           }
         }
         
@@ -1733,6 +1791,50 @@ Invite friends to climb the leaderboard!`;
 
         await sendTelegramMessage(chatId, contestMessage, keyboard);
       }
+    }
+
+    // Handle /ads command - Admin only
+    else if (messageText === '/ads') {
+      if (!ADMIN_IDS.includes(telegramId)) {
+        await sendTelegramMessage(chatId, '❌ This command is for admins only.');
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      const stats = await getAdStats();
+      
+      const adsMessage = `📊 <b>إحصائيات الإعلانات - AdsGram</b>
+
+━━━━━━━━━━━━━━━━━━━━━━
+📅 <b>اليوم:</b>
+👆 النقرات: <b>${stats.today.total}</b>
+👥 مستخدمين جدد: <b>${stats.today.unique}</b>
+💰 دافعين: <b>${stats.today.payers}</b>
+💵 الإيرادات: <b>$${stats.today.revenue.toFixed(2)}</b>
+📈 نسبة التحويل: <b>${stats.today.conversion}%</b>
+
+━━━━━━━━━━━━━━━━━━━━━━
+📅 <b>آخر 7 أيام:</b>
+👆 النقرات: <b>${stats.week.total}</b>
+👥 مستخدمين جدد: <b>${stats.week.unique}</b>
+💰 دافعين: <b>${stats.week.payers}</b>
+💵 الإيرادات: <b>$${stats.week.revenue.toFixed(2)}</b>
+📈 نسبة التحويل: <b>${stats.week.conversion}%</b>
+
+━━━━━━━━━━━━━━━━━━━━━━
+📅 <b>الكل:</b>
+👆 النقرات: <b>${stats.allTime.total}</b>
+👥 مستخدمين جدد: <b>${stats.allTime.unique}</b>
+💰 دافعين: <b>${stats.allTime.payers}</b>
+💵 الإيرادات: <b>$${stats.allTime.revenue.toFixed(2)}</b>
+📈 نسبة التحويل: <b>${stats.allTime.conversion}%</b>
+
+━━━━━━━━━━━━━━━━━━━━━━
+🔗 <b>رابط التتبع لـ AdsGram:</b>
+<code>https://pxerqticmmpurwmumhyw.supabase.co/functions/v1/adsgram-tracking?cid={campaign_id}&bid={banner_id}&pid={publisher_id}&click_id={click_id}</code>`;
+
+      await sendTelegramMessage(chatId, adsMessage);
     }
 
     // Handle /help command
