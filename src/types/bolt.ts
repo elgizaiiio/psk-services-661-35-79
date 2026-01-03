@@ -41,6 +41,8 @@ export interface BoltTask {
   title: string;
   description?: string;
   points: number;
+  reward_ton?: number;
+  reward_usdt?: number;
   task_url?: string;
   icon?: string;
   category: string;
@@ -53,6 +55,8 @@ export interface BoltCompletedTask {
   user_id: string;
   task_id: string;
   points_earned: number;
+  reward_ton_earned?: number;
+  reward_usdt_earned?: number;
   completed_at: string;
 }
 

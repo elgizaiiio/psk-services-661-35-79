@@ -78,20 +78,41 @@ export const useBoltTasks = () => {
         .insert({
           user_id: boltUser.id,
           task_id: taskId,
-          points_earned: taskData.points,
+          points_earned: taskData.points || 0,
         })
         .select('*')
         .maybeSingle();
 
       if (insertError) throw insertError;
 
-      // Update user balance
+      // Get current user balances
+      const { data: currentUser } = await supabase
+        .from('bolt_users' as any)
+        .select('token_balance, ton_balance, usdt_balance')
+        .eq('id', boltUser.id)
+        .single();
+
+      const userData = currentUser as any;
+      const currentTokens = Number(userData?.token_balance) || 0;
+      const currentTon = Number(userData?.ton_balance) || 0;
+      const currentUsdt = Number(userData?.usdt_balance) || 0;
+
+      // Update user balance based on reward type
+      const updates: Record<string, any> = { updated_at: new Date().toISOString() };
+
+      if (taskData.points > 0) {
+        updates.token_balance = currentTokens + taskData.points;
+      }
+      if (taskData.reward_ton && taskData.reward_ton > 0) {
+        updates.ton_balance = currentTon + taskData.reward_ton;
+      }
+      if (taskData.reward_usdt && taskData.reward_usdt > 0) {
+        updates.usdt_balance = currentUsdt + taskData.reward_usdt;
+      }
+
       const { error: updateError } = await supabase
         .from('bolt_users' as any)
-        .update({
-          token_balance: (Number(boltUser.token_balance) || 0) + taskData.points,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updates)
         .eq('id', boltUser.id);
 
       if (updateError) throw updateError;
