@@ -858,28 +858,6 @@ const Spin: React.FC = () => {
                     })}
                   </div>
                   
-                  {/* Special Guaranteed TON Package */}
-                  <div className="mt-4 pt-4 border-t border-border">
-                    <p className="text-center text-xs text-muted-foreground mb-3">⭐ Special Offer</p>
-                    <button
-                      onClick={() => {
-                        setShowPackagesSheet(false);
-                        setShowSpecialPayment(true);
-                      }}
-                      className="w-full p-4 rounded-xl border-2 border-amber-500/50 bg-gradient-to-br from-amber-500/10 to-orange-500/10 hover:border-amber-500 transition-all hover:scale-[1.02] active:scale-[0.98]"
-                    >
-                      <div className="flex flex-col items-center gap-2">
-                        <div className="flex items-center gap-2">
-                          <TonIcon size={24} />
-                          <span className="text-xl font-bold text-amber-500">Guaranteed Win!</span>
-                        </div>
-                        <div className="flex flex-col items-center gap-0.5">
-                          <span className="text-sm text-foreground">Pay <strong>5 TON</strong> → Win <strong>0.1 TON</strong></span>
-                          <span className="text-xs text-muted-foreground">100% Guaranteed</span>
-                        </div>
-                      </div>
-                    </button>
-                  </div>
                 </SheetContent>
               </Sheet>
             </div>
