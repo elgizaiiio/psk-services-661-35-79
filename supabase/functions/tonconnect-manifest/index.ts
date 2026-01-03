@@ -19,9 +19,9 @@ serve(async (req) => {
     // Create dynamic manifest based on the requesting origin
     const manifest = {
       url: origin,
-      name: "PSK Services - VIRAL Mining",
+      name: "BOLT Mining",
       iconUrl: `${origin}/favicon.ico`,
-      description: "PSK Services - Connect your TON wallet to start mining VIRAL tokens and earn rewards through our advanced mining platform",
+      description: "BOLT Mining - Connect your TON wallet to start mining BOLT tokens and earn rewards through our advanced mining platform",
       image: `${origin}/og-image.png`,
       termsOfUseUrl: `${origin}/terms`,
       privacyPolicyUrl: `${origin}/privacy`
@@ -38,9 +38,9 @@ serve(async (req) => {
     // Fallback manifest
     const fallbackManifest = {
       url: "https://psk-viral-mining.lovable.app",
-      name: "PSK Services - VIRAL Mining",
+      name: "BOLT Mining",
       iconUrl: "https://psk-viral-mining.lovable.app/favicon.ico",
-      description: "PSK Services - Connect your TON wallet to start mining VIRAL tokens and earn rewards through our advanced mining platform",
+      description: "BOLT Mining - Connect your TON wallet to start mining BOLT tokens and earn rewards",
       image: "https://psk-viral-mining.lovable.app/og-image.png",
       termsOfUseUrl: "https://psk-viral-mining.lovable.app/terms",
       privacyPolicyUrl: "https://psk-viral-mining.lovable.app/privacy"
