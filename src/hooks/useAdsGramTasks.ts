@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 // AdsGram Block ID for Tasks (Partner Tasks)
-// NOTE: AdsGram expects task blockIds to start with "task-"
-const ADSGRAM_TASKS_BLOCK_ID = 'task-20515';
+// AdsGram SDK requires numeric-only blockId (e.g., "20515")
+const ADSGRAM_TASKS_BLOCK_ID = '20515';
+
 declare global {
   interface Window {
     Adsgram?: {
@@ -40,38 +41,21 @@ export const useAdsGramTasks = (): UseAdsGramTasksReturn => {
         if (window.Adsgram) {
           initAttempted.current = true;
 
-          const candidatesRaw = [
-            ADSGRAM_TASKS_BLOCK_ID,
-            ADSGRAM_TASKS_BLOCK_ID.replace(/^task-/, '').replace(/^int-/, ''),
-            ADSGRAM_TASKS_BLOCK_ID.startsWith('task-')
-              ? `int-${ADSGRAM_TASKS_BLOCK_ID.slice(5)}`
-              : `task-${ADSGRAM_TASKS_BLOCK_ID}`,
-            ADSGRAM_TASKS_BLOCK_ID.startsWith('int-')
-              ? `task-${ADSGRAM_TASKS_BLOCK_ID.slice(4)}`
-              : `int-${ADSGRAM_TASKS_BLOCK_ID}`,
-          ];
-
-          const candidates = Array.from(
-            new Set(candidatesRaw.map((v) => (v || '').trim()).filter(Boolean))
-          );
-
-          let lastErr: unknown = null;
-          for (const blockId of candidates) {
-            try {
-              controllerRef.current = window.Adsgram.init({
-                blockId,
-                debug: false,
-              });
-              setIsReady(true);
-              console.log('AdsGram Tasks initialized successfully with blockId:', blockId);
-              return;
-            } catch (e) {
-              lastErr = e;
-            }
+          // Use numeric-only blockId - SDK requires this format
+          const numericBlockId = ADSGRAM_TASKS_BLOCK_ID.replace(/\D/g, '');
+          
+          if (!numericBlockId) {
+            console.error('Invalid AdsGram Tasks blockId - no digits found');
+            setError('Invalid ad configuration');
+            return;
           }
 
-          console.error('Failed to initialize AdsGram Tasks with all candidates:', candidates, lastErr);
-          setError('Failed to initialize ads');
+          controllerRef.current = window.Adsgram.init({
+            blockId: numericBlockId,
+            debug: false,
+          });
+          setIsReady(true);
+          console.log('AdsGram Tasks initialized with blockId:', numericBlockId);
         }
       } catch (err) {
         console.error('Failed to initialize AdsGram Tasks:', err);

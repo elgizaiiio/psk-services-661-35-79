@@ -330,7 +330,12 @@ const Tasks = () => {
 
   // Handle task ad watch
   const handleWatchTaskAd = async () => {
-    if (!taskAdReady || showingTaskAd) return;
+    if (showingTaskAd || taskAdLoading) return;
+    
+    if (!taskAdReady) {
+      toast.info('Loading ads... please try again in a moment');
+      return;
+    }
     
     setShowingTaskAd(true);
     try {
