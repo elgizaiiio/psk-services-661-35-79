@@ -103,17 +103,57 @@ export const useTelegramAuth = () => {
   const [user, setUser] = useState<TelegramUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [webApp, setWebApp] = useState<TelegramWebApp | null>(null);
+  const [hasWebApp, setHasWebApp] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
+    let retryCount = 0;
+    const maxRetries = 6; // 3 seconds total (500ms * 6)
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const getUserData = (tg: TelegramWebApp): TelegramUser | null => {
+      const telegramUser = tg.initDataUnsafe?.user;
+      
+      if (telegramUser && telegramUser.id) {
+        logger.info('Valid Telegram user found', { id: telegramUser.id });
+        
+        if (telegramUser.photo_url && !telegramUser.photo_url.startsWith('http')) {
+          telegramUser.photo_url = `https://t.me/i/userpic/320/${telegramUser.photo_url}`;
+        }
+        
+        return telegramUser;
+      }
+      
+      // Try parsing from initData
+      if (tg.initData) {
+        try {
+          const urlParams = new URLSearchParams(tg.initData);
+          const userParam = urlParams.get('user');
+          
+          if (userParam) {
+            const parsedUser = JSON.parse(decodeURIComponent(userParam));
+            if (parsedUser && parsedUser.id) {
+              logger.info('User parsed from initData', { id: parsedUser.id });
+              return parsedUser;
+            }
+          }
+        } catch (error) {
+          logger.error('Error parsing initData', error);
+        }
+      }
+      
+      return null;
+    };
+
     const initTelegramUser = () => {
-      logger.debug('Initializing Telegram user...');
+      logger.debug('Initializing Telegram user...', { retryCount });
       
       if (typeof window !== 'undefined' && window.Telegram?.WebApp) {
         logger.debug('Telegram WebApp detected');
         const tg = window.Telegram.WebApp;
         setWebApp(tg);
+        setHasWebApp(true);
         
         tg.ready();
         tg.expand();
@@ -151,50 +191,25 @@ export const useTelegramAuth = () => {
           });
         }
         
-        const getUserData = () => {
-          const telegramUser = tg.initDataUnsafe?.user;
-          
-          if (telegramUser && telegramUser.id) {
-            logger.info('Valid Telegram user found', { id: telegramUser.id });
-            
-            if (telegramUser.photo_url && !telegramUser.photo_url.startsWith('http')) {
-              telegramUser.photo_url = `https://t.me/i/userpic/320/${telegramUser.photo_url}`;
-            }
-            
-            setUser(telegramUser);
-          } else {
-            if (tg.initData) {
-              try {
-                const urlParams = new URLSearchParams(tg.initData);
-                const userParam = urlParams.get('user');
-                
-                if (userParam) {
-                  const parsedUser = JSON.parse(decodeURIComponent(userParam));
-                  logger.info('User parsed from initData', { id: parsedUser.id });
-                  setUser(parsedUser);
-                  return;
-                }
-              } catch (error) {
-                logger.error('Error parsing initData', error);
-              }
-            }
-            
-            logger.warn('No user data found');
-          }
-        };
+        const foundUser = getUserData(tg);
         
-        getUserData();
-        
-        if (!tg.initDataUnsafe?.user) {
-          const retryIntervals = [500, 1000, 2000];
-          retryIntervals.forEach((delay) => {
-            setTimeout(getUserData, delay);
-          });
+        if (foundUser) {
+          setUser(foundUser);
+          setIsLoading(false);
+        } else if (retryCount < maxRetries) {
+          // Retry after delay - user data may arrive late
+          retryCount++;
+          logger.debug(`User data not found, retry ${retryCount}/${maxRetries}`);
+          retryTimer = setTimeout(initTelegramUser, 500);
+        } else {
+          // Exhausted retries, no user found
+          logger.warn('No user data found after all retries');
+          setUser(null);
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       } else {
         logger.debug('No Telegram WebApp found - browser mode');
+        setHasWebApp(false);
         setUser(null);
         setIsLoading(false);
       }
@@ -202,12 +217,18 @@ export const useTelegramAuth = () => {
 
     if (document.readyState === 'complete' || document.readyState === 'interactive') {
       initTelegramUser();
-      return;
+    } else {
+      const onLoad = () => initTelegramUser();
+      window.addEventListener('load', onLoad);
+      return () => {
+        window.removeEventListener('load', onLoad);
+        if (retryTimer) clearTimeout(retryTimer);
+      };
     }
 
-    const onLoad = () => initTelegramUser();
-    window.addEventListener('load', onLoad);
-    return () => window.removeEventListener('load', onLoad);
+    return () => {
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, []);
 
   // BackButton management removed - handled by useTelegramBackButton hook
