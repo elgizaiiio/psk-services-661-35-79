@@ -9,6 +9,12 @@ const corsHeaders = {
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
+// Rate limiting settings - IMPORTANT for avoiding Telegram ban
+const MIN_DELAY_MS = 1500; // 1.5 seconds minimum
+const MAX_DELAY_MS = 2500; // 2.5 seconds maximum
+const BATCH_SIZE = 20; // Smaller batches for marketing
+const BATCH_DELAY_MS = 10000; // 10 seconds between batches
+
 interface UserSegmentRules {
   days_since_signup?: { max?: number; min?: number };
   days_inactive?: { min?: number; max?: number };
@@ -39,12 +45,24 @@ interface User {
   total_referrals: number;
   created_at: string;
   updated_at: string;
+  notifications_enabled?: boolean;
+  bot_blocked?: boolean;
 }
 
-async function sendTelegramMessage(chatId: number, text: string): Promise<boolean> {
+function getRandomDelay(): number {
+  return Math.floor(Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS + 1)) + MIN_DELAY_MS;
+}
+
+interface SendResult {
+  success: boolean;
+  blocked?: boolean;
+  rateLimited?: boolean;
+}
+
+async function sendTelegramMessage(chatId: number, text: string, retryCount = 0): Promise<SendResult> {
   if (!TELEGRAM_BOT_TOKEN) {
     console.error('TELEGRAM_BOT_TOKEN not configured');
-    return false;
+    return { success: false };
   }
 
   try {
@@ -59,10 +77,36 @@ async function sendTelegramMessage(chatId: number, text: string): Promise<boolea
     });
 
     const result = await response.json();
-    return result.ok;
+    
+    if (!result.ok) {
+      const errorCode = result.error_code;
+      const description = result.description || '';
+      
+      // User blocked the bot
+      if (errorCode === 403 || description.includes('blocked') || description.includes('deactivated')) {
+        console.log(`User ${chatId} blocked bot or deactivated`);
+        return { success: false, blocked: true };
+      }
+      
+      // Rate limited
+      if (errorCode === 429) {
+        console.warn(`Rate limited for ${chatId}`);
+        if (retryCount < 2) {
+          const retryAfter = (result.parameters?.retry_after || 30) * 1000;
+          await new Promise(resolve => setTimeout(resolve, retryAfter));
+          return sendTelegramMessage(chatId, text, retryCount + 1);
+        }
+        return { success: false, rateLimited: true };
+      }
+      
+      console.error(`Failed to send message to ${chatId}:`, description);
+      return { success: false };
+    }
+    
+    return { success: true };
   } catch (error) {
     console.error(`Failed to send message to ${chatId}:`, error);
-    return false;
+    return { success: false };
   }
 }
 
@@ -72,7 +116,9 @@ async function generateAIMessage(context: string, userName: string): Promise<str
   }
 
   try {
-    const response = await fetch('https://api.lovable.dev/v1/chat/completions', {
+    const randomSeed = Math.floor(Math.random() * 1000);
+    
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
@@ -85,8 +131,10 @@ async function generateAIMessage(context: string, userName: string): Promise<str
             role: 'system',
             content: `You are a friendly marketing assistant for a crypto mining app called BOLT. 
 Generate SHORT, engaging Telegram messages (max 200 characters).
+Use HTML formatting (<b>bold</b>, NOT markdown **bold**).
 Use emojis sparingly. Be friendly but professional.
-The user's name is: ${userName || 'Friend'}`
+The user's name is: ${userName || 'Friend'}
+Make each message unique - random seed: ${randomSeed}`
           },
           {
             role: 'user',
@@ -94,7 +142,7 @@ The user's name is: ${userName || 'Friend'}`
           }
         ],
         max_tokens: 150,
-        temperature: 0.8,
+        temperature: 0.9,
       }),
     });
 
@@ -131,7 +179,12 @@ async function getUsersInSegment(
   segmentKey: string,
   rules: UserSegmentRules
 ): Promise<User[]> {
-  let query = supabase.from('bolt_users').select('*');
+  let query = supabase
+    .from('bolt_users')
+    .select('*')
+    .not('telegram_id', 'is', null)
+    .neq('notifications_enabled', false)
+    .neq('bot_blocked', true);
 
   const now = new Date();
 
@@ -157,9 +210,6 @@ async function getUsersInSegment(
   if (rules.min_referrals) {
     query = query.gte('total_referrals', rules.min_referrals);
   }
-
-  // Only get users with telegram_id
-  query = query.not('telegram_id', 'is', null);
 
   const { data, error } = await query;
 
@@ -216,7 +266,6 @@ async function updateAnalytics(
 ) {
   const today = new Date().toISOString().split('T')[0];
 
-  // Try to update existing record
   const { data: existing } = await supabase
     .from('campaign_analytics')
     .select('*')
@@ -240,6 +289,13 @@ async function updateAnalytics(
       messages_delivered: delivered,
     });
   }
+}
+
+async function markUserAsBlocked(supabase: ReturnType<typeof createClient>, telegramId: number) {
+  await supabase
+    .from('bolt_users')
+    .update({ bot_blocked: true })
+    .eq('telegram_id', telegramId);
 }
 
 serve(async (req) => {
@@ -292,6 +348,7 @@ serve(async (req) => {
 
     let totalSent = 0;
     let totalDelivered = 0;
+    let totalBlocked = 0;
 
     for (const campaign of campaigns) {
       console.log(`Processing campaign: ${campaign.name}`);
@@ -313,6 +370,8 @@ serve(async (req) => {
           .from('bolt_users')
           .select('*')
           .eq('id', user_id)
+          .neq('notifications_enabled', false)
+          .neq('bot_blocked', true)
           .single();
         
         if (user) users = [user];
@@ -320,13 +379,22 @@ serve(async (req) => {
         users = await getUsersInSegment(supabase, campaign.target_segment, rules);
       }
 
-      console.log(`Found ${users.length} users in segment ${campaign.target_segment}`);
+      console.log(`Found ${users.length} eligible users in segment ${campaign.target_segment}`);
 
       // Process each user with rate limiting
       let campaignSent = 0;
       let campaignDelivered = 0;
+      let campaignBlocked = 0;
 
-      for (const user of users) {
+      for (let i = 0; i < users.length; i++) {
+        const user = users[i];
+        
+        // Batch delay
+        if (i > 0 && i % BATCH_SIZE === 0) {
+          console.log(`Batch ${Math.floor(i / BATCH_SIZE)} complete. Waiting ${BATCH_DELAY_MS/1000}s...`);
+          await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
+        }
+
         // Check cooldown
         if (await hasRecentMessage(supabase, user.id, campaign.id, campaign.cooldown_hours)) {
           console.log(`Skipping user ${user.id} - within cooldown period`);
@@ -340,7 +408,7 @@ serve(async (req) => {
         );
 
         // Send message
-        const delivered = await sendTelegramMessage(user.telegram_id, message);
+        const result = await sendTelegramMessage(user.telegram_id, message);
         
         // Record event
         await recordMarketingEvent(
@@ -349,14 +417,24 @@ serve(async (req) => {
           campaign.id,
           event_type || 'scheduled',
           message,
-          delivered
+          result.success
         );
 
         campaignSent++;
-        if (delivered) campaignDelivered++;
+        
+        if (result.success) {
+          campaignDelivered++;
+        } else if (result.blocked) {
+          campaignBlocked++;
+          await markUserAsBlocked(supabase, user.telegram_id);
+        } else if (result.rateLimited) {
+          // If rate limited, take a longer break
+          console.warn('Rate limited, taking extended break...');
+          await new Promise(resolve => setTimeout(resolve, 30000));
+        }
 
-        // Rate limit: wait 100ms between messages
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Random delay between messages
+        await new Promise(resolve => setTimeout(resolve, getRandomDelay()));
       }
 
       // Update analytics
@@ -364,8 +442,9 @@ serve(async (req) => {
 
       totalSent += campaignSent;
       totalDelivered += campaignDelivered;
+      totalBlocked += campaignBlocked;
 
-      console.log(`Campaign ${campaign.name}: Sent ${campaignSent}, Delivered ${campaignDelivered}`);
+      console.log(`Campaign ${campaign.name}: Sent ${campaignSent}, Delivered ${campaignDelivered}, Blocked ${campaignBlocked}`);
     }
 
     return new Response(
@@ -374,6 +453,7 @@ serve(async (req) => {
         campaigns_processed: campaigns.length,
         total_sent: totalSent,
         total_delivered: totalDelivered,
+        total_blocked: totalBlocked,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
