@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2 } from "lucide-react";
+import { Loader2, FileText, Shield, BookOpen, MessageCircle, ChevronRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
 import { useTasks } from "@/hooks/useTasks";
@@ -210,11 +211,65 @@ const Profile: React.FC = () => {
             </button>
           </motion.div>
 
+          {/* Legal & Info Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="space-y-2"
+          >
+            <p className="text-xs text-muted-foreground uppercase tracking-wide px-1 mb-3">Legal & Support</p>
+            
+            <Link 
+              to="/terms" 
+              className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="w-5 h-5 text-muted-foreground" />
+                <span className="text-foreground font-medium">Terms of Service</span>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </Link>
+            
+            <Link 
+              to="/privacy" 
+              className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <Shield className="w-5 h-5 text-muted-foreground" />
+                <span className="text-foreground font-medium">Privacy Policy</span>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </Link>
+            
+            <Link 
+              to="/rules" 
+              className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <BookOpen className="w-5 h-5 text-muted-foreground" />
+                <span className="text-foreground font-medium">Rules & Guidelines</span>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </Link>
+            
+            <button 
+              onClick={handleOpenCommunity}
+              className="w-full flex items-center justify-between p-4 rounded-2xl bg-card border border-border hover:bg-muted/50 transition-colors"
+            >
+              <div className="flex items-center gap-3">
+                <MessageCircle className="w-5 h-5 text-muted-foreground" />
+                <span className="text-foreground font-medium">Contact Support</span>
+              </div>
+              <ChevronRight className="w-5 h-5 text-muted-foreground" />
+            </button>
+          </motion.div>
+
           {/* App Version */}
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
+            transition={{ delay: 0.35 }}
             className="text-center text-xs text-muted-foreground py-4"
           >
             BOLT Mining v1.0.0

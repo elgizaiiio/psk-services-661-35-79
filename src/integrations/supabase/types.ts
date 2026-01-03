@@ -898,12 +898,14 @@ export type Database = {
       }
       bolt_users: {
         Row: {
+          bot_blocked: boolean | null
           created_at: string
           first_name: string | null
           id: string
           last_name: string | null
           mining_duration_hours: number
           mining_power: number
+          notifications_enabled: boolean | null
           photo_url: string | null
           referral_bonus: number
           referred_by: string | null
@@ -916,12 +918,14 @@ export type Database = {
           usdt_balance: number
         }
         Insert: {
+          bot_blocked?: boolean | null
           created_at?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
           mining_duration_hours?: number
           mining_power?: number
+          notifications_enabled?: boolean | null
           photo_url?: string | null
           referral_bonus?: number
           referred_by?: string | null
@@ -934,12 +938,14 @@ export type Database = {
           usdt_balance?: number
         }
         Update: {
+          bot_blocked?: boolean | null
           created_at?: string
           first_name?: string | null
           id?: string
           last_name?: string | null
           mining_duration_hours?: number
           mining_power?: number
+          notifications_enabled?: boolean | null
           photo_url?: string | null
           referral_bonus?: number
           referred_by?: string | null

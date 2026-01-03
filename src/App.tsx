@@ -51,6 +51,9 @@ const Contest = lazy(() => import("./pages/Contest"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Spin = lazy(() => import("./pages/Spin"));
 const BuyBolt = lazy(() => import("./pages/BuyBolt"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const Rules = lazy(() => import("./pages/Rules"));
 
 // Loading component
 const PageLoader = () => (
@@ -220,6 +223,9 @@ const App = () => (
                                 <Route path="/contest" element={<Contest />} />
                                 <Route path="/spin" element={<Spin />} />
                                 <Route path="/buy-bolt" element={<BuyBolt />} />
+                                <Route path="/terms" element={<TermsOfService />} />
+                                <Route path="/privacy" element={<PrivacyPolicy />} />
+                                <Route path="/rules" element={<Rules />} />
                               </Routes>
                             </Suspense>
                           </ErrorBoundary>

@@ -1686,6 +1686,51 @@ Invite friends to climb the leaderboard!`;
       await sendTelegramMessage(chatId, adsMessage);
     }
 
+    // Handle /mute command - Disable notifications
+    else if (messageText === '/mute') {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase
+        .from('bolt_users')
+        .update({ notifications_enabled: false })
+        .eq('telegram_id', telegramId);
+      
+      if (error) {
+        console.error('Error muting notifications:', error);
+        await sendTelegramMessage(chatId, '❌ Failed to mute notifications. Please try again.');
+      } else {
+        await sendTelegramMessage(chatId, `🔇 <b>Notifications Muted</b>
+
+You will no longer receive promotional messages from BOLT Mining.
+
+Use /unmute to enable notifications again.
+
+Note: You will still receive important account updates.`);
+      }
+    }
+
+    // Handle /unmute command - Enable notifications
+    else if (messageText === '/unmute') {
+      const supabase = getSupabaseClient();
+      const { error } = await supabase
+        .from('bolt_users')
+        .update({ notifications_enabled: true })
+        .eq('telegram_id', telegramId);
+      
+      if (error) {
+        console.error('Error unmuting notifications:', error);
+        await sendTelegramMessage(chatId, '❌ Failed to unmute notifications. Please try again.');
+      } else {
+        await sendTelegramMessage(chatId, `🔔 <b>Notifications Enabled</b>
+
+You will now receive notifications about:
+• Daily rewards and bonuses
+• Mining session reminders
+• Special offers and promotions
+
+Use /mute to disable notifications.`);
+      }
+    }
+
     // Handle /help command
     else if (messageText === '/help') {
       const helpMessage = `<b>Available Commands</b>
@@ -1696,6 +1741,8 @@ Invite friends to climb the leaderboard!`;
 /contest - View contest info and leaderboard
 /partnership - Submit a partnership task request
 /statistics - View your partnership statistics
+/mute - Disable notifications
+/unmute - Enable notifications
 /help - Show this help message
 
 <b>Quick Actions:</b>
