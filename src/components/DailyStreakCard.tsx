@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Play, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useDailyStreak } from '@/hooks/useDailyStreak';
+import { useAdsGramRewarded } from '@/hooks/useAdsGramRewarded';
 import { toast } from 'sonner';
 
 const DailyStreakCard = () => {
@@ -13,9 +14,13 @@ const DailyStreakCard = () => {
     loading,
     claiming,
     claimDailyReward,
+    claimDailyRewardWithBonus,
     getNextReward,
     streakRewards,
   } = useDailyStreak();
+
+  const { showAd, isLoading: isAdLoading, isReady: isAdReady } = useAdsGramRewarded();
+  const [isWatchingAd, setIsWatchingAd] = useState(false);
 
   const handleClaim = async () => {
     const reward = await claimDailyReward();
@@ -23,6 +28,32 @@ const DailyStreakCard = () => {
       toast.success(`Day ${(currentStreak % 7) + 1} reward claimed: +${reward} BOLT`);
     } else {
       toast.error('Failed to claim reward');
+    }
+  };
+
+  const handleClaimWithBonus = async () => {
+    if (!isAdReady) {
+      toast.error('Ads not available right now');
+      return;
+    }
+
+    setIsWatchingAd(true);
+    try {
+      const adWatched = await showAd();
+      if (adWatched) {
+        const reward = await claimDailyRewardWithBonus();
+        if (reward) {
+          toast.success(`🎉 x2 Bonus! Day ${(currentStreak % 7) + 1} reward: +${reward} BOLT`);
+        } else {
+          toast.error('Failed to claim bonus reward');
+        }
+      } else {
+        toast.error('Watch the full ad to get x2 bonus');
+      }
+    } catch (error) {
+      toast.error('Failed to show ad');
+    } finally {
+      setIsWatchingAd(false);
     }
   };
 
@@ -37,6 +68,8 @@ const DailyStreakCard = () => {
   }
 
   const nextDay = (currentStreak % 7) + 1;
+  const nextReward = getNextReward();
+  const isProcessing = claiming || isWatchingAd || isAdLoading;
 
   return (
     <Card className="p-5 border-border bg-card">
@@ -92,20 +125,49 @@ const DailyStreakCard = () => {
         })}
       </div>
 
-      {/* Claim Button */}
-      <Button
-        onClick={handleClaim}
-        disabled={!canClaim || claiming}
-        className="w-full h-11 text-sm font-semibold bg-white text-black hover:bg-white/90 disabled:bg-muted disabled:text-muted-foreground"
-      >
-        {claiming ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : canClaim ? (
-          `Claim Day ${nextDay} - +${getNextReward()} BOLT`
-        ) : (
-          'Already Claimed Today'
-        )}
-      </Button>
+      {/* Claim Buttons */}
+      {canClaim ? (
+        <div className="space-y-2">
+          {/* Normal Claim */}
+          <Button
+            onClick={handleClaim}
+            disabled={isProcessing}
+            className="w-full h-11 text-sm font-semibold bg-white text-black hover:bg-white/90 disabled:bg-muted disabled:text-muted-foreground"
+          >
+            {claiming ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              `Claim Day ${nextDay} - +${nextReward} BOLT`
+            )}
+          </Button>
+
+          {/* x2 Bonus Claim */}
+          <Button
+            onClick={handleClaimWithBonus}
+            disabled={isProcessing || !isAdReady}
+            variant="outline"
+            className="w-full h-11 text-sm font-semibold border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 disabled:opacity-50"
+          >
+            {isWatchingAd || isAdLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <div className="flex items-center gap-2">
+                <Play className="w-4 h-4 fill-current" />
+                <span>x2 Watch Ad</span>
+                <Sparkles className="w-4 h-4" />
+                <span className="font-bold">+{nextReward * 2} BOLT</span>
+              </div>
+            )}
+          </Button>
+        </div>
+      ) : (
+        <Button
+          disabled
+          className="w-full h-11 text-sm font-semibold bg-muted text-muted-foreground"
+        >
+          Already Claimed Today
+        </Button>
+      )}
 
       {/* Info */}
       <p className="text-[10px] text-muted-foreground text-center mt-3">

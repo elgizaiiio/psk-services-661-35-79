@@ -1107,6 +1107,7 @@ export type Database = {
           claimed_at: string
           created_at: string
           id: string
+          is_doubled: boolean | null
           reward_claimed: number
           streak_day: number
           user_id: string
@@ -1115,6 +1116,7 @@ export type Database = {
           claimed_at?: string
           created_at?: string
           id?: string
+          is_doubled?: boolean | null
           reward_claimed?: number
           streak_day?: number
           user_id: string
@@ -1123,6 +1125,7 @@ export type Database = {
           claimed_at?: string
           created_at?: string
           id?: string
+          is_doubled?: boolean | null
           reward_claimed?: number
           streak_day?: number
           user_id?: string
@@ -1181,6 +1184,48 @@ export type Database = {
             foreignKeyName: "daily_spins_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      free_server_ad_progress: {
+        Row: {
+          ads_watched: number | null
+          created_at: string | null
+          id: string
+          unlocked_at: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          ads_watched?: number | null
+          created_at?: string | null
+          id?: string
+          unlocked_at?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          ads_watched?: number | null
+          created_at?: string | null
+          id?: string
+          unlocked_at?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "free_server_ad_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "free_server_ad_progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "public_leaderboard"
             referencedColumns: ["id"]
           },

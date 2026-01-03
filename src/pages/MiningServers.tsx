@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -6,11 +6,14 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
-import { Server, Check, Cpu, Activity, TrendingUp, HardDrive, Database, Cloud, Wifi, Globe, Shield, Layers } from 'lucide-react';
+import { useAdsGramRewarded } from '@/hooks/useAdsGramRewarded';
+import { supabase } from '@/integrations/supabase/client';
+import { Server, Check, Cpu, Activity, TrendingUp, HardDrive, Database, Cloud, Wifi, Globe, Shield, Layers, Play, Users, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, FadeUp, StaggerContainer } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon, TonIcon } from '@/components/ui/currency-icons';
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
+import { useNavigate } from 'react-router-dom';
 
 type MiningServer = {
   id: string;
@@ -103,16 +106,89 @@ const tierConfig: Record<string, { color: string; bg: string; border: string }> 
   Elite: { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
 };
 
+const REQUIRED_ADS = 5;
+
 const MiningServers = () => {
   const { user: telegramUser, isLoading: isTelegramLoading, hapticFeedback } = useTelegramAuth();
   const { user, loading: isMiningUserLoading } = useViralMining(telegramUser);
   const { servers: ownedServers, purchaseServer, getStock } = useUserServers(user?.id || null);
   const [selectedServer, setSelectedServer] = useState<MiningServer | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [adProgress, setAdProgress] = useState(0);
+  const [isWatchingAd, setIsWatchingAd] = useState(false);
+  const [adUnlocked, setAdUnlocked] = useState(false);
+  
+  const { showAd, isLoading: isAdLoading, isReady: isAdReady } = useAdsGramRewarded();
+  const navigate = useNavigate();
   useTelegramBackButton();
 
   const isReady = !isTelegramLoading && !isMiningUserLoading;
-  const canClaimFreeServer = (user?.total_referrals ?? 0) >= 1;
+  const hasReferral = (user?.total_referrals ?? 0) >= 1;
+  const canClaimFreeServer = hasReferral || adUnlocked;
+
+  // Fetch ad progress
+  const fetchAdProgress = useCallback(async () => {
+    if (!user?.id) return;
+    
+    const { data } = await supabase
+      .from('free_server_ad_progress' as any)
+      .select('ads_watched, unlocked_at')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (data) {
+      setAdProgress((data as any).ads_watched || 0);
+      setAdUnlocked(!!(data as any).unlocked_at);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    fetchAdProgress();
+  }, [fetchAdProgress]);
+
+  // Watch ad for free server
+  const handleWatchAd = async () => {
+    if (!user?.id || !isAdReady) {
+      toast.error('Ads not available');
+      return;
+    }
+
+    setIsWatchingAd(true);
+    try {
+      const adWatched = await showAd();
+      if (adWatched) {
+        const newProgress = adProgress + 1;
+        
+        // Upsert progress
+        const { error } = await supabase
+          .from('free_server_ad_progress' as any)
+          .upsert({
+            user_id: user.id,
+            ads_watched: newProgress,
+            unlocked_at: newProgress >= REQUIRED_ADS ? new Date().toISOString() : null,
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'user_id' });
+
+        if (error) throw error;
+
+        setAdProgress(newProgress);
+        
+        if (newProgress >= REQUIRED_ADS) {
+          setAdUnlocked(true);
+          toast.success('🎉 Free server unlocked! You can now claim it.');
+        } else {
+          toast.success(`Ad watched! ${newProgress}/${REQUIRED_ADS} - ${REQUIRED_ADS - newProgress} more to go`);
+        }
+      } else {
+        toast.error('Watch the full ad to count');
+      }
+    } catch (error) {
+      console.error('Ad error:', error);
+      toast.error('Something went wrong');
+    } finally {
+      setIsWatchingAd(false);
+    }
+  };
 
   const handleBuyClick = async (server: MiningServer) => {
     if (!isReady || !user?.id) return;
@@ -127,7 +203,7 @@ const MiningServers = () => {
 
     if (server.priceTon === 0) {
       if (!canClaimFreeServer) {
-        toast.error('Invite 1 friend to unlock the free server');
+        toast.error('Invite 1 friend or watch 5 ads to unlock');
         return;
       }
 
@@ -171,6 +247,8 @@ const MiningServers = () => {
     boltPerDay: ownedServers.reduce((sum, s) => sum + s.daily_bolt_yield, 0),
     usdtPerDay: ownedServers.reduce((sum, s) => sum + s.daily_usdt_yield, 0),
   };
+
+  const freeServerOwned = isOwned('free-starter');
 
   return (
     <PageWrapper className="min-h-screen bg-background pb-32">
@@ -226,6 +304,7 @@ const MiningServers = () => {
                 const stock = getStock(server.id);
                 const Icon = server.icon;
                 const config = tierConfig[server.tier];
+                const isFreeServer = server.priceTon === 0;
 
                 return (
                   <FadeUp key={server.id}>
@@ -256,9 +335,11 @@ const MiningServers = () => {
                           </div>
 
                           <p className="text-xs text-muted-foreground mb-1">{server.hashRate}</p>
-                          {server.id === 'free-starter' && (
+                          
+                          {/* Free Server Special Text */}
+                          {isFreeServer && !owned && (
                             <p className="text-[11px] text-muted-foreground mb-3">
-                              Available for first 100 users only • Unlocks after 1 referral
+                              First 100 users • Invite 1 friend OR watch 5 ads
                             </p>
                           )}
 
@@ -273,6 +354,37 @@ const MiningServers = () => {
                               <span className="text-xs font-semibold text-emerald-400">+${server.usdtPerDay.toFixed(2)}</span>
                             </div>
                           </div>
+
+                          {/* Free Server Unlock Options */}
+                          {isFreeServer && !owned && !canClaimFreeServer && (
+                            <div className="flex gap-2 mt-3">
+                              <Button
+                                onClick={() => navigate('/invite')}
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 h-8 text-xs border-primary/30 text-primary"
+                              >
+                                <Users className="w-3 h-3 mr-1" />
+                                Invite Friend
+                              </Button>
+                              <Button
+                                onClick={handleWatchAd}
+                                disabled={isWatchingAd || isAdLoading || !isAdReady}
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 h-8 text-xs border-emerald-500/30 text-emerald-400"
+                              >
+                                {isWatchingAd || isAdLoading ? (
+                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Play className="w-3 h-3 mr-1 fill-current" />
+                                    Ad ({adProgress}/{REQUIRED_ADS})
+                                  </>
+                                )}
+                              </Button>
+                            </div>
+                          )}
                         </div>
 
                         {/* Price & Action */}
@@ -293,18 +405,13 @@ const MiningServers = () => {
                             </div>
                           ) : stock.soldOut ? (
                             <span className="text-xs text-muted-foreground">Sold Out</span>
-                          ) : (
+                          ) : isFreeServer && !canClaimFreeServer ? null : (
                             <Button
                               onClick={() => handleBuyClick(server)}
                               size="sm"
                               className="h-8 px-4 font-bold text-xs"
-                              disabled={server.priceTon === 0 && !canClaimFreeServer}
                             >
-                              {server.priceTon === 0
-                                ? canClaimFreeServer
-                                  ? 'Claim'
-                                  : 'Invite 1 friend'
-                                : 'Buy'}
+                              {server.priceTon === 0 ? 'Claim' : 'Buy'}
                             </Button>
                           )}
                         </div>

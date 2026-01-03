@@ -128,6 +128,56 @@ export const useDailyStreak = () => {
     }
   }, [user, canClaim, claiming, currentStreak, refreshUser]);
 
+  // Claim with x2 bonus (after watching ad)
+  const claimDailyRewardWithBonus = useCallback(async () => {
+    if (!user?.id || !canClaim || claiming) return false;
+
+    try {
+      setClaiming(true);
+
+      const nextDay = (currentStreak % 7) + 1;
+      const baseReward = STREAK_REWARDS[nextDay - 1];
+      const reward = baseReward * 2; // Double reward
+
+      // Insert claim record with is_doubled flag
+      const { error: insertError } = await supabase
+        .from('daily_login_rewards' as any)
+        .insert({
+          user_id: user.id,
+          streak_day: nextDay,
+          reward_claimed: reward,
+          is_doubled: true,
+        });
+
+      if (insertError) throw insertError;
+
+      // Update user balance
+      const newBalance = (Number(user.token_balance) || 0) + reward;
+      const { error: updateError } = await supabase
+        .from('bolt_users' as any)
+        .update({ 
+          token_balance: newBalance,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Refresh data
+      setCurrentStreak(nextDay);
+      setCanClaim(false);
+      setLastClaimDate(getTodayDate());
+      await refreshUser();
+
+      return reward;
+    } catch (err) {
+      console.error('Error claiming bonus reward:', err);
+      return false;
+    } finally {
+      setClaiming(false);
+    }
+  }, [user, canClaim, claiming, currentStreak, refreshUser]);
+
   useEffect(() => {
     loadStreakData();
   }, [loadStreakData]);
@@ -148,6 +198,7 @@ export const useDailyStreak = () => {
     loading,
     claiming,
     claimDailyReward,
+    claimDailyRewardWithBonus,
     getNextReward,
     getRewardForDay,
     streakRewards: STREAK_REWARDS,
