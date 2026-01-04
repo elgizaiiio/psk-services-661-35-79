@@ -152,50 +152,33 @@
   }
 }
 
-/* Vertical trace flow for timeline */
-.trace-flow-vertical {
-  stroke-width: 3;
-  fill: none;
-  stroke-linecap: round;
-  stroke-dasharray: 60 600;
-  stroke-dashoffset: 660;
-  filter: drop-shadow(0 0 10px currentColor);
-  animation: flow-vertical 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+/* Simple flowing dot animation */
+.timeline-flow-dot {
+  position: absolute;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin-left: -3px;
+  border-radius: 50%;
+  background: hsl(var(--primary));
+  box-shadow: 0 0 10px hsl(var(--primary)), 0 0 20px hsl(var(--primary)/0.5);
+  animation: flow-down 3s ease-in-out infinite;
 }
 
-@keyframes flow-vertical {
-  0% {
-    stroke-dashoffset: 660;
+@keyframes flow-down {
+  0%, 100% {
+    top: 0%;
     opacity: 0;
   }
-  5% {
+  10% {
     opacity: 1;
   }
-  95% {
+  90% {
     opacity: 1;
   }
   100% {
-    stroke-dashoffset: 0;
+    top: 100%;
     opacity: 0;
-  }
-}
-
-/* Timeline progress glow */
-.timeline-progress-glow {
-  filter: drop-shadow(0 0 8px hsl(var(--primary)));
-}
-
-/* Node pulse animation */
-.node-pulse {
-  animation: node-glow 2s ease-in-out infinite;
-}
-
-@keyframes node-glow {
-  0%, 100% {
-    opacity: 0.3;
-  }
-  50% {
-    opacity: 0.8;
   }
 }
 

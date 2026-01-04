@@ -328,8 +328,6 @@ const MiningServers = () => {
           <TimelineTraceAnimation 
             serverCount={sortedServers.length}
             ownedCount={ownedServers.length}
-            nodeHeight={120}
-            nodeGap={12}
           />
 
           {/* Server Nodes */}
