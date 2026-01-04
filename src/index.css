@@ -251,3 +251,78 @@
     box-shadow: 0 0 20px hsl(var(--primary) / 0.8);
   }
 }
+
+/* Animated Border Effect for Server Cards */
+.server-card-border {
+  position: relative;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.server-card-border::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    hsl(var(--primary)) 0%,
+    hsl(180 60% 60%) 25%,
+    hsl(280 60% 60%) 50%,
+    hsl(var(--primary)) 75%,
+    hsl(180 60% 60%) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-rotate 3s linear infinite;
+}
+
+.server-card-border::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 1.5px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from calc(var(--border-angle, 0deg) + 180deg),
+    hsl(160 60% 50%) 0%,
+    hsl(var(--primary)) 25%,
+    hsl(220 60% 60%) 50%,
+    hsl(160 60% 50%) 75%,
+    hsl(var(--primary)) 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-rotate 3s linear infinite reverse;
+  opacity: 0.6;
+}
+
+@property --border-angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes border-rotate {
+  to {
+    --border-angle: 360deg;
+  }
+}
+
+/* Fallback for browsers that don't support @property */
+@supports not (background: conic-gradient(from 0deg, red, blue)) {
+  .server-card-border::before,
+  .server-card-border::after {
+    background: linear-gradient(90deg, hsl(var(--primary)), hsl(180 60% 60%), hsl(var(--primary)));
+    animation: border-shift 2s linear infinite;
+  }
+  
+  @keyframes border-shift {
+    to {
+      background-position: 200% 0;
+    }
+  }
+}
