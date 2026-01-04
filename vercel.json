@@ -11,10 +11,14 @@
   ],
   "routes": [
     {
+      "handle": "filesystem"
+    },
+    {
       "src": "/tonconnect-manifest.json",
       "dest": "/tonconnect-manifest.json",
       "headers": {
         "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, OPTIONS",
         "Content-Type": "application/json"
       }
     },
