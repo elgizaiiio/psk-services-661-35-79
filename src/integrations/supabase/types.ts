@@ -900,8 +900,10 @@ export type Database = {
         Row: {
           bot_blocked: boolean | null
           created_at: string
+          daily_message_count: number | null
           first_name: string | null
           id: string
+          last_message_date: string | null
           last_name: string | null
           mining_duration_hours: number
           mining_power: number
@@ -920,8 +922,10 @@ export type Database = {
         Insert: {
           bot_blocked?: boolean | null
           created_at?: string
+          daily_message_count?: number | null
           first_name?: string | null
           id?: string
+          last_message_date?: string | null
           last_name?: string | null
           mining_duration_hours?: number
           mining_power?: number
@@ -940,8 +944,10 @@ export type Database = {
         Update: {
           bot_blocked?: boolean | null
           created_at?: string
+          daily_message_count?: number | null
           first_name?: string | null
           id?: string
+          last_message_date?: string | null
           last_name?: string | null
           mining_duration_hours?: number
           mining_power?: number
@@ -1820,6 +1826,60 @@ export type Database = {
           price_tokens?: number
           price_ton?: number
           tier?: string
+        }
+        Relationships: []
+      }
+      notification_run_logs: {
+        Row: {
+          average_delay_ms: number | null
+          blocked: number | null
+          created_at: string | null
+          end_time: string | null
+          failed: number | null
+          id: string
+          rate_limits: number | null
+          run_type: string
+          sent: number | null
+          skipped_daily_limit: number | null
+          start_time: string | null
+          stop_reason: string | null
+          stopped_early: boolean | null
+          time_slot: string | null
+          total_eligible: number | null
+        }
+        Insert: {
+          average_delay_ms?: number | null
+          blocked?: number | null
+          created_at?: string | null
+          end_time?: string | null
+          failed?: number | null
+          id?: string
+          rate_limits?: number | null
+          run_type: string
+          sent?: number | null
+          skipped_daily_limit?: number | null
+          start_time?: string | null
+          stop_reason?: string | null
+          stopped_early?: boolean | null
+          time_slot?: string | null
+          total_eligible?: number | null
+        }
+        Update: {
+          average_delay_ms?: number | null
+          blocked?: number | null
+          created_at?: string | null
+          end_time?: string | null
+          failed?: number | null
+          id?: string
+          rate_limits?: number | null
+          run_type?: string
+          sent?: number | null
+          skipped_daily_limit?: number | null
+          start_time?: string | null
+          stop_reason?: string | null
+          stopped_early?: boolean | null
+          time_slot?: string | null
+          total_eligible?: number | null
         }
         Relationships: []
       }
