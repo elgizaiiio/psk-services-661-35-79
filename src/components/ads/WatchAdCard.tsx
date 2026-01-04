@@ -142,7 +142,7 @@ export const WatchAdCard: React.FC<WatchAdCardProps> = ({
         <span className="text-muted-foreground">+</span>
         <div className="flex items-center gap-1 text-sm">
           <UsdtIcon size={14} />
-          <span className="font-medium text-emerald-400">+${REWARD_USDT}</span>
+          <span className="font-medium text-emerald-400">+{REWARD_USDT} USDT</span>
         </div>
         <span className="text-xs text-muted-foreground ml-auto">per ad</span>
       </div>
@@ -168,7 +168,7 @@ export const WatchAdCard: React.FC<WatchAdCardProps> = ({
         <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
           <TrendingUp className="w-4 h-4 text-emerald-400" />
           <span className="text-xs text-emerald-400">
-            Today: +{dailyCount * REWARD_BOLT} BOLT, +${(dailyCount * REWARD_USDT).toFixed(2)} USDT
+            Today: +{dailyCount * REWARD_BOLT} BOLT, +{(dailyCount * REWARD_USDT).toFixed(2)} USDT
           </span>
         </div>
       )}
