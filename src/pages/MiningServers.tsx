@@ -270,11 +270,8 @@ const MiningServers = () => {
   const freeServerOwned = isOwned('free-starter');
   const isPremium = (tier: string) => tier === 'Legendary' || tier === 'Mythic';
 
-  // Group servers by category
-  const freeServers = servers.filter(s => s.tier === 'Free');
-  const standardServers = servers.filter(s => s.tier === 'Basic' || s.tier === 'Pro');
-  const eliteServers = servers.filter(s => s.tier === 'Elite');
-  const premiumServers = servers.filter(s => isPremium(s.tier));
+  // Sort servers by price (cheapest first)
+  const sortedServers = [...servers].sort((a, b) => a.priceTon - b.priceTon);
 
   const ServerCard = ({ server }: { server: MiningServer }) => {
     const owned = isOwned(server.id);
@@ -526,42 +523,16 @@ const MiningServers = () => {
           </div>
         )}
 
-        {/* Premium Servers */}
+        {/* All Servers - Sorted by Price */}
         <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Premium</h2>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">All Servers</h2>
           <div className="space-y-3">
-            {premiumServers.map(server => (
-              <PremiumServerCard key={server.id} server={server} />
-            ))}
-          </div>
-        </section>
-
-        {/* Elite Servers */}
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Elite</h2>
-          <div className="space-y-2">
-            {eliteServers.map(server => (
-              <ServerCard key={server.id} server={server} />
-            ))}
-          </div>
-        </section>
-
-        {/* Standard Servers */}
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Standard</h2>
-          <div className="space-y-2">
-            {standardServers.map(server => (
-              <ServerCard key={server.id} server={server} />
-            ))}
-          </div>
-        </section>
-
-        {/* Free Server */}
-        <section>
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Free Tier</h2>
-          <div className="space-y-2">
-            {freeServers.map(server => (
-              <ServerCard key={server.id} server={server} />
+            {sortedServers.map(server => (
+              isPremium(server.tier) ? (
+                <PremiumServerCard key={server.id} server={server} />
+              ) : (
+                <ServerCard key={server.id} server={server} />
+              )
             ))}
           </div>
         </section>
