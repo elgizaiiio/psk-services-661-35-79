@@ -175,122 +175,91 @@ const MiningServers = () => {
     const Icon = server.icon;
     const colors = tierColors[server.tier];
     const isFreeServer = server.priceTon === 0;
-    const isPremium = server.tier === 'Legendary' || server.tier === 'Mythic';
     const isNext = !owned && index === lastOwnedIndex + 1;
 
     return (
       <div
         key={server.id}
-        className="timeline-node flex items-start gap-4"
+        className={`p-3 rounded-xl border transition-all ${
+          owned 
+            ? `${colors.bg} ${colors.border}` 
+            : stock.soldOut 
+              ? 'bg-card/30 border-border/20 opacity-40'
+              : isNext
+                ? 'bg-card/70 border-primary/30 hover:bg-card'
+                : 'bg-card/50 border-border/30 hover:bg-card/70'
+        }`}
+        onClick={() => !owned && !stock.soldOut && (isFreeServer ? canClaimFreeServer : true) && handleBuyClick(server)}
       >
-        {/* Node Dot */}
-        <div className="flex flex-col items-center pt-4">
-          <div className={`timeline-node-dot ${owned ? 'owned' : ''} ${isNext ? 'current' : ''}`}>
-            {owned && <Check className="w-2 h-2 text-primary-foreground" />}
+        <div className="flex items-center gap-3">
+          {/* Icon */}
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${colors.bg}`}>
+            <Icon className={`w-5 h-5 ${colors.text}`} />
           </div>
-        </div>
 
-        {/* Server Card */}
-        <div
-          className={`flex-1 p-4 rounded-xl border transition-all cursor-pointer ${
-            owned 
-              ? `${colors.bg} ${colors.border} shadow-lg ${colors.glow}` 
-              : stock.soldOut 
-                ? 'bg-card/40 border-border/30 opacity-50'
-                : `bg-card/60 border-border/50 hover:border-border hover:bg-card/80`
-          } ${isPremium ? 'border-2' : ''}`}
-          onClick={() => !owned && !stock.soldOut && (isFreeServer ? canClaimFreeServer : true) && handleBuyClick(server)}
-        >
-          <div className="flex items-center gap-3">
-            {/* Icon */}
-            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${colors.bg} ${colors.border} border`}>
-              <Icon className={`w-5 h-5 ${colors.text}`} />
+          {/* Name & Hash */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-sm text-foreground truncate">{server.name}</span>
+              {owned && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
             </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-semibold text-foreground text-sm">{server.name}</h3>
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${colors.bg} ${colors.text}`}>
-                  {server.tier}
-                </span>
-                {owned && (
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-primary/20 text-primary">
-                    OWNED
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">{server.hashRate}</p>
-            </div>
-
-            {/* Price */}
-            <div className="shrink-0 text-right">
-              {owned ? (
-                <div className="flex items-center gap-1 text-primary">
-                  <Check className="w-4 h-4" />
-                </div>
-              ) : stock.soldOut ? (
-                <span className="text-xs text-muted-foreground">Sold Out</span>
-              ) : server.priceTon === 0 ? (
-                <span className="text-sm font-bold text-emerald-500">FREE</span>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <TonIcon size={14} />
-                  <span className="font-bold text-foreground">{server.priceTon}</span>
-                </div>
-              )}
-            </div>
+            <span className="text-xs text-muted-foreground">{server.hashRate}</span>
           </div>
 
           {/* Earnings */}
-          <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border/20">
-            <div className="flex items-center gap-1.5">
+          <div className="text-right shrink-0">
+            <div className="flex items-center gap-1 justify-end">
               <BoltIcon size={12} />
-              <span className="text-xs font-medium text-primary">+{server.boltPerDay.toLocaleString()}/day</span>
+              <span className="text-xs font-medium text-primary">+{server.boltPerDay.toLocaleString()}</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <UsdtIcon size={14} />
-              <span className="text-xs font-medium text-emerald-500">+${server.usdtPerDay.toFixed(2)}/day</span>
+            <div className="flex items-center gap-1 justify-end">
+              <UsdtIcon size={12} />
+              <span className="text-xs text-emerald-500">${server.usdtPerDay.toFixed(2)}</span>
             </div>
           </div>
 
-          {/* Premium Features */}
-          {isPremium && server.features && (
-            <div className="flex flex-wrap gap-1.5 mt-3 pt-3 border-t border-border/20">
-              {server.features.slice(0, 3).map((feature, i) => (
-                <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-secondary/50 text-muted-foreground">
-                  ✓ {feature}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* Free Server Unlock */}
-          {isFreeServer && !owned && !canClaimFreeServer && (
-            <div className="flex gap-2 mt-3 pt-3 border-t border-border/20" onClick={(e) => e.stopPropagation()}>
-              <Button onClick={() => navigate('/invite')} size="sm" variant="outline" className="flex-1 h-8 text-xs">
-                <Users className="w-3 h-3 mr-1" />
-                Invite
-              </Button>
-              <Button
-                onClick={handleWatchAd}
-                disabled={isWatchingAd || isAdLoading || !isAdReady}
-                size="sm"
-                variant="outline"
-                className="flex-1 h-8 text-xs"
-              >
-                {isWatchingAd || isAdLoading ? (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                ) : (
-                  <>
-                    <Play className="w-3 h-3 mr-1 fill-current" />
-                    {adProgress}/{REQUIRED_ADS}
-                  </>
-                )}
-              </Button>
-            </div>
-          )}
+          {/* Price/Status */}
+          <div className="shrink-0 w-16 text-right">
+            {owned ? (
+              <span className={`text-xs font-medium ${colors.text}`}>Active</span>
+            ) : stock.soldOut ? (
+              <span className="text-xs text-muted-foreground">Sold</span>
+            ) : server.priceTon === 0 ? (
+              <span className="text-xs font-bold text-emerald-500">FREE</span>
+            ) : (
+              <div className="flex items-center gap-1 justify-end">
+                <TonIcon size={12} />
+                <span className="text-sm font-semibold">{server.priceTon}</span>
+              </div>
+            )}
+          </div>
         </div>
+
+        {/* Free Server Unlock - Compact */}
+        {isFreeServer && !owned && !canClaimFreeServer && (
+          <div className="flex gap-2 mt-2 pt-2 border-t border-border/20" onClick={(e) => e.stopPropagation()}>
+            <Button onClick={() => navigate('/invite')} size="sm" variant="ghost" className="flex-1 h-7 text-xs">
+              <Users className="w-3 h-3 mr-1" />
+              Invite
+            </Button>
+            <Button
+              onClick={handleWatchAd}
+              disabled={isWatchingAd || isAdLoading || !isAdReady}
+              size="sm"
+              variant="ghost"
+              className="flex-1 h-7 text-xs"
+            >
+              {isWatchingAd || isAdLoading ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <>
+                  <Play className="w-3 h-3 mr-1 fill-current" />
+                  {adProgress}/{REQUIRED_ADS}
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
     );
   };
