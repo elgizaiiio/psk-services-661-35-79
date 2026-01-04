@@ -9,8 +9,8 @@ interface TelegramTonConnectProviderProps {
 export const TelegramTonConnectProvider: React.FC<TelegramTonConnectProviderProps> = ({ children }) => {
   const { webApp } = useTelegramAuth();
 
-  // Use official TON Connect demo manifest (works 100%)
-  const manifestUrl = 'https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json';
+  // Use our own manifest
+  const manifestUrl = 'https://viral.elgiza.site/tonconnect-manifest.json';
   
   console.log('📋 TON Connect manifest URL:', manifestUrl);
 
