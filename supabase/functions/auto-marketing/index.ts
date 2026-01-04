@@ -9,11 +9,14 @@ const corsHeaders = {
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
-// Rate limiting settings - IMPORTANT for avoiding Telegram ban
-const MIN_DELAY_MS = 1500; // 1.5 seconds minimum
-const MAX_DELAY_MS = 2500; // 2.5 seconds maximum
-const BATCH_SIZE = 20; // Smaller batches for marketing
-const BATCH_DELAY_MS = 10000; // 10 seconds between batches
+// ============= IMPROVED RATE LIMITING SETTINGS =============
+const MIN_DELAY_MS = 2500;        // 2.5 seconds minimum between messages
+const MAX_DELAY_MS = 5000;        // 5 seconds maximum between messages
+const BATCH_SIZE = 10;            // Smaller batches (was 20)
+const BATCH_DELAY_MS = 20000;     // 20 seconds between batches (was 10)
+const MAX_MESSAGES_PER_RUN = 300; // Maximum messages per run
+const MAX_DAILY_MESSAGES = 2;     // Maximum messages per user per day
+const MAX_CONSECUTIVE_RATE_LIMITS = 3; // Stop after 3 consecutive rate limits
 
 interface UserSegmentRules {
   days_since_signup?: { max?: number; min?: number };
@@ -47,6 +50,24 @@ interface User {
   updated_at: string;
   notifications_enabled?: boolean;
   bot_blocked?: boolean;
+  daily_message_count?: number;
+  last_message_date?: string;
+}
+
+interface RunStats {
+  run_type: string;
+  time_slot: string | null;
+  total_eligible: number;
+  sent: number;
+  failed: number;
+  blocked: number;
+  rate_limits: number;
+  skipped_daily_limit: number;
+  average_delay_ms: number;
+  start_time: string;
+  end_time: string;
+  stopped_early: boolean;
+  stop_reason: string | null;
 }
 
 function getRandomDelay(): number {
@@ -174,6 +195,43 @@ function getDefaultMessage(context: string): string {
   return "Don't forget to claim your daily mining rewards! Every hour counts. Start mining now!";
 }
 
+// Check if user has reached daily message limit
+function hasReachedDailyLimit(lastMessageDate: string | null | undefined, dailyMessageCount: number | undefined): boolean {
+  const today = new Date().toISOString().split('T')[0];
+  
+  // If no messages sent today, limit not reached
+  if (!lastMessageDate || lastMessageDate !== today) {
+    return false;
+  }
+  
+  // Check if count exceeds limit
+  return (dailyMessageCount || 0) >= MAX_DAILY_MESSAGES;
+}
+
+// Log run statistics
+async function logRunStats(supabase: ReturnType<typeof createClient>, stats: RunStats) {
+  try {
+    await supabase.from('notification_run_logs').insert({
+      run_type: stats.run_type,
+      time_slot: stats.time_slot,
+      total_eligible: stats.total_eligible,
+      sent: stats.sent,
+      failed: stats.failed,
+      blocked: stats.blocked,
+      rate_limits: stats.rate_limits,
+      skipped_daily_limit: stats.skipped_daily_limit,
+      average_delay_ms: stats.average_delay_ms,
+      start_time: stats.start_time,
+      end_time: stats.end_time,
+      stopped_early: stats.stopped_early,
+      stop_reason: stats.stop_reason,
+    });
+    console.log('Run stats logged successfully');
+  } catch (error) {
+    console.error('Failed to log run stats:', error);
+  }
+}
+
 async function getNewInactiveUsers(supabase: ReturnType<typeof createClient>): Promise<User[]> {
   // Get users who signed up at least 1 hour ago but have no mining sessions
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
@@ -181,7 +239,7 @@ async function getNewInactiveUsers(supabase: ReturnType<typeof createClient>): P
   // Get all users with 0 token balance registered more than 1 hour ago
   const { data: users, error: usersError } = await supabase
     .from('bolt_users')
-    .select('*')
+    .select('*, daily_message_count, last_message_date')
     .not('telegram_id', 'is', null)
     .neq('notifications_enabled', false)
     .neq('bot_blocked', true)
@@ -221,7 +279,7 @@ async function getUsersInSegment(
 
   let query = supabase
     .from('bolt_users')
-    .select('*')
+    .select('*, daily_message_count, last_message_date')
     .not('telegram_id', 'is', null)
     .neq('notifications_enabled', false)
     .neq('bot_blocked', true);
@@ -338,10 +396,57 @@ async function markUserAsBlocked(supabase: ReturnType<typeof createClient>, tele
     .eq('telegram_id', telegramId);
 }
 
+// Update user's daily message count after successful send
+async function updateUserMessageCount(supabase: ReturnType<typeof createClient>, userId: string, lastMessageDate: string | null | undefined) {
+  const today = new Date().toISOString().split('T')[0];
+  const isNewDay = !lastMessageDate || lastMessageDate !== today;
+  
+  if (isNewDay) {
+    await supabase
+      .from('bolt_users')
+      .update({
+        daily_message_count: 1,
+        last_message_date: today,
+      })
+      .eq('id', userId);
+  } else {
+    // Increment existing count
+    const { data: user } = await supabase
+      .from('bolt_users')
+      .select('daily_message_count')
+      .eq('id', userId)
+      .single();
+    
+    await supabase
+      .from('bolt_users')
+      .update({
+        daily_message_count: (user?.daily_message_count || 0) + 1,
+      })
+      .eq('id', userId);
+  }
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const startTime = new Date();
+  let stats: RunStats = {
+    run_type: 'marketing',
+    time_slot: null,
+    total_eligible: 0,
+    sent: 0,
+    failed: 0,
+    blocked: 0,
+    rate_limits: 0,
+    skipped_daily_limit: 0,
+    average_delay_ms: 0,
+    start_time: startTime.toISOString(),
+    end_time: '',
+    stopped_early: false,
+    stop_reason: null,
+  };
 
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -389,8 +494,31 @@ serve(async (req) => {
     let totalSent = 0;
     let totalDelivered = 0;
     let totalBlocked = 0;
+    let totalSkippedDailyLimit = 0;
+    let totalRateLimits = 0;
+    let consecutiveRateLimits = 0;
+    let totalDelay = 0;
+    let globalMessageCount = 0;
+    let stoppedEarly = false;
+    let stopReason: string | null = null;
 
     for (const campaign of campaigns) {
+      // Check if we should stop due to rate limits
+      if (consecutiveRateLimits >= MAX_CONSECUTIVE_RATE_LIMITS) {
+        console.error(`🛑 Stopping campaign processing: ${consecutiveRateLimits} consecutive rate limits`);
+        stoppedEarly = true;
+        stopReason = `consecutive_rate_limits_${consecutiveRateLimits}`;
+        break;
+      }
+
+      // Check if we've hit max messages for this run
+      if (globalMessageCount >= MAX_MESSAGES_PER_RUN) {
+        console.log(`📦 Reached max messages per run (${MAX_MESSAGES_PER_RUN}), stopping`);
+        stoppedEarly = true;
+        stopReason = 'max_messages_reached';
+        break;
+      }
+
       console.log(`Processing campaign: ${campaign.name}`);
 
       // Get segment rules
@@ -408,7 +536,7 @@ serve(async (req) => {
       if (user_id) {
         const { data: user } = await supabase
           .from('bolt_users')
-          .select('*')
+          .select('*, daily_message_count, last_message_date')
           .eq('id', user_id)
           .neq('notifications_enabled', false)
           .neq('bot_blocked', true)
@@ -420,18 +548,36 @@ serve(async (req) => {
       }
 
       console.log(`Found ${users.length} eligible users in segment ${campaign.target_segment}`);
+      stats.total_eligible += users.length;
 
       // Process each user with rate limiting
       let campaignSent = 0;
       let campaignDelivered = 0;
       let campaignBlocked = 0;
+      let campaignSkippedDailyLimit = 0;
 
-      for (let i = 0; i < users.length; i++) {
+      const usersToProcess = Math.min(users.length, MAX_MESSAGES_PER_RUN - globalMessageCount);
+
+      for (let i = 0; i < usersToProcess; i++) {
         const user = users[i];
+
+        // Check daily message limit
+        if (hasReachedDailyLimit(user.last_message_date, user.daily_message_count)) {
+          campaignSkippedDailyLimit++;
+          continue;
+        }
+
+        // Check for consecutive rate limits
+        if (consecutiveRateLimits >= MAX_CONSECUTIVE_RATE_LIMITS) {
+          console.error(`🛑 Stopping mid-campaign: ${consecutiveRateLimits} consecutive rate limits`);
+          stoppedEarly = true;
+          stopReason = `consecutive_rate_limits_${consecutiveRateLimits}`;
+          break;
+        }
         
         // Batch delay
         if (i > 0 && i % BATCH_SIZE === 0) {
-          console.log(`Batch ${Math.floor(i / BATCH_SIZE)} complete. Waiting ${BATCH_DELAY_MS/1000}s...`);
+          console.log(`📦 Batch ${Math.floor(i / BATCH_SIZE)} complete. Waiting ${BATCH_DELAY_MS/1000}s...`);
           await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
         }
 
@@ -461,20 +607,31 @@ serve(async (req) => {
         );
 
         campaignSent++;
+        globalMessageCount++;
         
         if (result.success) {
           campaignDelivered++;
+          consecutiveRateLimits = 0; // Reset on success
+          
+          // Update user's daily message count
+          await updateUserMessageCount(supabase, user.id, user.last_message_date);
         } else if (result.blocked) {
           campaignBlocked++;
           await markUserAsBlocked(supabase, user.telegram_id);
         } else if (result.rateLimited) {
-          // If rate limited, take a longer break
-          console.warn('Rate limited, taking extended break...');
-          await new Promise(resolve => setTimeout(resolve, 30000));
+          totalRateLimits++;
+          consecutiveRateLimits++;
+          
+          // Exponential backoff
+          const waitTime = 30000 * Math.pow(2, consecutiveRateLimits - 1);
+          console.warn(`⚠️ Rate limit hit (${consecutiveRateLimits}/${MAX_CONSECUTIVE_RATE_LIMITS}), waiting ${waitTime/1000}s...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
         }
 
         // Random delay between messages
-        await new Promise(resolve => setTimeout(resolve, getRandomDelay()));
+        const delay = getRandomDelay();
+        totalDelay += delay;
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
 
       // Update analytics
@@ -483,9 +640,23 @@ serve(async (req) => {
       totalSent += campaignSent;
       totalDelivered += campaignDelivered;
       totalBlocked += campaignBlocked;
+      totalSkippedDailyLimit += campaignSkippedDailyLimit;
 
-      console.log(`Campaign ${campaign.name}: Sent ${campaignSent}, Delivered ${campaignDelivered}, Blocked ${campaignBlocked}`);
+      console.log(`✅ Campaign ${campaign.name}: Sent ${campaignSent}, Delivered ${campaignDelivered}, Blocked ${campaignBlocked}, Skipped (daily limit) ${campaignSkippedDailyLimit}`);
     }
+
+    // Update and log stats
+    stats.sent = totalDelivered;
+    stats.failed = totalSent - totalDelivered;
+    stats.blocked = totalBlocked;
+    stats.rate_limits = totalRateLimits;
+    stats.skipped_daily_limit = totalSkippedDailyLimit;
+    stats.average_delay_ms = totalDelivered > 0 ? totalDelay / totalDelivered : 0;
+    stats.end_time = new Date().toISOString();
+    stats.stopped_early = stoppedEarly;
+    stats.stop_reason = stopReason;
+
+    await logRunStats(supabase, stats);
 
     return new Response(
       JSON.stringify({
@@ -494,14 +665,36 @@ serve(async (req) => {
         total_sent: totalSent,
         total_delivered: totalDelivered,
         total_blocked: totalBlocked,
+        total_skipped_daily_limit: totalSkippedDailyLimit,
+        total_rate_limits: totalRateLimits,
+        stopped_early: stoppedEarly,
+        stop_reason: stopReason,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
     console.error('Auto marketing error:', error);
+    
+    stats.end_time = new Date().toISOString();
+    stats.stop_reason = `error: ${error instanceof Error ? error.message : 'Unknown'}`;
+    
+    // Try to log stats even on error
+    try {
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      );
+      await logRunStats(supabase, stats);
+    } catch (logError) {
+      console.error('Failed to log error stats:', logError);
+    }
+
     return new Response(
-      JSON.stringify({ error: 'Marketing automation failed', details: String(error) }),
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
