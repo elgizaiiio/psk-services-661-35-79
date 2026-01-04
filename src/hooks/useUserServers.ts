@@ -72,6 +72,59 @@ export const useUserServers = (userId: string | null) => {
     return { remaining, total: inv.total_stock, soldOut: remaining <= 0 };
   }, [inventory]);
 
+  const getPendingRewards = useCallback(() => {
+    const now = new Date();
+    let totalBolt = 0;
+    let totalUsdt = 0;
+    let earliestClaim: Date | null = null;
+
+    for (const server of servers) {
+      const lastClaim = server.last_claim_at 
+        ? new Date(server.last_claim_at) 
+        : new Date(server.purchased_at);
+      
+      if (!earliestClaim || lastClaim < earliestClaim) {
+        earliestClaim = lastClaim;
+      }
+
+      const hoursSinceLastClaim = (now.getTime() - lastClaim.getTime()) / (1000 * 60 * 60);
+      const claimableHours = Math.min(hoursSinceLastClaim, 24);
+      
+      totalBolt += (server.daily_bolt_yield / 24) * claimableHours;
+      totalUsdt += (server.daily_usdt_yield / 24) * claimableHours;
+    }
+
+    const hoursSinceFirstClaim = earliestClaim 
+      ? (now.getTime() - earliestClaim.getTime()) / (1000 * 60 * 60)
+      : 0;
+
+    return {
+      pendingBolt: Math.floor(totalBolt),
+      pendingUsdt: Math.round(totalUsdt * 100) / 100,
+      hoursSinceClaim: Math.floor(hoursSinceFirstClaim),
+      canClaim: hoursSinceFirstClaim >= 1,
+    };
+  }, [servers]);
+
+  const claimRewards = useCallback(async () => {
+    if (!userId) throw new Error('User not found');
+
+    const { data, error } = await supabase.functions.invoke('claim-server-rewards', {
+      body: { user_id: userId },
+    });
+
+    if (error) throw error;
+    if (data?.error) throw new Error(data.error);
+
+    // Refresh server data to update last_claim_at
+    await fetchServers();
+
+    return {
+      claimedBolt: data.claimed_bolt || 0,
+      claimedUsdt: data.claimed_usdt || 0,
+    };
+  }, [userId, fetchServers]);
+
   const purchaseServer = useCallback(async (
     serverId: string,
     serverTier: string,
@@ -145,6 +198,8 @@ export const useUserServers = (userId: string | null) => {
     purchaseServer,
     getTotalStats,
     getStock,
+    getPendingRewards,
+    claimRewards,
     refetch: fetchServers,
     refetchInventory: fetchInventory,
   };

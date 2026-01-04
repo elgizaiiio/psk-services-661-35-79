@@ -7,7 +7,7 @@ import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useAdsGramRewarded } from '@/hooks/useAdsGramRewarded';
 import { supabase } from '@/integrations/supabase/client';
-import { Server, Check, Cpu, HardDrive, Database, Cloud, Globe, Shield, Layers, Play, Users, Loader2, Crown, Gem, Zap } from 'lucide-react';
+import { Server, Check, Cpu, HardDrive, Database, Cloud, Globe, Shield, Layers, Play, Users, Loader2, Crown, Gem, Zap, Gift, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon, TonIcon } from '@/components/ui/currency-icons';
@@ -41,12 +41,13 @@ const REQUIRED_ADS = 5;
 const MiningServers = () => {
   const { user: telegramUser, isLoading: isTelegramLoading, hapticFeedback } = useTelegramAuth();
   const { user, loading: isMiningUserLoading } = useViralMining(telegramUser);
-  const { servers: ownedServers, purchaseServer, getStock } = useUserServers(user?.id || null);
+  const { servers: ownedServers, purchaseServer, getStock, getPendingRewards, claimRewards, refetch } = useUserServers(user?.id || null);
   const [selectedServer, setSelectedServer] = useState<MiningServer | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [adProgress, setAdProgress] = useState(0);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [adUnlocked, setAdUnlocked] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
   
   const { showAd, isLoading: isAdLoading, isReady: isAdReady } = useAdsGramRewarded();
   const navigate = useNavigate();
@@ -55,6 +56,7 @@ const MiningServers = () => {
   const isReady = !isTelegramLoading && !isMiningUserLoading;
   const hasReferral = (user?.total_referrals ?? 0) >= 1;
   const canClaimFreeServer = hasReferral || adUnlocked;
+  const pendingRewards = getPendingRewards();
 
   const fetchAdProgress = useCallback(async () => {
     if (!user?.id) return;
@@ -137,6 +139,25 @@ const MiningServers = () => {
     setSelectedServer(null);
   };
 
+  const handleClaimRewards = async () => {
+    if (!user?.id || isClaiming) return;
+    hapticFeedback?.impact?.('heavy');
+    setIsClaiming(true);
+    try {
+      const result = await claimRewards();
+      if (result.claimedBolt > 0 || result.claimedUsdt > 0) {
+        toast.success(`Claimed +${result.claimedBolt.toLocaleString()} BOLT & $${result.claimedUsdt.toFixed(2)} USDT!`);
+      } else {
+        toast.info('Wait at least 1 hour between claims');
+      }
+    } catch (error: any) {
+      console.error('Claim error:', error);
+      toast.error(error.message || 'Claim failed');
+    } finally {
+      setIsClaiming(false);
+    }
+  };
+
   const isOwned = (serverId: string) =>
     ownedServers.some((s) => s.server_name === servers.find((srv) => srv.id === serverId)?.name);
 
@@ -162,6 +183,46 @@ const MiningServers = () => {
           <p className="text-sm text-muted-foreground">Earn passive income 24/7</p>
         </div>
 
+        {/* Claim Rewards Card */}
+        {ownedServers.length > 0 && (pendingRewards.pendingBolt > 0 || pendingRewards.pendingUsdt > 0) && (
+          <div className="p-4 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Gift className="w-5 h-5 text-primary" />
+                <span className="font-semibold text-foreground">Pending Rewards</span>
+              </div>
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Clock className="w-3.5 h-3.5" />
+                <span>{pendingRewards.hoursSinceClaim}h ago</span>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4 mb-4">
+              <div className="flex items-center gap-1.5">
+                <BoltIcon size={18} />
+                <span className="text-lg font-bold text-primary">+{pendingRewards.pendingBolt.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-1.5">
+                <UsdtIcon size={18} />
+                <span className="text-lg font-bold text-emerald-500">+${pendingRewards.pendingUsdt.toFixed(2)}</span>
+              </div>
+            </div>
+
+            <Button
+              onClick={handleClaimRewards}
+              disabled={isClaiming || !pendingRewards.canClaim}
+              className="w-full bg-primary hover:bg-primary/90"
+            >
+              {isClaiming ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Gift className="w-4 h-4 mr-2" />
+              )}
+              {isClaiming ? 'Claiming...' : pendingRewards.canClaim ? 'CLAIM REWARDS' : 'Wait 1 hour'}
+            </Button>
+          </div>
+        )}
+
         {/* Stats */}
         {totalStats.servers > 0 && (
           <div className="flex items-center justify-between p-3 rounded-xl bg-card border border-border">
@@ -172,11 +233,11 @@ const MiningServers = () => {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1">
                 <BoltIcon size={14} />
-                <span className="text-sm font-medium text-primary">+{totalStats.boltPerDay.toLocaleString()}</span>
+                <span className="text-sm font-medium text-primary">+{totalStats.boltPerDay.toLocaleString()}/day</span>
               </div>
               <div className="flex items-center gap-1">
                 <UsdtIcon size={14} />
-                <span className="text-sm font-medium text-emerald-500">${totalStats.usdtPerDay.toFixed(2)}</span>
+                <span className="text-sm font-medium text-emerald-500">${totalStats.usdtPerDay.toFixed(2)}/day</span>
               </div>
             </div>
           </div>
