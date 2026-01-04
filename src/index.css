@@ -51,6 +51,7 @@
     touch-action: manipulation;
     overflow-x: hidden;
     max-width: 100vw;
+    padding-top: env(safe-area-inset-top, 12px);
   }
 
   html {
@@ -105,10 +106,15 @@
     }
   }
 
-  /* Safe area */
+  /* Safe area for Telegram mini app */
   .safe-area {
     min-height: 100vh;
-    padding-top: env(safe-area-inset-top, 0px);
+    padding-top: max(env(safe-area-inset-top, 0px), 16px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Page top spacing for Telegram full screen */
+  .page-content {
+    padding-top: max(env(safe-area-inset-top, 0px), 16px);
   }
 }
