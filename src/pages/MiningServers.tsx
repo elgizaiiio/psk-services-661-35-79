@@ -184,7 +184,7 @@ const MiningServers = () => {
 
         {/* Server List */}
         <div className="space-y-2">
-          {sortedServers.map((server) => {
+        {sortedServers.map((server) => {
             const owned = isOwned(server.id);
             const stock = getStock(server.id);
             const Icon = server.icon;
@@ -193,15 +193,16 @@ const MiningServers = () => {
             return (
               <div
                 key={server.id}
-                className={`p-3 rounded-xl border transition-colors ${
-                  owned 
-                    ? 'bg-primary/5 border-primary/20' 
-                    : stock.soldOut 
-                      ? 'bg-muted/30 border-border opacity-60'
-                      : 'bg-card border-border hover:border-primary/30 cursor-pointer'
-                }`}
+                className="server-card-border"
                 onClick={() => !owned && !stock.soldOut && handleBuyClick(server)}
               >
+                <div className={`p-3 rounded-xl transition-colors ${
+                  owned 
+                    ? 'bg-primary/5' 
+                    : stock.soldOut 
+                      ? 'bg-muted/30 opacity-60'
+                      : 'bg-card cursor-pointer'
+                }`}>
                 <div className="flex items-center gap-3">
                   {/* Icon */}
                   <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
@@ -272,6 +273,7 @@ const MiningServers = () => {
                     </Button>
                   </div>
                 )}
+                </div>
               </div>
             );
           })}
