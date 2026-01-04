@@ -1255,6 +1255,42 @@ export type Database = {
           },
         ]
       }
+      deposit_requests: {
+        Row: {
+          amount: number
+          confirmed_at: string | null
+          created_at: string | null
+          currency: string
+          id: string
+          status: string
+          tx_hash: string | null
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          amount: number
+          confirmed_at?: string | null
+          created_at?: string | null
+          currency?: string
+          id?: string
+          status?: string
+          tx_hash?: string | null
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          amount?: number
+          confirmed_at?: string | null
+          created_at?: string | null
+          currency?: string
+          id?: string
+          status?: string
+          tx_hash?: string | null
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
       free_server_ad_progress: {
         Row: {
           ads_watched: number | null
