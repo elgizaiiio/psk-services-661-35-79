@@ -168,7 +168,7 @@ const MiningServers = () => {
     ? ((lastOwnedIndex + 1) / sortedServers.length) * 100 
     : 0;
 
-  const TimelineNode = ({ server, index }: { server: MiningServer; index: number }) => {
+  const renderTimelineNode = (server: MiningServer, index: number) => {
     const owned = isOwned(server.id);
     const stock = getStock(server.id);
     const Icon = server.icon;
@@ -178,10 +178,8 @@ const MiningServers = () => {
     const isNext = !owned && index === lastOwnedIndex + 1;
 
     return (
-      <motion.div
-        initial={{ opacity: 0, x: -20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: index * 0.05 }}
+      <div
+        key={server.id}
         className="timeline-node flex items-start gap-4"
       >
         {/* Node Dot */}
@@ -192,7 +190,7 @@ const MiningServers = () => {
         </div>
 
         {/* Server Card */}
-        <motion.div
+        <div
           className={`flex-1 p-4 rounded-xl border transition-all cursor-pointer ${
             owned 
               ? `${colors.bg} ${colors.border} shadow-lg ${colors.glow}` 
@@ -200,8 +198,6 @@ const MiningServers = () => {
                 ? 'bg-card/40 border-border/30 opacity-50'
                 : `bg-card/60 border-border/50 hover:border-border hover:bg-card/80`
           } ${isPremium ? 'border-2' : ''}`}
-          whileHover={!owned && !stock.soldOut ? { scale: 1.01, x: 4 } : undefined}
-          whileTap={!owned && !stock.soldOut ? { scale: 0.99 } : undefined}
           onClick={() => !owned && !stock.soldOut && (isFreeServer ? canClaimFreeServer : true) && handleBuyClick(server)}
         >
           <div className="flex items-center gap-3">
@@ -252,7 +248,7 @@ const MiningServers = () => {
               <span className="text-xs font-medium text-primary">+{server.boltPerDay.toLocaleString()}/day</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <UsdtIcon size={12} />
+              <UsdtIcon size={14} />
               <span className="text-xs font-medium text-emerald-500">+${server.usdtPerDay.toFixed(2)}/day</span>
             </div>
           </div>
@@ -293,8 +289,8 @@ const MiningServers = () => {
               </Button>
             </div>
           )}
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     );
   };
 
@@ -369,9 +365,7 @@ const MiningServers = () => {
 
           {/* Server Nodes */}
           <div className="space-y-3 pl-2">
-            {sortedServers.map((server, index) => (
-              <TimelineNode key={server.id} server={server} index={index} />
-            ))}
+            {sortedServers.map((server, index) => renderTimelineNode(server, index))}
           </div>
         </section>
 
