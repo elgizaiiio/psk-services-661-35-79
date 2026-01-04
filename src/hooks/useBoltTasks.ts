@@ -52,6 +52,18 @@ export const useBoltTasks = () => {
     if (!boltUser) throw new Error('User not found');
 
     try {
+      // Check if already completed first
+      const { data: existingCompletion } = await supabase
+        .from('bolt_completed_tasks' as any)
+        .select('id')
+        .eq('user_id', boltUser.id)
+        .eq('task_id', taskId)
+        .maybeSingle();
+
+      if (existingCompletion) {
+        throw new Error('Task already completed');
+      }
+
       // Get task details
       const { data: task, error: taskError } = await supabase
         .from('bolt_tasks' as any)
@@ -73,7 +85,13 @@ export const useBoltTasks = () => {
         .select('*')
         .maybeSingle();
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        // Handle unique constraint violation
+        if (insertError.code === '23505') {
+          throw new Error('Task already completed');
+        }
+        throw insertError;
+      }
 
       // Get current user balances
       const { data: currentUser } = await supabase

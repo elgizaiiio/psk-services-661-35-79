@@ -833,7 +833,6 @@ const Spin: React.FC = () => {
                   </SheetHeader>
                   <div className="grid grid-cols-2 gap-3 py-4">
                     {packages.map((pkg) => {
-                      const priceStars = tonToStars(pkg.priceTon);
                       return (
                         <button
                           key={pkg.id}
@@ -846,12 +845,7 @@ const Spin: React.FC = () => {
                         >
                           <div className="flex flex-col items-center gap-2">
                             <span className={`text-2xl font-bold ${wheelType === 'pro' ? 'text-purple-500' : 'text-primary'}`}>{pkg.tickets}</span>
-                            <div className="flex flex-col items-center gap-0.5">
-                              <span className="text-sm font-semibold text-foreground">{pkg.priceTon} TON</span>
-                              <span className="text-xs text-muted-foreground">
-                                ⭐ {priceStars}
-                              </span>
-                            </div>
+                            <span className="text-sm font-semibold text-foreground">{pkg.priceTon} TON</span>
                           </div>
                         </button>
                       );
