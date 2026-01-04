@@ -29,10 +29,6 @@ export const useTelegramTonConnect = () => {
         
         if (isTelegramEnvironment) {
           hapticFeedback.notification('success');
-          toast({
-            title: "Wallet connected successfully",
-            description: `Address: ${walletInfo.account.address.slice(0, 6)}...${walletInfo.account.address.slice(-4)}`,
-          });
         }
       } else {
         console.log('❌ Wallet disconnected in Telegram');
@@ -41,7 +37,7 @@ export const useTelegramTonConnect = () => {
     });
 
     return () => unsubscribe();
-  }, [tonConnectUI, hapticFeedback, toast, isTelegramEnvironment]);
+  }, [tonConnectUI, hapticFeedback, isTelegramEnvironment]);
 
   const connectWallet = useCallback(async () => {
     const now = Date.now();
