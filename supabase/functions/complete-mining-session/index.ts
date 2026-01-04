@@ -150,10 +150,10 @@ serve(async (req) => {
       );
     }
 
-    // Update user's token balance atomically
+    // Update user's token balance and USDT balance atomically
     const { data: userRow, error: userFetchError } = await supabaseClient
       .from('bolt_users')
-      .select('token_balance')
+      .select('token_balance, usdt_balance')
       .eq('id', session.user_id)
       .single();
 
@@ -172,10 +172,16 @@ serve(async (req) => {
     }
 
     const newBalance = (Number(userRow?.token_balance) || 0) + Number(totalReward);
+    // USDT reward: 0.001 USDT per BOLT mined
+    const usdtReward = totalReward * 0.001;
+    const newUsdtBalance = (Number(userRow?.usdt_balance) || 0) + usdtReward;
 
     const { error: updateBalanceError } = await supabaseClient
       .from('bolt_users')
-      .update({ token_balance: newBalance })
+      .update({ 
+        token_balance: newBalance,
+        usdt_balance: newUsdtBalance
+      })
       .eq('id', session.user_id);
 
     if (updateBalanceError) {
@@ -186,13 +192,14 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Mining session ${sessionId} completed. Reward: ${totalReward} BOLT, New balance: ${newBalance}`);
+    console.log(`Mining session ${sessionId} completed. Reward: ${totalReward} BOLT + ${usdtReward.toFixed(4)} USDT, New balance: ${newBalance} BOLT / ${newUsdtBalance.toFixed(4)} USDT`);
 
     // Send Telegram notification
     if (session.bolt_users?.telegram_id && totalReward > 0) {
       const notificationMessage = `⛏️ <b>Mining Complete!</b>
 
 💰 You earned: <b>+${totalReward.toLocaleString()} BOLT</b>
+💵 USDT bonus: <b>+$${usdtReward.toFixed(4)}</b>
 💎 New balance: <b>${newBalance.toLocaleString()} BOLT</b>
 
 🚀 Start a new mining session now!`;
