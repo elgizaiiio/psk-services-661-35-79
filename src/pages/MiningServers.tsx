@@ -178,89 +178,110 @@ const MiningServers = () => {
     const isNext = !owned && index === lastOwnedIndex + 1;
 
     return (
-      <div
+      <motion.div
         key={server.id}
-        className={`p-3 rounded-xl border transition-all ${
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: index * 0.05 }}
+        className={`relative p-4 rounded-2xl backdrop-blur-xl border transition-all duration-300 cursor-pointer group ${
           owned 
-            ? `${colors.bg} ${colors.border}` 
+            ? 'bg-white/10 border-white/20 shadow-lg' 
             : stock.soldOut 
-              ? 'bg-card/30 border-border/20 opacity-40'
+              ? 'bg-white/5 border-white/5 opacity-50'
               : isNext
-                ? 'bg-card/70 border-primary/30 hover:bg-card'
-                : 'bg-card/50 border-border/30 hover:bg-card/70'
+                ? 'bg-white/15 border-primary/40 shadow-xl shadow-primary/10 hover:bg-white/20'
+                : 'bg-white/8 border-white/10 hover:bg-white/12 hover:border-white/20'
         }`}
         onClick={() => !owned && !stock.soldOut && (isFreeServer ? canClaimFreeServer : true) && handleBuyClick(server)}
       >
-        <div className="flex items-center gap-3">
-          {/* Icon */}
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${colors.bg}`}>
-            <Icon className={`w-5 h-5 ${colors.text}`} />
+        {/* Glassmorphism inner glow */}
+        <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${colors.bg}`} />
+        
+        {/* Tier badge */}
+        <div className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-sm ${colors.bg} ${colors.text} ${colors.border} border`}>
+          {server.tier}
+        </div>
+
+        <div className="relative flex items-center gap-4">
+          {/* Glowing Icon Container */}
+          <div className={`relative w-14 h-14 rounded-xl flex items-center justify-center backdrop-blur-sm ${colors.bg} border ${colors.border} group-hover:shadow-lg transition-shadow ${colors.glow}`}>
+            <Icon className={`w-7 h-7 ${colors.text}`} />
+            {owned && (
+              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/50">
+                <Check className="w-3 h-3 text-primary-foreground" />
+              </div>
+            )}
           </div>
 
-          {/* Name & Hash */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-sm text-foreground truncate">{server.name}</span>
-              {owned && <Check className="w-3.5 h-3.5 text-primary shrink-0" />}
+          {/* Content */}
+          <div className="flex-1 min-w-0 space-y-2">
+            <div>
+              <h3 className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">{server.name}</h3>
+              <p className="text-xs text-muted-foreground/80 font-mono">{server.hashRate}</p>
             </div>
-            <span className="text-xs text-muted-foreground">{server.hashRate}</span>
-          </div>
-
-          {/* Earnings */}
-          <div className="text-right shrink-0">
-            <div className="flex items-center gap-1 justify-end">
-              <BoltIcon size={12} />
-              <span className="text-xs font-medium text-primary">+{server.boltPerDay.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center gap-1 justify-end">
-              <UsdtIcon size={12} />
-              <span className="text-xs text-emerald-500">${server.usdtPerDay.toFixed(2)}</span>
+            
+            {/* Earnings row */}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 backdrop-blur-sm">
+                <BoltIcon size={12} />
+                <span className="text-xs font-bold text-primary">+{server.boltPerDay.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 backdrop-blur-sm">
+                <UsdtIcon size={12} />
+                <span className="text-xs font-bold text-emerald-500">${server.usdtPerDay.toFixed(2)}</span>
+              </div>
             </div>
           </div>
 
           {/* Price/Status */}
-          <div className="shrink-0 w-16 text-right">
+          <div className="text-right shrink-0">
             {owned ? (
-              <span className={`text-xs font-medium ${colors.text}`}>Active</span>
+              <div className={`px-3 py-1.5 rounded-lg ${colors.bg} backdrop-blur-sm`}>
+                <span className={`text-xs font-bold ${colors.text}`}>ACTIVE</span>
+              </div>
             ) : stock.soldOut ? (
-              <span className="text-xs text-muted-foreground">Sold</span>
+              <div className="px-3 py-1.5 rounded-lg bg-muted/50 backdrop-blur-sm">
+                <span className="text-xs font-medium text-muted-foreground">SOLD</span>
+              </div>
             ) : server.priceTon === 0 ? (
-              <span className="text-xs font-bold text-emerald-500">FREE</span>
+              <div className="px-3 py-1.5 rounded-lg bg-emerald-500/20 backdrop-blur-sm animate-pulse">
+                <span className="text-xs font-bold text-emerald-400">FREE</span>
+              </div>
             ) : (
-              <div className="flex items-center gap-1 justify-end">
-                <TonIcon size={12} />
-                <span className="text-sm font-semibold">{server.priceTon}</span>
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm group-hover:bg-white/15 transition-colors">
+                <TonIcon size={14} />
+                <span className="text-sm font-bold text-foreground">{server.priceTon}</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* Free Server Unlock - Compact */}
+        {/* Free Server Unlock Actions */}
         {isFreeServer && !owned && !canClaimFreeServer && (
-          <div className="flex gap-2 mt-2 pt-2 border-t border-border/20" onClick={(e) => e.stopPropagation()}>
-            <Button onClick={() => navigate('/invite')} size="sm" variant="ghost" className="flex-1 h-7 text-xs">
-              <Users className="w-3 h-3 mr-1" />
-              Invite
+          <div className="relative flex gap-2 mt-4 pt-3 border-t border-white/10" onClick={(e) => e.stopPropagation()}>
+            <Button onClick={() => navigate('/invite')} size="sm" variant="ghost" className="flex-1 h-9 text-xs backdrop-blur-sm bg-white/5 hover:bg-white/10 border border-white/10">
+              <Users className="w-3.5 h-3.5 mr-1.5" />
+              Invite Friend
             </Button>
             <Button
               onClick={handleWatchAd}
               disabled={isWatchingAd || isAdLoading || !isAdReady}
               size="sm"
               variant="ghost"
-              className="flex-1 h-7 text-xs"
+              className="flex-1 h-9 text-xs backdrop-blur-sm bg-white/5 hover:bg-white/10 border border-white/10"
             >
               {isWatchingAd || isAdLoading ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
                 <>
-                  <Play className="w-3 h-3 mr-1 fill-current" />
-                  {adProgress}/{REQUIRED_ADS}
+                  <Play className="w-3.5 h-3.5 mr-1.5 fill-current" />
+                  Watch ({adProgress}/{REQUIRED_ADS})
                 </>
               )}
             </Button>
           </div>
         )}
-      </div>
+      </motion.div>
     );
   };
 
