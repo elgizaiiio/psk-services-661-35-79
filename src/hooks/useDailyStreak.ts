@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
-import { useBoltMining } from '@/hooks/useBoltMining';
 
 // Rewards increase each day up to day 7, then reset
 const STREAK_REWARDS = [5, 10, 15, 25, 35, 50, 75];
@@ -16,13 +15,42 @@ interface DailyLoginReward {
 
 export const useDailyStreak = () => {
   const { user: telegramUser } = useTelegramAuth();
-  const { user, refreshUser } = useBoltMining(telegramUser);
   
+  const [userId, setUserId] = useState<string | null>(null);
   const [currentStreak, setCurrentStreak] = useState(0);
   const [canClaim, setCanClaim] = useState(false);
   const [lastClaimDate, setLastClaimDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [claiming, setClaiming] = useState(false);
+
+  // Get user ID from telegram user
+  useEffect(() => {
+    const fetchUserId = async () => {
+      if (!telegramUser?.id) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        const { data } = await supabase
+          .from('bolt_users')
+          .select('id')
+          .eq('telegram_id', telegramUser.id)
+          .maybeSingle();
+        
+        if (data) {
+          setUserId(data.id);
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Error fetching user ID:', err);
+        setLoading(false);
+      }
+    };
+    
+    fetchUserId();
+  }, [telegramUser?.id]);
 
   const getTodayDate = () => {
     return new Date().toISOString().split('T')[0];
@@ -35,16 +63,16 @@ export const useDailyStreak = () => {
   };
 
   const loadStreakData = useCallback(async () => {
-    if (!user?.id) return;
+    if (!userId) return;
 
     try {
       setLoading(true);
       
       // Get the most recent claim
       const { data, error } = await supabase
-        .from('daily_login_rewards' as any)
+        .from('daily_login_rewards')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('user_id', userId)
         .order('claimed_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -79,10 +107,10 @@ export const useDailyStreak = () => {
     } finally {
       setLoading(false);
     }
-  }, [user?.id]);
+  }, [userId]);
 
   const claimDailyReward = useCallback(async () => {
-    if (!user?.id || !canClaim || claiming) return false;
+    if (!userId || !canClaim || claiming) return false;
 
     try {
       setClaiming(true);
@@ -92,24 +120,33 @@ export const useDailyStreak = () => {
 
       // Insert claim record
       const { error: insertError } = await supabase
-        .from('daily_login_rewards' as any)
+        .from('daily_login_rewards')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           streak_day: nextDay,
           reward_claimed: reward,
         });
 
       if (insertError) throw insertError;
 
+      // Get current balance
+      const { data: userData } = await supabase
+        .from('bolt_users')
+        .select('token_balance')
+        .eq('id', userId)
+        .single();
+
       // Update user balance
-      const newBalance = (Number(user.token_balance) || 0) + reward;
+      const currentBalance = userData?.token_balance || 0;
+      const newBalance = currentBalance + reward;
+      
       const { error: updateError } = await supabase
-        .from('bolt_users' as any)
+        .from('bolt_users')
         .update({ 
           token_balance: newBalance,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', user.id);
+        .eq('id', userId);
 
       if (updateError) throw updateError;
 
@@ -117,7 +154,6 @@ export const useDailyStreak = () => {
       setCurrentStreak(nextDay);
       setCanClaim(false);
       setLastClaimDate(getTodayDate());
-      await refreshUser();
 
       return reward;
     } catch (err) {
@@ -126,11 +162,11 @@ export const useDailyStreak = () => {
     } finally {
       setClaiming(false);
     }
-  }, [user, canClaim, claiming, currentStreak, refreshUser]);
+  }, [userId, canClaim, claiming, currentStreak]);
 
   // Claim with x2 bonus (after watching ad)
   const claimDailyRewardWithBonus = useCallback(async () => {
-    if (!user?.id || !canClaim || claiming) return false;
+    if (!userId || !canClaim || claiming) return false;
 
     try {
       setClaiming(true);
@@ -141,9 +177,9 @@ export const useDailyStreak = () => {
 
       // Insert claim record with is_doubled flag
       const { error: insertError } = await supabase
-        .from('daily_login_rewards' as any)
+        .from('daily_login_rewards')
         .insert({
-          user_id: user.id,
+          user_id: userId,
           streak_day: nextDay,
           reward_claimed: reward,
           is_doubled: true,
@@ -151,15 +187,24 @@ export const useDailyStreak = () => {
 
       if (insertError) throw insertError;
 
+      // Get current balance
+      const { data: userData } = await supabase
+        .from('bolt_users')
+        .select('token_balance')
+        .eq('id', userId)
+        .single();
+
       // Update user balance
-      const newBalance = (Number(user.token_balance) || 0) + reward;
+      const currentBalance = userData?.token_balance || 0;
+      const newBalance = currentBalance + reward;
+      
       const { error: updateError } = await supabase
-        .from('bolt_users' as any)
+        .from('bolt_users')
         .update({ 
           token_balance: newBalance,
           updated_at: new Date().toISOString(),
         })
-        .eq('id', user.id);
+        .eq('id', userId);
 
       if (updateError) throw updateError;
 
@@ -167,7 +212,6 @@ export const useDailyStreak = () => {
       setCurrentStreak(nextDay);
       setCanClaim(false);
       setLastClaimDate(getTodayDate());
-      await refreshUser();
 
       return reward;
     } catch (err) {
@@ -176,11 +220,13 @@ export const useDailyStreak = () => {
     } finally {
       setClaiming(false);
     }
-  }, [user, canClaim, claiming, currentStreak, refreshUser]);
+  }, [userId, canClaim, claiming, currentStreak]);
 
   useEffect(() => {
-    loadStreakData();
-  }, [loadStreakData]);
+    if (userId) {
+      loadStreakData();
+    }
+  }, [userId, loadStreakData]);
 
   const getNextReward = () => {
     const nextDay = (currentStreak % 7) + 1;
