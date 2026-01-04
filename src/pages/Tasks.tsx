@@ -111,9 +111,9 @@ const checkMiningRequirement = async (title: string, userId: string): Promise<bo
 
 // Get task icon based on category
 const getTaskIcon = (task: BoltTask) => {
-  const category = task.category.toLowerCase();
-  const title = task.title.toLowerCase();
-  
+  const category = (task.category || '').toLowerCase();
+  const title = (task.title || '').toLowerCase();
+
   if (category === 'mining' || title.includes('mining') || title.includes('mine')) {
     return <Pickaxe className="w-6 h-6 text-amber-500" />;
   }
@@ -124,7 +124,7 @@ const getTaskIcon = (task: BoltTask) => {
     return (
       <img
         src={task.icon}
-        alt={task.title}
+        alt={task.title || 'Task icon'}
         className="w-full h-full object-cover"
         onError={(e) => {
           const target = e.target as HTMLImageElement;
