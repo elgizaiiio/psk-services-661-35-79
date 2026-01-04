@@ -1,80 +1,55 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-
-// AdsGram Block ID
-const ADSGRAM_BLOCK_ID = '20527';
-
-declare global {
-  interface Window {
-    Adsgram?: {
-      init: (config: { blockId: string; debug?: boolean }) => AdController;
-    };
-  }
-}
-
-interface AdController {
-  show: () => Promise<{ done: boolean; description: string; state: string; error?: boolean }>;
-  destroy: () => void;
-}
+import { useCallback, useEffect, useState } from 'react';
+import { 
+  BLOCK_IDS, 
+  getController, 
+  isTelegramEnvironment,
+  showAd as showAdFromManager 
+} from '@/lib/adsgram';
 
 interface UseAdsGramReturn {
   showAd: () => Promise<boolean>;
   isReady: boolean;
   isLoading: boolean;
   error: string | null;
+  isTelegram: boolean;
 }
 
 export const useAdsGram = (): UseAdsGramReturn => {
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const controllerRef = useRef<AdController | null>(null);
-  const initAttempted = useRef(false);
+  const [isTelegram] = useState(() => isTelegramEnvironment());
 
   useEffect(() => {
-    if (initAttempted.current) return;
-    
-    const checkAdsGram = () => {
-      if (initAttempted.current) return;
-      
-      try {
-        if (window.Adsgram) {
-          initAttempted.current = true;
-          controllerRef.current = window.Adsgram.init({
-            blockId: ADSGRAM_BLOCK_ID,
-            debug: false,
-          });
+    if (!isTelegram) {
+      setError('افتح التطبيق من تيليجرام');
+      return;
+    }
+
+    let mounted = true;
+
+    const init = async () => {
+      const controller = await getController(BLOCK_IDS.REWARDED);
+      if (mounted) {
+        if (controller) {
           setIsReady(true);
-          console.log('AdsGram initialized successfully');
+          setError(null);
+        } else {
+          setError('الإعلانات غير متاحة حالياً');
         }
-      } catch (err) {
-        console.error('Failed to initialize AdsGram:', err);
-        setError('Failed to initialize ads');
-        initAttempted.current = true;
       }
     };
 
-    // Check immediately
-    checkAdsGram();
-    
-    // Also check after a delay in case SDK loads late
-    const timeout = setTimeout(checkAdsGram, 2000);
+    init();
 
     return () => {
-      clearTimeout(timeout);
-      try {
-        if (controllerRef.current) {
-          controllerRef.current.destroy();
-        }
-      } catch (e) {
-        // Ignore destroy errors
-      }
+      mounted = false;
     };
-  }, []);
+  }, [isTelegram]);
 
   const showAd = useCallback(async (): Promise<boolean> => {
-    if (!controllerRef.current) {
-      console.warn('AdsGram not initialized');
-      setError('Ads not available');
+    if (!isTelegram) {
+      setError('افتح التطبيق من تيليجرام');
       return false;
     }
 
@@ -82,30 +57,28 @@ export const useAdsGram = (): UseAdsGramReturn => {
     setError(null);
 
     try {
-      const result = await controllerRef.current.show();
-      console.log('Ad result:', result);
+      const result = await showAdFromManager(BLOCK_IDS.REWARDED);
       
-      if (result.done) {
+      if (result.success) {
         return true;
       } else {
-        if (result.error) {
-          setError(result.description || 'Ad failed to load');
-        }
+        setError(result.error || 'فشل في عرض الإعلان');
         return false;
       }
     } catch (err) {
       console.error('Error showing ad:', err);
-      setError('Failed to show ad');
+      setError('فشل في عرض الإعلان');
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [isTelegram]);
 
   return {
     showAd,
     isReady,
     isLoading,
     error,
+    isTelegram,
   };
 };
