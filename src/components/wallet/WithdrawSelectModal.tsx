@@ -37,7 +37,7 @@ const WithdrawSelectModal: React.FC<WithdrawSelectModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-sm border-0 bg-background p-0 gap-0">
+      <DialogContent className="max-w-sm border-0 bg-background p-0 gap-0" hideCloseButton>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-3">
