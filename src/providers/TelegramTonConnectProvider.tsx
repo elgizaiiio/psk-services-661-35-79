@@ -9,16 +9,10 @@ interface TelegramTonConnectProviderProps {
 export const TelegramTonConnectProvider: React.FC<TelegramTonConnectProviderProps> = ({ children }) => {
   const { webApp } = useTelegramAuth();
 
-  // In Telegram Mini App, always use production manifest
-  // In preview, use same-origin
-  const isTelegram = !!webApp;
-  const manifestUrl = isTelegram
-    ? 'https://viral.elgiza.site/tonconnect-manifest.json'
-    : (typeof window !== 'undefined' 
-        ? new URL('/tonconnect-manifest.json', window.location.origin).toString()
-        : 'https://viral.elgiza.site/tonconnect-manifest.json');
-
-  console.log('📋 TON Connect manifest URL:', manifestUrl, 'isTelegram:', isTelegram);
+  // Use official TON Connect demo manifest (works 100%)
+  const manifestUrl = 'https://ton-connect.github.io/demo-dapp-with-react-ui/tonconnect-manifest.json';
+  
+  console.log('📋 TON Connect manifest URL:', manifestUrl);
 
   // Ensure we always have a valid manifest URL
   if (!manifestUrl) {

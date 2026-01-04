@@ -1,6 +1,9 @@
 {
-  "url": "https://t.me/Boltminingbot",
+  "url": "https://viral.elgiza.site",
   "name": "BOLT Mining",
-  "iconUrl": "https://viral.elgiza.site/lovable-uploads/bb2ce9b7-afd0-4e2c-8447-351c0ae1f27d.png",
-  "description": "Connect your TON wallet to BOLT Mining Bot"
+  "iconUrl": "https://viral.elgiza.site/favicon.ico",
+  "description": "BOLT Mining - Connect your TON wallet to start mining BOLT tokens and earn rewards through our advanced mining platform",
+  "image": "https://viral.elgiza.site/og-image.png",
+  "termsOfUseUrl": "https://viral.elgiza.site/terms",
+  "privacyPolicyUrl": "https://viral.elgiza.site/privacy"
 }
