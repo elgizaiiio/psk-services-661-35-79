@@ -43,7 +43,7 @@ serve(async (req) => {
     console.log(`[auto-distribute] Processing ${servers.length} active servers...`);
 
     // Group servers by user
-    const userRewards: Record<string, { bolt: number; usdt: number; serverIds: string[] }> = {};
+    const userRewards: Record<string, { bolt: number; usdt: number; ton: number; serverIds: string[] }> = {};
 
     for (const server of servers) {
       const lastClaim = server.last_claim_at 
@@ -60,13 +60,15 @@ serve(async (req) => {
       // Calculate hourly reward (no cap for auto-distribution, just the actual hours)
       const boltReward = (server.daily_bolt_yield / 24) * hoursSinceLastClaim;
       const usdtReward = (server.daily_usdt_yield / 24) * hoursSinceLastClaim;
+      const tonReward = ((server.daily_ton_yield || 0) / 24) * hoursSinceLastClaim;
 
       if (!userRewards[server.user_id]) {
-        userRewards[server.user_id] = { bolt: 0, usdt: 0, serverIds: [] };
+        userRewards[server.user_id] = { bolt: 0, usdt: 0, ton: 0, serverIds: [] };
       }
 
       userRewards[server.user_id].bolt += boltReward;
       userRewards[server.user_id].usdt += usdtReward;
+      userRewards[server.user_id].ton += tonReward;
       userRewards[server.user_id].serverIds.push(server.id);
     }
 
@@ -75,26 +77,28 @@ serve(async (req) => {
 
     let totalBoltDistributed = 0;
     let totalUsdtDistributed = 0;
+    let totalTonDistributed = 0;
     let usersUpdated = 0;
 
-    for (const userId of usersToUpdate) {
-      const rewards = userRewards[userId];
+    for (const odUser of usersToUpdate) {
+      const rewards = userRewards[odUser];
       const boltToAdd = Math.floor(rewards.bolt);
       const usdtToAdd = Math.round(rewards.usdt * 100) / 100;
+      const tonToAdd = Math.round(rewards.ton * 10000) / 10000;
 
-      if (boltToAdd <= 0 && usdtToAdd <= 0) {
+      if (boltToAdd <= 0 && usdtToAdd <= 0 && tonToAdd <= 0) {
         continue;
       }
 
       // Get current balance
       const { data: userData, error: userError } = await supabase
         .from('bolt_users')
-        .select('token_balance, usdt_balance')
-        .eq('id', userId)
+        .select('token_balance, usdt_balance, ton_balance')
+        .eq('id', odUser)
         .single();
 
       if (userError) {
-        console.error(`[auto-distribute] Error fetching user ${userId}:`, userError);
+        console.error(`[auto-distribute] Error fetching user ${odUser}:`, userError);
         continue;
       }
 
@@ -104,12 +108,13 @@ serve(async (req) => {
         .update({
           token_balance: (userData.token_balance || 0) + boltToAdd,
           usdt_balance: (userData.usdt_balance || 0) + usdtToAdd,
+          ton_balance: (userData.ton_balance || 0) + tonToAdd,
           updated_at: now.toISOString(),
         })
-        .eq('id', userId);
+        .eq('id', odUser);
 
       if (updateError) {
-        console.error(`[auto-distribute] Error updating user ${userId}:`, updateError);
+        console.error(`[auto-distribute] Error updating user ${odUser}:`, updateError);
         continue;
       }
 
@@ -120,17 +125,18 @@ serve(async (req) => {
         .in('id', rewards.serverIds);
 
       if (serverUpdateError) {
-        console.error(`[auto-distribute] Error updating servers for user ${userId}:`, serverUpdateError);
+        console.error(`[auto-distribute] Error updating servers for user ${odUser}:`, serverUpdateError);
       }
 
       totalBoltDistributed += boltToAdd;
       totalUsdtDistributed += usdtToAdd;
+      totalTonDistributed += tonToAdd;
       usersUpdated++;
 
-      console.log(`[auto-distribute] User ${userId}: +${boltToAdd} BOLT, +${usdtToAdd} USDT`);
+      console.log(`[auto-distribute] User ${odUser}: +${boltToAdd} BOLT, +${usdtToAdd} USDT, +${tonToAdd} TON`);
     }
 
-    console.log(`[auto-distribute] Complete! Distributed ${totalBoltDistributed} BOLT and ${totalUsdtDistributed} USDT to ${usersUpdated} users`);
+    console.log(`[auto-distribute] Complete! Distributed ${totalBoltDistributed} BOLT, ${totalUsdtDistributed} USDT, ${totalTonDistributed} TON to ${usersUpdated} users`);
 
     return new Response(
       JSON.stringify({
@@ -138,6 +144,7 @@ serve(async (req) => {
         users_updated: usersUpdated,
         total_bolt_distributed: totalBoltDistributed,
         total_usdt_distributed: totalUsdtDistributed,
+        total_ton_distributed: totalTonDistributed,
         servers_processed: servers.length,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
