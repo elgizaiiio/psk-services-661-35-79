@@ -1,16 +1,14 @@
 import React, { useEffect, useState, useRef } from 'react';
-import BoltIcon from './ui/bolt-icon';
 
 interface SplashScreenProps {
   onComplete: () => void;
   duration?: number;
 }
 
-const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, duration = 2000 }) => {
+const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, duration = 2500 }) => {
   const [isVisible, setIsVisible] = useState(true);
   const onCompleteRef = useRef(onComplete);
   
-  // Keep ref updated
   useEffect(() => {
     onCompleteRef.current = onComplete;
   }, [onComplete]);
@@ -20,21 +18,29 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, duration = 2000
       setIsVisible(false);
       setTimeout(() => {
         onCompleteRef.current();
-      }, 200);
+      }, 300);
     }, duration);
 
     return () => clearTimeout(timer);
-  }, [duration]); // Only depend on duration, not onComplete
+  }, [duration]);
 
   return (
-    <div className={`fixed inset-0 bg-background z-50 flex items-center justify-center transition-opacity duration-200 ${!isVisible ? 'opacity-0 pointer-events-none' : ''}`}>
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-3">
-          <BoltIcon size="xl" className="w-16 h-16" />
-        </div>
-        <h1 className="text-3xl font-bold text-primary">Bolt</h1>
-        <p className="text-muted-foreground">Mining Platform</p>
-        <div className="bubble-loader mx-auto mt-6"></div>
+    <div 
+      className={`fixed inset-0 bg-background z-50 flex items-center justify-center transition-opacity duration-300 ${
+        !isVisible ? 'opacity-0 pointer-events-none' : ''
+      }`}
+    >
+      <div className="flex flex-col items-center">
+        {/* Bubble Loader */}
+        <div className="bubble-loader"></div>
+        
+        {/* Bolt Text with French Font */}
+        <h1 
+          className="mt-8 text-4xl font-semibold text-primary tracking-wide"
+          style={{ fontFamily: "'Playfair Display', serif" }}
+        >
+          Bolt
+        </h1>
       </div>
     </div>
   );
