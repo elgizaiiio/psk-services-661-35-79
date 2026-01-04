@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
@@ -14,8 +13,6 @@ import { PageWrapper } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon, TonIcon } from '@/components/ui/currency-icons';
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
 import { useNavigate } from 'react-router-dom';
-import CircuitAnimation from '@/components/mining/CircuitAnimation';
-import TimelineTraceAnimation from '@/components/mining/TimelineTraceAnimation';
 
 type MiningServer = {
   id: string;
@@ -24,31 +21,20 @@ type MiningServer = {
   boltPerDay: number;
   usdtPerDay: number;
   priceTon: number;
-  tier: 'Free' | 'Basic' | 'Pro' | 'Elite' | 'Legendary' | 'Mythic';
   icon: React.ElementType;
-  features?: string[];
 };
 
 const servers: MiningServer[] = [
-  { id: 'free-starter', name: 'Free Starter', hashRate: '1 TH/s', boltPerDay: 50, usdtPerDay: 0.05, priceTon: 0, tier: 'Free', icon: Zap },
-  { id: 'basic-1', name: 'Starter Pro', hashRate: '5 TH/s', boltPerDay: 250, usdtPerDay: 0.25, priceTon: 1.5, tier: 'Basic', icon: HardDrive },
-  { id: 'basic-2', name: 'Basic Server', hashRate: '10 TH/s', boltPerDay: 500, usdtPerDay: 0.50, priceTon: 2.5, tier: 'Basic', icon: Database },
-  { id: 'pro-1', name: 'Pro Server', hashRate: '25 TH/s', boltPerDay: 1250, usdtPerDay: 1.25, priceTon: 5.0, tier: 'Pro', icon: Cloud },
-  { id: 'pro-2', name: 'Advanced Pro', hashRate: '50 TH/s', boltPerDay: 2500, usdtPerDay: 2.50, priceTon: 9.0, tier: 'Pro', icon: Globe },
-  { id: 'elite-1', name: 'Elite Server', hashRate: '100 TH/s', boltPerDay: 5000, usdtPerDay: 5.00, priceTon: 16.0, tier: 'Elite', icon: Shield },
-  { id: 'elite-2', name: 'Ultra Elite', hashRate: '200 TH/s', boltPerDay: 10000, usdtPerDay: 10.00, priceTon: 30.0, tier: 'Elite', icon: Layers },
-  { id: 'legendary-1', name: 'Legendary Server', hashRate: '500 TH/s', boltPerDay: 25000, usdtPerDay: 25.00, priceTon: 50.0, tier: 'Legendary', icon: Crown, features: ['Priority Support', '2x Mining Speed', 'VIP Badge', 'Early Access'] },
-  { id: 'mythic-1', name: 'Mythic Server', hashRate: '1000 TH/s', boltPerDay: 60000, usdtPerDay: 60.00, priceTon: 100.0, tier: 'Mythic', icon: Gem, features: ['24/7 Priority Support', '3x Mining Speed', 'Exclusive VIP Badge', 'Early Access', 'Bonus Multiplier', 'Limited Edition'] },
+  { id: 'free-starter', name: 'Starter', hashRate: '1 TH/s', boltPerDay: 50, usdtPerDay: 0.05, priceTon: 0, icon: Zap },
+  { id: 'basic-1', name: 'Basic I', hashRate: '5 TH/s', boltPerDay: 250, usdtPerDay: 0.25, priceTon: 1.5, icon: HardDrive },
+  { id: 'basic-2', name: 'Basic II', hashRate: '10 TH/s', boltPerDay: 500, usdtPerDay: 0.50, priceTon: 2.5, icon: Database },
+  { id: 'pro-1', name: 'Advanced I', hashRate: '25 TH/s', boltPerDay: 1250, usdtPerDay: 1.25, priceTon: 5.0, icon: Cloud },
+  { id: 'pro-2', name: 'Advanced II', hashRate: '50 TH/s', boltPerDay: 2500, usdtPerDay: 2.50, priceTon: 9.0, icon: Globe },
+  { id: 'elite-1', name: 'Elite I', hashRate: '100 TH/s', boltPerDay: 5000, usdtPerDay: 5.00, priceTon: 16.0, icon: Shield },
+  { id: 'elite-2', name: 'Elite II', hashRate: '200 TH/s', boltPerDay: 10000, usdtPerDay: 10.00, priceTon: 30.0, icon: Layers },
+  { id: 'legendary-1', name: 'Legend', hashRate: '500 TH/s', boltPerDay: 25000, usdtPerDay: 25.00, priceTon: 50.0, icon: Crown },
+  { id: 'mythic-1', name: 'Mythic', hashRate: '1000 TH/s', boltPerDay: 60000, usdtPerDay: 60.00, priceTon: 100.0, icon: Gem },
 ];
-
-const tierColors: Record<string, { bg: string; text: string; border: string; glow: string }> = {
-  Free: { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/30', glow: 'shadow-emerald-500/20' },
-  Basic: { bg: 'bg-blue-500/10', text: 'text-blue-500', border: 'border-blue-500/30', glow: 'shadow-blue-500/20' },
-  Pro: { bg: 'bg-violet-500/10', text: 'text-violet-500', border: 'border-violet-500/30', glow: 'shadow-violet-500/20' },
-  Elite: { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/30', glow: 'shadow-amber-500/20' },
-  Legendary: { bg: 'bg-orange-500/15', text: 'text-orange-500', border: 'border-orange-500/40', glow: 'shadow-orange-500/30' },
-  Mythic: { bg: 'bg-fuchsia-500/15', text: 'text-fuchsia-500', border: 'border-fuchsia-500/40', glow: 'shadow-fuchsia-500/30' },
-};
 
 const REQUIRED_ADS = 5;
 
@@ -61,7 +47,6 @@ const MiningServers = () => {
   const [adProgress, setAdProgress] = useState(0);
   const [isWatchingAd, setIsWatchingAd] = useState(false);
   const [adUnlocked, setAdUnlocked] = useState(false);
-  const timelineRef = useRef<HTMLDivElement>(null);
   
   const { showAd, isLoading: isAdLoading, isReady: isAdReady } = useAdsGramRewarded();
   const navigate = useNavigate();
@@ -136,7 +121,7 @@ const MiningServers = () => {
         toast.error('Invite 1 friend or watch 5 ads to unlock');
         return;
       }
-      await purchaseServer(server.id, server.tier, server.name, server.hashRate, server.boltPerDay, server.usdtPerDay);
+      await purchaseServer(server.id, 'Free', server.name, server.hashRate, server.boltPerDay, server.usdtPerDay);
       toast.success('Free server claimed!');
       return;
     }
@@ -146,7 +131,7 @@ const MiningServers = () => {
 
   const handlePaymentSuccess = async () => {
     if (selectedServer && user?.id) {
-      await purchaseServer(selectedServer.id, selectedServer.tier, selectedServer.name, selectedServer.hashRate, selectedServer.boltPerDay, selectedServer.usdtPerDay);
+      await purchaseServer(selectedServer.id, 'Paid', selectedServer.name, selectedServer.hashRate, selectedServer.boltPerDay, selectedServer.usdtPerDay);
       toast.success('Server purchased!');
     }
     setSelectedServer(null);
@@ -161,208 +146,141 @@ const MiningServers = () => {
     usdtPerDay: ownedServers.reduce((sum, s) => sum + s.daily_usdt_yield, 0),
   };
 
-  // Calculate timeline progress
   const sortedServers = [...servers].sort((a, b) => a.priceTon - b.priceTon);
-  const lastOwnedIndex = sortedServers.reduce((lastIdx, server, idx) => 
-    isOwned(server.id) ? idx : lastIdx, -1);
-  const progressPercent = lastOwnedIndex >= 0 
-    ? ((lastOwnedIndex + 1) / sortedServers.length) * 100 
-    : 0;
-
-  const renderTimelineNode = (server: MiningServer, index: number) => {
-    const owned = isOwned(server.id);
-    const stock = getStock(server.id);
-    const Icon = server.icon;
-    const colors = tierColors[server.tier];
-    const isFreeServer = server.priceTon === 0;
-    const isNext = !owned && index === lastOwnedIndex + 1;
-
-    return (
-      <motion.div
-        key={server.id}
-        initial={{ opacity: 0, x: 20 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ delay: index * 0.05 }}
-        className={`relative p-4 rounded-2xl backdrop-blur-xl border transition-all duration-300 cursor-pointer group ${
-          owned 
-            ? 'bg-white/10 border-white/20 shadow-lg' 
-            : stock.soldOut 
-              ? 'bg-white/5 border-white/5 opacity-50'
-              : isNext
-                ? 'bg-white/15 border-primary/40 shadow-xl shadow-primary/10 hover:bg-white/20'
-                : 'bg-white/8 border-white/10 hover:bg-white/12 hover:border-white/20'
-        }`}
-        onClick={() => !owned && !stock.soldOut && (isFreeServer ? canClaimFreeServer : true) && handleBuyClick(server)}
-      >
-        {/* Glassmorphism inner glow */}
-        <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${colors.bg}`} />
-        
-        {/* Tier badge */}
-        <div className={`absolute -top-2 -right-2 px-2 py-0.5 rounded-full text-[10px] font-bold backdrop-blur-sm ${colors.bg} ${colors.text} ${colors.border} border`}>
-          {server.tier}
-        </div>
-
-        <div className="relative flex items-center gap-4">
-          {/* Glowing Icon Container */}
-          <div className={`relative w-14 h-14 rounded-xl flex items-center justify-center backdrop-blur-sm ${colors.bg} border ${colors.border} group-hover:shadow-lg transition-shadow ${colors.glow}`}>
-            <Icon className={`w-7 h-7 ${colors.text}`} />
-            {owned && (
-              <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/50">
-                <Check className="w-3 h-3 text-primary-foreground" />
-              </div>
-            )}
-          </div>
-
-          {/* Content */}
-          <div className="flex-1 min-w-0 space-y-2">
-            <div>
-              <h3 className="font-semibold text-foreground text-sm group-hover:text-primary transition-colors">{server.name}</h3>
-              <p className="text-xs text-muted-foreground/80 font-mono">{server.hashRate}</p>
-            </div>
-            
-            {/* Earnings row */}
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 backdrop-blur-sm">
-                <BoltIcon size={12} />
-                <span className="text-xs font-bold text-primary">+{server.boltPerDay.toLocaleString()}</span>
-              </div>
-              <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-500/10 backdrop-blur-sm">
-                <UsdtIcon size={12} />
-                <span className="text-xs font-bold text-emerald-500">${server.usdtPerDay.toFixed(2)}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Price/Status */}
-          <div className="text-right shrink-0">
-            {owned ? (
-              <div className={`px-3 py-1.5 rounded-lg ${colors.bg} backdrop-blur-sm`}>
-                <span className={`text-xs font-bold ${colors.text}`}>ACTIVE</span>
-              </div>
-            ) : stock.soldOut ? (
-              <div className="px-3 py-1.5 rounded-lg bg-muted/50 backdrop-blur-sm">
-                <span className="text-xs font-medium text-muted-foreground">SOLD</span>
-              </div>
-            ) : server.priceTon === 0 ? (
-              <div className="px-3 py-1.5 rounded-lg bg-emerald-500/20 backdrop-blur-sm animate-pulse">
-                <span className="text-xs font-bold text-emerald-400">FREE</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 backdrop-blur-sm group-hover:bg-white/15 transition-colors">
-                <TonIcon size={14} />
-                <span className="text-sm font-bold text-foreground">{server.priceTon}</span>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Free Server Unlock Actions */}
-        {isFreeServer && !owned && !canClaimFreeServer && (
-          <div className="relative flex gap-2 mt-4 pt-3 border-t border-white/10" onClick={(e) => e.stopPropagation()}>
-            <Button onClick={() => navigate('/invite')} size="sm" variant="ghost" className="flex-1 h-9 text-xs backdrop-blur-sm bg-white/5 hover:bg-white/10 border border-white/10">
-              <Users className="w-3.5 h-3.5 mr-1.5" />
-              Invite Friend
-            </Button>
-            <Button
-              onClick={handleWatchAd}
-              disabled={isWatchingAd || isAdLoading || !isAdReady}
-              size="sm"
-              variant="ghost"
-              className="flex-1 h-9 text-xs backdrop-blur-sm bg-white/5 hover:bg-white/10 border border-white/10"
-            >
-              {isWatchingAd || isAdLoading ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <>
-                  <Play className="w-3.5 h-3.5 mr-1.5 fill-current" />
-                  Watch ({adProgress}/{REQUIRED_ADS})
-                </>
-              )}
-            </Button>
-          </div>
-        )}
-      </motion.div>
-    );
-  };
 
   return (
     <PageWrapper className="min-h-screen bg-background pb-32">
       <Helmet>
-        <title>Mining Servers | Passive Income</title>
+        <title>Mining Servers</title>
         <meta name="description" content="Buy mining servers to earn daily BOLT and USDT rewards." />
-        <link rel="canonical" href={`${typeof window !== 'undefined' ? window.location.origin : ''}/mining-servers`} />
       </Helmet>
 
-      <div className="max-w-md mx-auto px-4 pt-6 space-y-6">
-        {/* Header with Circuit Animation */}
-        <div className="text-center space-y-4">
-          <CircuitAnimation className="mx-auto max-w-xs" />
-          
-          <div>
-            <h1 className="text-xl font-bold text-foreground">Mining Journey</h1>
-            <p className="text-sm text-muted-foreground mt-1">Your path to passive income</p>
-          </div>
+      <div className="max-w-md mx-auto px-4 pt-6 space-y-5">
+        {/* Header */}
+        <div className="text-center space-y-1">
+          <h1 className="text-xl font-bold text-foreground">Mining Servers</h1>
+          <p className="text-sm text-muted-foreground">Earn passive income 24/7</p>
         </div>
 
-        {/* Stats Bar */}
+        {/* Stats */}
         {totalStats.servers > 0 && (
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="flex items-center justify-center gap-5 py-3 px-4 rounded-xl bg-card/60 border border-primary/20 shadow-lg shadow-primary/5"
-          >
+          <div className="flex items-center justify-between p-3 rounded-xl bg-card border border-border">
             <div className="flex items-center gap-2">
-              <Server className="w-4 h-4 text-primary" />
-              <span className="text-sm font-bold text-foreground">{totalStats.servers}</span>
+              <Server className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-foreground">{totalStats.servers} active</span>
             </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="flex items-center gap-1.5">
-              <BoltIcon size={14} />
-              <span className="text-sm font-bold text-primary">+{totalStats.boltPerDay.toLocaleString()}/d</span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1">
+                <BoltIcon size={14} />
+                <span className="text-sm font-medium text-primary">+{totalStats.boltPerDay.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <UsdtIcon size={14} />
+                <span className="text-sm font-medium text-emerald-500">${totalStats.usdtPerDay.toFixed(2)}</span>
+              </div>
             </div>
-            <div className="w-px h-4 bg-border" />
-            <div className="flex items-center gap-1.5">
-              <UsdtIcon size={14} />
-              <span className="text-sm font-bold text-emerald-500">+${totalStats.usdtPerDay.toFixed(2)}/d</span>
-            </div>
-          </motion.div>
+          </div>
         )}
 
-        {/* Progress Indicator */}
-        <div className="flex items-center gap-3 px-2">
-          <div className="flex-1 h-1.5 rounded-full bg-secondary/50 overflow-hidden">
-            <motion.div 
-              className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full"
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercent}%` }}
-              transition={{ duration: 0.8, ease: "easeOut" }}
-            />
-          </div>
-          <span className="text-xs text-muted-foreground font-medium">
-            {ownedServers.length}/{servers.length}
-          </span>
+        {/* Server List */}
+        <div className="space-y-2">
+          {sortedServers.map((server) => {
+            const owned = isOwned(server.id);
+            const stock = getStock(server.id);
+            const Icon = server.icon;
+            const isFreeServer = server.priceTon === 0;
+
+            return (
+              <div
+                key={server.id}
+                className={`p-3 rounded-xl border transition-colors ${
+                  owned 
+                    ? 'bg-primary/5 border-primary/20' 
+                    : stock.soldOut 
+                      ? 'bg-muted/30 border-border opacity-60'
+                      : 'bg-card border-border hover:border-primary/30 cursor-pointer'
+                }`}
+                onClick={() => !owned && !stock.soldOut && handleBuyClick(server)}
+              >
+                <div className="flex items-center gap-3">
+                  {/* Icon */}
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                    owned ? 'bg-primary/10' : 'bg-secondary'
+                  }`}>
+                    <Icon className={`w-5 h-5 ${owned ? 'text-primary' : 'text-muted-foreground'}`} />
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium text-foreground text-sm">{server.name}</h3>
+                      {owned && <Check className="w-4 h-4 text-primary" />}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs text-muted-foreground">{server.hashRate}</span>
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <span className="text-xs text-primary">+{server.boltPerDay}</span>
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <span className="text-xs text-emerald-500">${server.usdtPerDay}</span>
+                    </div>
+                  </div>
+
+                  {/* Price */}
+                  <div className="shrink-0">
+                    {owned ? (
+                      <span className="text-xs text-primary font-medium">Active</span>
+                    ) : stock.soldOut ? (
+                      <span className="text-xs text-muted-foreground">Sold</span>
+                    ) : isFreeServer ? (
+                      <span className="text-xs text-emerald-500 font-medium">Free</span>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <TonIcon size={14} />
+                        <span className="text-sm font-medium text-foreground">{server.priceTon}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Free Server Unlock */}
+                {isFreeServer && !owned && !canClaimFreeServer && (
+                  <div className="flex gap-2 mt-3 pt-3 border-t border-border" onClick={(e) => e.stopPropagation()}>
+                    <Button 
+                      onClick={() => navigate('/invite')} 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1 h-8 text-xs"
+                    >
+                      <Users className="w-3.5 h-3.5 mr-1.5" />
+                      Invite
+                    </Button>
+                    <Button
+                      onClick={handleWatchAd}
+                      disabled={isWatchingAd || isAdLoading || !isAdReady}
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 h-8 text-xs"
+                    >
+                      {isWatchingAd || isAdLoading ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <>
+                          <Play className="w-3.5 h-3.5 mr-1.5" />
+                          Ad ({adProgress}/{REQUIRED_ADS})
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-
-        {/* Timeline */}
-        <section className="relative" ref={timelineRef}>
-          {/* Animated Timeline Trace */}
-          <TimelineTraceAnimation 
-            serverCount={sortedServers.length}
-            ownedCount={ownedServers.length}
-          />
-
-          {/* Server Nodes */}
-          <div className="space-y-3 pl-8">
-            {sortedServers.map((server, index) => renderTimelineNode(server, index))}
-          </div>
-        </section>
 
         {/* Info */}
-        <div className="p-4 rounded-xl bg-secondary/30 border border-border/30">
-          <p className="text-xs text-muted-foreground text-center">
-            Servers mine 24/7 automatically. Rewards added to your balance daily.
-          </p>
-        </div>
+        <p className="text-xs text-muted-foreground text-center px-4">
+          Servers mine automatically. Rewards added daily.
+        </p>
       </div>
 
       {/* Payment Modal */}
