@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft,
   Zap,
@@ -14,9 +14,14 @@ import {
   Ticket,
   Clock,
   Users,
-  Headphones
+  Headphones,
+  Shield,
+  Sparkles,
+  ChevronRight,
+  TrendingUp
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
@@ -24,12 +29,6 @@ import { usePriceCalculator } from '@/hooks/usePriceCalculator';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
-interface VIPBenefit {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}
 
 interface VIPPlan {
   id: string;
@@ -42,10 +41,8 @@ interface VIPPlan {
   weeklySpinTickets: number;
   referralBonus: number;
   miningDurationBonus: number;
-  gradient: string;
-  iconBg: string;
-  icon: React.ReactNode;
-  benefits: VIPBenefit[];
+  popular?: boolean;
+  features: string[];
 }
 
 const vipPlans: VIPPlan[] = [
@@ -60,15 +57,12 @@ const vipPlans: VIPPlan[] = [
     weeklySpinTickets: 3,
     referralBonus: 20,
     miningDurationBonus: 2,
-    gradient: 'from-slate-400 to-slate-500',
-    iconBg: 'bg-slate-500/20',
-    icon: <Star className="w-6 h-6 text-slate-400" />,
-    benefits: [
-      { icon: <Rocket className="w-4 h-4" />, label: 'Mining Speed', value: '+20%' },
-      { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '100 BOLT' },
-      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '3/day' },
-      { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+20%' },
-      { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+2 hours' },
+    features: [
+      '+20% Mining Speed',
+      '100 BOLT Daily Bonus',
+      '3 Free Spins/day',
+      '+20% Referral Bonus',
+      '+2h Mining Duration',
     ]
   },
   {
@@ -82,16 +76,14 @@ const vipPlans: VIPPlan[] = [
     weeklySpinTickets: 10,
     referralBonus: 50,
     miningDurationBonus: 4,
-    gradient: 'from-amber-400 to-orange-500',
-    iconBg: 'bg-amber-500/20',
-    icon: <Crown className="w-6 h-6 text-amber-400" />,
-    benefits: [
-      { icon: <Rocket className="w-4 h-4" />, label: 'Mining Speed', value: '+50%' },
-      { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '300 BOLT' },
-      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '5/day' },
-      { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+50%' },
-      { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+4 hours' },
-      { icon: <Headphones className="w-4 h-4" />, label: 'Support', value: 'Priority' },
+    popular: true,
+    features: [
+      '+50% Mining Speed',
+      '300 BOLT Daily Bonus',
+      '5 Free Spins/day',
+      '+50% Referral Bonus',
+      '+4h Mining Duration',
+      'Priority Support',
     ]
   },
   {
@@ -105,19 +97,43 @@ const vipPlans: VIPPlan[] = [
     weeklySpinTickets: 25,
     referralBonus: 100,
     miningDurationBonus: 8,
-    gradient: 'from-violet-400 to-purple-600',
-    iconBg: 'bg-violet-500/20',
-    icon: <Gem className="w-6 h-6 text-violet-400" />,
-    benefits: [
-      { icon: <Rocket className="w-4 h-4" />, label: 'Mining Speed', value: '+100%' },
-      { icon: <Gift className="w-4 h-4" />, label: 'Daily Bonus', value: '700 BOLT' },
-      { icon: <Ticket className="w-4 h-4" />, label: 'Free Spins', value: '10/day' },
-      { icon: <Users className="w-4 h-4" />, label: 'Referral Bonus', value: '+100%' },
-      { icon: <Clock className="w-4 h-4" />, label: 'Mining Duration', value: '+8 hours' },
-      { icon: <Headphones className="w-4 h-4" />, label: 'Support', value: 'VIP 24/7' },
+    features: [
+      '+100% Mining Speed',
+      '700 BOLT Daily Bonus',
+      '10 Free Spins/day',
+      '+100% Referral Bonus',
+      '+8h Mining Duration',
+      'VIP 24/7 Support',
     ]
   }
 ];
+
+const tierConfig = {
+  silver: {
+    icon: Star,
+    gradient: 'from-slate-300 via-slate-400 to-slate-500',
+    bg: 'bg-slate-500/10',
+    border: 'border-slate-500/30',
+    text: 'text-slate-400',
+    glow: 'shadow-slate-500/20',
+  },
+  gold: {
+    icon: Crown,
+    gradient: 'from-amber-300 via-yellow-400 to-orange-500',
+    bg: 'bg-amber-500/10',
+    border: 'border-amber-500/30',
+    text: 'text-amber-400',
+    glow: 'shadow-amber-500/20',
+  },
+  platinum: {
+    icon: Gem,
+    gradient: 'from-violet-300 via-purple-400 to-indigo-500',
+    bg: 'bg-violet-500/10',
+    border: 'border-violet-500/30',
+    text: 'text-violet-400',
+    glow: 'shadow-violet-500/20',
+  },
+};
 
 const VIPSubscription = () => {
   const navigate = useNavigate();
@@ -127,9 +143,8 @@ const VIPSubscription = () => {
   const { tonToUsd, formatUsd } = usePriceCalculator();
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [currentVIP, setCurrentVIP] = useState<string | null>(null);
-  const [selectedPlan, setSelectedPlan] = useState<string>('gold');
+  const [vipExpiresAt, setVipExpiresAt] = useState<string | null>(null);
   
-  // Enable Telegram back button
   useTelegramBackButton();
 
   useEffect(() => {
@@ -151,7 +166,7 @@ const VIPSubscription = () => {
         
         if (vipData && new Date(vipData.expires_at) > new Date()) {
           setCurrentVIP(vipData.tier);
-          setSelectedPlan(vipData.tier);
+          setVipExpiresAt(vipData.expires_at);
         }
       }
     };
@@ -232,6 +247,7 @@ const VIPSubscription = () => {
 
         toast.success(`${plan.name} VIP activated!`);
         setCurrentVIP(plan.tier);
+        setVipExpiresAt(expiresAt.toISOString());
       }
     } catch (error) {
       console.error('Purchase error:', error);
@@ -241,7 +257,12 @@ const VIPSubscription = () => {
     }
   };
 
-  const currentPlan = vipPlans.find(p => p.id === selectedPlan) || vipPlans[1];
+  const getDaysRemaining = () => {
+    if (!vipExpiresAt) return 0;
+    return Math.ceil((new Date(vipExpiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  };
+
+  const currentPlanData = currentVIP ? vipPlans.find(p => p.tier === currentVIP) : null;
 
   return (
     <main className="min-h-screen bg-background pb-24">
@@ -261,113 +282,201 @@ const VIPSubscription = () => {
           >
             <ArrowLeft className="w-5 h-5" />
           </Button>
-          <h1 className="text-xl font-semibold text-foreground">VIP Membership</h1>
-        </div>
-
-        {/* Plan Selector */}
-        <div className="flex gap-2 p-1 bg-muted rounded-xl mb-6">
-          {vipPlans.map((plan) => (
-            <button
-              key={plan.id}
-              onClick={() => setSelectedPlan(plan.id)}
-              className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium transition-all ${
-                selectedPlan === plan.id
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {plan.name}
-            </button>
-          ))}
-        </div>
-
-        {/* Selected Plan Card */}
-        <motion.div
-          key={currentPlan.id}
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2 }}
-          className="relative overflow-hidden rounded-2xl bg-card border border-border"
-        >
-          {/* Gradient accent */}
-          <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${currentPlan.gradient}`} />
-          
-          <div className="p-5">
-            {currentVIP === currentPlan.tier && (
-              <div className="absolute top-4 right-4">
-                <span className="text-xs font-medium text-primary bg-primary/10 px-2.5 py-1 rounded-full flex items-center gap-1">
-                  <Check className="w-3 h-3" />
-                  Active
-                </span>
-              </div>
-            )}
-
-            {/* Icon & Name */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`w-12 h-12 rounded-xl ${currentPlan.iconBg} flex items-center justify-center`}>
-                {currentPlan.icon}
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-foreground">{currentPlan.name} VIP</h2>
-                <p className="text-xs text-muted-foreground">30-day membership</p>
-              </div>
-            </div>
-
-            {/* Price */}
-            <div className="flex items-baseline gap-2 mb-5">
-              <span className="text-3xl font-bold text-foreground">{currentPlan.priceTon}</span>
-              <span className="text-base text-muted-foreground">TON</span>
-              <span className="text-sm text-muted-foreground">≈ {formatUsd(tonToUsd(currentPlan.priceTon))}</span>
-            </div>
-
-            {/* Benefits List */}
-            <div className="space-y-2.5 mb-5">
-              {currentPlan.benefits.map((benefit, i) => (
-                <div 
-                  key={i} 
-                  className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-border/50"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-lg ${currentPlan.iconBg} flex items-center justify-center`}>
-                      <span className="text-foreground">{benefit.icon}</span>
-                    </div>
-                    <span className="text-sm text-foreground">{benefit.label}</span>
-                  </div>
-                  <span className={`text-sm font-bold bg-gradient-to-r ${currentPlan.gradient} bg-clip-text text-transparent`}>
-                    {benefit.value}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {/* Subscribe Button */}
-            <Button
-              onClick={() => handlePurchase(currentPlan)}
-              disabled={currentVIP === currentPlan.tier || purchasing === currentPlan.id || isProcessing}
-              className={`w-full h-11 text-sm font-medium bg-gradient-to-r ${currentPlan.gradient} hover:opacity-90 transition-opacity`}
-            >
-              {purchasing === currentPlan.id ? (
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : currentVIP === currentPlan.tier ? (
-                <span className="flex items-center gap-2">
-                  <Check className="w-4 h-4" />
-                  Subscribed
-                </span>
-              ) : !isConnected ? (
-                'Connect Wallet'
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Zap className="w-4 h-4" />
-                  Subscribe Now
-                </span>
-              )}
-            </Button>
+          <div>
+            <h1 className="text-xl font-bold text-foreground">VIP Membership</h1>
+            <p className="text-xs text-muted-foreground">Unlock exclusive benefits</p>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Footer Note */}
-        <p className="text-xs text-muted-foreground text-center mt-5">
-          Benefits activate immediately • No auto-renewal
+        {/* Current VIP Status Banner */}
+        {currentVIP && currentPlanData && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`mb-6 p-4 rounded-2xl bg-gradient-to-r ${tierConfig[currentVIP as keyof typeof tierConfig].gradient} relative overflow-hidden`}
+          >
+            <div className="absolute inset-0 bg-black/40" />
+            <div className="relative z-10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  {currentVIP === 'silver' && <Star className="w-5 h-5 text-white" />}
+                  {currentVIP === 'gold' && <Crown className="w-5 h-5 text-white" />}
+                  {currentVIP === 'platinum' && <Gem className="w-5 h-5 text-white" />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-white">{currentPlanData.name} VIP</span>
+                    <Badge className="bg-white/20 text-white text-[10px] border-0">Active</Badge>
+                  </div>
+                  <p className="text-xs text-white/80">{getDaysRemaining()} days remaining</p>
+                </div>
+              </div>
+              <Shield className="w-8 h-8 text-white/40" />
+            </div>
+          </motion.div>
+        )}
+
+        {/* Plans Grid */}
+        <div className="space-y-4">
+          {vipPlans.map((plan, index) => {
+            const config = tierConfig[plan.tier];
+            const TierIcon = config.icon;
+            const isActive = currentVIP === plan.tier;
+            const isUpgrade = currentVIP && vipPlans.findIndex(p => p.tier === currentVIP) < index;
+            
+            return (
+              <motion.div
+                key={plan.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="relative"
+              >
+                {plan.popular && (
+                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 z-10">
+                    <Badge className={`bg-gradient-to-r ${config.gradient} text-white border-0 text-[10px] px-3 shadow-lg`}>
+                      <Sparkles className="w-3 h-3 mr-1" />
+                      Most Popular
+                    </Badge>
+                  </div>
+                )}
+                
+                <div 
+                  className={`
+                    relative p-4 rounded-2xl border transition-all duration-300
+                    ${isActive 
+                      ? `${config.bg} ${config.border} shadow-lg ${config.glow}` 
+                      : 'bg-card/60 backdrop-blur-sm border-border/50 hover:border-border'
+                    }
+                    ${plan.popular ? 'mt-3' : ''}
+                  `}
+                >
+                  {/* Header Row */}
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-11 h-11 rounded-xl ${config.bg} ${config.border} border flex items-center justify-center`}>
+                        <TierIcon className={`w-5 h-5 ${config.text}`} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-bold text-foreground">{plan.name}</h3>
+                          {isActive && (
+                            <Check className="w-4 h-4 text-green-500" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">30 days access</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="flex items-baseline gap-1">
+                        <span className={`text-xl font-bold bg-gradient-to-r ${config.gradient} bg-clip-text text-transparent`}>
+                          {plan.priceTon}
+                        </span>
+                        <span className="text-xs text-muted-foreground">TON</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">
+                        ≈ {formatUsd(tonToUsd(plan.priceTon))}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Benefits Grid */}
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    {plan.features.slice(0, 4).map((feature, i) => (
+                      <div 
+                        key={i}
+                        className="flex items-center gap-2 text-xs text-muted-foreground"
+                      >
+                        <Check className={`w-3 h-3 ${config.text} shrink-0`} />
+                        <span className="truncate">{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Additional features */}
+                  {plan.features.length > 4 && (
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {plan.features.slice(4).map((feature, i) => (
+                        <Badge 
+                          key={i}
+                          variant="outline" 
+                          className={`text-[10px] ${config.border} ${config.text} bg-transparent`}
+                        >
+                          {feature}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Action Button */}
+                  <Button
+                    onClick={() => handlePurchase(plan)}
+                    disabled={isActive || purchasing === plan.id || isProcessing}
+                    className={`w-full h-10 text-sm font-medium transition-all ${
+                      isActive 
+                        ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                        : `bg-gradient-to-r ${config.gradient} hover:opacity-90 text-white shadow-md`
+                    }`}
+                  >
+                    {purchasing === plan.id ? (
+                      <div className="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin" />
+                    ) : isActive ? (
+                      <span className="flex items-center gap-2">
+                        <Shield className="w-4 h-4" />
+                        Current Plan
+                      </span>
+                    ) : !isConnected ? (
+                      'Connect Wallet'
+                    ) : isUpgrade ? (
+                      <span className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4" />
+                        Upgrade
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        <Zap className="w-4 h-4" />
+                        Subscribe
+                      </span>
+                    )}
+                  </Button>
+                </div>
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* Comparison Section */}
+        <div className="mt-8 p-4 rounded-2xl bg-card/40 backdrop-blur-sm border border-border/30">
+          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-primary" />
+            Why Go VIP?
+          </h3>
+          <div className="space-y-3">
+            {[
+              { icon: Rocket, label: 'Up to 2x faster mining speed', color: 'text-blue-400' },
+              { icon: Gift, label: 'Daily bonus up to 700 BOLT', color: 'text-green-400' },
+              { icon: Ticket, label: 'Up to 10 free spins every day', color: 'text-purple-400' },
+              { icon: Users, label: 'Double referral rewards', color: 'text-amber-400' },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 + i * 0.1 }}
+                className="flex items-center gap-3"
+              >
+                <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
+                  <item.icon className={`w-4 h-4 ${item.color}`} />
+                </div>
+                <span className="text-sm text-foreground">{item.label}</span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <p className="text-[10px] text-muted-foreground text-center mt-6">
+          Benefits activate immediately • No auto-renewal • Cancel anytime
         </p>
       </div>
     </main>
