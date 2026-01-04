@@ -53,6 +53,46 @@ function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
+// Process AdsGram direct click from Telegram start parameter
+async function processAdsGramDirectClick(
+  telegramId: number,
+  startParam: string
+) {
+  const supabase = getSupabaseClient();
+  
+  // Parse: adg_{campaign_id}_{banner_id}_{publisher_id}_{click_id}
+  const parts = startParam.replace('adg_', '').split('_');
+  
+  const campaignId = parts[0] || null;
+  const bannerId = parts[1] || null;
+  const publisherId = parts[2] || null;
+  // Click ID might contain underscores, so join the rest
+  const clickId = parts.slice(3).join('_') || `direct_${Date.now()}`;
+  
+  console.log('AdsGram direct click:', { 
+    telegramId, campaignId, bannerId, publisherId, clickId 
+  });
+  
+  // Insert or update ad click with user
+  const { error } = await supabase
+    .from('ad_clicks')
+    .upsert({
+      click_id: clickId,
+      campaign_id: campaignId,
+      banner_id: bannerId,
+      publisher_id: publisherId,
+      telegram_id: telegramId,
+    }, { onConflict: 'click_id' });
+  
+  if (error) {
+    console.error('Error storing direct ad click:', error);
+  } else {
+    console.log('Successfully stored AdsGram direct click for:', telegramId);
+  }
+  
+  return { campaignId, bannerId, publisherId, clickId };
+}
+
 // Register user in bolt_users on /start command
 async function registerUser(
   telegramId: number,
@@ -77,7 +117,7 @@ async function registerUser(
   
   // Find referrer if referral code provided
   let referrerId: string | null = null;
-  if (referralCode && !referralCode.startsWith('adclick_')) {
+  if (referralCode && !referralCode.startsWith('adclick_') && !referralCode.startsWith('adg_')) {
     // Try to find by username first
     const { data: referrerByUsername } = await supabase
       .from('bolt_users')
@@ -1680,10 +1720,28 @@ Use /partnership to submit a new task.`;
       await registerUser(telegramId, firstName, lastName, username || null, referralParam);
       console.log('User registered/verified on /start:', telegramId);
 
-      // Check if this is an ad click tracking parameter
-      if (referralParam && referralParam.startsWith('adclick_')) {
+      // Check if this is a direct AdsGram tracking parameter (new format)
+      if (referralParam && referralParam.startsWith('adg_')) {
+        const adData = await processAdsGramDirectClick(telegramId, referralParam);
+        
+        // Notify admin about new AdsGram user
+        for (const adminId of ADMIN_IDS) {
+          await sendTelegramMessage(adminId, `📢 <b>New AdsGram User (Direct)!</b>
+            
+👤 User: ${firstName} ${username ? `(@${username})` : ''}
+🆔 Telegram ID: ${telegramId}
+📊 Campaign: ${adData.campaignId}
+🎯 Banner: ${adData.bannerId}
+📡 Publisher: ${adData.publisherId}
+🔗 Click ID: ${adData.clickId}
+
+User joined from AdsGram ad!`);
+        }
+      }
+      // Legacy: Check if this is an old ad click tracking parameter
+      else if (referralParam && referralParam.startsWith('adclick_')) {
         const clickId = referralParam.replace('adclick_', '');
-        console.log('Ad click detected, click_id:', clickId);
+        console.log('Legacy ad click detected, click_id:', clickId);
         
         const supabase = getSupabaseClient();
         
@@ -1702,7 +1760,7 @@ Use /partnership to submit a new task.`;
           
           // Notify admin about new ad click conversion
           for (const adminId of ADMIN_IDS) {
-            await sendTelegramMessage(adminId, `📢 <b>New Ad Click!</b>
+            await sendTelegramMessage(adminId, `📢 <b>New Ad Click (Legacy)!</b>
             
 👤 User: ${firstName} ${username ? `(@${username})` : ''}
 🆔 Telegram ID: ${telegramId}
@@ -1714,7 +1772,7 @@ User joined from AdsGram ad!`);
       }
 
       let webAppUrl = WEBAPP_URL;
-      if (referralParam && !referralParam.startsWith('adclick_')) {
+      if (referralParam && !referralParam.startsWith('adclick_') && !referralParam.startsWith('adg_')) {
         webAppUrl = `${WEBAPP_URL}?ref=${encodeURIComponent(referralParam)}`;
       }
 
@@ -1919,35 +1977,38 @@ Invite friends to climb the leaderboard!`;
       
       const stats = await getAdStats();
       
-      const adsMessage = `📊 <b>إحصائيات الإعلانات - AdsGram</b>
+      const adsMessage = `📊 <b>AdsGram Statistics</b>
 
 ━━━━━━━━━━━━━━━━━━━━━━
-📅 <b>اليوم:</b>
-👆 النقرات: <b>${stats.today.total}</b>
-👥 مستخدمين جدد: <b>${stats.today.unique}</b>
-💰 دافعين: <b>${stats.today.payers}</b>
-💵 الإيرادات: <b>$${stats.today.revenue.toFixed(2)}</b>
-📈 نسبة التحويل: <b>${stats.today.conversion}%</b>
+📅 <b>Today:</b>
+👆 Clicks: <b>${stats.today.total}</b>
+👥 New Users: <b>${stats.today.unique}</b>
+💰 Payers: <b>${stats.today.payers}</b>
+💵 Revenue: <b>$${stats.today.revenue.toFixed(2)}</b>
+📈 Conversion: <b>${stats.today.conversion}%</b>
 
 ━━━━━━━━━━━━━━━━━━━━━━
-📅 <b>آخر 7 أيام:</b>
-👆 النقرات: <b>${stats.week.total}</b>
-👥 مستخدمين جدد: <b>${stats.week.unique}</b>
-💰 دافعين: <b>${stats.week.payers}</b>
-💵 الإيرادات: <b>$${stats.week.revenue.toFixed(2)}</b>
-📈 نسبة التحويل: <b>${stats.week.conversion}%</b>
+📅 <b>Last 7 Days:</b>
+👆 Clicks: <b>${stats.week.total}</b>
+👥 New Users: <b>${stats.week.unique}</b>
+💰 Payers: <b>${stats.week.payers}</b>
+💵 Revenue: <b>$${stats.week.revenue.toFixed(2)}</b>
+📈 Conversion: <b>${stats.week.conversion}%</b>
 
 ━━━━━━━━━━━━━━━━━━━━━━
-📅 <b>الكل:</b>
-👆 النقرات: <b>${stats.allTime.total}</b>
-👥 مستخدمين جدد: <b>${stats.allTime.unique}</b>
-💰 دافعين: <b>${stats.allTime.payers}</b>
-💵 الإيرادات: <b>$${stats.allTime.revenue.toFixed(2)}</b>
-📈 نسبة التحويل: <b>${stats.allTime.conversion}%</b>
+📅 <b>All Time:</b>
+👆 Clicks: <b>${stats.allTime.total}</b>
+👥 New Users: <b>${stats.allTime.unique}</b>
+💰 Payers: <b>${stats.allTime.payers}</b>
+💵 Revenue: <b>$${stats.allTime.revenue.toFixed(2)}</b>
+📈 Conversion: <b>${stats.allTime.conversion}%</b>
 
 ━━━━━━━━━━━━━━━━━━━━━━
-🔗 <b>رابط التتبع لـ AdsGram:</b>
-<code>https://pxerqticmmpurwmumhyw.supabase.co/functions/v1/adsgram-tracking?cid={campaign_id}&bid={banner_id}&pid={publisher_id}&click_id={click_id}</code>`;
+🔗 <b>AdsGram Direct Tracking Link:</b>
+<code>https://t.me/Boltminingbot?start=adg_{campaign_id}_{banner_id}_{publisher_id}_{click_id}</code>
+
+✅ This is a direct Telegram link - no redirect needed!
+📝 Replace {placeholders} with AdsGram macros`;
 
       await sendTelegramMessage(chatId, adsMessage);
     }
