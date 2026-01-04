@@ -118,3 +118,124 @@
     padding-top: max(env(safe-area-inset-top, 0px), 16px);
   }
 }
+
+/* Circuit Trace Animation */
+.circuit-container {
+  width: 100%;
+}
+
+.trace-bg {
+  stroke: hsl(var(--border));
+  stroke-width: 1.8;
+  fill: none;
+}
+
+.trace-flow {
+  stroke-width: 1.8;
+  fill: none;
+  stroke-dasharray: 40 400;
+  stroke-dashoffset: 438;
+  filter: drop-shadow(0 0 6px currentColor);
+  animation: circuit-flow 3s cubic-bezier(0.5, 0, 0.9, 1) infinite;
+}
+
+.trace-blue {
+  stroke: #399fff;
+  color: #399fff;
+}
+
+.trace-emerald {
+  stroke: #10b981;
+  color: #10b981;
+}
+
+.trace-violet {
+  stroke: #8b5cf6;
+  color: #8b5cf6;
+}
+
+.trace-amber {
+  stroke: #f59e0b;
+  color: #f59e0b;
+}
+
+.trace-fuchsia {
+  stroke: #d946ef;
+  color: #d946ef;
+}
+
+@keyframes circuit-flow {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Chip styles */
+.chip-body {
+  rx: 12;
+  ry: 12;
+}
+
+.chip-text {
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.chip-pin {
+  stroke: hsl(var(--muted-foreground));
+  stroke-width: 0.5;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.6));
+}
+
+/* Timeline styles */
+.timeline-line {
+  position: absolute;
+  left: 23px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, hsl(var(--border)), hsl(var(--border)));
+}
+
+.timeline-line-glow {
+  position: absolute;
+  left: 23px;
+  top: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, hsl(var(--primary)), hsl(var(--primary) / 0.3));
+  box-shadow: 0 0 10px hsl(var(--primary) / 0.5);
+  transition: height 0.5s ease;
+}
+
+.timeline-node {
+  position: relative;
+  z-index: 10;
+}
+
+.timeline-node-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid hsl(var(--border));
+  background: hsl(var(--background));
+  transition: all 0.3s ease;
+}
+
+.timeline-node-dot.owned {
+  border-color: hsl(var(--primary));
+  background: hsl(var(--primary));
+  box-shadow: 0 0 12px hsl(var(--primary) / 0.6);
+}
+
+.timeline-node-dot.current {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 8px hsl(var(--primary) / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.8);
+  }
+}
