@@ -1865,6 +1865,63 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_queue: {
+        Row: {
+          attempts: number | null
+          created_at: string | null
+          id: string
+          last_error: string | null
+          message: string
+          processed_at: string | null
+          scheduled_for: string | null
+          status: string | null
+          telegram_id: number
+          time_slot: string | null
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number | null
+          created_at?: string | null
+          id?: string
+          last_error?: string | null
+          message: string
+          processed_at?: string | null
+          scheduled_for?: string | null
+          status?: string | null
+          telegram_id: number
+          time_slot?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number | null
+          created_at?: string | null
+          id?: string
+          last_error?: string | null
+          message?: string
+          processed_at?: string | null
+          scheduled_for?: string | null
+          status?: string | null
+          telegram_id?: number
+          time_slot?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_queue_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_run_logs: {
         Row: {
           average_delay_ms: number | null

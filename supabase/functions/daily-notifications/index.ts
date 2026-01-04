@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
@@ -9,27 +8,7 @@ const corsHeaders = {
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
 
-// ============= IMPROVED RATE LIMITING SETTINGS =============
-const MIN_DELAY_MS = 2500;        // 2.5 seconds minimum between messages
-const MAX_DELAY_MS = 4000;        // 4 seconds maximum between messages
-const BATCH_SIZE = 15;            // Smaller batches (was 25)
-const BATCH_DELAY_MS = 15000;     // 15 seconds between batches (was 5)
-const MAX_RETRIES = 2;
-const RETRY_DELAY_MS = 5000;
-const MAX_MESSAGES_PER_RUN = 500; // Maximum messages per run to avoid long-running functions
-const MAX_DAILY_MESSAGES = 2;     // Maximum messages per user per day
-const MAX_CONSECUTIVE_RATE_LIMITS = 3; // Stop after 3 consecutive rate limits
-
-// Get random delay between min and max
-function getRandomDelay(): number {
-  return Math.floor(Math.random() * (MAX_DELAY_MS - MIN_DELAY_MS + 1)) + MIN_DELAY_MS;
-}
-
-interface SendResult {
-  success: boolean;
-  blocked?: boolean;
-  rateLimited?: boolean;
-}
+const MAX_DAILY_MESSAGES = 2;
 
 interface RunStats {
   run_type: string;
@@ -47,79 +26,16 @@ interface RunStats {
   stop_reason: string | null;
 }
 
-async function sendTelegramMessage(chatId: number, text: string, retryCount = 0): Promise<SendResult> {
-  if (!TELEGRAM_BOT_TOKEN) {
-    console.error('TELEGRAM_BOT_TOKEN not configured');
-    return { success: false };
-  }
-
-  try {
-    const response = await fetch(
-      `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: text,
-          parse_mode: 'HTML',
-        }),
-      }
-    );
-
-    const result = await response.json();
-    
-    if (!result.ok) {
-      const errorCode = result.error_code;
-      const description = result.description || '';
-      
-      // User blocked the bot
-      if (errorCode === 403 || description.includes('blocked') || description.includes('deactivated')) {
-        console.log(`User ${chatId} blocked bot or deactivated`);
-        return { success: false, blocked: true };
-      }
-      
-      // Rate limited - wait and retry
-      if (errorCode === 429) {
-        console.warn(`Rate limited for ${chatId}, retry after ${result.parameters?.retry_after || 30}s`);
-        if (retryCount < MAX_RETRIES) {
-          const retryAfter = (result.parameters?.retry_after || 30) * 1000;
-          await new Promise(resolve => setTimeout(resolve, retryAfter));
-          return sendTelegramMessage(chatId, text, retryCount + 1);
-        }
-        return { success: false, rateLimited: true };
-      }
-      
-      console.error(`Failed to send to ${chatId}:`, description);
-      return { success: false };
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error(`Error sending to ${chatId}:`, error);
-    
-    // Retry on network errors
-    if (retryCount < MAX_RETRIES) {
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
-      return sendTelegramMessage(chatId, text, retryCount + 1);
-    }
-    
-    return { success: false };
-  }
-}
-
 async function generatePersonalizedMessage(
   template: { theme: string; prompt_context: string; time_slot: string }, 
   dayOfYear: number,
   userName?: string
 ): Promise<string> {
   if (!LOVABLE_API_KEY) {
-    console.error('LOVABLE_API_KEY not configured');
     return getDefaultMessage(template.time_slot, template.theme, dayOfYear, userName);
   }
 
   try {
-    // Add randomization to make messages unique
     const randomSeed = Math.floor(Math.random() * 1000);
     const greeting = userName ? `Hey ${userName}! ` : '';
     
@@ -139,7 +55,6 @@ async function generatePersonalizedMessage(
 📝 CRITICAL FORMAT RULES:
 - ${greeting ? `Start with greeting: "${greeting}"` : 'Start with 2-3 powerful emojis (💰⚡🚨🔥🎰💎🍀)'}
 - For BOLD text, use HTML <b>tags</b> NOT markdown **asterisks**
-- Example: <b>3 hours</b> left! NOT **3 hours** left!
 - NEVER use markdown formatting (**, __, etc.) - Telegram uses HTML!
 - Create URGENCY without being spammy
 - Max 3 short sentences (~150 chars)
@@ -169,12 +84,11 @@ REMEMBER: Use HTML tags like <b>bold</b> and <i>italic</i>, NOT markdown!`;
           { role: 'user', content: `Generate a ${template.time_slot} notification about "${template.theme}" using dark psychology. Make it irresistible and UNIQUE. Use HTML <b>tags</b> for bold, NOT markdown asterisks. Variation: ${randomSeed}` }
         ],
         max_tokens: 200,
-        temperature: 0.95, // Higher temperature for more variety
+        temperature: 0.95,
       }),
     });
 
     if (!response.ok) {
-      console.error('AI API error:', response.status);
       return getDefaultMessage(template.time_slot, template.theme, dayOfYear, userName);
     }
 
@@ -182,7 +96,6 @@ REMEMBER: Use HTML tags like <b>bold</b> and <i>italic</i>, NOT markdown!`;
     const message = data.choices?.[0]?.message?.content?.trim();
     
     if (message) {
-      console.log('AI generated message:', message.substring(0, 50) + '...');
       return message;
     }
     
@@ -244,27 +157,20 @@ function getDefaultMessage(timeSlot: string, theme: string, dayOfYear: number, u
   };
 
   const themeMessages = messages[theme] || messages.general;
-  // Add some randomness to message selection
   const randomOffset = Math.floor(Math.random() * 3);
   const messageIndex = (dayOfYear + randomOffset) % themeMessages.length;
   
   return themeMessages[messageIndex];
 }
 
-// Check if user has reached daily message limit
 function hasReachedDailyLimit(lastMessageDate: string | null, dailyMessageCount: number): boolean {
   const today = new Date().toISOString().split('T')[0];
-  
-  // If no messages sent today, limit not reached
   if (!lastMessageDate || lastMessageDate !== today) {
     return false;
   }
-  
-  // Check if count exceeds limit
   return dailyMessageCount >= MAX_DAILY_MESSAGES;
 }
 
-// Log run statistics
 async function logRunStats(supabase: ReturnType<typeof createClient>, stats: RunStats) {
   try {
     await supabase.from('notification_run_logs').insert({
@@ -282,38 +188,19 @@ async function logRunStats(supabase: ReturnType<typeof createClient>, stats: Run
       stopped_early: stats.stopped_early,
       stop_reason: stats.stop_reason,
     });
-    console.log('Run stats logged successfully');
   } catch (error) {
     console.error('Failed to log run stats:', error);
   }
 }
 
-// Update user's daily message count
-async function updateUserMessageCount(
-  supabase: ReturnType<typeof createClient>, 
-  userId: string, 
-  lastMessageDate: string | null
-) {
-  const today = new Date().toISOString().split('T')[0];
-  const isNewDay = !lastMessageDate || lastMessageDate !== today;
-  
-  await supabase
-    .from('bolt_users')
-    .update({
-      daily_message_count: isNewDay ? 1 : supabase.rpc('increment_message_count'),
-      last_message_date: today,
-    })
-    .eq('id', userId);
-}
-
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   const startTime = new Date();
   let stats: RunStats = {
-    run_type: 'daily',
+    run_type: 'daily_queue',
     time_slot: null,
     total_eligible: 0,
     sent: 0,
@@ -338,24 +225,23 @@ serve(async (req) => {
     const today = new Date().toISOString().split('T')[0];
     stats.time_slot = time_slot;
 
-    console.log(`Processing ${time_slot} notifications for ${today}`);
+    console.log(`[QUEUE MODE] Processing ${time_slot} notifications for ${today}`);
 
-    // Check if already sent for this time slot today
-    const { data: existingNotification } = await supabase
-      .from('ai_scheduled_notifications')
+    // Check if already queued for this time slot today
+    const { data: existingQueue } = await supabase
+      .from('notification_queue')
       .select('id')
-      .eq('notification_date', today)
       .eq('time_slot', time_slot)
-      .eq('sent', true)
+      .gte('created_at', `${today}T00:00:00Z`)
       .limit(1);
 
-    if (existingNotification && existingNotification.length > 0) {
-      console.log(`Already sent ${time_slot} notification for ${today}`);
+    if (existingQueue && existingQueue.length > 0) {
+      console.log(`Already queued ${time_slot} notifications for ${today}`);
       stats.end_time = new Date().toISOString();
-      stats.stop_reason = 'already_sent_today';
+      stats.stop_reason = 'already_queued_today';
       await logRunStats(supabase, stats);
       return new Response(
-        JSON.stringify({ success: true, message: 'Already sent for this time slot' }),
+        JSON.stringify({ success: true, message: 'Already queued for this time slot' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -378,15 +264,13 @@ serve(async (req) => {
       );
     }
 
-    // Select random template based on day
     const now = new Date();
     const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
     const templateIndex = dayOfYear % templates.length;
     const template = templates[templateIndex];
-    console.log('Selected template:', template.theme, template.prompt_context, 'dayOfYear:', dayOfYear);
+    console.log('Selected template:', template.theme);
 
-    // Get all users with telegram_id who have notifications enabled and haven't blocked the bot
-    // Also get daily message tracking columns
+    // Get all eligible users
     const { data: users, error: usersError } = await supabase
       .from('bolt_users')
       .select('id, telegram_id, first_name, daily_message_count, last_message_date')
@@ -406,159 +290,97 @@ serve(async (req) => {
     }
 
     stats.total_eligible = users?.length || 0;
-    console.log(`Found ${stats.total_eligible} eligible users (notifications enabled, not blocked)`);
+    console.log(`Found ${stats.total_eligible} eligible users`);
 
-    // Send to all users with proper rate limiting
-    let successCount = 0;
-    let failCount = 0;
-    let blockedCount = 0;
-    let rateLimitHits = 0;
-    let skippedDailyLimit = 0;
-    let consecutiveRateLimits = 0;
-    let totalDelay = 0;
-    const blockedUsers: number[] = [];
-    const successfulUsers: string[] = [];
+    // Filter users who haven't reached daily limit
+    const eligibleUsers = users?.filter(user => 
+      !hasReachedDailyLimit(user.last_message_date, user.daily_message_count || 0)
+    ) || [];
 
-    const usersToProcess = Math.min(users?.length || 0, MAX_MESSAGES_PER_RUN);
-    console.log(`Processing ${usersToProcess} users (max per run: ${MAX_MESSAGES_PER_RUN})`);
+    stats.skipped_daily_limit = stats.total_eligible - eligibleUsers.length;
+    console.log(`${eligibleUsers.length} users after daily limit filter (${stats.skipped_daily_limit} skipped)`);
 
-    for (let i = 0; i < usersToProcess; i++) {
-      const user = users![i];
+    if (eligibleUsers.length === 0) {
+      stats.end_time = new Date().toISOString();
+      stats.stop_reason = 'no_eligible_users';
+      await logRunStats(supabase, stats);
+      return new Response(
+        JSON.stringify({ success: true, message: 'No eligible users to notify' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Generate messages and add to queue in batches
+    const BATCH_INSERT_SIZE = 100;
+    let queuedCount = 0;
+
+    for (let i = 0; i < eligibleUsers.length; i += BATCH_INSERT_SIZE) {
+      const batch = eligibleUsers.slice(i, i + BATCH_INSERT_SIZE);
       
-      // Check daily message limit
-      if (hasReachedDailyLimit(user.last_message_date, user.daily_message_count || 0)) {
-        skippedDailyLimit++;
-        continue;
-      }
-
-      // Check for consecutive rate limits - stop early if too many
-      if (consecutiveRateLimits >= MAX_CONSECUTIVE_RATE_LIMITS) {
-        console.error(`🛑 Stopping early: ${consecutiveRateLimits} consecutive rate limits`);
-        stats.stopped_early = true;
-        stats.stop_reason = `consecutive_rate_limits_${consecutiveRateLimits}`;
-        break;
-      }
-      
-      // Batch delay - longer pause between batches
-      if (i > 0 && i % BATCH_SIZE === 0) {
-        console.log(`📦 Batch ${Math.floor(i / BATCH_SIZE)} complete (${successCount} success, ${failCount} fail). Waiting ${BATCH_DELAY_MS/1000}s...`);
-        await new Promise(resolve => setTimeout(resolve, BATCH_DELAY_MS));
-      }
-
-      // Generate personalized message for each user (or every 10 users to balance performance)
-      let message: string;
-      if (i % 10 === 0) {
-        message = await generatePersonalizedMessage(
-          { theme: template.theme, prompt_context: template.prompt_context, time_slot },
-          dayOfYear,
-          user.first_name || undefined
-        );
-      } else {
-        message = getDefaultMessage(time_slot, template.theme, dayOfYear + i, user.first_name || undefined);
-      }
-
-      const result = await sendTelegramMessage(user.telegram_id, message);
-      
-      if (result.success) {
-        successCount++;
-        consecutiveRateLimits = 0; // Reset on success
-        successfulUsers.push(user.id);
-      } else {
-        failCount++;
-        if (result.blocked) {
-          blockedCount++;
-          blockedUsers.push(user.telegram_id);
+      const queueItems = await Promise.all(batch.map(async (user, idx) => {
+        // Generate personalized message for every 10th user, default for others
+        let message: string;
+        if ((i + idx) % 10 === 0) {
+          message = await generatePersonalizedMessage(
+            { theme: template.theme, prompt_context: template.prompt_context, time_slot },
+            dayOfYear,
+            user.first_name || undefined
+          );
+        } else {
+          message = getDefaultMessage(time_slot, template.theme, dayOfYear + i + idx, user.first_name || undefined);
         }
-        if (result.rateLimited) {
-          rateLimitHits++;
-          consecutiveRateLimits++;
-          
-          // Exponential backoff based on consecutive rate limits
-          const waitTime = 30000 * Math.pow(2, consecutiveRateLimits - 1); // 30s, 60s, 120s
-          console.warn(`⚠️ Rate limit hit (${consecutiveRateLimits}/${MAX_CONSECUTIVE_RATE_LIMITS}), waiting ${waitTime/1000}s...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        }
+
+        return {
+          user_id: user.id,
+          telegram_id: user.telegram_id,
+          message: message,
+          time_slot: time_slot,
+          status: 'pending',
+          scheduled_for: new Date().toISOString(),
+        };
+      }));
+
+      const { error: insertError } = await supabase
+        .from('notification_queue')
+        .insert(queueItems);
+
+      if (insertError) {
+        console.error('Error inserting queue batch:', insertError);
+      } else {
+        queuedCount += batch.length;
+        console.log(`Queued batch ${Math.floor(i / BATCH_INSERT_SIZE) + 1}: ${queuedCount} total`);
       }
-
-      // Random delay between messages to avoid pattern detection
-      const delay = getRandomDelay();
-      totalDelay += delay;
-      await new Promise(resolve => setTimeout(resolve, delay));
     }
 
-    // Update blocked users in database
-    if (blockedUsers.length > 0) {
-      console.log(`Marking ${blockedUsers.length} users as bot_blocked`);
-      await supabase
-        .from('bolt_users')
-        .update({ bot_blocked: true })
-        .in('telegram_id', blockedUsers);
-    }
-
-    // Update daily message counts for successful sends
-    if (successfulUsers.length > 0) {
-      const todayDate = new Date().toISOString().split('T')[0];
-      
-      // Update users who already had messages today
-      await supabase
-        .from('bolt_users')
-        .update({ 
-          daily_message_count: supabase.sql`daily_message_count + 1`
-        })
-        .in('id', successfulUsers)
-        .eq('last_message_date', todayDate);
-      
-      // Update users who haven't had messages today (reset count to 1)
-      await supabase
-        .from('bolt_users')
-        .update({ 
-          daily_message_count: 1,
-          last_message_date: todayDate
-        })
-        .in('id', successfulUsers)
-        .or(`last_message_date.is.null,last_message_date.neq.${todayDate}`);
-    }
-
-    console.log(`✅ Final: ${successCount} success, ${failCount} failed, ${blockedCount} blocked, ${rateLimitHits} rate limits, ${skippedDailyLimit} skipped (daily limit)`);
-
-    // Update stats
-    stats.sent = successCount;
-    stats.failed = failCount;
-    stats.blocked = blockedCount;
-    stats.rate_limits = rateLimitHits;
-    stats.skipped_daily_limit = skippedDailyLimit;
-    stats.average_delay_ms = successCount > 0 ? totalDelay / successCount : 0;
+    stats.sent = queuedCount;
     stats.end_time = new Date().toISOString();
 
-    // Log run statistics
     await logRunStats(supabase, stats);
 
     // Record the notification
     await supabase
       .from('ai_scheduled_notifications')
       .insert({
-        message_text: 'Personalized messages sent',
+        message_text: 'Personalized messages queued',
         notification_type: template.theme,
         target_all_users: true,
-        sent: true,
-        sent_at: new Date().toISOString(),
+        sent: false,
         notification_date: today,
         time_slot: time_slot
       });
 
+    const duration = Date.now() - startTime.getTime();
+    console.log(`✅ Queued ${queuedCount} notifications in ${duration}ms`);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: `Sent to ${successCount} users`,
+        message: `Queued ${queuedCount} notifications`,
         stats: { 
-          success: successCount, 
-          failed: failCount, 
-          blocked: blockedCount,
-          rateLimitHits,
-          skippedDailyLimit,
-          stoppedEarly: stats.stopped_early,
+          queued: queuedCount,
+          skippedDailyLimit: stats.skipped_daily_limit,
           totalEligible: stats.total_eligible,
-          processedCount: usersToProcess
+          duration_ms: duration
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -569,7 +391,6 @@ serve(async (req) => {
     stats.end_time = new Date().toISOString();
     stats.stop_reason = `error: ${error instanceof Error ? error.message : 'Unknown'}`;
     
-    // Try to log stats even on error
     try {
       const supabase = createClient(
         Deno.env.get('SUPABASE_URL') ?? '',
