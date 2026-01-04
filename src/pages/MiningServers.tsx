@@ -8,7 +8,7 @@ import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useAdsGramRewarded } from '@/hooks/useAdsGramRewarded';
 import { supabase } from '@/integrations/supabase/client';
-import { Server, Check, Cpu, Activity, TrendingUp, HardDrive, Database, Cloud, Wifi, Globe, Shield, Layers, Play, Users, Loader2 } from 'lucide-react';
+import { Server, Check, Cpu, Activity, TrendingUp, HardDrive, Database, Cloud, Wifi, Globe, Shield, Layers, Play, Users, Loader2, Crown, Gem, Sparkles, Star, Zap } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, FadeUp, StaggerContainer } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon, TonIcon } from '@/components/ui/currency-icons';
@@ -22,8 +22,9 @@ type MiningServer = {
   boltPerDay: number;
   usdtPerDay: number;
   priceTon: number;
-  tier: 'Free' | 'Basic' | 'Pro' | 'Elite';
+  tier: 'Free' | 'Basic' | 'Pro' | 'Elite' | 'Legendary' | 'Mythic';
   icon: React.ElementType;
+  features?: string[];
 };
 
 const servers: MiningServer[] = [
@@ -97,13 +98,49 @@ const servers: MiningServer[] = [
     tier: 'Elite',
     icon: Layers,
   },
+  { 
+    id: 'legendary-1', 
+    name: 'Legendary Server', 
+    hashRate: '500 TH/s', 
+    boltPerDay: 25000, 
+    usdtPerDay: 25.00, 
+    priceTon: 50.0, 
+    tier: 'Legendary',
+    icon: Crown,
+    features: ['Priority Support', '2x Mining Speed', 'VIP Badge', 'Early Access'],
+  },
+  { 
+    id: 'mythic-1', 
+    name: 'Mythic Server', 
+    hashRate: '1000 TH/s', 
+    boltPerDay: 60000, 
+    usdtPerDay: 60.00, 
+    priceTon: 100.0, 
+    tier: 'Mythic',
+    icon: Gem,
+    features: ['24/7 Priority Support', '3x Mining Speed', 'Exclusive VIP Badge', 'Early Access', 'Bonus Multiplier', 'Limited Edition'],
+  },
 ];
 
-const tierConfig: Record<string, { color: string; bg: string; border: string }> = {
+const tierConfig: Record<string, { color: string; bg: string; border: string; glow?: string; gradient?: string }> = {
   Free: { color: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
   Basic: { color: 'text-blue-400', bg: 'bg-blue-500/10', border: 'border-blue-500/20' },
   Pro: { color: 'text-violet-400', bg: 'bg-violet-500/10', border: 'border-violet-500/20' },
   Elite: { color: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+  Legendary: { 
+    color: 'text-orange-400', 
+    bg: 'bg-gradient-to-r from-orange-500/20 to-yellow-500/20', 
+    border: 'border-orange-500/40',
+    glow: 'shadow-lg shadow-orange-500/30',
+    gradient: 'from-orange-500 to-yellow-500'
+  },
+  Mythic: { 
+    color: 'text-fuchsia-400', 
+    bg: 'bg-gradient-to-r from-fuchsia-500/20 to-purple-500/20', 
+    border: 'border-fuchsia-500/40',
+    glow: 'shadow-xl shadow-fuchsia-500/40',
+    gradient: 'from-fuchsia-500 to-purple-500'
+  },
 };
 
 const REQUIRED_ADS = 5;
@@ -305,36 +342,72 @@ const MiningServers = () => {
                 const Icon = server.icon;
                 const config = tierConfig[server.tier];
                 const isFreeServer = server.priceTon === 0;
+                const isPremium = server.tier === 'Legendary' || server.tier === 'Mythic';
 
                 return (
                   <FadeUp key={server.id}>
                   <motion.div
                     className={`relative p-4 rounded-2xl bg-card border transition-all ${
-                      owned ? 'border-primary/30 opacity-80' : stock.soldOut ? 'border-border opacity-50' : 'border-border hover:border-primary/30'
+                      isPremium 
+                        ? `${config.border} ${config.glow} bg-gradient-to-br from-card via-card to-card`
+                        : owned ? 'border-primary/30 opacity-80' : stock.soldOut ? 'border-border opacity-50' : 'border-border hover:border-primary/30'
                     }`}
-                    whileHover={!owned && !stock.soldOut ? { scale: 1.01 } : undefined}
-                    whileTap={!owned && !stock.soldOut ? { scale: 0.99 } : undefined}
+                    whileHover={!owned && !stock.soldOut ? { scale: 1.02 } : undefined}
+                    whileTap={!owned && !stock.soldOut ? { scale: 0.98 } : undefined}
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.05 }}
                   >
+                      {/* Premium Badge */}
+                      {isPremium && (
+                        <div className="absolute -top-2 -right-2 z-10">
+                          <span className={`px-2 py-1 text-[10px] font-black rounded-full bg-gradient-to-r ${config.gradient} text-white shadow-lg flex items-center gap-1`}>
+                            {server.tier === 'Mythic' ? (
+                              <>
+                                <Sparkles className="w-3 h-3" />
+                                LIMITED
+                              </>
+                            ) : (
+                              <>
+                                <Star className="w-3 h-3 fill-current" />
+                                EXCLUSIVE
+                              </>
+                            )}
+                          </span>
+                        </div>
+                      )}
 
-                      <div className="flex items-start gap-4">
+                      {/* Glowing Border Effect for Premium */}
+                      {isPremium && (
+                        <div className={`absolute inset-0 rounded-2xl bg-gradient-to-r ${config.gradient} opacity-10 pointer-events-none`} />
+                      )}
+
+                      <div className="flex items-start gap-4 relative">
                         {/* Icon */}
-                        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${config.bg}`}>
-                          <Icon className={`w-6 h-6 ${config.color}`} />
+                        <div className={`${isPremium ? 'w-14 h-14' : 'w-12 h-12'} rounded-xl flex items-center justify-center shrink-0 ${config.bg} ${isPremium ? 'ring-2 ring-offset-2 ring-offset-card' : ''}`}
+                          style={isPremium ? { '--tw-ring-color': server.tier === 'Mythic' ? 'rgb(217 70 239 / 0.5)' : 'rgb(249 115 22 / 0.5)' } as React.CSSProperties : {}}
+                        >
+                          <Icon className={`${isPremium ? 'w-7 h-7' : 'w-6 h-6'} ${config.color}`} />
                         </div>
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-bold text-foreground text-sm">{server.name}</h3>
-                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${config.bg} ${config.color}`}>
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <h3 className={`font-bold text-foreground ${isPremium ? 'text-base' : 'text-sm'}`}>{server.name}</h3>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isPremium ? `bg-gradient-to-r ${config.gradient} text-white` : `${config.bg} ${config.color}`}`}>
                               {server.tier}
                             </span>
+                            {isPremium && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 animate-pulse">
+                                🔥 HOT
+                              </span>
+                            )}
                           </div>
 
-                          <p className="text-xs text-muted-foreground mb-1">{server.hashRate}</p>
+                          <p className={`text-xs text-muted-foreground mb-1 ${isPremium ? 'font-semibold' : ''}`}>
+                            {server.hashRate}
+                            {isPremium && <span className="ml-2 text-emerald-400">⚡ Ultra Fast</span>}
+                          </p>
                           
                           {/* Free Server Special Text */}
                           {isFreeServer && !owned && (
@@ -344,16 +417,32 @@ const MiningServers = () => {
                           )}
 
                           {/* Earnings */}
-                          <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${isPremium ? 'bg-primary/20' : 'bg-primary/10'}`}>
                               <BoltIcon size={14} />
-                              <span className="text-xs font-semibold text-primary">+{server.boltPerDay}/day</span>
+                              <span className={`text-xs font-semibold text-primary ${isPremium ? 'text-sm' : ''}`}>+{server.boltPerDay.toLocaleString()}/day</span>
                             </div>
-                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10">
+                            <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${isPremium ? 'bg-emerald-500/20' : 'bg-emerald-500/10'}`}>
                               <UsdtIcon size={14} />
-                              <span className="text-xs font-semibold text-emerald-400">+${server.usdtPerDay.toFixed(2)}</span>
+                              <span className={`text-xs font-semibold text-emerald-400 ${isPremium ? 'text-sm' : ''}`}>+${server.usdtPerDay.toFixed(2)}</span>
                             </div>
                           </div>
+
+                          {/* Premium Features */}
+                          {isPremium && server.features && (
+                            <div className="mt-3 flex flex-wrap gap-1.5">
+                              {server.features.slice(0, 4).map((feature, i) => (
+                                <span key={i} className={`text-[9px] px-2 py-0.5 rounded-full bg-gradient-to-r ${config.gradient} text-white/90`}>
+                                  ✓ {feature}
+                                </span>
+                              ))}
+                              {server.features.length > 4 && (
+                                <span className="text-[9px] px-2 py-0.5 rounded-full bg-white/10 text-muted-foreground">
+                                  +{server.features.length - 4} more
+                                </span>
+                              )}
+                            </div>
+                          )}
 
                           {/* Free Server Unlock Options */}
                           {isFreeServer && !owned && !canClaimFreeServer && (
@@ -393,8 +482,8 @@ const MiningServers = () => {
                             <span className="text-lg font-black text-emerald-400">FREE</span>
                           ) : (
                             <div className="flex items-center gap-1">
-                              <TonIcon size={16} />
-                              <span className="text-lg font-black text-foreground">{server.priceTon}</span>
+                              <TonIcon size={isPremium ? 20 : 16} />
+                              <span className={`font-black text-foreground ${isPremium ? 'text-xl' : 'text-lg'}`}>{server.priceTon}</span>
                             </div>
                           )}
 
@@ -409,9 +498,9 @@ const MiningServers = () => {
                             <Button
                               onClick={() => handleBuyClick(server)}
                               size="sm"
-                              className="h-8 px-4 font-bold text-xs"
+                              className={`h-8 px-4 font-bold text-xs ${isPremium ? `bg-gradient-to-r ${config.gradient} hover:opacity-90 text-white shadow-lg` : ''}`}
                             >
-                              {server.priceTon === 0 ? 'Claim' : 'Buy'}
+                              {server.priceTon === 0 ? 'Claim' : isPremium ? '🔥 Buy Now' : 'Buy'}
                             </Button>
                           )}
                         </div>
