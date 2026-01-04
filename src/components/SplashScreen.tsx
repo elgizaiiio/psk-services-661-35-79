@@ -34,7 +34,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, duration = 2000
         </div>
         <h1 className="text-3xl font-bold text-primary">Bolt</h1>
         <p className="text-muted-foreground">Mining Platform</p>
-        <div className="simple-loader mx-auto mt-6"></div>
+        <div className="bubble-loader mx-auto mt-6"></div>
       </div>
     </div>
   );
