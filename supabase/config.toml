@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.claim-server-rewards]
 verify_jwt = false
+
+[functions.auto-distribute-server-rewards]
+verify_jwt = false
