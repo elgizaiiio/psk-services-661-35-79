@@ -207,10 +207,24 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
                 </div>
               )}
 
+              {/* Friday Notice for USDT */}
+              {currency === 'USDT' && (
+                <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                  <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                    📅 يتم فتح السحب يوم الجمعة من كل أسبوع
+                  </p>
+                  <p className="text-xs text-blue-600/80 dark:text-blue-400/80 mt-1">
+                    Withdrawals are available every Friday
+                  </p>
+                </div>
+              )}
+
               {/* Warning */}
               <div className="p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
                 <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                  Withdrawals are processed within 24-48 hours. Please ensure your wallet address is correct.
+                  {currency === 'USDT' 
+                    ? 'سيتم معالجة طلبك يوم الجمعة. تأكد من صحة عنوان المحفظة.'
+                    : 'Withdrawals are processed within 24-48 hours. Please ensure your wallet address is correct.'}
                 </p>
               </div>
 
