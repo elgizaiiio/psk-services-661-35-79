@@ -5,13 +5,14 @@ import { useNavigate } from "react-router-dom";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { useViralMining } from "@/hooks/useViralMining";
 import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
-import { Eye, EyeOff, Loader2, Wallet as WalletIcon, ArrowUpRight, ShoppingCart } from "lucide-react";
+import { Eye, EyeOff, Loader2, Wallet as WalletIcon, ArrowUpRight, ArrowDownLeft, Copy, Check } from "lucide-react";
 import { TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
 import { PageWrapper, StaggerContainer, FadeUp, ScaleIn, AnimatedNumber } from '@/components/ui/motion-wrapper';
 import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
-import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import WithdrawModal from '@/components/WithdrawModal';
 import WithdrawSelectModal from '@/components/wallet/WithdrawSelectModal';
+import DepositModal from '@/components/wallet/DepositModal';
 
 const Wallet: React.FC = () => {
   const navigate = useNavigate();
@@ -21,7 +22,9 @@ const Wallet: React.FC = () => {
   const [tonPrice, setTonPrice] = useState<number | null>(null);
   const [showBalance, setShowBalance] = useState(true);
   const [withdrawSelectOpen, setWithdrawSelectOpen] = useState(false);
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; currency: 'TON' | 'USDT' } | null>(null);
+  const [copied, setCopied] = useState(false);
   useTelegramBackButton();
 
   const boltBalance = user?.token_balance ?? 0;
@@ -37,20 +40,32 @@ const Wallet: React.FC = () => {
 
   const isLoading = authLoading || miningLoading;
 
+  // Calculate total in USD
+  const totalUSD = usdtBalance + (tonBalance * (tonPrice || 0));
+
+  const copyAddress = () => {
+    if (wallet?.account?.address) {
+      navigator.clipboard.writeText(wallet.account.address);
+      setCopied(true);
+      toast.success('تم نسخ العنوان');
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   if (!wallet?.account?.address) {
     return (
       <PageWrapper className="min-h-screen bg-background flex items-center justify-center px-6 pb-24">
         <Helmet><title>Wallet | Connect</title></Helmet>
         <div className="text-center space-y-4">
           <ScaleIn>
-            <div className="w-16 h-16 rounded-2xl bg-card border border-border flex items-center justify-center mx-auto mb-4">
-              <WalletIcon className="w-8 h-8 text-muted-foreground" />
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center mx-auto mb-4">
+              <WalletIcon className="w-10 h-10 text-primary" />
             </div>
           </ScaleIn>
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-            <h2 className="text-xl font-semibold text-foreground">Connect Wallet</h2>
-            <p className="text-sm text-muted-foreground max-w-xs mt-2">Connect your TON wallet to view your assets</p>
-            <div className="pt-4"><TonConnectButton /></div>
+            <h2 className="text-2xl font-bold text-foreground">ربط المحفظة</h2>
+            <p className="text-sm text-muted-foreground max-w-xs mt-2">اربط محفظة TON لعرض أصولك</p>
+            <div className="pt-6"><TonConnectButton /></div>
           </motion.div>
         </div>
       </PageWrapper>
@@ -59,7 +74,7 @@ const Wallet: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
           <Loader2 className="w-8 h-8 text-primary" />
         </motion.div>
@@ -70,88 +85,196 @@ const Wallet: React.FC = () => {
   return (
     <PageWrapper className="min-h-screen bg-background pb-28">
       <Helmet><title>Wallet</title></Helmet>
-      <div className="max-w-md mx-auto px-5 pt-16">
+      <div className="max-w-md mx-auto px-5 pt-8">
         <StaggerContainer className="space-y-6">
+          
+          {/* Total Balance - Hero Section */}
           <FadeUp>
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold text-foreground">Wallet</h1>
-              <motion.button onClick={() => setShowBalance(!showBalance)} className="p-2 rounded-lg hover:bg-muted" whileTap={{ scale: 0.9 }}>
+            <div className="text-center py-6">
+              {/* Balance Toggle */}
+              <motion.button 
+                onClick={() => setShowBalance(!showBalance)} 
+                className="absolute top-4 right-4 p-2 rounded-lg hover:bg-muted/50"
+                whileTap={{ scale: 0.9 }}
+              >
                 {showBalance ? <EyeOff className="w-5 h-5 text-muted-foreground" /> : <Eye className="w-5 h-5 text-muted-foreground" />}
+              </motion.button>
+
+              <p className="text-sm text-muted-foreground mb-2">الرصيد الإجمالي</p>
+              <AnimatePresence mode="wait">
+                {showBalance ? (
+                  <motion.div
+                    key="balance"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    className="flex items-center justify-center gap-2"
+                  >
+                    <span className="text-5xl font-bold text-foreground">
+                      $<AnimatedNumber value={totalUSD} decimals={2} duration={1} />
+                    </span>
+                  </motion.div>
+                ) : (
+                  <motion.p
+                    key="hidden"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-5xl font-bold text-foreground"
+                  >
+                    ••••••
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              {/* Wallet Address */}
+              <motion.div 
+                className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full bg-muted/50 cursor-pointer hover:bg-muted transition-colors"
+                onClick={copyAddress}
+                whileTap={{ scale: 0.95 }}
+              >
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                <span className="text-sm font-mono text-muted-foreground">
+                  {wallet.account.address.slice(0, 6)}...{wallet.account.address.slice(-4)}
+                </span>
+                {copied ? (
+                  <Check className="w-4 h-4 text-green-500" />
+                ) : (
+                  <Copy className="w-4 h-4 text-muted-foreground" />
+                )}
+              </motion.div>
+            </div>
+          </FadeUp>
+
+          {/* Action Buttons Grid */}
+          <FadeUp>
+            <div className="grid grid-cols-2 gap-3">
+              {/* Deposit Button */}
+              <motion.button
+                onClick={() => setDepositModalOpen(true)}
+                className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all"
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                  <ArrowDownLeft className="w-6 h-6 text-green-500" />
+                </div>
+                <span className="text-sm font-medium text-foreground">إيداع</span>
+              </motion.button>
+
+              {/* Withdraw Button */}
+              <motion.button
+                onClick={() => setWithdrawSelectOpen(true)}
+                className="flex flex-col items-center justify-center gap-2 p-5 rounded-2xl bg-card border border-border hover:border-primary/50 transition-all"
+                whileHover={{ y: -2, scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <ArrowUpRight className="w-6 h-6 text-orange-500" />
+                </div>
+                <span className="text-sm font-medium text-foreground">سحب</span>
               </motion.button>
             </div>
           </FadeUp>
 
-          {/* Action Buttons */}
+          {/* Wallet Connection */}
           <FadeUp>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => setWithdrawSelectOpen(true)}
-                variant="outline"
-                className="flex-1 h-12"
-              >
-                <ArrowUpRight className="w-4 h-4 mr-2" />
-                Withdraw
-              </Button>
-              <Button
-                onClick={() => navigate('/buy-bolt')}
-                variant="outline"
-                className="flex-1 h-12 bg-white text-black hover:bg-white/90 border-white/20"
-              >
-                <ShoppingCart className="w-4 h-4 mr-2" />
-                Buy BOLT
-              </Button>
-            </div>
-          </FadeUp>
-
-          <FadeUp>
-            <div className="flex items-center justify-between p-4 rounded-xl bg-card border border-border">
-              <div>
-                <p className="text-xs text-muted-foreground">TON Wallet</p>
-                <p className="text-sm font-medium text-foreground">{wallet.account.address.slice(0, 6)}...{wallet.account.address.slice(-4)}</p>
+            <div className="flex items-center justify-between p-4 rounded-xl bg-card/50 border border-border/50">
+              <div className="flex items-center gap-3">
+                <TonIcon size={32} />
+                <div>
+                  <p className="text-xs text-muted-foreground">محفظة TON</p>
+                  <p className="text-sm font-medium text-foreground">متصلة</p>
+                </div>
               </div>
               <TonConnectButton />
             </div>
           </FadeUp>
 
+          {/* Assets Section */}
           <FadeUp>
-            <motion.div className="p-6 rounded-2xl bg-card border border-border text-center" whileHover={{ y: -2 }}>
-              <p className="text-sm text-muted-foreground mb-2">Total Balance</p>
-              <AnimatePresence mode="wait">
-                {showBalance ? (
-                  <motion.p key="show" className="text-4xl font-bold text-foreground" initial={{ opacity: 0, filter: 'blur(10px)' }} animate={{ opacity: 1, filter: 'blur(0)' }} exit={{ opacity: 0, filter: 'blur(10px)' }}>
-                    $<AnimatedNumber value={usdtBalance} decimals={2} duration={1} />
-                  </motion.p>
-                ) : (
-                  <motion.p key="hide" className="text-4xl font-bold text-foreground" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>••••••</motion.p>
-                )}
-              </AnimatePresence>
-            </motion.div>
+            <div className="flex items-center justify-between px-1 pt-2">
+              <p className="text-sm font-semibold text-foreground">الأصول</p>
+            </div>
           </FadeUp>
 
-          <FadeUp><p className="text-sm font-medium text-muted-foreground px-1">Assets</p></FadeUp>
-
-          {[
-            { name: 'BOLT', balance: boltBalance, value: 0, icon: <BoltIcon size={40} /> },
-            { name: 'TON', balance: tonBalance, value: tonBalance * (tonPrice || 0), icon: <TonIcon size={40} /> },
-            { name: 'USDT', balance: usdtBalance, value: usdtBalance, icon: <UsdtIcon size={40} /> },
-          ].map((asset) => (
-            <FadeUp key={asset.name}>
-              <motion.div className="p-4 rounded-xl bg-card border border-border" whileTap={{ scale: 0.98 }}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    {asset.icon}
-                    <div>
-                      <p className="font-medium text-foreground">{asset.name}</p>
-                      <p className="text-xs text-muted-foreground">{showBalance ? asset.balance.toFixed(2) : '••••'}</p>
+          {/* Asset Cards */}
+          <div className="space-y-3">
+            {[
+              { 
+                name: 'BOLT', 
+                fullName: 'Bolt Token',
+                balance: boltBalance, 
+                value: 0, 
+                icon: <BoltIcon size={44} />,
+                change: null
+              },
+              { 
+                name: 'TON', 
+                fullName: 'Toncoin',
+                balance: tonBalance, 
+                value: tonBalance * (tonPrice || 0), 
+                icon: <TonIcon size={44} />,
+                change: '+2.4%'
+              },
+              { 
+                name: 'USDT', 
+                fullName: 'Tether USD',
+                balance: usdtBalance, 
+                value: usdtBalance, 
+                icon: <UsdtIcon size={44} />,
+                change: null
+              },
+            ].map((asset, index) => (
+              <FadeUp key={asset.name}>
+                <motion.div 
+                  className="p-4 rounded-2xl bg-card border border-border backdrop-blur-sm"
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.99 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        {asset.icon}
+                      </div>
+                      <div>
+                        <p className="font-semibold text-foreground">{asset.name}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-xs text-muted-foreground">{asset.fullName}</p>
+                          {asset.change && (
+                            <span className="text-xs text-green-500 font-medium">{asset.change}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-foreground">
+                        {showBalance ? asset.balance.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '••••'}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {showBalance ? `$${asset.value.toFixed(2)}` : '••••'}
+                      </p>
                     </div>
                   </div>
-                  <p className="font-medium text-foreground">{showBalance ? `$${asset.value.toFixed(2)}` : '••••'}</p>
-                </div>
-              </motion.div>
-            </FadeUp>
-          ))}
+                </motion.div>
+              </FadeUp>
+            ))}
+          </div>
         </StaggerContainer>
       </div>
+
+      {/* Deposit Modal */}
+      {user && (
+        <DepositModal
+          open={depositModalOpen}
+          onClose={() => setDepositModalOpen(false)}
+          userId={user.id}
+          onSuccess={() => window.location.reload()}
+        />
+      )}
 
       {/* Withdraw Select Modal */}
       <WithdrawSelectModal
