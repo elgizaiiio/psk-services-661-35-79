@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { motion } from 'framer-motion';
-import { ArrowDownLeft, Loader2, CheckCircle2 } from 'lucide-react';
+import { ArrowDownLeft, Loader2, CheckCircle2, X } from 'lucide-react';
 import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,19 +28,18 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
     const depositAmount = parseFloat(amount);
     
     if (!depositAmount || depositAmount < 0.1) {
-      toast.error('الحد الأدنى للإيداع 0.1 TON');
+      toast.error('Minimum deposit is 0.1 TON');
       return;
     }
 
     if (!wallet?.account) {
-      toast.error('يرجى ربط المحفظة أولاً');
+      toast.error('Please connect your wallet first');
       return;
     }
 
     setIsProcessing(true);
 
     try {
-      // Create deposit record first
       const { data: depositRecord, error: insertError } = await supabase
         .from('deposit_requests')
         .insert({
@@ -56,10 +54,9 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
 
       if (insertError) {
         console.error('Failed to create deposit record:', insertError);
-        throw new Error('فشل إنشاء طلب الإيداع');
+        throw new Error('Failed to create deposit request');
       }
 
-      // Send TON transaction via TON Connect
       const amountNano = tonToNano(depositAmount);
 
       const transaction = {
@@ -75,7 +72,6 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
       const result = await tonConnectUI.sendTransaction(transaction);
 
       if (result) {
-        // Update deposit with tx hash
         await supabase
           .from('deposit_requests')
           .update({
@@ -84,11 +80,9 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
           })
           .eq('id', depositRecord.id);
 
-        // Wait for verification
-        toast.info('جاري التحقق من المعاملة...');
+        toast.info('Verifying transaction...');
         await new Promise(resolve => setTimeout(resolve, 5000));
 
-        // Verify the deposit
         const verifyResult = await supabase.functions.invoke('verify-ton-payment', {
           body: {
             paymentId: depositRecord.id,
@@ -98,7 +92,6 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
         });
 
         if (verifyResult.data?.ok) {
-          // Update deposit to confirmed
           await supabase
             .from('deposit_requests')
             .update({
@@ -107,7 +100,6 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
             })
             .eq('id', depositRecord.id);
 
-          // Add balance to user - get current balance first then update
           const { data: currentUser } = await supabase
             .from('bolt_users')
             .select('ton_balance')
@@ -124,7 +116,7 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
           }
 
           setSuccess(true);
-          toast.success('تم الإيداع بنجاح! 🎉');
+          toast.success('Deposit successful!');
           onSuccess?.();
           
           setTimeout(() => {
@@ -133,102 +125,108 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
             onClose();
           }, 2000);
         } else {
-          toast.warning('تم الإرسال! التحقق قد يستغرق دقائق.');
+          toast.warning('Sent! Verification may take a few minutes.');
         }
       }
     } catch (error: any) {
       console.error('Deposit error:', error);
       if (error.message?.includes('cancelled') || error.message?.includes('declined')) {
-        toast.error('تم إلغاء المعاملة');
+        toast.error('Transaction cancelled');
       } else {
-        toast.error('فشل الإيداع');
+        toast.error('Deposit failed');
       }
     } finally {
       setIsProcessing(false);
     }
   };
 
+  const handleClose = () => {
+    if (!isProcessing) {
+      setAmount('');
+      setSuccess(false);
+      onClose();
+    }
+  };
+
   const quickAmounts = [0.5, 1, 2, 5];
 
   return (
-    <Dialog open={open} onOpenChange={() => !isProcessing && onClose()}>
-      <DialogContent className="max-w-sm bg-card border-border">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-foreground">
-            <div className="p-2 rounded-xl bg-primary/10">
-              <ArrowDownLeft className="w-5 h-5 text-primary" />
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-sm border-0 bg-background p-0 gap-0">
+        {/* Header */}
+        <div className="flex items-center justify-between p-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
+              <ArrowDownLeft className="w-5 h-5 text-green-500" />
             </div>
-            إيداع TON
-          </DialogTitle>
-        </DialogHeader>
+            <span className="font-semibold text-foreground">Deposit TON</span>
+          </div>
+          <button onClick={handleClose} className="text-muted-foreground">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
         {success ? (
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className="py-8 text-center"
+            className="py-12 text-center px-6"
           >
             <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-            <p className="text-lg font-medium text-foreground">تم الإيداع بنجاح!</p>
+            <p className="text-lg font-semibold text-foreground">Deposit Successful</p>
           </motion.div>
         ) : (
-          <div className="space-y-5">
+          <div className="p-6 space-y-6">
             {/* Currency Display */}
-            <div className="flex items-center justify-center gap-3 py-4">
-              <TonIcon size={48} />
-              <span className="text-2xl font-bold text-foreground">TON</span>
+            <div className="flex items-center justify-center gap-2">
+              <TonIcon size={32} />
+              <span className="text-lg font-semibold text-foreground">TON</span>
             </div>
 
             {/* Amount Input */}
-            <div className="space-y-2">
-              <Label className="text-muted-foreground">المبلغ</Label>
+            <div>
               <Input
                 type="number"
                 placeholder="0.00"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="h-14 text-2xl text-center font-bold bg-background border-border"
+                className="h-14 text-2xl text-center font-semibold bg-muted/30 border-0"
                 min="0.1"
                 step="0.1"
               />
             </div>
 
             {/* Quick Amounts */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="flex gap-2">
               {quickAmounts.map((qa) => (
-                <Button
+                <button
                   key={qa}
-                  variant="outline"
-                  size="sm"
                   onClick={() => setAmount(qa.toString())}
-                  className="border-border hover:bg-primary/10 hover:border-primary"
+                  className="flex-1 py-2 text-sm font-medium rounded-lg bg-muted/50 text-foreground hover:bg-muted transition-colors"
                 >
                   {qa} TON
-                </Button>
+                </button>
               ))}
             </div>
 
-            {/* Min Deposit Notice */}
+            {/* Min Notice */}
             <p className="text-xs text-center text-muted-foreground">
-              الحد الأدنى للإيداع: 0.1 TON
+              Minimum deposit: 0.1 TON
             </p>
 
             {/* Deposit Button */}
             <Button
               onClick={handleDeposit}
               disabled={isProcessing || !amount || parseFloat(amount) < 0.1}
-              className="w-full h-12 bg-primary hover:bg-primary/90"
+              className="w-full h-12 bg-green-500 hover:bg-green-600 text-white"
             >
               {isProcessing ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  جاري المعالجة...
+                  Processing...
                 </>
               ) : (
-                <>
-                  <ArrowDownLeft className="w-4 h-4 mr-2" />
-                  إيداع {amount ? `${amount} TON` : ''}
-                </>
+                `Deposit ${amount ? `${amount} TON` : ''}`
               )}
             </Button>
           </div>
