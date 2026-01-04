@@ -52,6 +52,7 @@ serve(async (req) => {
     const now = new Date();
     let totalBoltClaimed = 0;
     let totalUsdtClaimed = 0;
+    let totalTonClaimed = 0;
     const MIN_HOURS = 1; // Minimum 1 hour between claims
     const MAX_HOURS = 24; // Maximum accumulation of 24 hours
 
@@ -75,11 +76,13 @@ serve(async (req) => {
       // Calculate pro-rated rewards (daily_yield / 24 hours * claimable hours)
       const boltReward = (server.daily_bolt_yield / 24) * claimableHours;
       const usdtReward = (server.daily_usdt_yield / 24) * claimableHours;
+      const tonReward = ((server.daily_ton_yield || 0) / 24) * claimableHours;
 
-      console.log(`[claim-server-rewards] Server ${server.server_name}: ${claimableHours.toFixed(2)} hours = +${boltReward.toFixed(2)} BOLT, +${usdtReward.toFixed(4)} USDT`);
+      console.log(`[claim-server-rewards] Server ${server.server_name}: ${claimableHours.toFixed(2)} hours = +${boltReward.toFixed(2)} BOLT, +${usdtReward.toFixed(4)} USDT, +${tonReward.toFixed(6)} TON`);
 
       totalBoltClaimed += boltReward;
       totalUsdtClaimed += usdtReward;
+      totalTonClaimed += tonReward;
 
       // Update last_claim_at
       await supabase
@@ -91,12 +94,13 @@ serve(async (req) => {
     // Round to reasonable precision
     totalBoltClaimed = Math.floor(totalBoltClaimed);
     totalUsdtClaimed = Math.round(totalUsdtClaimed * 100) / 100;
+    totalTonClaimed = Math.round(totalTonClaimed * 10000) / 10000;
 
-    if (totalBoltClaimed > 0 || totalUsdtClaimed > 0) {
+    if (totalBoltClaimed > 0 || totalUsdtClaimed > 0 || totalTonClaimed > 0) {
       // Update user balances
       const { data: userData, error: userError } = await supabase
         .from('bolt_users')
-        .select('token_balance, usdt_balance')
+        .select('token_balance, usdt_balance, ton_balance')
         .eq('id', user_id)
         .single();
 
@@ -107,12 +111,14 @@ serve(async (req) => {
 
       const newBoltBalance = (userData.token_balance || 0) + totalBoltClaimed;
       const newUsdtBalance = (userData.usdt_balance || 0) + totalUsdtClaimed;
+      const newTonBalance = (userData.ton_balance || 0) + totalTonClaimed;
 
       const { error: updateError } = await supabase
         .from('bolt_users')
         .update({
           token_balance: newBoltBalance,
           usdt_balance: newUsdtBalance,
+          ton_balance: newTonBalance,
           updated_at: now.toISOString(),
         })
         .eq('id', user_id);
@@ -122,7 +128,7 @@ serve(async (req) => {
         throw updateError;
       }
 
-      console.log(`[claim-server-rewards] Successfully claimed: ${totalBoltClaimed} BOLT, ${totalUsdtClaimed} USDT for user ${user_id}`);
+      console.log(`[claim-server-rewards] Successfully claimed: ${totalBoltClaimed} BOLT, ${totalUsdtClaimed} USDT, ${totalTonClaimed} TON for user ${user_id}`);
     }
 
     return new Response(
@@ -130,6 +136,7 @@ serve(async (req) => {
         success: true,
         claimed_bolt: totalBoltClaimed,
         claimed_usdt: totalUsdtClaimed,
+        claimed_ton: totalTonClaimed,
         servers_count: servers.length,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

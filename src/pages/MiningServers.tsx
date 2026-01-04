@@ -20,20 +20,21 @@ type MiningServer = {
   hashRate: string;
   boltPerDay: number;
   usdtPerDay: number;
+  tonPerDay: number;
   priceTon: number;
   icon: React.ElementType;
 };
 
 const servers: MiningServer[] = [
-  { id: 'free-starter', name: 'Starter', hashRate: '1 TH/s', boltPerDay: 50, usdtPerDay: 0.05, priceTon: 0, icon: Zap },
-  { id: 'basic-1', name: 'Basic I', hashRate: '5 TH/s', boltPerDay: 250, usdtPerDay: 0.25, priceTon: 1.5, icon: HardDrive },
-  { id: 'basic-2', name: 'Basic II', hashRate: '10 TH/s', boltPerDay: 500, usdtPerDay: 0.50, priceTon: 2.5, icon: Database },
-  { id: 'pro-1', name: 'Advanced I', hashRate: '25 TH/s', boltPerDay: 1250, usdtPerDay: 1.25, priceTon: 5.0, icon: Cloud },
-  { id: 'pro-2', name: 'Advanced II', hashRate: '50 TH/s', boltPerDay: 2500, usdtPerDay: 2.50, priceTon: 9.0, icon: Globe },
-  { id: 'elite-1', name: 'Elite I', hashRate: '100 TH/s', boltPerDay: 5000, usdtPerDay: 5.00, priceTon: 16.0, icon: Shield },
-  { id: 'elite-2', name: 'Elite II', hashRate: '200 TH/s', boltPerDay: 10000, usdtPerDay: 10.00, priceTon: 30.0, icon: Layers },
-  { id: 'legendary-1', name: 'Legend', hashRate: '500 TH/s', boltPerDay: 25000, usdtPerDay: 25.00, priceTon: 50.0, icon: Crown },
-  { id: 'mythic-1', name: 'Mythic', hashRate: '1000 TH/s', boltPerDay: 60000, usdtPerDay: 60.00, priceTon: 100.0, icon: Gem },
+  { id: 'free-starter', name: 'Starter', hashRate: '1 TH/s', boltPerDay: 50, usdtPerDay: 0.05, tonPerDay: 0, priceTon: 0, icon: Zap },
+  { id: 'basic-1', name: 'Basic I', hashRate: '5 TH/s', boltPerDay: 250, usdtPerDay: 0.25, tonPerDay: 0, priceTon: 1.5, icon: HardDrive },
+  { id: 'basic-2', name: 'Basic II', hashRate: '10 TH/s', boltPerDay: 500, usdtPerDay: 0.50, tonPerDay: 0, priceTon: 2.5, icon: Database },
+  { id: 'pro-1', name: 'Advanced I', hashRate: '25 TH/s', boltPerDay: 1250, usdtPerDay: 1.25, tonPerDay: 0.05, priceTon: 5.0, icon: Cloud },
+  { id: 'pro-2', name: 'Advanced II', hashRate: '50 TH/s', boltPerDay: 2500, usdtPerDay: 2.50, tonPerDay: 0.09, priceTon: 9.0, icon: Globe },
+  { id: 'elite-1', name: 'Elite I', hashRate: '100 TH/s', boltPerDay: 5000, usdtPerDay: 5.00, tonPerDay: 0.16, priceTon: 16.0, icon: Shield },
+  { id: 'elite-2', name: 'Elite II', hashRate: '200 TH/s', boltPerDay: 10000, usdtPerDay: 10.00, tonPerDay: 0.30, priceTon: 30.0, icon: Layers },
+  { id: 'legendary-1', name: 'Legend', hashRate: '500 TH/s', boltPerDay: 25000, usdtPerDay: 25.00, tonPerDay: 0.50, priceTon: 50.0, icon: Crown },
+  { id: 'mythic-1', name: 'Mythic', hashRate: '1000 TH/s', boltPerDay: 60000, usdtPerDay: 60.00, tonPerDay: 1.00, priceTon: 100.0, icon: Gem },
 ];
 
 const REQUIRED_ADS = 5;
@@ -123,7 +124,7 @@ const MiningServers = () => {
         toast.error('Invite 1 friend or watch 5 ads to unlock');
         return;
       }
-      await purchaseServer(server.id, 'Free', server.name, server.hashRate, server.boltPerDay, server.usdtPerDay);
+      await purchaseServer(server.id, 'Free', server.name, server.hashRate, server.boltPerDay, server.usdtPerDay, server.tonPerDay);
       toast.success('Free server claimed!');
       return;
     }
@@ -133,7 +134,7 @@ const MiningServers = () => {
 
   const handlePaymentSuccess = async () => {
     if (selectedServer && user?.id) {
-      await purchaseServer(selectedServer.id, 'Paid', selectedServer.name, selectedServer.hashRate, selectedServer.boltPerDay, selectedServer.usdtPerDay);
+      await purchaseServer(selectedServer.id, 'Paid', selectedServer.name, selectedServer.hashRate, selectedServer.boltPerDay, selectedServer.usdtPerDay, selectedServer.tonPerDay);
       toast.success('Server purchased!');
     }
     setSelectedServer(null);
@@ -145,8 +146,9 @@ const MiningServers = () => {
     setIsClaiming(true);
     try {
       const result = await claimRewards();
-      if (result.claimedBolt > 0 || result.claimedUsdt > 0) {
-        toast.success(`Claimed +${result.claimedBolt.toLocaleString()} BOLT & $${result.claimedUsdt.toFixed(2)} USDT!`);
+      if (result.claimedBolt > 0 || result.claimedUsdt > 0 || result.claimedTon > 0) {
+        const tonMsg = result.claimedTon > 0 ? ` & ${result.claimedTon.toFixed(4)} TON` : '';
+        toast.success(`Claimed +${result.claimedBolt.toLocaleString()} BOLT & $${result.claimedUsdt.toFixed(2)} USDT${tonMsg}!`);
       } else {
         toast.info('Wait at least 1 hour between claims');
       }
@@ -165,6 +167,7 @@ const MiningServers = () => {
     servers: ownedServers.length,
     boltPerDay: ownedServers.reduce((sum, s) => sum + s.daily_bolt_yield, 0),
     usdtPerDay: ownedServers.reduce((sum, s) => sum + s.daily_usdt_yield, 0),
+    tonPerDay: ownedServers.reduce((sum, s) => sum + (s.daily_ton_yield || 0), 0),
   };
 
   const sortedServers = [...servers].sort((a, b) => a.priceTon - b.priceTon);
@@ -184,7 +187,7 @@ const MiningServers = () => {
         </div>
 
         {/* Claim Rewards Card */}
-        {ownedServers.length > 0 && (pendingRewards.pendingBolt > 0 || pendingRewards.pendingUsdt > 0) && (
+        {ownedServers.length > 0 && (pendingRewards.pendingBolt > 0 || pendingRewards.pendingUsdt > 0 || pendingRewards.pendingTon > 0) && (
           <div className="p-4 rounded-xl border border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -197,7 +200,7 @@ const MiningServers = () => {
               </div>
             </div>
             
-            <div className="flex items-center gap-4 mb-4">
+            <div className="flex items-center gap-4 mb-4 flex-wrap">
               <div className="flex items-center gap-1.5">
                 <BoltIcon size={18} />
                 <span className="text-lg font-bold text-primary">+{pendingRewards.pendingBolt.toLocaleString()}</span>
@@ -206,6 +209,12 @@ const MiningServers = () => {
                 <UsdtIcon size={18} />
                 <span className="text-lg font-bold text-emerald-500">+${pendingRewards.pendingUsdt.toFixed(2)}</span>
               </div>
+              {pendingRewards.pendingTon > 0 && (
+                <div className="flex items-center gap-1.5">
+                  <TonIcon size={18} />
+                  <span className="text-lg font-bold text-sky-500">+{pendingRewards.pendingTon.toFixed(4)}</span>
+                </div>
+              )}
             </div>
 
             <Button
@@ -225,21 +234,29 @@ const MiningServers = () => {
 
         {/* Stats */}
         {totalStats.servers > 0 && (
-          <div className="flex items-center justify-between p-3 rounded-xl bg-card border border-border">
-            <div className="flex items-center gap-2">
-              <Server className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm text-foreground">{totalStats.servers} active</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-1">
-                <BoltIcon size={14} />
-                <span className="text-sm font-medium text-primary">+{totalStats.boltPerDay.toLocaleString()}/day</span>
+          <div className="p-3 rounded-xl bg-card border border-border space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Server className="w-4 h-4 text-muted-foreground" />
+                <span className="text-sm text-foreground">{totalStats.servers} active</span>
               </div>
-              <div className="flex items-center gap-1">
-                <UsdtIcon size={14} />
-                <span className="text-sm font-medium text-emerald-500">${totalStats.usdtPerDay.toFixed(2)}/day</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <BoltIcon size={14} />
+                  <span className="text-sm font-medium text-primary">+{totalStats.boltPerDay.toLocaleString()}/day</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <UsdtIcon size={14} />
+                  <span className="text-sm font-medium text-emerald-500">${totalStats.usdtPerDay.toFixed(2)}/day</span>
+                </div>
               </div>
             </div>
+            {totalStats.tonPerDay > 0 && (
+              <div className="flex items-center justify-end gap-1">
+                <TonIcon size={14} />
+                <span className="text-sm font-medium text-sky-500">+{totalStats.tonPerDay.toFixed(4)} TON/day</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -277,12 +294,18 @@ const MiningServers = () => {
                       <h3 className="font-medium text-foreground text-sm">{server.name}</h3>
                       {owned && <Check className="w-4 h-4 text-primary" />}
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                       <span className="text-xs text-muted-foreground">{server.hashRate}</span>
                       <span className="text-xs text-muted-foreground">•</span>
                       <span className="text-xs text-primary">+{server.boltPerDay}</span>
                       <span className="text-xs text-muted-foreground">•</span>
                       <span className="text-xs text-emerald-500">${server.usdtPerDay}</span>
+                      {server.tonPerDay > 0 && (
+                        <>
+                          <span className="text-xs text-muted-foreground">•</span>
+                          <span className="text-xs text-sky-500">+{server.tonPerDay} TON</span>
+                        </>
+                      )}
                     </div>
                   </div>
 

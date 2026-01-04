@@ -2607,6 +2607,7 @@ export type Database = {
       user_servers: {
         Row: {
           daily_bolt_yield: number
+          daily_ton_yield: number
           daily_usdt_yield: number
           hash_rate: string
           id: string
@@ -2619,6 +2620,7 @@ export type Database = {
         }
         Insert: {
           daily_bolt_yield?: number
+          daily_ton_yield?: number
           daily_usdt_yield?: number
           hash_rate: string
           id?: string
@@ -2631,6 +2633,7 @@ export type Database = {
         }
         Update: {
           daily_bolt_yield?: number
+          daily_ton_yield?: number
           daily_usdt_yield?: number
           hash_rate?: string
           id?: string
