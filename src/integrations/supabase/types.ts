@@ -2861,6 +2861,10 @@ export type Database = {
       }
       get_telegram_user_id: { Args: never; Returns: string }
       get_telegram_user_id_text: { Args: never; Returns: string }
+      increment_referral_stats: {
+        Args: { bonus_amount?: number; referrer_uuid: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

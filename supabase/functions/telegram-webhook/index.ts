@@ -170,28 +170,88 @@ async function registerUser(
   // Process referral if exists
   if (referrerId && newUser) {
     // Create referral record
-    await supabase.from('bolt_referrals').insert({
+    const { error: refError } = await supabase.from('bolt_referrals').insert({
       referrer_id: referrerId,
       referred_id: newUser.id,
       bonus_earned: 100,
       status: 'completed'
     });
     
-    // Update referrer stats
-    await supabase.rpc('increment_referral_stats', {
-      referrer_uuid: referrerId,
-      bonus_amount: 100
-    }).catch(() => {
-      // Fallback if RPC doesn't exist
-      supabase
+    if (refError) {
+      console.error('Error creating referral record:', refError);
+    } else {
+      console.log('Referral record created for referrer:', referrerId);
+    }
+    
+    // Get referrer data for notification and update
+    const { data: referrer } = await supabase
+      .from('bolt_users')
+      .select('telegram_id, total_referrals, referral_bonus, token_balance, first_name')
+      .eq('id', referrerId)
+      .single();
+    
+    if (referrer) {
+      // Update referrer stats directly (more reliable than RPC)
+      const newTotalReferrals = (referrer.total_referrals || 0) + 1;
+      const newReferralBonus = (referrer.referral_bonus || 0) + 100;
+      const newTokenBalance = (referrer.token_balance || 0) + 100;
+      
+      const { error: updateError } = await supabase
         .from('bolt_users')
         .update({
-          total_referrals: supabase.rpc('increment', { x: 1 }),
-          referral_bonus: supabase.rpc('increment', { x: 100 }),
-          token_balance: supabase.rpc('increment', { x: 100 })
+          total_referrals: newTotalReferrals,
+          referral_bonus: newReferralBonus,
+          token_balance: newTokenBalance,
+          updated_at: new Date().toISOString()
         })
         .eq('id', referrerId);
-    });
+      
+      if (updateError) {
+        console.error('Error updating referrer stats:', updateError);
+      } else {
+        console.log('Referrer stats updated:', referrerId, { newTotalReferrals, newReferralBonus });
+      }
+      
+      // Update contest participation if active
+      const { data: activeContest } = await supabase
+        .from('referral_contests')
+        .select('id')
+        .eq('is_active', true)
+        .eq('status', 'active')
+        .single();
+      
+      if (activeContest) {
+        // Upsert contest participant
+        await supabase
+          .from('contest_participants')
+          .upsert({
+            contest_id: activeContest.id,
+            user_id: referrerId,
+            referral_count: newTotalReferrals,
+            last_referral_at: new Date().toISOString()
+          }, { onConflict: 'contest_id,user_id' });
+      }
+      
+      // Send notification to referrer
+      if (referrer.telegram_id) {
+        const referredName = firstName || username || 'مستخدم جديد';
+        const notificationText = 
+          `🎉 <b>إحالة جديدة!</b>\n\n` +
+          `<b>${referredName}</b> انضم باستخدام رابطك!\n\n` +
+          `💰 ربحت: <b>+100 BOLT</b>\n` +
+          `👥 إجمالي الأصدقاء: <b>${newTotalReferrals}</b>\n\n` +
+          `🎉 <b>New Referral!</b>\n` +
+          `<b>${referredName}</b> joined using your link!\n` +
+          `💰 You earned: <b>+100 BOLT</b>`;
+        
+        try {
+          await sendTelegramMessage(referrer.telegram_id, notificationText);
+          console.log('Referral notification sent to:', referrer.telegram_id);
+        } catch (notifyError) {
+          console.error('Error sending referral notification:', notifyError);
+        }
+      }
+    }
   }
   
   return newUser;
