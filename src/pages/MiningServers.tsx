@@ -15,6 +15,7 @@ import { BoltIcon, UsdtIcon, TonIcon } from '@/components/ui/currency-icons';
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
 import { useNavigate } from 'react-router-dom';
 import CircuitAnimation from '@/components/mining/CircuitAnimation';
+import TimelineTraceAnimation from '@/components/mining/TimelineTraceAnimation';
 
 type MiningServer = {
   id: string;
@@ -354,17 +355,16 @@ const MiningServers = () => {
 
         {/* Timeline */}
         <section className="relative" ref={timelineRef}>
-          {/* Timeline Line */}
-          <div className="timeline-line" />
-          <motion.div 
-            className="timeline-line-glow"
-            initial={{ height: 0 }}
-            animate={{ height: `${progressPercent}%` }}
-            transition={{ duration: 1, ease: "easeOut" }}
+          {/* Animated Timeline Trace */}
+          <TimelineTraceAnimation 
+            serverCount={sortedServers.length}
+            ownedCount={ownedServers.length}
+            nodeHeight={120}
+            nodeGap={12}
           />
 
           {/* Server Nodes */}
-          <div className="space-y-3 pl-2">
+          <div className="space-y-3 pl-8">
             {sortedServers.map((server, index) => renderTimelineNode(server, index))}
           </div>
         </section>

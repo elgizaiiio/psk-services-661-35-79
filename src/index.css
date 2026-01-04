@@ -139,34 +139,63 @@
   animation: circuit-flow 3s cubic-bezier(0.5, 0, 0.9, 1) infinite;
 }
 
-.trace-blue {
-  stroke: #399fff;
-  color: #399fff;
-}
-
-.trace-emerald {
-  stroke: #10b981;
-  color: #10b981;
-}
-
-.trace-violet {
-  stroke: #8b5cf6;
-  color: #8b5cf6;
-}
-
-.trace-amber {
-  stroke: #f59e0b;
-  color: #f59e0b;
-}
-
-.trace-fuchsia {
-  stroke: #d946ef;
-  color: #d946ef;
-}
+/* Trace colors */
+.trace-blue { stroke: #399fff; color: #399fff; }
+.trace-emerald { stroke: #10b981; color: #10b981; }
+.trace-violet { stroke: #8b5cf6; color: #8b5cf6; }
+.trace-amber { stroke: #f59e0b; color: #f59e0b; }
+.trace-fuchsia { stroke: #d946ef; color: #d946ef; }
 
 @keyframes circuit-flow {
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+/* Vertical trace flow for timeline */
+.trace-flow-vertical {
+  stroke-width: 3;
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 60 600;
+  stroke-dashoffset: 660;
+  filter: drop-shadow(0 0 10px currentColor);
+  animation: flow-vertical 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes flow-vertical {
+  0% {
+    stroke-dashoffset: 660;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+/* Timeline progress glow */
+.timeline-progress-glow {
+  filter: drop-shadow(0 0 8px hsl(var(--primary)));
+}
+
+/* Node pulse animation */
+.node-pulse {
+  animation: node-glow 2s ease-in-out infinite;
+}
+
+@keyframes node-glow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.8;
   }
 }
 
@@ -194,7 +223,7 @@
   top: 0;
   bottom: 0;
   width: 2px;
-  background: linear-gradient(to bottom, hsl(var(--border)), hsl(var(--border)));
+  background: hsl(var(--border) / 0.3);
 }
 
 .timeline-line-glow {
