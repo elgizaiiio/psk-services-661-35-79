@@ -1057,6 +1057,81 @@ export type Database = {
           },
         ]
       }
+      casino_bets: {
+        Row: {
+          bet_amount: number
+          created_at: string | null
+          game_type: string
+          id: string
+          is_win: boolean | null
+          profit: number | null
+          result: Json | null
+          user_id: string
+          win_amount: number | null
+        }
+        Insert: {
+          bet_amount: number
+          created_at?: string | null
+          game_type: string
+          id?: string
+          is_win?: boolean | null
+          profit?: number | null
+          result?: Json | null
+          user_id: string
+          win_amount?: number | null
+        }
+        Update: {
+          bet_amount?: number
+          created_at?: string | null
+          game_type?: string
+          id?: string
+          is_win?: boolean | null
+          profit?: number | null
+          result?: Json | null
+          user_id?: string
+          win_amount?: number | null
+        }
+        Relationships: []
+      }
+      casino_player_stats: {
+        Row: {
+          biggest_win: number | null
+          id: string
+          loss_count: number | null
+          total_bets: number | null
+          total_profit: number | null
+          total_wagered: number | null
+          total_won: number | null
+          updated_at: string | null
+          user_id: string
+          win_count: number | null
+        }
+        Insert: {
+          biggest_win?: number | null
+          id?: string
+          loss_count?: number | null
+          total_bets?: number | null
+          total_profit?: number | null
+          total_wagered?: number | null
+          total_won?: number | null
+          updated_at?: string | null
+          user_id: string
+          win_count?: number | null
+        }
+        Update: {
+          biggest_win?: number | null
+          id?: string
+          loss_count?: number | null
+          total_bets?: number | null
+          total_profit?: number | null
+          total_wagered?: number | null
+          total_won?: number | null
+          updated_at?: string | null
+          user_id?: string
+          win_count?: number | null
+        }
+        Relationships: []
+      }
       character_upgrades: {
         Row: {
           bonus_value: number
