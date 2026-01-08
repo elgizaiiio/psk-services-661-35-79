@@ -26,10 +26,10 @@ const categoryColors: Record<string, string> = {
 };
 
 const categoryLabels: Record<string, { en: string; ar: string }> = {
-  mining: { en: 'Mining', ar: 'التعدين' },
-  characters: { en: 'Characters', ar: 'الشخصيات' },
-  challenges: { en: 'Challenges', ar: 'التحديات' },
-  social: { en: 'Social', ar: 'اجتماعي' },
+  mining: { en: 'Mining', ar: 'Mining' },
+  characters: { en: 'Characters', ar: 'Characters' },
+  challenges: { en: 'Challenges', ar: 'Challenges' },
+  social: { en: 'Social', ar: 'Social' },
 };
 
 const Achievements = () => {

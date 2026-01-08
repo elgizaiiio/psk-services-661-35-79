@@ -26,12 +26,12 @@ export const DiceGame: React.FC<DiceGameProps> = ({
 
   const roll = () => {
     if (guess === null) {
-      toast.error("اختر رقماً أولاً!");
+      toast.error("Choose a number first!");
       return;
     }
 
     if (coins < BET_AMOUNT) {
-      toast.error("عملات غير كافية!");
+      toast.error("Not enough coins!");
       return;
     }
 
@@ -57,9 +57,9 @@ export const DiceGame: React.FC<DiceGameProps> = ({
         if (finalResult === guess) {
           const winAmount = BET_AMOUNT * WIN_MULTIPLIER;
           onWin(winAmount);
-          toast.success(`🎲 صحيح! ربحت ${winAmount} عملة!`);
+          toast.success(`🎲 Correct! You won ${winAmount} coins!`);
         } else {
-          toast.error(`الرقم كان ${finalResult}. حظ أوفر!`);
+          toast.error(`The number was ${finalResult}. Better luck!`);
         }
       }
     }, 100);
@@ -86,13 +86,13 @@ export const DiceGame: React.FC<DiceGameProps> = ({
           animate={{ opacity: 1, scale: 1 }}
           className={`text-xl font-bold ${result === guess ? "text-green-500" : "text-destructive"}`}
         >
-          النتيجة: {result} {result === guess ? "✓ فزت!" : "✗ خسرت"}
+          Result: {result} {result === guess ? "✓ You Win!" : "✗ You Lose"}
         </motion.div>
       )}
 
       {/* Guess Buttons */}
       <div className="flex flex-col items-center gap-2">
-        <p className="text-sm text-muted-foreground">خمّن الرقم:</p>
+        <p className="text-sm text-muted-foreground">Guess the number:</p>
         <div className="grid grid-cols-6 gap-2">
           {[1, 2, 3, 4, 5, 6].map((num) => (
             <Button
@@ -116,15 +116,15 @@ export const DiceGame: React.FC<DiceGameProps> = ({
         size="lg"
         className="w-48 text-lg"
       >
-        {isRolling ? "جاري الرمي..." : `ارمِ النرد (${BET_AMOUNT} ⚡)`}
+        {isRolling ? "Rolling..." : `Roll Dice (${BET_AMOUNT} ⚡)`}
       </Button>
 
       <div className="text-center space-y-1">
         <p className="text-sm text-muted-foreground">
-          رصيدك: {coins.toLocaleString()} ⚡
+          Balance: {coins.toLocaleString()} ⚡
         </p>
         <p className="text-xs text-muted-foreground">
-          التخمين الصحيح = {WIN_MULTIPLIER}x المبلغ
+          Correct guess = {WIN_MULTIPLIER}x amount
         </p>
       </div>
     </div>

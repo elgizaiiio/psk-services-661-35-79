@@ -40,7 +40,7 @@ export const useMetaMaskPayment = () => {
 
   const connectWallet = useCallback(async (): Promise<string | null> => {
     if (!checkMetaMask()) {
-      toast.error('MetaMask غير مثبت. يرجى تثبيت MetaMask أولاً');
+      toast.error('MetaMask not installed. Please install MetaMask first');
       window.open('https://metamask.io/download/', '_blank');
       return null;
     }
@@ -53,16 +53,16 @@ export const useMetaMaskPayment = () => {
       if (accounts && accounts.length > 0) {
         setWalletAddress(accounts[0]);
         setIsConnected(true);
-        toast.success('تم الاتصال بـ MetaMask بنجاح');
+        toast.success('Successfully connected to MetaMask');
         return accounts[0];
       }
       return null;
     } catch (error: unknown) {
       console.error('MetaMask connection error:', error);
       if ((error as { code?: number }).code === 4001) {
-        toast.error('تم رفض الاتصال من قبل المستخدم');
+        toast.error('Connection rejected by user');
       } else {
-        toast.error('فشل الاتصال بـ MetaMask');
+        toast.error('Failed to connect to MetaMask');
       }
       return null;
     }
@@ -71,7 +71,7 @@ export const useMetaMaskPayment = () => {
   const disconnectWallet = useCallback(() => {
     setWalletAddress(null);
     setIsConnected(false);
-    toast.info('تم قطع الاتصال بـ MetaMask');
+    toast.info('Disconnected from MetaMask');
   }, []);
 
   const getBalance = useCallback(async (): Promise<string | null> => {
@@ -106,7 +106,7 @@ export const useMetaMaskPayment = () => {
       const amountWei = parseEther(params.amount.toString());
 
       if (balance < amountWei) {
-        toast.error('رصيد ETH غير كافٍ');
+        toast.error('Insufficient ETH balance');
         return false;
       }
 
@@ -135,7 +135,7 @@ export const useMetaMaskPayment = () => {
         console.error('Database error:', dbError);
       }
 
-      toast.info('جاري إرسال المعاملة...');
+      toast.info('Sending transaction...');
 
       // Send transaction
       const tx = await signer.sendTransaction({
@@ -143,7 +143,7 @@ export const useMetaMaskPayment = () => {
         value: amountWei,
       });
 
-      toast.info('جاري تأكيد المعاملة...');
+      toast.info('Confirming transaction...');
 
       // Wait for confirmation
       const receipt = await tx.wait();
@@ -167,7 +167,7 @@ export const useMetaMaskPayment = () => {
             .eq('id', paymentData.id);
         }
 
-        toast.success('تم الدفع بنجاح! 🎉');
+        toast.success('Payment successful! 🎉');
         return true;
       } else {
         if (paymentData) {
@@ -177,15 +177,15 @@ export const useMetaMaskPayment = () => {
             .eq('id', paymentData.id);
         }
 
-        toast.error('فشلت المعاملة');
+        toast.error('Transaction failed');
         return false;
       }
     } catch (error: unknown) {
       console.error('Payment error:', error);
       if ((error as { code?: string }).code === 'ACTION_REJECTED') {
-        toast.error('تم رفض المعاملة من قبل المستخدم');
+        toast.error('Transaction rejected by user');
       } else {
-        toast.error('فشل الدفع');
+        toast.error('Payment failed');
       }
       return false;
     } finally {

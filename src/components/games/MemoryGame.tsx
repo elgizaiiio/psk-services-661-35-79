@@ -50,7 +50,7 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({
 
   const startGame = () => {
     if (coins < PLAY_COST) {
-      toast.error("عملات غير كافية!");
+      toast.error("Not enough coins!");
       return;
     }
 
@@ -58,7 +58,7 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({
 
     setIsPlaying(true);
     initializeGame();
-    toast.info("ابدأ اللعب! اعثر على الأزواج المتطابقة");
+    toast.info("Start playing! Find the matching pairs");
   };
 
   const handleCardClick = (cardId: number) => {
@@ -117,7 +117,7 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({
       const reward = BASE_REWARD * bonusMultiplier;
       
       onWin(reward);
-      toast.success(`🎉 أحسنت! ربحت ${reward} عملة في ${moves} حركة!`);
+      toast.success(`🎉 Well done! You won ${reward} coins in ${moves} moves!`);
     }
   }, [matchedPairs, isPlaying, moves, onWin]);
 
@@ -126,11 +126,11 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({
       {/* Stats */}
       <div className="flex gap-6 text-sm">
         <div className="text-center">
-          <p className="text-muted-foreground">الحركات</p>
+          <p className="text-muted-foreground">Moves</p>
           <p className="text-xl font-bold text-foreground">{moves}</p>
         </div>
         <div className="text-center">
-          <p className="text-muted-foreground">الأزواج</p>
+          <p className="text-muted-foreground">Pairs</p>
           <p className="text-xl font-bold text-primary">{matchedPairs}/{EMOJIS.length}</p>
         </div>
       </div>
@@ -160,7 +160,7 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({
         <div className="h-72 flex items-center justify-center">
           <div className="text-center space-y-4">
             <p className="text-6xl">🧠</p>
-            <p className="text-muted-foreground">اختبر ذاكرتك!</p>
+            <p className="text-muted-foreground">Test your memory!</p>
           </div>
         </div>
       )}
@@ -172,16 +172,16 @@ export const MemoryGame: React.FC<MemoryGameProps> = ({
           size="lg"
           className="w-48 text-lg"
         >
-          {gameComplete ? `العب مجدداً (${PLAY_COST} ⚡)` : `ابدأ (${PLAY_COST} ⚡)`}
+          {gameComplete ? `Play Again (${PLAY_COST} ⚡)` : `Start (${PLAY_COST} ⚡)`}
         </Button>
       )}
 
       <div className="text-center space-y-1">
         <p className="text-sm text-muted-foreground">
-          رصيدك: {coins.toLocaleString()} ⚡
+          Balance: {coins.toLocaleString()} ⚡
         </p>
         <p className="text-xs text-muted-foreground">
-          المكافأة: {BASE_REWARD}-{BASE_REWARD * 3} عملة حسب السرعة
+          Reward: {BASE_REWARD}-{BASE_REWARD * 3} coins based on speed
         </p>
       </div>
     </div>

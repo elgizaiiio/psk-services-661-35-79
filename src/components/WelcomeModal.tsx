@@ -81,12 +81,12 @@ const WelcomeModal = ({ isOpen, onClose, userName }: WelcomeModalProps) => {
                 transition={{ delay: 0.3 }}
               >
                 <h2 className="text-2xl font-bold text-foreground mb-2">
-                  مرحباً {userName || 'بك'}! 🎉
+                  Welcome {userName || 'Back'}! 🎉
                 </h2>
                 <p className="text-muted-foreground mb-6">
-                  أهلاً وسهلاً في Bolt Mining
+                  Welcome to Bolt Mining
                   <br />
-                  مستقبل التعدين الرقمي يبدأ من هنا
+                  The future of digital mining starts here
                 </p>
               </motion.div>
 
@@ -99,12 +99,12 @@ const WelcomeModal = ({ isOpen, onClose, userName }: WelcomeModalProps) => {
               >
                 <Gift className="w-5 h-5 text-primary" />
                 <span className="text-sm font-medium text-primary">
-                  🎁 حصلت على 100 عملة ترحيبية!
+                  🎁 You received 100 welcome coins!
                 </span>
               </motion.div>
 
               <Button onClick={() => setStep(1)} className="w-full" size="lg">
-                التالي
+                Next
               </Button>
             </motion.div>
           ) : (
@@ -116,7 +116,7 @@ const WelcomeModal = ({ isOpen, onClose, userName }: WelcomeModalProps) => {
               className="p-6"
             >
               <h3 className="text-xl font-bold text-center mb-6">
-                كيف تبدأ؟
+                How to get started?
               </h3>
 
               <div className="space-y-4 mb-6">
@@ -131,7 +131,7 @@ const WelcomeModal = ({ isOpen, onClose, userName }: WelcomeModalProps) => {
                     <div className={`p-2 rounded-lg bg-background ${feature.color}`}>
                       <feature.icon className="w-5 h-5" />
                     </div>
-                    <div className="text-right flex-1">
+                    <div className="flex-1">
                       <h4 className="font-semibold text-foreground">
                         {feature.title}
                       </h4>
@@ -145,7 +145,7 @@ const WelcomeModal = ({ isOpen, onClose, userName }: WelcomeModalProps) => {
 
               <Button onClick={onClose} className="w-full" size="lg">
                 <Zap className="w-4 h-4 mr-2" />
-                ابدأ التعدين الآن
+                Start Mining Now
               </Button>
             </motion.div>
           )}

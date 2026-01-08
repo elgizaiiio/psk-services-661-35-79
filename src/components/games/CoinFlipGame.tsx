@@ -26,12 +26,12 @@ export const CoinFlipGame: React.FC<CoinFlipGameProps> = ({
 
   const flip = () => {
     if (!choice) {
-      toast.error("اختر رأس أو نقش أولاً!");
+      toast.error("Choose heads or tails first!");
       return;
     }
 
     if (coins < betAmount) {
-      toast.error("عملات غير كافية!");
+      toast.error("Not enough coins!");
       return;
     }
 
@@ -52,9 +52,9 @@ export const CoinFlipGame: React.FC<CoinFlipGameProps> = ({
       if (flipResult === choice) {
         const winAmount = betAmount * 2;
         onWin(winAmount);
-        toast.success(`🎉 ربحت ${winAmount} عملة!`);
+        toast.success(`🎉 You won ${winAmount} coins!`);
       } else {
-        toast.error("خسرت! حظ أوفر في المرة القادمة");
+        toast.error("You lost! Better luck next time");
       }
     }, 2000);
   };
@@ -86,8 +86,8 @@ export const CoinFlipGame: React.FC<CoinFlipGameProps> = ({
           animate={{ opacity: 1, y: 0 }}
           className={`text-xl font-bold ${result === choice ? "text-green-500" : "text-destructive"}`}
         >
-          {result === "heads" ? "رأس 👑" : "نقش ⭐"}
-          {result === choice ? " - فزت!" : " - خسرت!"}
+          {result === "heads" ? "Heads 👑" : "Tails ⭐"}
+          {result === choice ? " - You Win!" : " - You Lose!"}
         </motion.div>
       )}
 
@@ -99,7 +99,7 @@ export const CoinFlipGame: React.FC<CoinFlipGameProps> = ({
           disabled={isFlipping}
           className="w-28"
         >
-          👑 رأس
+          👑 Heads
         </Button>
         <Button
           variant={choice === "tails" ? "default" : "outline"}
@@ -107,13 +107,13 @@ export const CoinFlipGame: React.FC<CoinFlipGameProps> = ({
           disabled={isFlipping}
           className="w-28"
         >
-          ⭐ نقش
+          ⭐ Tails
         </Button>
       </div>
 
       {/* Bet Amount */}
       <div className="flex flex-col items-center gap-2">
-        <p className="text-sm text-muted-foreground">مبلغ الرهان:</p>
+        <p className="text-sm text-muted-foreground">Bet Amount:</p>
         <div className="flex gap-2">
           {BET_OPTIONS.map((amount) => (
             <Button
@@ -136,11 +136,11 @@ export const CoinFlipGame: React.FC<CoinFlipGameProps> = ({
         size="lg"
         className="w-48 text-lg"
       >
-        {isFlipping ? "جاري القلب..." : `اقلب (${betAmount} ⚡)`}
+        {isFlipping ? "Flipping..." : `Flip (${betAmount} ⚡)`}
       </Button>
 
       <p className="text-sm text-muted-foreground">
-        رصيدك: {coins.toLocaleString()} ⚡
+        Balance: {coins.toLocaleString()} ⚡
       </p>
     </div>
   );

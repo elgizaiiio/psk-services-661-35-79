@@ -72,29 +72,27 @@ async function callAI(prompt: string, systemPrompt: string): Promise<string> {
 }
 
 async function generateDynamicOffer(supabase: any, context: Record<string, unknown>) {
-  const systemPrompt = `أنت مساعد ذكي متخصص في إنشاء عروض ترويجية لتطبيق ألعاب ومكافآت.
-قواعد مهمة:
-1. العروض يجب أن تكون جذابة ومشجعة
-2. لا يمكن للمستخدمين ربح TON أو USDT - فقط BOLT tokens
-3. العروض تشمل خصومات على التذاكر أو مضاعفة BOLT
-4. اكتب بالعربية والإنجليزية
+  const systemPrompt = `You are an intelligent assistant specializing in creating promotional offers for a gaming and rewards app.
+Important rules:
+1. Offers must be attractive and encouraging
+2. Users cannot win TON or USDT - only BOLT tokens
+3. Offers include discounts on tickets or BOLT multipliers
+4. Write in English only
 
-أعد JSON بالتنسيق التالي:
+Return JSON in this format:
 {
-  "title": "عنوان العرض بالإنجليزية",
-  "title_ar": "عنوان العرض بالعربية",
-  "description": "وصف قصير بالإنجليزية",
-  "description_ar": "وصف قصير بالعربية",
-  "offer_type": "slots_discount" أو "spin_bonus" أو "token_multiplier",
-  "discount_percent": رقم من 10-50,
-  "bonus_multiplier": رقم من 1.5-3,
-  "duration_hours": رقم من 1-24
+  "title": "English offer title",
+  "description": "Short English description",
+  "offer_type": "slots_discount" or "spin_bonus" or "token_multiplier",
+  "discount_percent": number from 10-50,
+  "bonus_multiplier": number from 1.5-3,
+  "duration_hours": number from 1-24
 }`;
 
-  const prompt = `أنشئ عرضاً ترويجياً جديداً بناءً على هذا السياق:
-- الوقت الحالي: ${new Date().toISOString()}
-- نوع العرض المطلوب: ${context?.offerType || 'عشوائي'}
-- معلومات إضافية: ${JSON.stringify(context)}`;
+  const prompt = `Create a new promotional offer based on this context:
+- Current time: ${new Date().toISOString()}
+- Required offer type: ${context?.offerType || 'random'}
+- Additional info: ${JSON.stringify(context)}`;
 
   try {
     const aiResponse = await callAI(prompt, systemPrompt);
@@ -118,9 +116,9 @@ async function generateDynamicOffer(supabase: any, context: Record<string, unkno
       .insert({
         offer_type: offerData.offer_type || 'slots_discount',
         title: offerData.title,
-        title_ar: offerData.title_ar,
+        title_ar: offerData.title,
         description: offerData.description,
-        description_ar: offerData.description_ar,
+        description_ar: offerData.description,
         discount_percent: offerData.discount_percent || 0,
         bonus_multiplier: offerData.bonus_multiplier || 1,
         expires_at: expiresAt.toISOString(),
@@ -145,24 +143,23 @@ async function generateDynamicOffer(supabase: any, context: Record<string, unkno
 }
 
 async function generateNotification(supabase: any, context: Record<string, unknown>) {
-  const systemPrompt = `أنت مساعد ذكي متخصص في إنشاء رسائل إشعارات تحفيزية لتطبيق ألعاب.
-قواعد:
-1. الرسائل يجب أن تكون قصيرة ومشجعة
-2. استخدم الإيموجي بشكل مناسب
-3. اكتب بالعربية أو الإنجليزية حسب السياق
-4. شجع المستخدمين على اللعب والمشاركة
+  const systemPrompt = `You are an intelligent assistant specializing in creating motivational notification messages for a gaming app.
+Rules:
+1. Messages must be short and encouraging
+2. Use emojis appropriately
+3. Write in English only
+4. Encourage users to play and participate
 
-أعد JSON بالتنسيق:
+Return JSON in format:
 {
-  "message_text": "الرسالة بالإنجليزية",
-  "message_text_ar": "الرسالة بالعربية",
-  "notification_type": "offer" أو "reminder" أو "achievement" أو "general"
+  "message_text": "English message",
+  "notification_type": "offer" or "reminder" or "achievement" or "general"
 }`;
 
-  const prompt = `أنشئ رسالة إشعار بناءً على:
-- نوع الإشعار: ${context?.notificationType || 'general'}
-- المستهدفين: ${context?.targetAll ? 'جميع المستخدمين' : 'مستخدم محدد'}
-- السياق: ${JSON.stringify(context)}`;
+  const prompt = `Create a notification message based on:
+- Notification type: ${context?.notificationType || 'general'}
+- Target: ${context?.targetAll ? 'all users' : 'specific user'}
+- Context: ${JSON.stringify(context)}`;
 
   try {
     const aiResponse = await callAI(prompt, systemPrompt);
@@ -182,7 +179,7 @@ async function generateNotification(supabase: any, context: Record<string, unkno
         target_user_id: context?.targetUserId || null,
         target_all_users: context?.targetAll || false,
         message_text: notificationData.message_text,
-        message_text_ar: notificationData.message_text_ar,
+        message_text_ar: notificationData.message_text,
         notification_type: notificationData.notification_type || 'general',
         scheduled_for: new Date().toISOString(),
       })
@@ -231,25 +228,25 @@ async function analyzeUsers(supabase: any, context: Record<string, unknown>) {
     .order('token_balance', { ascending: false })
     .limit(100);
 
-  const systemPrompt = `أنت محلل بيانات متخصص في فهم سلوك المستخدمين.
-حلل البيانات المقدمة وقدم رؤى مفيدة عن:
-1. المستخدمين الأكثر نشاطاً
-2. اقتراحات لزيادة التفاعل
-3. أفضل وقت لإرسال الإشعارات
-4. أفكار لعروض ترويجية
+  const systemPrompt = `You are a data analyst specializing in understanding user behavior.
+Analyze the provided data and provide useful insights about:
+1. Most active users
+2. Suggestions for increasing engagement
+3. Best time to send notifications
+4. Ideas for promotional offers
 
-أعد JSON بالتنسيق:
+Return JSON in format:
 {
-  "insights": ["رؤية 1", "رؤية 2"],
-  "suggestions": ["اقتراح 1", "اقتراح 2"],
-  "recommended_offer_types": ["نوع 1", "نوع 2"]
+  "insights": ["insight 1", "insight 2"],
+  "suggestions": ["suggestion 1", "suggestion 2"],
+  "recommended_offer_types": ["type 1", "type 2"]
 }`;
 
-  const prompt = `حلل هذه البيانات:
-- عدد المستخدمين: ${stats?.length || 0}
-- أعلى رصيد: ${stats?.[0]?.token_balance || 0}
-- معدل الإحالات: ${stats ? stats.reduce((a: number, b: any) => a + (b.total_referrals || 0), 0) / stats.length : 0}
-- السياق: ${JSON.stringify(context)}`;
+  const prompt = `Analyze this data:
+- Number of users: ${stats?.length || 0}
+- Highest balance: ${stats?.[0]?.token_balance || 0}
+- Average referrals: ${stats ? stats.reduce((a: number, b: any) => a + (b.total_referrals || 0), 0) / stats.length : 0}
+- Context: ${JSON.stringify(context)}`;
 
   try {
     const aiResponse = await callAI(prompt, systemPrompt);
