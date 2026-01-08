@@ -28,17 +28,17 @@ const CoinFlip: React.FC = () => {
   return (
     <div className="min-h-screen bg-background pb-24">
       <Helmet>
-        <title>قلب العملة | Bolt</title>
-        <meta name="description" content="اختر رأس أو نقش وضاعف رصيدك" />
+        <title>Coin Flip | Bolt</title>
+        <meta name="description" content="Choose heads or tails and double your balance" />
       </Helmet>
 
       {/* Header */}
       <div className="px-4 pt-6 pb-4">
         <div className="flex items-center gap-2 mb-2">
           <BackButton />
-          <h1 className="text-xl font-bold text-foreground">قلب العملة</h1>
+          <h1 className="text-xl font-bold text-foreground">Coin Flip</h1>
         </div>
-        <p className="text-sm text-muted-foreground">اختر الجهة الصحيحة وضاعف!</p>
+        <p className="text-sm text-muted-foreground">Pick the right side and double your coins!</p>
       </div>
 
       {/* Game */}
@@ -55,11 +55,11 @@ const CoinFlip: React.FC = () => {
       {/* Info Card */}
       <div className="px-4">
         <div className="bg-primary/10 border border-primary/30 rounded-xl p-4">
-          <h3 className="font-bold text-foreground mb-2">💡 كيفية اللعب</h3>
+          <h3 className="font-bold text-foreground mb-2">💡 How to Play</h3>
           <ul className="text-sm text-muted-foreground space-y-1">
-            <li>• اختر رأس 👑 أو نقش ⭐</li>
-            <li>• حدد مبلغ الرهان</li>
-            <li>• الفوز = ضعف المبلغ!</li>
+            <li>• Choose Heads 👑 or Tails ⭐</li>
+            <li>• Select your bet amount</li>
+            <li>• Win = Double your bet!</li>
           </ul>
         </div>
       </div>
