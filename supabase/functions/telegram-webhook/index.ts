@@ -234,15 +234,13 @@ async function registerUser(
       
       // Send notification to referrer
       if (referrer.telegram_id) {
-        const referredName = firstName || username || 'مستخدم جديد';
+        const referredName = firstName || username || 'New User';
         const notificationText = 
-          `🎉 <b>إحالة جديدة!</b>\n\n` +
-          `<b>${referredName}</b> انضم باستخدام رابطك!\n\n` +
-          `💰 ربحت: <b>+100 BOLT</b>\n` +
-          `👥 إجمالي الأصدقاء: <b>${newTotalReferrals}</b>\n\n` +
-          `🎉 <b>New Referral!</b>\n` +
-          `<b>${referredName}</b> joined using your link!\n` +
-          `💰 You earned: <b>+100 BOLT</b>`;
+          `🎉 <b>New Referral!</b>\n\n` +
+          `👤 <b>${referredName}</b> joined using your link!\n\n` +
+          `💰 You earned: <b>+100 BOLT</b>\n` +
+          `👥 Total friends: <b>${newTotalReferrals}</b>\n\n` +
+          `🚀 Keep inviting to earn more!`;
         
         try {
           await sendTelegramMessage(referrer.telegram_id, notificationText);
@@ -1836,34 +1834,28 @@ User joined from AdsGram ad!`);
         webAppUrl = `${WEBAPP_URL}?ref=${encodeURIComponent(referralParam)}`;
       }
 
-      const welcomeMessage = `<b>Welcome ${firstName}!</b>
+      const welcomeMessage = `🚀 <b>Welcome ${firstName}!</b>
 
-Mine BOLT 24/7 | Daily Tasks | Earn 0.1 TON/referral
+🎰 <b>High Win Rate Active!</b>
 
-<b>$10,000 Contest LIVE!</b>
+Start mining BOLT and win real USDT & TON prizes!
 
-Tap below to start!`;
+• Features:
+- Real USDT winning chances
+- Direct TON rewards
+- Free daily bonuses
+- Instant withdrawals
+
+🏆 <b>$10,000 Contest LIVE!</b>
+
+⏰ Don't miss out - Start now!`;
 
       const keyboard = {
         inline_keyboard: [
-          [
-            {
-              text: 'Start Mining Now',
-              web_app: { url: webAppUrl }
-            }
-          ],
-          [
-            {
-              text: 'View Contest',
-              web_app: { url: `${WEBAPP_URL}/contest` }
-            }
-          ],
-          [
-            {
-              text: 'Join Channel',
-              url: 'https://t.me/boltcomm'
-            }
-          ]
+          [{ text: '🚀 Start Mining Now', web_app: { url: webAppUrl } }],
+          [{ text: '🏆 View Contest', web_app: { url: `${WEBAPP_URL}/contest` } }],
+          [{ text: '✅ Withdrawal Proofs', url: 'https://t.me/boltwithdrawals' }],
+          [{ text: '📢 Join Community', url: 'https://t.me/boltcomm' }]
         ]
       };
 

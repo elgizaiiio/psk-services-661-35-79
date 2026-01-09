@@ -185,8 +185,8 @@ Deno.serve(async (req) => {
           .from('notifications')
           .insert({
             user_id: referrer.id,
-            title: '🎉 إحالة متأخرة!',
-            message: `لقد حصلت على 100 رمز مقابل إحالة ${pending.first_name || pending.telegram_username || 'مستخدم جديد'}`,
+            title: '🎉 Delayed Referral Bonus!',
+            message: `You earned 100 BOLT for referring ${pending.first_name || pending.telegram_username || 'New User'}`,
             type: 'success'
           })
 

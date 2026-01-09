@@ -39,37 +39,31 @@ async function generatePersonalizedMessage(
     const randomSeed = Math.floor(Math.random() * 1000);
     const greeting = userName ? `Hey ${userName}! ` : '';
     
-    const systemPrompt = `You are a master persuasion copywriter for BOLT - a crypto mining and gambling app.
+    const systemPrompt = `You are a marketing copywriter for BOLT - a crypto mining app.
 
-🎯 YOUR MISSION: Create a TELEGRAM notification that users CAN'T IGNORE and MUST tap.
+🎯 CREATE: Professional Telegram notification in OFFER style.
 
-⚡ DARK PSYCHOLOGY TACTICS TO USE:
-1. FOMO (Fear of Missing Out) - "Others are winning RIGHT NOW"
-2. Scarcity - "Only 2 hours left", "Limited spins remaining"
-3. Social Proof - "10,000 users already claimed today"
-4. Loss Aversion - "Don't lose your streak", "You're leaving money on the table"
-5. Urgency - "Expires at midnight", "Your bonus is waiting"
-6. Curiosity Gap - "Your reward is ready... (tap to see)"
-7. Personalization - "Your lucky hour is NOW"
+📝 FORMAT (follow this structure):
+${greeting ? `${greeting}` : ''}[Emoji] <b>Catchy Title!</b>
 
-📝 CRITICAL FORMAT RULES:
-- ${greeting ? `Start with greeting: "${greeting}"` : 'Start with 2-3 powerful emojis (💰⚡🚨🔥🎰💎🍀)'}
-- For BOLD text, use HTML <b>tags</b> NOT markdown **asterisks**
-- NEVER use markdown formatting (**, __, etc.) - Telegram uses HTML!
-- Create URGENCY without being spammy
-- Max 3 short sentences (~150 chars)
-- End with a HOOK that demands action
-- Make this message UNIQUE - variation seed: ${randomSeed}
+[Short compelling description - 1-2 sentences]
 
-🎰 APP FEATURES: Lucky Spin (free daily), Mining Servers (earn BOLT/USDT), Referral (earn TON), VIP Rewards
+• Includes:
+- Benefit 1
+- Benefit 2  
+- Benefit 3
 
-⏰ Time: ${template.time_slot}
-📌 Theme: ${template.theme}
-💡 Focus: ${template.prompt_context}
-🔢 Day variation seed: ${dayOfYear}
+⏰ [Urgency message - e.g. "Limited time!" or "Don't miss out!"]
 
-NEVER repeat the same message structure. Be creative and use different angles each time.
-REMEMBER: Use HTML tags like <b>bold</b> and <i>italic</i>, NOT markdown!`;
+📌 RULES:
+- Use HTML <b>tags</b> for bold, NOT markdown
+- Keep under 300 characters total
+- Create urgency without spam
+- Make message UNIQUE - seed: ${randomSeed}
+- Theme: ${template.theme}
+- Time: ${template.time_slot}
+
+🎰 APP FEATURES: Lucky Spin, Mining Servers, Referral Rewards, VIP Benefits`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -110,43 +104,27 @@ function getDefaultMessage(timeSlot: string, theme: string, dayOfYear: number, u
   const greeting = userName ? `Hey ${userName}! ` : '';
   
   const spinMessages = [
-    `${greeting}🎰🔥 <b>JACKPOT ALERT!</b> Someone just won 500 USDT! Your turn is next... Spin NOW before midnight! ⏰`,
-    `${greeting}💎😱 You're missing out! <b>3,847 users</b> already spun today. Your FREE spin expires in hours!`,
-    `${greeting}🍀⚡ Your lucky window is OPEN! <b>Last chance</b> for today's free spin. Don't regret it tomorrow!`,
-    `${greeting}🎲🤑 WARNING: Unclaimed reward detected! <b>Spin now</b> or lose it forever at midnight!`,
-    `${greeting}🌟💰 TOP SECRET: Lucky hour activated! <b>2x rewards</b> for the next 60 minutes. GO GO GO!`,
-    `${greeting}🎯🔥 Your streak is at risk! <b>Don't break it now</b>. One spin keeps your rewards alive!`,
-    `${greeting}⭐😮 BREAKING: Spin rewards <b>doubled</b> for early birds! Limited to first 1000 spins today!`
+    `${greeting}🎰 <b>Lucky Spin Bonus!</b>\n\nHigh win rate active now!\n\n• Includes:\n- Real USDT chances\n- TON rewards\n- Free bonus\n\n⏰ Spin now!`,
+    `${greeting}🎲 <b>Spin & Win!</b>\n\nYour free daily spin is ready!\n\n• Includes:\n- USDT prizes\n- BOLT tokens\n- Bonus rewards\n\n⏰ Don't miss out!`,
+    `${greeting}🍀 <b>Lucky Hour Active!</b>\n\nBoosted rewards for limited time!\n\n• Includes:\n- Higher win rates\n- Extra bonuses\n- Free spins\n\n⏰ Play now!`
   ];
   
   const miningMessages = [
-    `${greeting}⛏️💎 While you slept, your miners earned <b>+247 BOLT</b>! Claim before it resets! 🚨`,
-    `${greeting}🔥⚡ URGENT: Mining session ending! <b>Claim NOW</b> or lose 8 hours of earnings! 💸`,
-    `${greeting}💰🏆 Top miners are pulling <b>10x your rate</b>. Upgrade power and catch up! Time's ticking!`,
-    `${greeting}⏰😤 Your mining is at <b>32%</b> capacity! Max it out NOW before others take your spot!`,
-    `${greeting}🚀💎 SECRET: <b>Bonus mining hour</b> active! Start session NOW for extra rewards! ⚡`,
-    `${greeting}📈🔥 Your competitors upgraded! You're falling behind. <b>Boost your power</b> TODAY!`,
-    `${greeting}⛏️💸 <b>8 hours of BOLT</b> waiting for you! Don't let them expire. CLAIM NOW!`
+    `${greeting}⛏️ <b>Mining Rewards Ready!</b>\n\nYour BOLT is waiting to be claimed!\n\n• Includes:\n- 8 hours of mining\n- Bonus tokens\n- Power upgrades\n\n⏰ Claim now!`,
+    `${greeting}💎 <b>Mining Boost Active!</b>\n\nEarn more BOLT per hour!\n\n• Includes:\n- Increased rate\n- Extra rewards\n- VIP bonuses\n\n⏰ Start mining!`,
+    `${greeting}🚀 <b>Power Up Your Mining!</b>\n\nMaximize your earnings today!\n\n• Includes:\n- Higher power\n- More tokens\n- Daily bonuses\n\n⏰ Upgrade now!`
   ];
   
   const referralMessages = [
-    `${greeting}👥💰 Your friend just earned <b>0.5 TON</b> from referrals! Where's YOUR share? Share link NOW!`,
-    `${greeting}🤑🔥 LEAK: Top referrer earned <b>$500 this week</b>! Your link = passive income. Share it!`,
-    `${greeting}💎👀 <b>5 friends = 0.5 TON</b> FREE! You're leaving real money on the table. ACT NOW!`,
-    `${greeting}🚀💸 While you wait, others are earning <b>TON daily</b>! Share your link, retire early! 🏖️`,
-    `${greeting}⚡🤝 SECRET BONUS: Next 3 referrals get <b>DOUBLE rewards</b>! Limited time only!`,
-    `${greeting}💰😱 You could've earned <b>$50 today</b> from referrals! Don't miss tomorrow. SHARE NOW!`,
-    `${greeting}🎁🔥 Your referral earnings: <b>$0</b>. Fix that TODAY! One share = passive income!`
+    `${greeting}👥 <b>Referral Rewards!</b>\n\nEarn TON for every friend!\n\n• Includes:\n- 0.1 TON per referral\n- Bonus tokens\n- Contest entries\n\n⏰ Share now!`,
+    `${greeting}💰 <b>Invite & Earn!</b>\n\nPassive income awaits!\n\n• Includes:\n- Real TON rewards\n- BOLT bonuses\n- VIP perks\n\n⏰ Start inviting!`,
+    `${greeting}🎁 <b>Friend Bonus Active!</b>\n\nDouble referral rewards today!\n\n• Includes:\n- 2x TON rewards\n- Extra tokens\n- Special prizes\n\n⏰ Limited time!`
   ];
   
   const generalMessages = [
-    `${greeting}🚨💰 ALERT: <b>Unclaimed rewards</b> detected in your account! Expires at MIDNIGHT! 🕛`,
-    `${greeting}🔥😱 You're in the top 20%! But <b>3 daily tasks</b> away from VIP rewards. Complete NOW!`,
-    `${greeting}💎⚡ BREAKING: <b>Flash bonus</b> activated! Log in next 2 hours for surprise reward!`,
-    `${greeting}🎯🏆 <b>Your rank is dropping!</b> Complete tasks NOW to stay in the prize pool!`,
-    `${greeting}✨🤑 SECRET: <b>Hidden achievements</b> unlocked today! Check app for free rewards!`,
-    `${greeting}⏰💸 <b>Daily reset in 3 hours!</b> You still haven't claimed all your rewards! HURRY!`,
-    `${greeting}🚀🔥 VIP users earned <b>5x more</b> today! Upgrade now before prices increase!`
+    `${greeting}🎯 <b>Daily Rewards!</b>\n\nComplete tasks for free BOLT!\n\n• Includes:\n- Free tokens\n- Bonus spins\n- VIP points\n\n⏰ Claim now!`,
+    `${greeting}🏆 <b>Contest Update!</b>\n\n$10,000 prize pool LIVE!\n\n• Includes:\n- TON prizes\n- USDT rewards\n- Leaderboard bonus\n\n⏰ Join now!`,
+    `${greeting}⚡ <b>Flash Bonus!</b>\n\nLimited time rewards active!\n\n• Includes:\n- Extra BOLT\n- Free spins\n- VIP upgrades\n\n⏰ Don't miss out!`
   ];
 
   const messages: Record<string, string[]> = {
