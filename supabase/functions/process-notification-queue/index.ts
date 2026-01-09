@@ -16,23 +16,29 @@ interface SendResult {
   error?: string;
 }
 
-async function sendTelegramMessage(chatId: number, text: string): Promise<SendResult> {
+async function sendTelegramMessage(chatId: number, text: string, replyMarkup?: object): Promise<SendResult> {
   if (!TELEGRAM_BOT_TOKEN) {
     return { success: false, error: 'Missing bot token' };
   }
 
   try {
+    const body: Record<string, unknown> = {
+      chat_id: chatId,
+      text: text,
+      parse_mode: 'HTML',
+      disable_web_page_preview: true,
+    };
+
+    if (replyMarkup) {
+      body.reply_markup = replyMarkup;
+    }
+
     const response = await fetch(
       `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: chatId,
-          text: text,
-          parse_mode: 'HTML',
-          disable_web_page_preview: true,
-        }),
+        body: JSON.stringify(body),
       }
     );
 
@@ -117,7 +123,19 @@ Deno.serve(async (req) => {
         await new Promise(resolve => setTimeout(resolve, 100));
       }
 
-      const result = await sendTelegramMessage(notification.telegram_id, notification.message);
+      // Add buttons for broadcast messages
+      let replyMarkup: object | undefined = undefined;
+      if (notification.time_slot === 'broadcast') {
+        replyMarkup = {
+          inline_keyboard: [
+            [{ text: '🎰 Play & Win Now', url: 'http://t.me/Boltminingbot' }],
+            [{ text: '✅ Withdrawal Proofs', url: 'https://t.me/boltwithdrawals' }],
+            [{ text: '📢 Join Community', url: 'https://t.me/boltcomm' }]
+          ]
+        };
+      }
+
+      const result = await sendTelegramMessage(notification.telegram_id, notification.message, replyMarkup);
 
       if (result.success) {
         stats.sent++;
