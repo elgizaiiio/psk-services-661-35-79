@@ -136,12 +136,15 @@ export const useDirectTonPayment = () => {
           // Wait a few seconds for the transaction to propagate
           await new Promise(resolve => setTimeout(resolve, 5000));
           
-          // Try to verify the payment
+          // Try to verify the payment with telegram ID header
           const verifyResult = await supabase.functions.invoke('verify-ton-payment', {
             body: {
               paymentId: paymentData.id,
               txHash: result.boc,
               walletAddress: wallet.account.address
+            },
+            headers: {
+              'x-telegram-id': telegramUser?.id?.toString() || ''
             }
           });
           
