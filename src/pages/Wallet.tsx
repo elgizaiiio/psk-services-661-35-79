@@ -8,9 +8,11 @@ import { Eye, EyeOff, Loader2, Wallet as WalletIcon, ArrowUpRight, ArrowDownLeft
 import { TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
 import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import WithdrawModal from '@/components/WithdrawModal';
 import WithdrawSelectModal from '@/components/wallet/WithdrawSelectModal';
 import DepositModal from '@/components/wallet/DepositModal';
+import WalletVerificationModal from '@/components/WalletVerificationModal';
 
 const Wallet: React.FC = () => {
   const { user: tgUser, isLoading: authLoading } = useTelegramAuth();
@@ -22,6 +24,9 @@ const Wallet: React.FC = () => {
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; currency: 'TON' | 'USDT' } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [verificationOpen, setVerificationOpen] = useState(false);
+  const [isWalletVerified, setIsWalletVerified] = useState(false);
+  const [pendingWithdrawCurrency, setPendingWithdrawCurrency] = useState<'TON' | 'USDT' | null>(null);
   useTelegramBackButton();
 
   const boltBalance = user?.token_balance ?? 0;
@@ -34,6 +39,28 @@ const Wallet: React.FC = () => {
       .then(data => setTonPrice(data?.["the-open-network"]?.usd ?? null))
       .catch(() => {});
   }, []);
+
+  // Check if current wallet is verified
+  useEffect(() => {
+    const checkWalletVerification = async () => {
+      if (!user?.id || !wallet?.account?.address) return;
+      
+      try {
+        const { data } = await supabase
+          .from('wallet_verifications')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('wallet_address', wallet.account.address)
+          .single();
+        
+        setIsWalletVerified(!!data);
+      } catch {
+        setIsWalletVerified(false);
+      }
+    };
+
+    checkWalletVerification();
+  }, [user?.id, wallet?.account?.address]);
 
   const isLoading = authLoading || miningLoading;
   const totalUSD = usdtBalance + (tonBalance * (tonPrice || 0));
@@ -236,11 +263,39 @@ const Wallet: React.FC = () => {
         onClose={() => setWithdrawSelectOpen(false)}
         onSelectCurrency={(currency) => {
           setWithdrawSelectOpen(false);
-          setWithdrawModal({ open: true, currency });
+          // Check if wallet is verified before allowing withdrawal
+          if (!isWalletVerified) {
+            setPendingWithdrawCurrency(currency);
+            setVerificationOpen(true);
+          } else {
+            setWithdrawModal({ open: true, currency });
+          }
         }}
         tonBalance={tonBalance}
         usdtBalance={usdtBalance}
       />
+
+      {/* Wallet Verification Modal */}
+      {user && wallet?.account?.address && (
+        <WalletVerificationModal
+          open={verificationOpen}
+          onClose={() => {
+            setVerificationOpen(false);
+            setPendingWithdrawCurrency(null);
+          }}
+          userId={user.id}
+          walletAddress={wallet.account.address}
+          onVerified={() => {
+            setIsWalletVerified(true);
+            setVerificationOpen(false);
+            // Open withdraw modal after verification
+            if (pendingWithdrawCurrency) {
+              setWithdrawModal({ open: true, currency: pendingWithdrawCurrency });
+              setPendingWithdrawCurrency(null);
+            }
+          }}
+        />
+      )}
 
       {/* Withdraw Modal */}
       {withdrawModal && user && (
