@@ -192,16 +192,15 @@ export const useBoltTasks = () => {
   }, [tasks, completedTasks]);
 
   useEffect(() => {
-    const loadAllData = async () => {
-      setLoading(true);
-      await loadTasks();
-      if (boltUser) {
-        await loadCompletedTasks();
-      }
-      setLoading(false);
-    };
-    loadAllData();
-  }, [loadTasks, loadCompletedTasks, boltUser]);
+    setLoading(true);
+    loadTasks().finally(() => setLoading(false));
+  }, [loadTasks]);
+
+  useEffect(() => {
+    if (boltUser) {
+      loadCompletedTasks();
+    }
+  }, [boltUser, loadCompletedTasks]);
 
   return {
     tasks: getAvailableTasks(),

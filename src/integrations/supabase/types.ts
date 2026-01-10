@@ -2881,54 +2881,6 @@ export type Database = {
           },
         ]
       }
-      wallet_verifications: {
-        Row: {
-          created_at: string
-          currency: string
-          id: string
-          tx_hash: string | null
-          user_id: string
-          verification_fee: number
-          verified_at: string
-          wallet_address: string
-        }
-        Insert: {
-          created_at?: string
-          currency?: string
-          id?: string
-          tx_hash?: string | null
-          user_id: string
-          verification_fee?: number
-          verified_at?: string
-          wallet_address: string
-        }
-        Update: {
-          created_at?: string
-          currency?: string
-          id?: string
-          tx_hash?: string | null
-          user_id?: string
-          verification_fee?: number
-          verified_at?: string
-          wallet_address?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "wallet_verifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "bolt_users"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "wallet_verifications_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "public_leaderboard"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       withdrawal_requests: {
         Row: {
           admin_note: string | null
