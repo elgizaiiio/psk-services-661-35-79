@@ -178,10 +178,16 @@ async function registerUser(
     });
     
     if (refError) {
+      // IMPORTANT: if referral already exists, DO NOT update referrer stats again
+      if ((refError as any)?.code === '23505') {
+        console.log('Referral already exists, skipping referrer reward update:', { referrerId, referredId: newUser.id });
+        return newUser;
+      }
       console.error('Error creating referral record:', refError);
-    } else {
-      console.log('Referral record created for referrer:', referrerId);
+      return newUser;
     }
+
+    console.log('Referral record created for referrer:', referrerId);
     
     // Get referrer data for notification and update
     const { data: referrer } = await supabase
@@ -835,66 +841,84 @@ async function getRecentUsers(limit: number = 10) {
 
 async function broadcastMessage(message: string, photoFileIdOrUrl?: string): Promise<{ sent: number; failed: number }> {
   const supabase = getSupabaseClient();
-  
-  const { data: users } = await supabase
-    .from('bolt_users')
-    .select('telegram_id');
-  
-  if (!users || users.length === 0) {
-    return { sent: 0, failed: 0 };
-  }
-  
+
   let sent = 0;
   let failed = 0;
-  
-  for (const user of users) {
-    try {
-      let response;
-      
-      if (photoFileIdOrUrl) {
-        // Send photo with caption - works with both file_id and URL
-        // file_id is preferred as it's permanent and can be reused
-        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
-        response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: user.telegram_id,
-            photo: photoFileIdOrUrl,
-            caption: message,
-            parse_mode: 'HTML'
-          }),
-        });
-      } else {
-        // Send text only
-        const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
-        response = await fetch(url, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: user.telegram_id,
-            text: message,
-            parse_mode: 'HTML'
-          }),
-        });
-      }
-      
-      const result = await response.json();
-      if (result.ok) {
-        sent++;
-      } else {
-        failed++;
-        console.log(`Failed to send to ${user.telegram_id}:`, result.description || result);
-      }
-      
-      // Small delay to avoid rate limiting
-      await new Promise(resolve => setTimeout(resolve, 35));
-    } catch (error) {
-      failed++;
-      console.error(`Error sending to ${user.telegram_id}:`, error);
+
+  // IMPORTANT: Supabase queries are limited; use pagination + de-duplication
+  const seen = new Set<number>();
+  const pageSize = 1000;
+  let offset = 0;
+
+  while (true) {
+    const { data: users, error } = await supabase
+      .from('bolt_users')
+      .select('telegram_id, notifications_enabled, bot_blocked')
+      .not('telegram_id', 'is', null)
+      .neq('notifications_enabled', false)
+      .neq('bot_blocked', true)
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      console.error('Broadcast fetch users error:', error);
+      break;
     }
+
+    if (!users || users.length === 0) break;
+
+    for (const user of users as any[]) {
+      const chatId = Number(user.telegram_id);
+      if (!Number.isFinite(chatId) || chatId <= 0) continue;
+      if (seen.has(chatId)) continue;
+      seen.add(chatId);
+
+      try {
+        let response;
+
+        if (photoFileIdOrUrl) {
+          const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`;
+          response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              photo: photoFileIdOrUrl,
+              caption: message,
+              parse_mode: 'HTML'
+            }),
+          });
+        } else {
+          const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+          response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: chatId,
+              text: message,
+              parse_mode: 'HTML'
+            }),
+          });
+        }
+
+        const result = await response.json();
+        if (result.ok) {
+          sent++;
+        } else {
+          failed++;
+          console.log(`Failed to send to ${chatId}:`, result.description || result);
+        }
+
+        // Delay to reduce rate limiting
+        await new Promise(resolve => setTimeout(resolve, 80));
+      } catch (error) {
+        failed++;
+        console.error(`Error sending to ${chatId}:`, error);
+      }
+    }
+
+    offset += pageSize;
   }
-  
+
   return { sent, failed };
 }
 

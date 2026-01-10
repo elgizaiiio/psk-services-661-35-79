@@ -40,20 +40,30 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
     setIsProcessing(true);
 
     try {
-      const { data: depositRecord, error: insertError } = await supabase
-        .from('deposit_requests')
+      // Use ton_payments so it can be verified by verify-ton-payment
+      const { data: paymentData, error: insertError } = await supabase
+        .from('ton_payments')
         .insert({
           user_id: userId,
-          currency: 'TON',
-          amount: depositAmount,
+          amount_ton: depositAmount,
+          description: 'Deposit TON',
+          product_type: 'deposit',
+          product_id: null,
+          destination_address: TON_PAYMENT_ADDRESS,
+          wallet_address: wallet.account.address,
+          payment_method: 'ton',
+          payment_currency: 'TON',
           status: 'pending',
-          wallet_address: wallet.account.address
+          metadata: {
+            deposit: true,
+            created_from: 'wallet_deposit_modal'
+          }
         })
         .select()
         .single();
 
-      if (insertError) {
-        console.error('Failed to create deposit record:', insertError);
+      if (insertError || !paymentData) {
+        console.error('Failed to create payment record:', insertError);
         throw new Error('Failed to create deposit request');
       }
 
@@ -73,19 +83,26 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
 
       if (result) {
         await supabase
-          .from('deposit_requests')
+          .from('ton_payments')
           .update({
             tx_hash: result.boc,
-            status: 'pending'
+            status: 'pending',
+            wallet_address: wallet.account.address,
+            metadata: {
+              deposit: true,
+              boc_submitted: true,
+              submitted_at: new Date().toISOString(),
+              wallet_address: wallet.account.address
+            }
           })
-          .eq('id', depositRecord.id);
+          .eq('id', paymentData.id);
 
         toast.info('Verifying transaction...');
         await new Promise(resolve => setTimeout(resolve, 5000));
 
         const verifyResult = await supabase.functions.invoke('verify-ton-payment', {
           body: {
-            paymentId: depositRecord.id,
+            paymentId: paymentData.id,
             txHash: result.boc,
             walletAddress: wallet.account.address
           }
@@ -93,12 +110,12 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
 
         if (verifyResult.data?.ok) {
           await supabase
-            .from('deposit_requests')
+            .from('ton_payments')
             .update({
               status: 'confirmed',
               confirmed_at: new Date().toISOString()
             })
-            .eq('id', depositRecord.id);
+            .eq('id', paymentData.id);
 
           const { data: currentUser } = await supabase
             .from('bolt_users')
@@ -118,7 +135,7 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
           setSuccess(true);
           toast.success('Deposit successful!');
           onSuccess?.();
-          
+
           setTimeout(() => {
             setSuccess(false);
             setAmount('');
