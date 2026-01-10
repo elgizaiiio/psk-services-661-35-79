@@ -93,9 +93,13 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
             currency: 'TON',
             verification_fee: VERIFICATION_FEE,
             tx_hash: result.boc,
+            verified_at: new Date().toISOString(),
           });
 
-        if (error) throw error;
+        if (error) {
+          console.error('Wallet verification insert error:', error);
+          throw error;
+        }
 
         setIsVerified(true);
         toast.success('Wallet verified successfully!');
