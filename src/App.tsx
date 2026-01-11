@@ -185,7 +185,7 @@ const App = () => (
                   <Route path="/*" element={
                     <TelegramWebAppWrapper>
                       <div className="tg-webapp-container min-h-screen bg-background relative">
-                        <div className="pt-6 relative z-10">
+                        <div className="pt-8 relative z-10">
                           <ErrorBoundary>
                             <Suspense fallback={<PageLoader />}>
                               <Routes>

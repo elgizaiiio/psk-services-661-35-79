@@ -1,5 +1,4 @@
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface PaymentStatus {
@@ -11,7 +10,7 @@ export interface PaymentStatus {
   confirmed_at?: string;
 }
 
-export const useTonPaymentStatus = () => {
+export const useTonPaymentStatus = (telegramId?: number | string) => {
   const [payments, setPayments] = useState<PaymentStatus[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +19,10 @@ export const useTonPaymentStatus = () => {
       setLoading(true);
       
       const { data, error } = await supabase.functions.invoke('verify-ton-payment', {
-        body: { paymentId }
+        body: { paymentId },
+        headers: {
+          'x-telegram-id': telegramId?.toString() || ''
+        }
       });
 
       if (error) {
@@ -29,7 +31,6 @@ export const useTonPaymentStatus = () => {
       }
 
       if (data?.ok && data?.status === 'confirmed') {
-        // تحديث حالة الدفع محلياً
         setPayments(prev => prev.map(p => 
           p.id === paymentId 
             ? { ...p, status: 'confirmed', confirmed_at: new Date().toISOString() }
@@ -52,7 +53,7 @@ export const useTonPaymentStatus = () => {
   };
 
   const getRecentPayments = () => {
-    return payments.slice(0, 10); // آخر 10 معاملات
+    return payments.slice(0, 10);
   };
 
   return {
