@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { TON_PAYMENT_ADDRESS, getValidUntil, tonToNano } from '@/lib/ton-constants';
 import { TonIcon } from '@/components/ui/currency-icons';
+import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 
 interface DepositModalProps {
   open: boolean;
@@ -23,6 +24,7 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
   const [success, setSuccess] = useState(false);
   const [tonConnectUI] = useTonConnectUI();
   const wallet = useTonWallet();
+  const { user: telegramUser } = useTelegramAuth();
 
   const handleDeposit = async () => {
     const depositAmount = parseFloat(amount);
@@ -105,6 +107,9 @@ const DepositModal: React.FC<DepositModalProps> = ({ open, onClose, userId, onSu
             paymentId: paymentData.id,
             txHash: result.boc,
             walletAddress: wallet.account.address
+          },
+          headers: {
+            'x-telegram-id': telegramUser?.id?.toString() || ''
           }
         });
 
