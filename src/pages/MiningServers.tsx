@@ -12,7 +12,6 @@ import { toast } from 'sonner';
 import { PageWrapper } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon, TonIcon } from '@/components/ui/currency-icons';
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
-import { LimitedOfferBadge } from '@/components/offers/LimitedOfferBadge';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 
@@ -29,15 +28,15 @@ type MiningServer = {
 };
 
 const servers: MiningServer[] = [
-  { id: 'free-starter', name: 'Starter', hashRate: '1 TH/s', boltPerDay: 50, usdtPerDay: 0.01, tonPerDay: 0, priceTon: 0, icon: Zap, tier: 'free' },
-  { id: 'basic-1', name: 'Basic I', hashRate: '5 TH/s', boltPerDay: 250, usdtPerDay: 0.05, tonPerDay: 0, priceTon: 1.5, icon: HardDrive, tier: 'basic' },
-  { id: 'basic-2', name: 'Basic II', hashRate: '10 TH/s', boltPerDay: 500, usdtPerDay: 0.10, tonPerDay: 0, priceTon: 2.5, icon: Database, tier: 'basic' },
-  { id: 'pro-1', name: 'Advanced I', hashRate: '25 TH/s', boltPerDay: 1250, usdtPerDay: 0.25, tonPerDay: 0.005, priceTon: 5.0, icon: Cloud, tier: 'advanced' },
-  { id: 'pro-2', name: 'Advanced II', hashRate: '50 TH/s', boltPerDay: 2500, usdtPerDay: 0.50, tonPerDay: 0.01, priceTon: 9.0, icon: Globe, tier: 'advanced' },
-  { id: 'elite-1', name: 'Elite I', hashRate: '100 TH/s', boltPerDay: 5000, usdtPerDay: 1.00, tonPerDay: 0.02, priceTon: 16.0, icon: Shield, tier: 'elite' },
-  { id: 'elite-2', name: 'Elite II', hashRate: '200 TH/s', boltPerDay: 10000, usdtPerDay: 2.00, tonPerDay: 0.04, priceTon: 30.0, icon: Layers, tier: 'elite' },
-  { id: 'legendary-1', name: 'Legend', hashRate: '500 TH/s', boltPerDay: 25000, usdtPerDay: 5.00, tonPerDay: 0.08, priceTon: 50.0, icon: Crown, tier: 'legendary' },
-  { id: 'mythic-1', name: 'Mythic', hashRate: '1000 TH/s', boltPerDay: 60000, usdtPerDay: 12.00, tonPerDay: 0.15, priceTon: 100.0, icon: Gem, tier: 'legendary' },
+  { id: 'free-starter', name: 'Starter', hashRate: '1 TH/s', boltPerDay: 50, usdtPerDay: 0.05, tonPerDay: 0, priceTon: 0, icon: Zap, tier: 'free' },
+  { id: 'basic-1', name: 'Basic I', hashRate: '5 TH/s', boltPerDay: 250, usdtPerDay: 0.25, tonPerDay: 0, priceTon: 1.5, icon: HardDrive, tier: 'basic' },
+  { id: 'basic-2', name: 'Basic II', hashRate: '10 TH/s', boltPerDay: 500, usdtPerDay: 0.50, tonPerDay: 0, priceTon: 2.5, icon: Database, tier: 'basic' },
+  { id: 'pro-1', name: 'Advanced I', hashRate: '25 TH/s', boltPerDay: 1250, usdtPerDay: 1.25, tonPerDay: 0.05, priceTon: 5.0, icon: Cloud, tier: 'advanced' },
+  { id: 'pro-2', name: 'Advanced II', hashRate: '50 TH/s', boltPerDay: 2500, usdtPerDay: 2.50, tonPerDay: 0.09, priceTon: 9.0, icon: Globe, tier: 'advanced' },
+  { id: 'elite-1', name: 'Elite I', hashRate: '100 TH/s', boltPerDay: 5000, usdtPerDay: 5.00, tonPerDay: 0.16, priceTon: 16.0, icon: Shield, tier: 'elite' },
+  { id: 'elite-2', name: 'Elite II', hashRate: '200 TH/s', boltPerDay: 10000, usdtPerDay: 10.00, tonPerDay: 0.30, priceTon: 30.0, icon: Layers, tier: 'elite' },
+  { id: 'legendary-1', name: 'Legend', hashRate: '500 TH/s', boltPerDay: 25000, usdtPerDay: 25.00, tonPerDay: 0.50, priceTon: 50.0, icon: Crown, tier: 'legendary' },
+  { id: 'mythic-1', name: 'Mythic', hashRate: '1000 TH/s', boltPerDay: 60000, usdtPerDay: 60.00, tonPerDay: 1.00, priceTon: 100.0, icon: Gem, tier: 'legendary' },
 ];
 
 const REQUIRED_ADS = 5;
@@ -300,9 +299,6 @@ const MiningServers = () => {
             </Button>
           </motion.div>
         )}
-
-        {/* Limited Offer Banner */}
-        <LimitedOfferBadge variant="inline" className="mt-2" />
 
         {/* Server List */}
         <div className="space-y-3">
