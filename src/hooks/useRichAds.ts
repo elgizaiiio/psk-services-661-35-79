@@ -1,12 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { 
-  BLOCK_IDS, 
-  getController, 
-  isTelegramEnvironment,
-  showAd as showAdFromManager 
-} from '@/lib/adsgram';
+import { isTelegramEnvironment, isRichAdsReady, showRichAd } from '@/lib/richads';
 
-interface UseAdsGramReturn {
+interface UseRichAdsReturn {
   showAd: () => Promise<boolean>;
   isReady: boolean;
   isLoading: boolean;
@@ -14,7 +9,7 @@ interface UseAdsGramReturn {
   isTelegram: boolean;
 }
 
-export const useAdsGram = (): UseAdsGramReturn => {
+export const useRichAds = (): UseRichAdsReturn => {
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,20 +22,27 @@ export const useAdsGram = (): UseAdsGramReturn => {
     }
 
     let mounted = true;
+    let retries = 0;
+    const maxRetries = 20;
 
-    const init = async () => {
-      const controller = await getController(BLOCK_IDS.REWARDED);
-      if (mounted) {
-        if (controller) {
-          setIsReady(true);
-          setError(null);
-        } else {
-          setError('الإعلانات غير متاحة حالياً');
-        }
+    const checkReady = () => {
+      if (!mounted) return;
+      
+      if (isRichAdsReady()) {
+        setIsReady(true);
+        setError(null);
+        console.log('[RichAds] Controller ready');
+      } else if (retries < maxRetries) {
+        retries++;
+        console.log(`[RichAds] Waiting for controller... attempt ${retries}/${maxRetries}`);
+        setTimeout(checkReady, 300);
+      } else {
+        setError('الإعلانات غير متاحة حالياً');
+        console.error('[RichAds] Controller not available after retries');
       }
     };
 
-    init();
+    checkReady();
 
     return () => {
       mounted = false;
@@ -57,7 +59,7 @@ export const useAdsGram = (): UseAdsGramReturn => {
     setError(null);
 
     try {
-      const result = await showAdFromManager(BLOCK_IDS.REWARDED);
+      const result = await showRichAd();
       
       if (result.success) {
         return true;
