@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
-import { BoltIcon, UsdtIcon, TonIcon } from '@/components/ui/currency-icons';
 import { toast } from 'sonner';
 import { Loader2, X } from 'lucide-react';
 import { motion } from 'motion/react';
@@ -45,7 +44,6 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
     try {
       setLoading(true);
       
-      // Fetch offers
       const { data: offersData, error: offersError } = await supabase
         .from('limited_server_offers')
         .select('*')
@@ -55,7 +53,6 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
       if (offersError) throw offersError;
       setOffers(offersData || []);
 
-      // Fetch user claims
       if (user?.id) {
         const { data: claimsData } = await supabase
           .from('limited_server_offer_claims')
@@ -84,19 +81,16 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
     if (!selectedOffer || !user?.id) return;
 
     try {
-      // Record the claim
       await supabase.from('limited_server_offer_claims').insert({
         user_id: user.id,
         offer_id: selectedOffer.id,
       });
 
-      // Increment purchase count
       await supabase
         .from('limited_server_offers')
         .update({ current_purchases: selectedOffer.current_purchases + 1 })
         .eq('id', selectedOffer.id);
 
-      // Add server to user
       await supabase.from('user_servers').insert({
         user_id: user.id,
         server_id: `limited-${selectedOffer.id}`,
@@ -125,34 +119,36 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
   const hasUserClaimed = (offerId: string) => userClaims.includes(offerId);
   const isSoldOut = (offer: LimitedOffer) => getRemainingSlots(offer) === 0;
 
-  // Only show first 3 offers
-  const displayOffers = offers.slice(0, 3);
+  const displayOffers = offers.slice(0, 5);
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-md p-0 gap-0 bg-background border-border overflow-hidden">
-          <DialogHeader className="p-5 pb-3 border-b border-border">
+        <DialogContent className="max-w-[95vw] w-full max-h-[50vh] p-0 gap-0 bg-background border-border overflow-hidden rounded-2xl">
+          <DialogHeader className="p-4 pb-2 border-b border-border">
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-xl font-bold text-foreground">Limited Offer</DialogTitle>
-                <p className="text-sm text-muted-foreground mt-1">Only 20 slots per server</p>
+                <DialogTitle className="text-lg font-bold text-foreground">Limited Offers</DialogTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Only 20 slots per server</p>
               </div>
-              <button onClick={onClose} className="p-2 hover:bg-muted rounded-lg transition-colors">
-                <X className="w-5 h-5 text-muted-foreground" />
+              <button 
+                onClick={onClose} 
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
+              >
+                <X className="w-4 h-4 text-foreground" />
               </button>
             </div>
           </DialogHeader>
 
-          <div className="p-5 space-y-4">
+          <div className="p-4 overflow-x-auto">
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : displayOffers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-12">No offers available</p>
+              <p className="text-center text-muted-foreground py-8 text-sm">No offers available</p>
             ) : (
-              <div className="grid gap-3">
+              <div className="flex gap-3 pb-2" style={{ minWidth: 'max-content' }}>
                 {displayOffers.map((offer, index) => {
                   const remaining = getRemainingSlots(offer);
                   const claimed = hasUserClaimed(offer.id);
@@ -162,47 +158,43 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
                   return (
                     <motion.div
                       key={offer.id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      className={`p-4 rounded-xl border transition-all ${
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={`flex-shrink-0 w-[200px] p-4 rounded-xl border transition-all ${
                         claimed
                           ? 'bg-primary/5 border-primary/30'
                           : soldOut
                           ? 'bg-muted/30 border-border opacity-60'
-                          : 'bg-card border-border hover:border-primary/50'
+                          : 'bg-card border-border'
                       }`}
                     >
                       {/* Header */}
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h3 className="font-semibold text-foreground">{offer.name}</h3>
-                          <p className="text-xs text-muted-foreground">
-                            {remaining} of {offer.max_purchases} remaining
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/10">
-                          <TonIcon size={18} />
-                          <span className="font-bold text-sky-500">{offer.price_ton}</span>
-                        </div>
+                      <div className="mb-3">
+                        <h3 className="font-semibold text-foreground text-sm">{offer.name}</h3>
+                        <p className="text-[10px] text-muted-foreground">
+                          {remaining}/{offer.max_purchases} left
+                        </p>
                       </div>
 
-                      {/* Daily Yields */}
-                      <div className="grid grid-cols-3 gap-2 mb-4">
-                        <div className="p-2.5 rounded-lg bg-background text-center">
-                          <BoltIcon size={20} className="mx-auto mb-1" />
-                          <p className="text-sm font-bold text-yellow-500">+{offer.daily_bolt_yield}</p>
-                          <p className="text-[10px] text-muted-foreground">day</p>
+                      {/* Price */}
+                      <div className="mb-3 py-2 px-3 rounded-lg bg-sky-500/10 text-center">
+                        <span className="font-bold text-sky-500">{offer.price_ton} TON</span>
+                      </div>
+
+                      {/* Yields */}
+                      <div className="space-y-1 mb-3 text-xs">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">BOLT/day</span>
+                          <span className="font-medium text-yellow-500">+{offer.daily_bolt_yield}</span>
                         </div>
-                        <div className="p-2.5 rounded-lg bg-background text-center">
-                          <UsdtIcon size={20} className="mx-auto mb-1" />
-                          <p className="text-sm font-bold text-emerald-500">${offer.daily_usdt_yield.toFixed(2)}</p>
-                          <p className="text-[10px] text-muted-foreground">day</p>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">USDT/day</span>
+                          <span className="font-medium text-emerald-500">${offer.daily_usdt_yield.toFixed(2)}</span>
                         </div>
-                        <div className="p-2.5 rounded-lg bg-background text-center">
-                          <TonIcon size={20} className="mx-auto mb-1" />
-                          <p className="text-sm font-bold text-sky-500">+{offer.daily_ton_yield}</p>
-                          <p className="text-[10px] text-muted-foreground">day</p>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">TON/day</span>
+                          <span className="font-medium text-sky-500">+{offer.daily_ton_yield}</span>
                         </div>
                       </div>
 
@@ -210,10 +202,11 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
                       <Button
                         onClick={() => handleBuyClick(offer)}
                         disabled={disabled}
-                        className="w-full h-11 font-semibold rounded-xl"
+                        className="w-full h-9 text-xs font-semibold rounded-lg"
                         variant={claimed ? 'outline' : 'default'}
+                        size="sm"
                       >
-                        {claimed ? 'Purchased' : soldOut ? 'Sold Out' : 'Buy Now'}
+                        {claimed ? 'Owned' : soldOut ? 'Sold Out' : 'Buy'}
                       </Button>
                     </motion.div>
                   );
@@ -224,7 +217,6 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
         </DialogContent>
       </Dialog>
 
-      {/* Payment Modal */}
       {selectedOffer && (
         <UnifiedPaymentModal
           isOpen={isPaymentOpen}

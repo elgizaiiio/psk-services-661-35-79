@@ -47,6 +47,8 @@ const VIPSubscription = lazy(() => import("./pages/VIPSubscription"));
 const TokenStore = lazy(() => import("./pages/TokenStore"));
 const DailyTasks = lazy(() => import("./pages/DailyTasks"));
 const Contest = lazy(() => import("./pages/Contest"));
+const DailyContest = lazy(() => import("./pages/DailyContest"));
+const Leaderboard = lazy(() => import("./pages/Leaderboard"));
 const Auth = lazy(() => import("./pages/Auth"));
 const Spin = lazy(() => import("./pages/Spin"));
 const BuyBolt = lazy(() => import("./pages/BuyBolt"));
@@ -220,6 +222,8 @@ const App = () => (
                                 <Route path="/token-store" element={<TokenStore />} />
                                 <Route path="/daily-tasks" element={<DailyTasks />} />
                                 <Route path="/contest" element={<Contest />} />
+                                <Route path="/daily-contest" element={<DailyContest />} />
+                                <Route path="/leaderboard" element={<Leaderboard />} />
                                 <Route path="/spin" element={<Spin />} />
                                 <Route path="/buy-bolt" element={<BuyBolt />} />
                                 <Route path="/terms" element={<TermsOfService />} />
