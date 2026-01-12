@@ -5,7 +5,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
-import { useRichAds } from '@/hooks/useRichAds';
+import { useAdsGramRewarded } from '@/hooks/useAdsGramRewarded';
 import { supabase } from '@/integrations/supabase/client';
 import { Server, Check, Cpu, HardDrive, Database, Cloud, Globe, Shield, Layers, Play, Users, Loader2, Crown, Gem, Zap, Gift, Clock, TrendingUp, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -69,7 +69,7 @@ const MiningServers = () => {
   const [adUnlocked, setAdUnlocked] = useState(false);
   const [isClaiming, setIsClaiming] = useState(false);
   
-  const { showAd, isLoading: isAdLoading, isReady: isAdReady } = useRichAds();
+  const { showAd, isLoading: isAdLoading, isReady: isAdReady } = useAdsGramRewarded();
   const navigate = useNavigate();
   useTelegramBackButton();
 

@@ -4,7 +4,7 @@ import { Loader2, Play, Sparkles } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useDailyStreak } from '@/hooks/useDailyStreak';
-import { useRichAds } from '@/hooks/useRichAds';
+import { useAdsGramRewarded } from '@/hooks/useAdsGramRewarded';
 import { toast } from 'sonner';
 
 const DailyStreakCard = () => {
@@ -19,7 +19,7 @@ const DailyStreakCard = () => {
     streakRewards,
   } = useDailyStreak();
 
-  const { showAd, isLoading: isAdLoading, isReady: isAdReady } = useRichAds();
+  const { showAd, isLoading: isAdLoading, isReady: isAdReady } = useAdsGramRewarded();
   const [isWatchingAd, setIsWatchingAd] = useState(false);
 
   const handleClaim = async () => {
