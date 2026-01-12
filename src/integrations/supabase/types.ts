@@ -1243,6 +1243,72 @@ export type Database = {
           },
         ]
       }
+      daily_contest_entries: {
+        Row: {
+          created_at: string | null
+          entry_date: string
+          id: string
+          paid_amount: number | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          paid_amount?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          entry_date?: string
+          id?: string
+          paid_amount?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_contest_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_contest_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_contest_winners: {
+        Row: {
+          contest_date: string
+          created_at: string | null
+          id: string
+          is_fake: boolean | null
+          prize_amount: number | null
+          winner_name: string
+        }
+        Insert: {
+          contest_date: string
+          created_at?: string | null
+          id?: string
+          is_fake?: boolean | null
+          prize_amount?: number | null
+          winner_name: string
+        }
+        Update: {
+          contest_date?: string
+          created_at?: string | null
+          id?: string
+          is_fake?: boolean | null
+          prize_amount?: number | null
+          winner_name?: string
+        }
+        Relationships: []
+      }
       daily_login_rewards: {
         Row: {
           claimed_at: string
