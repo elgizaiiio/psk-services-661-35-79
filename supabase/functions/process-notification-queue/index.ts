@@ -6,6 +6,11 @@ const corsHeaders = {
 };
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
+
+// Safety switch: default is DISABLED to prevent accidental spam.
+// Set env NOTIFICATION_QUEUE_DISABLED=false to enable processing.
+const NOTIFICATION_QUEUE_DISABLED = (Deno.env.get('NOTIFICATION_QUEUE_DISABLED') ?? 'true') !== 'false';
+
 const BATCH_SIZE = 25; // Process 25 messages per run
 const MAX_RETRIES = 3;
 
@@ -73,6 +78,14 @@ Deno.serve(async (req) => {
   }
 
   const startTime = Date.now();
+
+  if (NOTIFICATION_QUEUE_DISABLED) {
+    console.log('[process-notification-queue] Disabled (NOTIFICATION_QUEUE_DISABLED != false)');
+    return new Response(
+      JSON.stringify({ success: true, processed: 0, disabled: true }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
 
   try {
     const supabase = createClient(
