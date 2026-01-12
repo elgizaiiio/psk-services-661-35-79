@@ -1,5 +1,5 @@
 // RichAds / TelegramAdsController Manager
-// Replaces AdsGram with RichAds full-screen native notification ads
+// Full-screen native notification ads ($10-12 RPM)
 
 interface TelegramAdsControllerType {
   triggerNativeNotification: (enabled: boolean) => Promise<{ clicked: boolean }>;
@@ -16,35 +16,43 @@ declare global {
  */
 export function isTelegramEnvironment(): boolean {
   const telegram = (window as any).Telegram;
-  return !!(telegram?.WebApp?.initData || telegram?.WebApp?.initDataUnsafe?.user);
+  const hasTelegram = !!(telegram?.WebApp?.initData || telegram?.WebApp?.initDataUnsafe?.user);
+  console.log('[RichAds] Telegram environment check:', hasTelegram);
+  return hasTelegram;
 }
 
 /**
  * Check if RichAds controller is ready
  */
 export function isRichAdsReady(): boolean {
-  return typeof window.TelegramAdsController?.triggerNativeNotification === 'function';
+  const ready = typeof window.TelegramAdsController?.triggerNativeNotification === 'function';
+  console.log('[RichAds] Controller ready:', ready, 'TelegramAdsController:', !!window.TelegramAdsController);
+  return ready;
 }
 
 /**
  * Show RichAds native notification ad
  */
 export async function showRichAd(): Promise<{ success: boolean; error?: string }> {
+  console.log('[RichAds] showRichAd called');
+  
   if (!isTelegramEnvironment()) {
-    return { success: false, error: 'Ads only work in Telegram' };
+    console.log('[RichAds] Not in Telegram environment');
+    return { success: false, error: 'الإعلانات تعمل فقط داخل تيليجرام' };
   }
 
   if (!isRichAdsReady()) {
-    return { success: false, error: 'Ad controller not ready' };
+    console.log('[RichAds] Controller not ready');
+    return { success: false, error: 'الإعلانات غير متاحة حالياً' };
   }
 
   try {
+    console.log('[RichAds] Triggering native notification...');
     const result = await window.TelegramAdsController!.triggerNativeNotification(true);
-    // Ad was clicked = success
     console.log('[RichAds] Ad result:', result);
     return { success: true };
   } catch (err) {
     console.error('[RichAds] Error showing ad:', err);
-    return { success: false, error: 'No ad available' };
+    return { success: false, error: 'لا يوجد إعلان متاح حالياً' };
   }
 }

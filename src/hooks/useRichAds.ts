@@ -16,6 +16,8 @@ export const useRichAds = (): UseRichAdsReturn => {
   const [isTelegram] = useState(() => isTelegramEnvironment());
 
   useEffect(() => {
+    console.log('[useRichAds] Initializing, isTelegram:', isTelegram);
+    
     if (!isTelegram) {
       setError('افتح التطبيق من تيليجرام');
       return;
@@ -23,26 +25,29 @@ export const useRichAds = (): UseRichAdsReturn => {
 
     let mounted = true;
     let retries = 0;
-    const maxRetries = 20;
+    const maxRetries = 30; // Increased retries
 
     const checkReady = () => {
       if (!mounted) return;
       
-      if (isRichAdsReady()) {
+      const ready = isRichAdsReady();
+      console.log(`[useRichAds] Check ready attempt ${retries + 1}/${maxRetries}:`, ready);
+      
+      if (ready) {
         setIsReady(true);
         setError(null);
-        console.log('[RichAds] Controller ready');
+        console.log('[useRichAds] Controller is ready!');
       } else if (retries < maxRetries) {
         retries++;
-        console.log(`[RichAds] Waiting for controller... attempt ${retries}/${maxRetries}`);
         setTimeout(checkReady, 300);
       } else {
         setError('الإعلانات غير متاحة حالياً');
-        console.error('[RichAds] Controller not available after retries');
+        console.error('[useRichAds] Controller not available after', maxRetries, 'retries');
       }
     };
 
-    checkReady();
+    // Start checking after a small delay to allow script to load
+    setTimeout(checkReady, 500);
 
     return () => {
       mounted = false;
@@ -50,6 +55,8 @@ export const useRichAds = (): UseRichAdsReturn => {
   }, [isTelegram]);
 
   const showAd = useCallback(async (): Promise<boolean> => {
+    console.log('[useRichAds] showAd called, isTelegram:', isTelegram, 'isReady:', isReady);
+    
     if (!isTelegram) {
       setError('افتح التطبيق من تيليجرام');
       return false;
@@ -60,6 +67,7 @@ export const useRichAds = (): UseRichAdsReturn => {
 
     try {
       const result = await showRichAd();
+      console.log('[useRichAds] showAd result:', result);
       
       if (result.success) {
         return true;
@@ -68,13 +76,13 @@ export const useRichAds = (): UseRichAdsReturn => {
         return false;
       }
     } catch (err) {
-      console.error('Error showing ad:', err);
+      console.error('[useRichAds] Error showing ad:', err);
       setError('فشل في عرض الإعلان');
       return false;
     } finally {
       setIsLoading(false);
     }
-  }, [isTelegram]);
+  }, [isTelegram, isReady]);
 
   return {
     showAd,
