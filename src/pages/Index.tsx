@@ -8,10 +8,13 @@ import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
+import { useLimitedOfferModal } from '@/hooks/useLimitedOfferModal';
 import { Server, Loader2, Play, Gift, ShoppingCart, Trophy, Crown, User, type LucideIcon } from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress, LiveNumber } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import DailyStreakModal from '@/components/DailyStreakModal';
+import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
+import { LimitedOfferBadge } from '@/components/offers/LimitedOfferBadge';
 import UserAvatar from '@/components/UserAvatar';
 import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
 import Autoplay from 'embla-carousel-autoplay';
@@ -35,6 +38,7 @@ const Index = () => {
   const { isConnected, isConnecting, connectWallet } = useTelegramTonConnect();
   const { getTotalStats } = useUserServers(user?.id || null);
   const stats = getTotalStats();
+  const { shouldShowModal: showLimitedOffer, markAsShown: closeLimitedOffer } = useLimitedOfferModal();
   useTelegramBackButton();
 
   const [carouselApi, setCarouselApi] = useState<CarouselApi>();
@@ -180,6 +184,12 @@ const Index = () => {
 
       {/* Daily Streak Modal - shows on entry when reward available */}
       <DailyStreakModal />
+
+      {/* Limited Offer Modal - shows on entry once per 24h */}
+      <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
+
+      {/* Floating Limited Offer Badge */}
+      <LimitedOfferBadge variant="floating" />
 
       <div className="max-w-md mx-auto px-5 pt-16">
         <StaggerContainer className="space-y-6">
