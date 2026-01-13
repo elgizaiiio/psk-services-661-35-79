@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'motion/react';
 import { Button } from '@/components/ui/button';
@@ -7,46 +7,56 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
-import { usePriceCalculator } from '@/hooks/usePriceCalculator';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
-import { PageWrapper, StaggerContainer, FadeUp } from '@/components/ui/motion-wrapper';
-
-interface Winner {
-  id: string;
-  winner_name: string;
-  contest_date: string;
-  prize_amount: number;
-}
+import { Loader2, Gift, Users, Sparkles, Clock } from 'lucide-react';
+import { PageWrapper, StaggerContainer, FadeUp, ScaleIn } from '@/components/ui/motion-wrapper';
 
 const DailyContest = () => {
   const { user: tgUser } = useTelegramAuth();
   const { user } = useBoltMining(tgUser);
   const { sendDirectPayment, isProcessing } = useDirectTonPayment();
-  const { usdToTon } = usePriceCalculator();
   useTelegramBackButton();
 
-  const [winners, setWinners] = useState<Winner[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasEntered, setHasEntered] = useState(false);
-  const [participantCount] = useState(() => 2847 + Math.floor(Math.random() * 200));
+  const [participantCount, setParticipantCount] = useState(2847);
+  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const countRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     fetchData();
+    // Increment participants randomly
+    countRef.current = setInterval(() => {
+      setParticipantCount(prev => prev + Math.floor(Math.random() * 3));
+    }, 8000);
+
+    return () => {
+      if (countRef.current) clearInterval(countRef.current);
+    };
   }, [user?.id]);
+
+  // Countdown timer to midnight UTC
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const midnight = new Date(now);
+      midnight.setUTCHours(24, 0, 0, 0);
+      const diff = midnight.getTime() - now.getTime();
+      
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      
+      setTimeLeft({ hours, minutes, seconds });
+    };
+
+    calculateTimeLeft();
+    const timer = setInterval(calculateTimeLeft, 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const fetchData = async () => {
     try {
-      // Fetch recent winners
-      const { data: winnersData } = await supabase
-        .from('daily_contest_winners')
-        .select('*')
-        .order('contest_date', { ascending: false })
-        .limit(7);
-
-      setWinners(winnersData || []);
-
-      // Check if user has entered today
       if (user?.id) {
         const today = new Date().toISOString().split('T')[0];
         const { data: entry } = await supabase
@@ -71,8 +81,7 @@ const DailyContest = () => {
       return;
     }
 
-    const entryFeeUsd = 0.25;
-    const entryFeeTon = usdToTon(entryFeeUsd);
+    const entryFeeTon = 0.25;
 
     try {
       const success = await sendDirectPayment({
@@ -84,33 +93,19 @@ const DailyContest = () => {
       });
 
       if (success) {
-        // Record entry
         await supabase.from('daily_contest_entries').insert({
           user_id: user.id,
-          paid_amount: entryFeeUsd,
+          paid_amount: entryFeeTon,
         });
 
         setHasEntered(true);
+        setParticipantCount(prev => prev + 1);
         toast.success('You have entered the contest!');
       }
     } catch (error) {
       console.error('Error entering contest:', error);
       toast.error('Failed to enter contest');
     }
-  };
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toDateString() === yesterday.toDateString()) {
-      return 'Yesterday';
-    }
-
-    const diffDays = Math.floor((today.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    return `${diffDays} days ago`;
   };
 
   if (loading) {
@@ -127,66 +122,112 @@ const DailyContest = () => {
         <title>Daily $100 Contest</title>
       </Helmet>
 
-      <div className="max-w-md mx-auto px-5 pt-16">
-        <StaggerContainer className="space-y-6">
+      <div className="max-w-md mx-auto px-5 pt-10">
+        <StaggerContainer className="space-y-5">
+          
           {/* Header */}
           <FadeUp>
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-foreground mb-2">$100 Daily Prize</h1>
-              <p className="text-muted-foreground">One lucky winner every day</p>
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 flex items-center justify-center mx-auto mb-4">
+                <Gift className="w-8 h-8 text-emerald-500" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground">$100 Daily</h1>
+              <p className="text-sm text-muted-foreground mt-1">One lucky winner every day</p>
             </div>
           </FadeUp>
 
-          {/* Prize Info Card */}
-          <FadeUp>
+          {/* Prize Card */}
+          <ScaleIn delay={0.1}>
             <motion.div 
-              className="p-6 rounded-2xl bg-card border border-border"
-              whileHover={{ y: -2 }}
+              className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500/10 via-card to-teal-500/10 border border-emerald-500/20 text-center"
+              whileHover={{ scale: 1.01 }}
             >
-              <div className="grid grid-cols-3 gap-4 text-center">
-                <div>
-                  <p className="text-3xl font-bold text-primary">$100</p>
-                  <p className="text-xs text-muted-foreground mt-1">Prize Pool</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-foreground">$0.25</p>
-                  <p className="text-xs text-muted-foreground mt-1">Entry Fee</p>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-foreground">{participantCount.toLocaleString()}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Participants</p>
-                </div>
-              </div>
+              <p className="text-5xl font-bold text-emerald-500 mb-1">$100</p>
+              <p className="text-sm text-muted-foreground">Prize Pool</p>
             </motion.div>
+          </ScaleIn>
+
+          {/* Stats Row */}
+          <FadeUp delay={0.15}>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-4 rounded-2xl bg-card border border-border text-center">
+                <Users className="w-5 h-5 text-primary mx-auto mb-2" />
+                <motion.p 
+                  className="text-xl font-bold text-foreground"
+                  key={participantCount}
+                  initial={{ scale: 1.1 }}
+                  animate={{ scale: 1 }}
+                >
+                  {participantCount.toLocaleString()}
+                </motion.p>
+                <p className="text-xs text-muted-foreground">Participants</p>
+              </div>
+              <div className="p-4 rounded-2xl bg-card border border-border text-center">
+                <Sparkles className="w-5 h-5 text-amber-500 mx-auto mb-2" />
+                <p className="text-xl font-bold text-foreground">0.25</p>
+                <p className="text-xs text-muted-foreground">TON Entry</p>
+              </div>
+            </div>
           </FadeUp>
 
-          {/* How It Works */}
-          <FadeUp>
-            <div className="p-5 rounded-2xl bg-card border border-border">
-              <h2 className="text-sm font-semibold text-foreground mb-4">How It Works</h2>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">1</span>
-                  <p className="text-sm text-muted-foreground">Pay $0.25 entry fee to join today's contest</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">2</span>
-                  <p className="text-sm text-muted-foreground">Stay active in the app to increase your chances</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <span className="w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0">3</span>
-                  <p className="text-sm text-muted-foreground">Winner is selected randomly at midnight UTC</p>
-                </div>
+          {/* Countdown */}
+          <FadeUp delay={0.2}>
+            <div className="p-4 rounded-2xl bg-card border border-border">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Clock className="w-4 h-4 text-muted-foreground" />
+                <p className="text-xs text-muted-foreground">Drawing in</p>
+              </div>
+              <div className="flex justify-center gap-3">
+                {[
+                  { value: timeLeft.hours, label: 'H' },
+                  { value: timeLeft.minutes, label: 'M' },
+                  { value: timeLeft.seconds, label: 'S' },
+                ].map((item) => (
+                  <div key={item.label} className="text-center">
+                    <motion.div 
+                      className="w-14 h-14 rounded-xl bg-muted flex items-center justify-center"
+                      key={item.value}
+                      initial={{ scale: 0.95 }}
+                      animate={{ scale: 1 }}
+                    >
+                      <span className="text-xl font-bold text-foreground">
+                        {item.value.toString().padStart(2, '0')}
+                      </span>
+                    </motion.div>
+                    <p className="text-[10px] text-muted-foreground mt-1">{item.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </FadeUp>
+
+          {/* How it Works */}
+          <FadeUp delay={0.25}>
+            <div className="p-4 rounded-2xl bg-card border border-border">
+              <p className="text-sm font-semibold text-foreground mb-3">How It Works</p>
+              <div className="space-y-2.5">
+                {[
+                  'Pay 0.25 TON to join today\'s contest',
+                  'Stay active to increase your chances',
+                  'Winner selected at midnight UTC',
+                ].map((step, index) => (
+                  <div key={index} className="flex items-start gap-3">
+                    <span className="w-5 h-5 rounded-full bg-primary/10 text-primary text-xs font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
+                      {index + 1}
+                    </span>
+                    <p className="text-sm text-muted-foreground">{step}</p>
+                  </div>
+                ))}
               </div>
             </div>
           </FadeUp>
 
           {/* Enter Button */}
-          <FadeUp>
+          <FadeUp delay={0.3}>
             <Button
               onClick={handleEnterContest}
               disabled={hasEntered || isProcessing}
-              className="w-full h-14 text-base font-semibold rounded-xl"
+              className="w-full h-14 text-base font-semibold rounded-2xl"
             >
               {isProcessing ? (
                 <>
@@ -194,44 +235,25 @@ const DailyContest = () => {
                   Processing...
                 </>
               ) : hasEntered ? (
-                'Entered Today'
+                <>
+                  <Sparkles className="w-5 h-5 mr-2" />
+                  You're In!
+                </>
               ) : (
-                'Enter Contest - $0.25'
+                'Enter Contest — 0.25 TON'
               )}
             </Button>
             {hasEntered && (
-              <p className="text-xs text-center text-muted-foreground mt-2">
-                You are in! Winner will be announced at midnight UTC
-              </p>
+              <motion.p 
+                className="text-xs text-center text-primary mt-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                Good luck! Winner announced at midnight UTC
+              </motion.p>
             )}
           </FadeUp>
 
-          {/* Previous Winners */}
-          <FadeUp>
-            <div className="p-5 rounded-2xl bg-card border border-border">
-              <h2 className="text-sm font-semibold text-foreground mb-4">Previous Winners</h2>
-              <div className="space-y-3">
-                {winners.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">No winners yet</p>
-                ) : (
-                  winners.map((winner) => (
-                    <motion.div
-                      key={winner.id}
-                      className="flex items-center justify-between py-2 border-b border-border last:border-0"
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{winner.winner_name}</p>
-                        <p className="text-xs text-muted-foreground">{formatDate(winner.contest_date)}</p>
-                      </div>
-                      <span className="text-sm font-bold text-primary">${winner.prize_amount}</span>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </div>
-          </FadeUp>
         </StaggerContainer>
       </div>
     </PageWrapper>
