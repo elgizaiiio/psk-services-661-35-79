@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useRef } from "react";
+import React from "react";
 import { Helmet } from "react-helmet-async";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -11,9 +11,9 @@ import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useLimitedOfferModal } from '@/hooks/useLimitedOfferModal';
 import { 
   Server, Loader2, Play, Gift, Trophy, Crown, Wallet, 
-  Sparkles, TrendingUp, Users, ChevronRight, Zap
+  Sparkles, Users, ChevronRight, Zap, ArrowUpRight
 } from 'lucide-react';
-import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress, LiveNumber } from '@/components/ui/motion-wrapper';
+import { PageWrapper, FadeUp, AnimatedProgress, LiveNumber } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon, ViralIcon } from '@/components/ui/currency-icons';
 import DailyStreakModal from '@/components/DailyStreakModal';
 import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
@@ -35,41 +35,25 @@ const Index = () => {
     await startMining();
   };
 
-  if (authLoading) {
+  if (authLoading || loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-          <Loader2 className="w-8 h-8 text-primary" />
-        </motion.div>
+        <Loader2 className="w-6 h-6 text-primary animate-spin" />
       </main>
     );
   }
 
   if (!telegramUser?.id) {
     return (
-      <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <Loader2 className="w-12 h-12 text-muted-foreground mb-4" />
-        <p className="text-lg text-muted-foreground text-center mb-4">
-          Please open the app from Telegram
-        </p>
-        <a 
-          href="https://t.me/Boltminingbot" 
-          target="_blank" 
-          rel="noopener noreferrer"
-          className="px-6 py-3 bg-primary text-primary-foreground rounded-xl font-medium"
-        >
-          Open in Telegram
+      <main className="min-h-screen bg-background flex flex-col items-center justify-center p-6 gap-4">
+        <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+          <Zap className="w-8 h-8 text-primary" />
+        </div>
+        <p className="text-muted-foreground text-center">Open from Telegram</p>
+        <a href="https://t.me/Boltminingbot" target="_blank" rel="noopener noreferrer"
+          className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium text-sm">
+          Open App
         </a>
-      </main>
-    );
-  }
-
-  if (loading) {
-    return (
-      <main className="min-h-screen bg-background flex items-center justify-center">
-        <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>
-          <Loader2 className="w-8 h-8 text-primary" />
-        </motion.div>
       </main>
     );
   }
@@ -77,9 +61,9 @@ const Index = () => {
   if (error) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center px-6">
-        <div className="text-center space-y-4">
+        <div className="text-center space-y-3">
           <p className="text-destructive text-sm">{error}</p>
-          <Button onClick={clearError} size="sm" variant="outline">Try Again</Button>
+          <Button onClick={clearError} size="sm" variant="outline">Retry</Button>
         </div>
       </main>
     );
@@ -90,252 +74,172 @@ const Index = () => {
   const viralBalance = (user as any)?.viral_balance || 0;
   const isMining = activeMiningSession && new Date() < new Date(activeMiningSession.end_time);
   const progress = miningProgress ? Math.round(miningProgress.progress * 100) : 0;
-
-  const quickLinks = [
-    { id: 'contest', icon: Gift, label: '$100', sublabel: 'Daily', path: '/daily-contest', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-    { id: 'spin', icon: Sparkles, label: 'Spin', sublabel: 'Free', path: '/spin', color: 'text-purple-500', bg: 'bg-purple-500/10' },
-    { id: 'servers', icon: Server, label: 'Servers', sublabel: stats.totalServers > 0 ? `${stats.totalServers}` : 'Buy', path: '/mining-servers', color: 'text-sky-500', bg: 'bg-sky-500/10' },
-    { id: 'wallet', icon: Wallet, label: 'Wallet', sublabel: 'Assets', path: '/wallet', color: 'text-amber-500', bg: 'bg-amber-500/10' },
-  ];
+  const currentMined = miningProgress?.tokensMinedSoFar || 0;
 
   return (
     <PageWrapper className="min-h-screen bg-background pb-28">
       <Helmet><title>Bolt Mining</title></Helmet>
-
       <DailyStreakModal />
       <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
 
-      <div className="max-w-md mx-auto px-4 pt-14">
-        <StaggerContainer className="space-y-4">
-          
-          {/* Compact Header */}
-          <FadeUp>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <motion.button onClick={() => navigate('/profile')} whileTap={{ scale: 0.95 }}>
-                  <UserAvatar user={telegramUser} size="sm" />
-                </motion.button>
-                <div>
-                  <h1 className="text-base font-semibold text-foreground">{telegramUser?.first_name || 'Miner'}</h1>
-                  <p className="text-xs text-muted-foreground">Welcome back</p>
-                </div>
-              </div>
-              {!isConnected ? (
-                <Button onClick={() => connectWallet()} disabled={isConnecting} size="sm" variant="outline" className="text-xs h-8 px-3">
-                  Connect
-                </Button>
-              ) : (
-                <Button onClick={() => navigate('/profile')} size="sm" variant="ghost" className="text-xs h-8 px-3 gap-1">
-                  <Crown className="w-3.5 h-3.5 text-amber-500" />
-                </Button>
-              )}
-            </div>
-          </FadeUp>
-
-          {/* Promo Banner */}
-          <FadeUp>
-            <PromoBanner />
-          </FadeUp>
-
-          {/* Main Balance Card - Glassmorphism Style */}
-          <FadeUp>
-            <motion.div 
-              className="relative p-5 rounded-2xl bg-gradient-to-br from-card via-card to-card/80 border border-border overflow-hidden"
-              whileHover={{ y: -2 }}
-            >
-              {/* Decorative gradient */}
-              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
-              
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-3">
-                  <span className="text-xs text-muted-foreground font-medium">Total Balance</span>
-                  {stats.totalBoltPerDay > 0 && (
-                    <span className="text-xs text-primary flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" />
-                      +${((stats.totalBoltPerDay * 0.001) + stats.totalUsdtPerDay).toFixed(4)}/day
-                    </span>
-                  )}
-                </div>
-                <p className="text-3xl font-bold text-foreground tracking-tight">
-                  $<AnimatedNumber value={usdtBalance + (boltBalance * 0.001)} decimals={2} duration={1} />
-                </p>
-
-                {/* Mining Progress */}
-                {isMining && miningProgress && (
-                  <div className="mt-4 pt-3 border-t border-border/50 space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                        <Zap className="w-3 h-3 text-primary" />
-                        Mining Active
-                      </span>
-                      <span className="text-xs font-bold text-primary">{progress}%</span>
-                    </div>
-                    <AnimatedProgress value={progress} />
-                    <p className="text-xs text-muted-foreground">
-                      +{miningProgress.tokensMinedSoFar.toFixed(2)} BOLT mined
-                    </p>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </FadeUp>
-
-          {/* Three Currency Cards */}
-          <div className="grid grid-cols-3 gap-2">
-            <FadeUp>
-              <motion.div 
-                onClick={() => navigate('/wallet')}
-                className="p-3 rounded-xl bg-card border border-border cursor-pointer" 
-                whileTap={{ scale: 0.97 }}
-              >
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <BoltIcon size={20} />
-                </div>
-                <p className="text-sm font-semibold text-foreground truncate">
-                  <LiveNumber 
-                    value={boltBalance + (miningProgress?.tokensMinedSoFar || 0)} 
-                    incrementPerSecond={isMining ? (activeMiningSession?.tokens_per_hour || 0) / 3600 : 0}
-                    isActive={!!isMining}
-                    decimals={0} 
-                  />
-                </p>
-                <p className="text-[10px] text-muted-foreground">BOLT</p>
-              </motion.div>
-            </FadeUp>
-            
-            <FadeUp>
-              <motion.div 
-                onClick={() => navigate('/wallet')}
-                className="p-3 rounded-xl bg-card border border-border cursor-pointer" 
-                whileTap={{ scale: 0.97 }}
-              >
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <UsdtIcon size={20} />
-                </div>
-                <p className="text-sm font-semibold text-foreground truncate">
-                  <LiveNumber 
-                    value={usdtBalance} 
-                    incrementPerSecond={0}
-                    isActive={false}
-                    decimals={2} 
-                  />
-                </p>
-                <p className="text-[10px] text-muted-foreground">USDT</p>
-              </motion.div>
-            </FadeUp>
-
-            <FadeUp>
-              <motion.div 
-                onClick={() => navigate('/wallet')}
-                className="p-3 rounded-xl bg-card border border-border cursor-pointer" 
-                whileTap={{ scale: 0.97 }}
-              >
-                <div className="flex items-center gap-1.5 mb-1.5">
-                  <ViralIcon size={20} />
-                </div>
-                <p className="text-sm font-semibold text-foreground truncate">
-                  {viralBalance.toLocaleString()}
-                </p>
-                <p className="text-[10px] text-muted-foreground">VIRAL</p>
-              </motion.div>
-            </FadeUp>
+      <div className="max-w-md mx-auto px-4 pt-12 space-y-5">
+        
+        {/* Header */}
+        <FadeUp>
+          <div className="flex items-center justify-between">
+            <motion.button onClick={() => navigate('/profile')} whileTap={{ scale: 0.95 }} className="flex items-center gap-2.5">
+              <UserAvatar user={telegramUser} size="sm" />
+              <span className="text-sm font-medium text-foreground">{telegramUser?.first_name}</span>
+            </motion.button>
+            {!isConnected ? (
+              <Button onClick={() => connectWallet()} disabled={isConnecting} size="sm" variant="outline" className="h-8 px-3 text-xs rounded-full">
+                Connect
+              </Button>
+            ) : (
+              <motion.button onClick={() => navigate('/wallet')} whileTap={{ scale: 0.95 }}
+                className="h-8 px-3 rounded-full bg-primary/10 text-primary text-xs font-medium flex items-center gap-1">
+                <Wallet className="w-3.5 h-3.5" /> Wallet
+              </motion.button>
+            )}
           </div>
+        </FadeUp>
 
-          {/* Quick Links Grid */}
+        {/* Banner */}
+        <FadeUp>
+          <PromoBanner />
+        </FadeUp>
+
+        {/* Main BOLT Balance */}
+        <FadeUp>
+          <motion.div className="text-center py-6" whileHover={{ scale: 1.01 }}>
+            <p className="text-xs text-muted-foreground mb-2 uppercase tracking-wider">Your Balance</p>
+            <div className="flex items-center justify-center gap-3">
+              <BoltIcon size={40} />
+              <p className="text-4xl font-bold text-foreground tabular-nums">
+                <LiveNumber 
+                  value={boltBalance + currentMined} 
+                  incrementPerSecond={isMining ? (activeMiningSession?.tokens_per_hour || 0) / 3600 : 0}
+                  isActive={!!isMining}
+                  decimals={0} 
+                />
+              </p>
+            </div>
+            <p className="text-sm text-muted-foreground mt-1">BOLT Tokens</p>
+            {stats.totalBoltPerDay > 0 && (
+              <p className="text-xs text-primary mt-2 flex items-center justify-center gap-1">
+                <ArrowUpRight className="w-3 h-3" />
+                +{stats.totalBoltPerDay.toLocaleString()} BOLT/day
+              </p>
+            )}
+          </motion.div>
+        </FadeUp>
+
+        {/* Mining Progress */}
+        {isMining && miningProgress && (
           <FadeUp>
-            <div className="grid grid-cols-4 gap-2">
-              {quickLinks.map((link) => (
-                <motion.button
-                  key={link.id}
-                  onClick={() => {
-                    hapticFeedback.impact('light');
-                    navigate(link.path);
-                  }}
-                  className={`flex flex-col items-center justify-center p-3 rounded-xl ${link.bg} border border-transparent hover:border-border transition-colors`}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <link.icon className={`w-5 h-5 ${link.color} mb-1`} />
-                  <span className="text-xs font-semibold text-foreground">{link.label}</span>
-                  <span className="text-[9px] text-muted-foreground">{link.sublabel}</span>
-                </motion.button>
-              ))}
+            <div className="p-4 rounded-2xl bg-card border border-border space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-muted-foreground flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  Mining Active
+                </span>
+                <span className="text-xs font-semibold text-primary">{progress}%</span>
+              </div>
+              <AnimatedProgress value={progress} />
+              <p className="text-xs text-muted-foreground text-center">
+                +{currentMined.toFixed(2)} BOLT mined this session
+              </p>
             </div>
           </FadeUp>
+        )}
 
-          {/* Feature Cards Row */}
-          <FadeUp>
-            <div className="grid grid-cols-2 gap-2">
-              {/* Leaderboard Card */}
-              <motion.button
-                onClick={() => navigate('/leaderboard')}
-                className="p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20 text-left"
-                whileTap={{ scale: 0.97 }}
-              >
-                <Trophy className="w-5 h-5 text-amber-500 mb-2" />
-                <p className="text-sm font-semibold text-foreground">Leaderboard</p>
-                <p className="text-xs text-muted-foreground">Top 5 win prizes</p>
+        {/* Other Balances */}
+        <FadeUp>
+          <div className="grid grid-cols-2 gap-3">
+            <motion.button onClick={() => navigate('/wallet')} whileTap={{ scale: 0.97 }}
+              className="p-4 rounded-2xl bg-card border border-border text-left">
+              <UsdtIcon size={24} />
+              <p className="text-lg font-semibold text-foreground mt-2">{usdtBalance.toFixed(2)}</p>
+              <p className="text-xs text-muted-foreground">USDT</p>
+            </motion.button>
+            <motion.button onClick={() => navigate('/wallet')} whileTap={{ scale: 0.97 }}
+              className="p-4 rounded-2xl bg-card border border-border text-left">
+              <ViralIcon size={24} />
+              <p className="text-lg font-semibold text-foreground mt-2">{viralBalance.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">VIRAL</p>
+            </motion.button>
+          </div>
+        </FadeUp>
+
+        {/* Quick Actions */}
+        <FadeUp>
+          <div className="grid grid-cols-4 gap-2">
+            {[
+              { icon: Gift, label: '$100', path: '/daily-contest', color: 'text-emerald-500' },
+              { icon: Sparkles, label: 'Spin', path: '/spin', color: 'text-purple-500' },
+              { icon: Server, label: 'Servers', path: '/mining-servers', color: 'text-sky-500' },
+              { icon: Trophy, label: 'Top', path: '/leaderboard', color: 'text-amber-500' },
+            ].map((item) => (
+              <motion.button key={item.label} onClick={() => { hapticFeedback.impact('light'); navigate(item.path); }}
+                className="flex flex-col items-center gap-1.5 py-3 rounded-xl bg-card border border-border"
+                whileTap={{ scale: 0.95 }}>
+                <item.icon className={`w-5 h-5 ${item.color}`} />
+                <span className="text-[11px] font-medium text-foreground">{item.label}</span>
               </motion.button>
+            ))}
+          </div>
+        </FadeUp>
 
-              {/* Invite Card */}
-              <motion.button
-                onClick={() => navigate('/invite')}
-                className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 text-left"
-                whileTap={{ scale: 0.97 }}
-              >
-                <Users className="w-5 h-5 text-purple-500 mb-2" />
-                <p className="text-sm font-semibold text-foreground">Invite Friends</p>
-                <p className="text-xs text-muted-foreground">Earn 15% bonus</p>
-              </motion.button>
-            </div>
-          </FadeUp>
-
-          {/* VIP Banner */}
-          <FadeUp>
-            <motion.button
-              onClick={() => navigate('/vip')}
-              className="w-full p-4 rounded-xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 flex items-center justify-between"
-              whileTap={{ scale: 0.98 }}
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                  <Crown className="w-5 h-5 text-primary" />
-                </div>
-                <div className="text-left">
-                  <p className="text-sm font-semibold text-foreground">Upgrade to VIP</p>
-                  <p className="text-xs text-muted-foreground">2x mining power + exclusive perks</p>
-                </div>
+        {/* CTA Cards */}
+        <FadeUp>
+          <div className="space-y-2">
+            <motion.button onClick={() => navigate('/invite')} whileTap={{ scale: 0.98 }}
+              className="w-full p-4 rounded-2xl bg-gradient-to-r from-purple-500/10 to-pink-500/10 border border-purple-500/20 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center shrink-0">
+                <Users className="w-5 h-5 text-purple-500" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="text-sm font-semibold text-foreground">Invite & Earn</p>
+                <p className="text-xs text-muted-foreground">15% of friends' earnings</p>
               </div>
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </motion.button>
+
+            <motion.button onClick={() => navigate('/vip')} whileTap={{ scale: 0.98 }}
+              className="w-full p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center shrink-0">
+                <Crown className="w-5 h-5 text-amber-500" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="text-sm font-semibold text-foreground">VIP Status</p>
+                <p className="text-xs text-muted-foreground">2x mining power</p>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </motion.button>
+          </div>
+        </FadeUp>
+
+        {/* Mining Button */}
+        {stats.totalServers > 0 && !isMining && (
+          <FadeUp>
+            <Button onClick={handleStartMining} className="w-full h-12 rounded-2xl font-semibold gap-2">
+              <Play className="w-5 h-5" /> Start Mining
+            </Button>
           </FadeUp>
+        )}
 
-          {/* Mining Button */}
-          {stats.totalServers > 0 && !isMining && (
-            <FadeUp>
-              <motion.div whileTap={{ scale: 0.98 }}>
-                <Button onClick={handleStartMining} className="w-full h-12 font-semibold rounded-xl gap-2 bg-primary hover:bg-primary/90">
-                  <Play className="w-5 h-5" />
-                  Start Mining
-                </Button>
-              </motion.div>
-            </FadeUp>
-          )}
+        {/* No Servers */}
+        {stats.totalServers === 0 && (
+          <FadeUp>
+            <motion.button onClick={() => navigate('/mining-servers')} whileTap={{ scale: 0.98 }}
+              className="w-full p-4 rounded-2xl border-2 border-dashed border-border text-center">
+              <Server className="w-6 h-6 text-muted-foreground mx-auto mb-2" />
+              <p className="text-sm font-medium text-foreground">Get a Server</p>
+              <p className="text-xs text-muted-foreground">Start earning BOLT</p>
+            </motion.button>
+          </FadeUp>
+        )}
 
-          {/* No Servers CTA */}
-          {stats.totalServers === 0 && (
-            <FadeUp>
-              <motion.button
-                onClick={() => navigate('/mining-servers')}
-                className="w-full p-4 rounded-xl border-2 border-dashed border-border flex items-center justify-center gap-2 text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
-                whileTap={{ scale: 0.98 }}
-              >
-                <Server className="w-4 h-4" />
-                <span className="text-sm font-medium">Get your first server to start mining</span>
-              </motion.button>
-            </FadeUp>
-          )}
-
-        </StaggerContainer>
       </div>
     </PageWrapper>
   );
