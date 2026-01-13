@@ -918,6 +918,7 @@ export type Database = {
           total_referrals: number
           updated_at: string
           usdt_balance: number
+          viral_balance: number | null
         }
         Insert: {
           bot_blocked?: boolean | null
@@ -940,6 +941,7 @@ export type Database = {
           total_referrals?: number
           updated_at?: string
           usdt_balance?: number
+          viral_balance?: number | null
         }
         Update: {
           bot_blocked?: boolean | null
@@ -962,6 +964,7 @@ export type Database = {
           total_referrals?: number
           updated_at?: string
           usdt_balance?: number
+          viral_balance?: number | null
         }
         Relationships: [
           {
@@ -2327,6 +2330,39 @@ export type Database = {
           },
         ]
       }
+      promo_banners: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          link_url: string | null
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          link_url?: string | null
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       referral_contests: {
         Row: {
           created_at: string
@@ -2934,6 +2970,7 @@ export type Database = {
           daily_bolt_yield: number
           daily_ton_yield: number
           daily_usdt_yield: number
+          daily_viral_yield: number | null
           hash_rate: string
           id: string
           is_active: boolean
@@ -2947,6 +2984,7 @@ export type Database = {
           daily_bolt_yield?: number
           daily_ton_yield?: number
           daily_usdt_yield?: number
+          daily_viral_yield?: number | null
           hash_rate: string
           id?: string
           is_active?: boolean
@@ -2960,6 +2998,7 @@ export type Database = {
           daily_bolt_yield?: number
           daily_ton_yield?: number
           daily_usdt_yield?: number
+          daily_viral_yield?: number | null
           hash_rate?: string
           id?: string
           is_active?: boolean

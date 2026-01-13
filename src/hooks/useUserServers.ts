@@ -10,6 +10,7 @@ export interface UserServer {
   daily_bolt_yield: number;
   daily_usdt_yield: number;
   daily_ton_yield: number;
+  daily_viral_yield: number;
   purchased_at: string;
   is_active: boolean;
   last_claim_at: string | null;
@@ -78,6 +79,7 @@ export const useUserServers = (userId: string | null) => {
     let totalBolt = 0;
     let totalUsdt = 0;
     let totalTon = 0;
+    let totalViral = 0;
     let earliestClaim: Date | null = null;
 
     for (const server of servers) {
@@ -95,6 +97,7 @@ export const useUserServers = (userId: string | null) => {
       totalBolt += (server.daily_bolt_yield / 24) * claimableHours;
       totalUsdt += (server.daily_usdt_yield / 24) * claimableHours;
       totalTon += ((server.daily_ton_yield || 0) / 24) * claimableHours;
+      totalViral += ((server.daily_viral_yield || 0) / 24) * claimableHours;
     }
 
     const hoursSinceFirstClaim = earliestClaim 
@@ -105,6 +108,7 @@ export const useUserServers = (userId: string | null) => {
       pendingBolt: Math.floor(totalBolt),
       pendingUsdt: Math.round(totalUsdt * 100) / 100,
       pendingTon: Math.round(totalTon * 10000) / 10000,
+      pendingViral: Math.floor(totalViral),
       hoursSinceClaim: Math.floor(hoursSinceFirstClaim),
       canClaim: hoursSinceFirstClaim >= 1,
     };
@@ -180,6 +184,7 @@ export const useUserServers = (userId: string | null) => {
     const totalBoltPerDay = servers.reduce((sum, s) => sum + s.daily_bolt_yield, 0);
     const totalUsdtPerDay = servers.reduce((sum, s) => sum + s.daily_usdt_yield, 0);
     const totalTonPerDay = servers.reduce((sum, s) => sum + (s.daily_ton_yield || 0), 0);
+    const totalViralPerDay = servers.reduce((sum, s) => sum + (s.daily_viral_yield || 0), 0);
     const totalHashRate = servers.reduce((sum, s) => {
       const rate = parseFloat(s.hash_rate.replace(/[^0-9.]/g, ''));
       return sum + rate;
@@ -190,6 +195,7 @@ export const useUserServers = (userId: string | null) => {
       totalBoltPerDay,
       totalUsdtPerDay,
       totalTonPerDay,
+      totalViralPerDay,
       totalHashRate,
     };
   }, [servers]);

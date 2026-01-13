@@ -36,3 +36,17 @@ export const BoltIcon: React.FC<CurrencyIconProps> = ({ className, size = 20 }) 
     />
   </div>
 );
+
+export const ViralIcon: React.FC<CurrencyIconProps> = ({ className, size = 20 }) => (
+  <div 
+    className={cn("inline-flex items-center justify-center rounded-full bg-gradient-to-br from-purple-500 to-pink-500", className)}
+    style={{ width: size, height: size }}
+  >
+    <span 
+      className="text-white font-bold"
+      style={{ fontSize: size * 0.5 }}
+    >
+      V
+    </span>
+  </div>
+);
