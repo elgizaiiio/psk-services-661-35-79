@@ -9,27 +9,16 @@ import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useUserServers } from '@/hooks/useUserServers';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useLimitedOfferModal } from '@/hooks/useLimitedOfferModal';
-import { Server, Loader2, Play, Gift, ShoppingCart, Trophy, Crown, User, type LucideIcon } from 'lucide-react';
+import { 
+  Server, Loader2, Play, Gift, Trophy, Crown, Wallet, 
+  Sparkles, TrendingUp, Users, ChevronRight, Zap
+} from 'lucide-react';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress, LiveNumber } from '@/components/ui/motion-wrapper';
-import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
+import { BoltIcon, UsdtIcon, ViralIcon } from '@/components/ui/currency-icons';
 import DailyStreakModal from '@/components/DailyStreakModal';
 import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
-import { LimitedOfferBadge } from '@/components/offers/LimitedOfferBadge';
 import UserAvatar from '@/components/UserAvatar';
-import { Carousel, CarouselContent, CarouselItem, type CarouselApi } from '@/components/ui/carousel';
-import Autoplay from 'embla-carousel-autoplay';
-
-interface QuickAction {
-  id: string;
-  title: string;
-  description: string;
-  icon: LucideIcon;
-  path: string;
-  badge?: string;
-  gradient: string;
-  iconBg: string;
-  iconColor: string;
-}
+import PromoBanner from '@/components/home/PromoBanner';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -40,92 +29,6 @@ const Index = () => {
   const stats = getTotalStats();
   const { shouldShowModal: showLimitedOffer, markAsShown: closeLimitedOffer } = useLimitedOfferModal();
   useTelegramBackButton();
-
-  const [carouselApi, setCarouselApi] = useState<CarouselApi>();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  
-  const autoplayPlugin = useRef(
-    Autoplay({ delay: 3000, stopOnInteraction: false, stopOnMouseEnter: true })
-  );
-
-  const quickActions: QuickAction[] = [
-    {
-      id: 'daily-contest',
-      title: '$100 Daily',
-      description: 'Win $100 every day',
-      icon: Gift,
-      path: '/daily-contest',
-      badge: 'Hot',
-      gradient: 'bg-gradient-to-br from-emerald-500/15 to-emerald-500/5',
-      iconBg: 'bg-emerald-500/20',
-      iconColor: 'text-emerald-500',
-    },
-    {
-      id: 'leaderboard',
-      title: 'Leaderboard',
-      description: 'Top 5 win prizes',
-      icon: Trophy,
-      path: '/leaderboard',
-      gradient: 'bg-gradient-to-br from-amber-500/15 to-amber-500/5',
-      iconBg: 'bg-amber-500/20',
-      iconColor: 'text-amber-500',
-    },
-    {
-      id: 'spin',
-      title: 'Lucky Spin',
-      description: 'Win TON, USDT and more',
-      icon: Gift,
-      path: '/spin',
-      badge: 'Free Daily',
-      gradient: 'bg-gradient-to-br from-primary/15 to-primary/5',
-      iconBg: 'bg-primary/20',
-      iconColor: 'text-primary',
-    },
-    {
-      id: 'vip',
-      title: 'Premium VIP',
-      description: 'Unlock all benefits',
-      icon: Crown,
-      path: '/vip',
-      gradient: 'bg-gradient-to-br from-purple-500/15 to-purple-500/5',
-      iconBg: 'bg-purple-500/20',
-      iconColor: 'text-purple-500',
-    },
-    {
-      id: 'servers',
-      title: 'My Servers',
-      description: stats.totalServers > 0 ? `${stats.totalServers} servers` : 'No servers yet',
-      icon: Server,
-      path: '/mining-servers',
-      gradient: 'bg-gradient-to-br from-sky-500/15 to-sky-500/5',
-      iconBg: 'bg-sky-500/20',
-      iconColor: 'text-sky-500',
-    },
-    {
-      id: 'buy',
-      title: 'Buy BOLT',
-      description: 'Get more tokens',
-      icon: ShoppingCart,
-      path: '/buy-bolt',
-      gradient: 'bg-gradient-to-br from-blue-500/15 to-blue-500/5',
-      iconBg: 'bg-blue-500/20',
-      iconColor: 'text-blue-500',
-    },
-  ];
-
-  const onSelect = useCallback(() => {
-    if (!carouselApi) return;
-    setCurrentSlide(carouselApi.selectedScrollSnap());
-  }, [carouselApi]);
-
-  useEffect(() => {
-    if (!carouselApi) return;
-    onSelect();
-    carouselApi.on('select', onSelect);
-    return () => {
-      carouselApi.off('select', onSelect);
-    };
-  }, [carouselApi, onSelect]);
 
   const handleStartMining = async () => {
     hapticFeedback.impact('medium');
@@ -142,7 +45,6 @@ const Index = () => {
     );
   }
 
-  // Show message if user is outside Telegram
   if (!telegramUser?.id) {
     return (
       <main className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
@@ -185,191 +87,251 @@ const Index = () => {
 
   const boltBalance = user?.token_balance || 0;
   const usdtBalance = (user as any)?.usdt_balance || 0;
+  const viralBalance = (user as any)?.viral_balance || 0;
   const isMining = activeMiningSession && new Date() < new Date(activeMiningSession.end_time);
   const progress = miningProgress ? Math.round(miningProgress.progress * 100) : 0;
+
+  const quickLinks = [
+    { id: 'contest', icon: Gift, label: '$100', sublabel: 'Daily', path: '/daily-contest', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+    { id: 'spin', icon: Sparkles, label: 'Spin', sublabel: 'Free', path: '/spin', color: 'text-purple-500', bg: 'bg-purple-500/10' },
+    { id: 'servers', icon: Server, label: 'Servers', sublabel: stats.totalServers > 0 ? `${stats.totalServers}` : 'Buy', path: '/mining-servers', color: 'text-sky-500', bg: 'bg-sky-500/10' },
+    { id: 'wallet', icon: Wallet, label: 'Wallet', sublabel: 'Assets', path: '/wallet', color: 'text-amber-500', bg: 'bg-amber-500/10' },
+  ];
 
   return (
     <PageWrapper className="min-h-screen bg-background pb-28">
       <Helmet><title>Bolt Mining</title></Helmet>
 
-      {/* Daily Streak Modal - shows on entry when reward available */}
       <DailyStreakModal />
-
-      {/* Limited Offer Modal - shows on entry once per 24h */}
       <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
 
-      {/* Floating Limited Offer Badge */}
-      <LimitedOfferBadge variant="floating" />
-
-      <div className="max-w-md mx-auto px-5 pt-16">
-        <StaggerContainer className="space-y-6">
-          {/* Header */}
+      <div className="max-w-md mx-auto px-4 pt-14">
+        <StaggerContainer className="space-y-4">
+          
+          {/* Compact Header */}
           <FadeUp>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <motion.button
-                  onClick={() => navigate('/profile')}
-                  whileTap={{ scale: 0.95 }}
-                  className="relative"
-                >
-                  <UserAvatar user={telegramUser} size="md" />
+                <motion.button onClick={() => navigate('/profile')} whileTap={{ scale: 0.95 }}>
+                  <UserAvatar user={telegramUser} size="sm" />
                 </motion.button>
                 <div>
-                  <h1 className="text-xl font-semibold text-foreground">Hey, {telegramUser?.first_name || 'Miner'}</h1>
-                  <p className="text-sm text-muted-foreground">Welcome back</p>
+                  <h1 className="text-base font-semibold text-foreground">{telegramUser?.first_name || 'Miner'}</h1>
+                  <p className="text-xs text-muted-foreground">Welcome back</p>
                 </div>
               </div>
               {!isConnected ? (
-                <motion.div whileTap={{ scale: 0.95 }}>
-                  <Button onClick={() => connectWallet()} disabled={isConnecting} size="sm" variant="outline" className="text-xs h-9">
-                    {isConnecting ? "..." : "Connect"}
-                  </Button>
-                </motion.div>
+                <Button onClick={() => connectWallet()} disabled={isConnecting} size="sm" variant="outline" className="text-xs h-8 px-3">
+                  Connect
+                </Button>
               ) : (
-                <motion.div whileTap={{ scale: 0.95 }}>
-                  <Button onClick={() => navigate('/profile')} size="sm" variant="outline" className="text-xs h-9 gap-1">
-                    <User className="w-3.5 h-3.5" />
-                    Profile
-                  </Button>
-                </motion.div>
+                <Button onClick={() => navigate('/profile')} size="sm" variant="ghost" className="text-xs h-8 px-3 gap-1">
+                  <Crown className="w-3.5 h-3.5 text-amber-500" />
+                </Button>
               )}
             </div>
           </FadeUp>
 
-          {/* Total Balance Card with Mining Progress */}
+          {/* Promo Banner */}
           <FadeUp>
-            <motion.div className="p-6 rounded-2xl bg-card border border-border" whileHover={{ y: -2 }}>
-              <p className="text-sm text-muted-foreground mb-1">Total Balance</p>
-              <p className="text-4xl font-bold text-foreground tracking-tight">
-                $<AnimatedNumber value={usdtBalance + (boltBalance * 0.001)} decimals={2} duration={1} />
-              </p>
-              {stats.totalBoltPerDay > 0 && (
-                <p className="text-sm text-primary mt-2">+${((stats.totalBoltPerDay * 0.001) + stats.totalUsdtPerDay).toFixed(4)}/day</p>
-              )}
+            <PromoBanner />
+          </FadeUp>
+
+          {/* Main Balance Card - Glassmorphism Style */}
+          <FadeUp>
+            <motion.div 
+              className="relative p-5 rounded-2xl bg-gradient-to-br from-card via-card to-card/80 border border-border overflow-hidden"
+              whileHover={{ y: -2 }}
+            >
+              {/* Decorative gradient */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl" />
               
-              {/* Mining Progress inside balance card */}
-              {isMining && miningProgress && (
-                <div className="mt-4 pt-4 border-t border-border space-y-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-xs font-medium text-muted-foreground">Mining</span>
-                    <span className="text-sm font-bold text-primary">{progress}%</span>
-                  </div>
-                  <AnimatedProgress value={progress} />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>+{miningProgress.tokensMinedSoFar.toFixed(2)} BOLT</span>
-                    <span>+${(miningProgress.tokensMinedSoFar * 0.001).toFixed(4)} USDT</span>
-                  </div>
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs text-muted-foreground font-medium">Total Balance</span>
+                  {stats.totalBoltPerDay > 0 && (
+                    <span className="text-xs text-primary flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" />
+                      +${((stats.totalBoltPerDay * 0.001) + stats.totalUsdtPerDay).toFixed(4)}/day
+                    </span>
+                  )}
                 </div>
-              )}
+                <p className="text-3xl font-bold text-foreground tracking-tight">
+                  $<AnimatedNumber value={usdtBalance + (boltBalance * 0.001)} decimals={2} duration={1} />
+                </p>
+
+                {/* Mining Progress */}
+                {isMining && miningProgress && (
+                  <div className="mt-4 pt-3 border-t border-border/50 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-primary" />
+                        Mining Active
+                      </span>
+                      <span className="text-xs font-bold text-primary">{progress}%</span>
+                    </div>
+                    <AnimatedProgress value={progress} />
+                    <p className="text-xs text-muted-foreground">
+                      +{miningProgress.tokensMinedSoFar.toFixed(2)} BOLT mined
+                    </p>
+                  </div>
+                )}
+              </div>
             </motion.div>
           </FadeUp>
 
-          {/* Balances Row */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Three Currency Cards */}
+          <div className="grid grid-cols-3 gap-2">
             <FadeUp>
-              <motion.div className="p-4 rounded-xl bg-card border border-border" whileTap={{ scale: 0.98 }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <BoltIcon size={32} />
-                  <span className="text-xs text-muted-foreground">BOLT</span>
+              <motion.div 
+                onClick={() => navigate('/wallet')}
+                className="p-3 rounded-xl bg-card border border-border cursor-pointer" 
+                whileTap={{ scale: 0.97 }}
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <BoltIcon size={20} />
                 </div>
-                <p className="text-xl font-semibold text-foreground">
+                <p className="text-sm font-semibold text-foreground truncate">
                   <LiveNumber 
                     value={boltBalance + (miningProgress?.tokensMinedSoFar || 0)} 
                     incrementPerSecond={isMining ? (activeMiningSession?.tokens_per_hour || 0) / 3600 : 0}
                     isActive={!!isMining}
-                    decimals={2} 
+                    decimals={0} 
                   />
                 </p>
-                {stats.totalBoltPerDay > 0 && <p className="text-xs text-primary mt-1">+{stats.totalBoltPerDay}/day</p>}
+                <p className="text-[10px] text-muted-foreground">BOLT</p>
               </motion.div>
             </FadeUp>
             
             <FadeUp>
-              <motion.div className="p-4 rounded-xl bg-card border border-border" whileTap={{ scale: 0.98 }}>
-                <div className="flex items-center gap-2 mb-2">
-                  <UsdtIcon size={32} />
-                  <span className="text-xs text-muted-foreground">USDT</span>
+              <motion.div 
+                onClick={() => navigate('/wallet')}
+                className="p-3 rounded-xl bg-card border border-border cursor-pointer" 
+                whileTap={{ scale: 0.97 }}
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <UsdtIcon size={20} />
                 </div>
-                <p className="text-xl font-semibold text-foreground">
+                <p className="text-sm font-semibold text-foreground truncate">
                   <LiveNumber 
-                    value={usdtBalance + ((miningProgress?.tokensMinedSoFar || 0) * 0.001)} 
-                    incrementPerSecond={isMining ? ((activeMiningSession?.tokens_per_hour || 0) / 3600) * 0.001 : 0}
-                    isActive={!!isMining}
-                    decimals={4} 
+                    value={usdtBalance} 
+                    incrementPerSecond={0}
+                    isActive={false}
+                    decimals={2} 
                   />
                 </p>
-                {stats.totalUsdtPerDay > 0 && <p className="text-xs text-primary mt-1">+${stats.totalUsdtPerDay.toFixed(4)}/day</p>}
+                <p className="text-[10px] text-muted-foreground">USDT</p>
+              </motion.div>
+            </FadeUp>
+
+            <FadeUp>
+              <motion.div 
+                onClick={() => navigate('/wallet')}
+                className="p-3 rounded-xl bg-card border border-border cursor-pointer" 
+                whileTap={{ scale: 0.97 }}
+              >
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <ViralIcon size={20} />
+                </div>
+                <p className="text-sm font-semibold text-foreground truncate">
+                  {viralBalance.toLocaleString()}
+                </p>
+                <p className="text-[10px] text-muted-foreground">VIRAL</p>
               </motion.div>
             </FadeUp>
           </div>
 
-          {/* Quick Actions Carousel */}
+          {/* Quick Links Grid */}
           <FadeUp>
-            <div className="space-y-3">
-              <Carousel
-                opts={{ align: "start", dragFree: true, loop: true }}
-                className="w-full"
-                setApi={setCarouselApi}
-                plugins={[autoplayPlugin.current]}
-              >
-                <CarouselContent className="-ml-3">
-                  {quickActions.map((action) => (
-                    <CarouselItem key={action.id} className="pl-3 basis-[280px]">
-                      <motion.button
-                        onClick={() => {
-                          hapticFeedback.impact('light');
-                          navigate(action.path);
-                        }}
-                        className={`w-full h-[120px] p-4 rounded-2xl ${action.gradient} border border-border/50 flex flex-col justify-between text-left relative overflow-hidden`}
-                        whileTap={{ scale: 0.97 }}
-                        whileHover={{ scale: 1.02 }}
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className={`w-11 h-11 rounded-xl ${action.iconBg} flex items-center justify-center`}>
-                            <action.icon className={`w-5 h-5 ${action.iconColor}`} />
-                          </div>
-                          {action.badge && (
-                            <span className="text-[10px] font-semibold text-primary-foreground bg-primary px-2 py-0.5 rounded-full">
-                              {action.badge}
-                            </span>
-                          )}
-                        </div>
-                        <div>
-                          <p className="font-semibold text-foreground text-sm">{action.title}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-1">{action.description}</p>
-                        </div>
-                      </motion.button>
-                    </CarouselItem>
-                  ))}
-                </CarouselContent>
-              </Carousel>
-
-              {/* Pagination Dots */}
-              <div className="flex justify-center gap-1.5">
-                {quickActions.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => carouselApi?.scrollTo(index)}
-                    className={`h-1.5 rounded-full transition-all duration-300 ${
-                      currentSlide === index 
-                        ? 'w-6 bg-primary' 
-                        : 'w-1.5 bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                    }`}
-                  />
-                ))}
-              </div>
+            <div className="grid grid-cols-4 gap-2">
+              {quickLinks.map((link) => (
+                <motion.button
+                  key={link.id}
+                  onClick={() => {
+                    hapticFeedback.impact('light');
+                    navigate(link.path);
+                  }}
+                  className={`flex flex-col items-center justify-center p-3 rounded-xl ${link.bg} border border-transparent hover:border-border transition-colors`}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <link.icon className={`w-5 h-5 ${link.color} mb-1`} />
+                  <span className="text-xs font-semibold text-foreground">{link.label}</span>
+                  <span className="text-[9px] text-muted-foreground">{link.sublabel}</span>
+                </motion.button>
+              ))}
             </div>
           </FadeUp>
 
-          {/* Mining Button (only when not mining) */}
+          {/* Feature Cards Row */}
+          <FadeUp>
+            <div className="grid grid-cols-2 gap-2">
+              {/* Leaderboard Card */}
+              <motion.button
+                onClick={() => navigate('/leaderboard')}
+                className="p-4 rounded-xl bg-gradient-to-br from-amber-500/10 to-amber-500/5 border border-amber-500/20 text-left"
+                whileTap={{ scale: 0.97 }}
+              >
+                <Trophy className="w-5 h-5 text-amber-500 mb-2" />
+                <p className="text-sm font-semibold text-foreground">Leaderboard</p>
+                <p className="text-xs text-muted-foreground">Top 5 win prizes</p>
+              </motion.button>
+
+              {/* Invite Card */}
+              <motion.button
+                onClick={() => navigate('/invite')}
+                className="p-4 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20 text-left"
+                whileTap={{ scale: 0.97 }}
+              >
+                <Users className="w-5 h-5 text-purple-500 mb-2" />
+                <p className="text-sm font-semibold text-foreground">Invite Friends</p>
+                <p className="text-xs text-muted-foreground">Earn 15% bonus</p>
+              </motion.button>
+            </div>
+          </FadeUp>
+
+          {/* VIP Banner */}
+          <FadeUp>
+            <motion.button
+              onClick={() => navigate('/vip')}
+              className="w-full p-4 rounded-xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 flex items-center justify-between"
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Crown className="w-5 h-5 text-primary" />
+                </div>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-foreground">Upgrade to VIP</p>
+                  <p className="text-xs text-muted-foreground">2x mining power + exclusive perks</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            </motion.button>
+          </FadeUp>
+
+          {/* Mining Button */}
           {stats.totalServers > 0 && !isMining && (
             <FadeUp>
               <motion.div whileTap={{ scale: 0.98 }}>
-                <Button onClick={handleStartMining} className="w-full h-14 font-semibold rounded-xl gap-2">
+                <Button onClick={handleStartMining} className="w-full h-12 font-semibold rounded-xl gap-2 bg-primary hover:bg-primary/90">
                   <Play className="w-5 h-5" />
                   Start Mining
                 </Button>
               </motion.div>
+            </FadeUp>
+          )}
+
+          {/* No Servers CTA */}
+          {stats.totalServers === 0 && (
+            <FadeUp>
+              <motion.button
+                onClick={() => navigate('/mining-servers')}
+                className="w-full p-4 rounded-xl border-2 border-dashed border-border flex items-center justify-center gap-2 text-muted-foreground hover:border-primary/50 hover:text-foreground transition-colors"
+                whileTap={{ scale: 0.98 }}
+              >
+                <Server className="w-4 h-4" />
+                <span className="text-sm font-medium">Get your first server to start mining</span>
+              </motion.button>
             </FadeUp>
           )}
 
