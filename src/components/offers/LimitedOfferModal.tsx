@@ -186,9 +186,15 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
 
                       {/* Name */}
                       <h3 className="font-semibold text-foreground text-xs mb-1">{offer.name}</h3>
-                      <p className="text-[9px] text-muted-foreground mb-2">
-                        {remaining}/{offer.max_purchases} left
-                      </p>
+                      <div className="flex items-center gap-1 mb-2">
+                        <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden">
+                          <div 
+                            className="h-full bg-primary rounded-full transition-all"
+                            style={{ width: `${(remaining / offer.max_purchases) * 100}%` }}
+                          />
+                        </div>
+                        <span className="text-[9px] text-muted-foreground whitespace-nowrap">{remaining} left</span>
+                      </div>
 
                       {/* Contents */}
                       <div className="space-y-1 mb-2 text-[10px]">

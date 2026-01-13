@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 
 interface Banner {
   id: string;
@@ -62,14 +62,15 @@ const PromoBanner: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="w-full h-[120px] rounded-xl bg-gradient-to-r from-primary/20 via-primary/10 to-primary/20 animate-pulse" />
+      <div className="w-full h-24 rounded-xl bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 animate-pulse" />
     );
   }
 
   if (banners.length === 0) {
     return (
-      <div className="w-full h-[120px] rounded-xl bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20 flex items-center justify-center">
-        <p className="text-muted-foreground text-sm">Special offers coming soon</p>
+      <div className="w-full h-24 rounded-xl bg-gradient-to-br from-primary/10 via-card to-accent/10 border border-border flex items-center justify-center gap-3">
+        <Sparkles className="w-5 h-5 text-primary" />
+        <p className="text-foreground text-sm font-medium">Special offers coming soon</p>
       </div>
     );
   }
@@ -77,13 +78,13 @@ const PromoBanner: React.FC = () => {
   const currentBanner = banners[currentIndex];
 
   return (
-    <div className="relative w-full h-[120px] rounded-xl overflow-hidden">
+    <div className="relative w-full h-24 rounded-xl overflow-hidden border border-border">
       <AnimatePresence mode="wait">
         <motion.div
           key={currentBanner.id}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
           transition={{ duration: 0.3 }}
           className="absolute inset-0 cursor-pointer"
           onClick={() => handleClick(currentBanner.link_url)}
@@ -95,8 +96,8 @@ const PromoBanner: React.FC = () => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-r from-primary/30 via-accent/30 to-primary/30 flex items-center justify-center">
-              <p className="text-foreground font-semibold text-center px-4">
+            <div className="w-full h-full bg-gradient-to-br from-primary/10 via-card to-accent/10 flex items-center justify-center">
+              <p className="text-foreground font-semibold text-center px-4 text-sm">
                 {currentBanner.title}
               </p>
             </div>
@@ -107,24 +108,25 @@ const PromoBanner: React.FC = () => {
       {banners.length > 1 && (
         <>
           <button
-            onClick={goToPrev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 flex items-center justify-center"
+            onClick={(e) => { e.stopPropagation(); goToPrev(); }}
+            className="absolute left-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-background/90 backdrop-blur-sm flex items-center justify-center border border-border/50"
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-3.5 h-3.5" />
           </button>
           <button
-            onClick={goToNext}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-background/80 flex items-center justify-center"
+            onClick={(e) => { e.stopPropagation(); goToNext(); }}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-background/90 backdrop-blur-sm flex items-center justify-center border border-border/50"
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-3.5 h-3.5" />
           </button>
 
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 flex gap-1">
             {banners.map((_, index) => (
-              <div
+              <button
                 key={index}
-                className={`w-2 h-2 rounded-full transition-colors ${
-                  index === currentIndex ? 'bg-primary' : 'bg-primary/30'
+                onClick={(e) => { e.stopPropagation(); setCurrentIndex(index); }}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${
+                  index === currentIndex ? 'bg-primary w-3' : 'bg-foreground/30'
                 }`}
               />
             ))}
