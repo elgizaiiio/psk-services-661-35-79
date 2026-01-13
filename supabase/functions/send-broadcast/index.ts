@@ -15,7 +15,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, adminTelegramId } = await req.json();
+    const { message, adminTelegramId, sendToAll } = await req.json();
 
     // Verify admin
     if (!adminTelegramId || !ADMIN_TELEGRAM_IDS.includes(Number(adminTelegramId))) {
@@ -45,13 +45,20 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get all users with notifications enabled and not blocked
-    const { data: users, error: usersError } = await supabase
+    // Get users based on sendToAll flag
+    let query = supabase
       .from('bolt_users')
       .select('telegram_id, first_name')
-      .eq('notifications_enabled', true)
-      .eq('bot_blocked', false)
       .not('telegram_id', 'is', null);
+
+    // If sendToAll is true, skip notifications_enabled and bot_blocked filters
+    if (!sendToAll) {
+      query = query
+        .eq('notifications_enabled', true)
+        .eq('bot_blocked', false);
+    }
+
+    const { data: users, error: usersError } = await query;
 
     if (usersError) {
       console.error('Error fetching users:', usersError);
@@ -61,7 +68,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Starting broadcast to ${users?.length || 0} users`);
+    console.log(`Starting broadcast to ${users?.length || 0} users (sendToAll: ${sendToAll})`);
 
     let sent = 0;
     let failed = 0;

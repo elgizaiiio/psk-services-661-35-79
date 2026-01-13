@@ -5,9 +5,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useViralMining } from '@/hooks/useViralMining';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { toast } from 'sonner';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X, Zap, Ticket } from 'lucide-react';
 import { motion } from 'motion/react';
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
+import { BoltIcon, ViralIcon } from '@/components/ui/currency-icons';
 
 interface LimitedOffer {
   id: string;
@@ -25,12 +26,19 @@ interface LimitedOfferModalProps {
   onClose: () => void;
 }
 
+// Bundle content details
+const bundleContents: Record<number, { bolt: number; tickets: number; viral: number }> = {
+  1.5: { bolt: 5000, tickets: 10, viral: 50 },
+  3: { bolt: 15000, tickets: 30, viral: 200 },
+  5: { bolt: 50000, tickets: 100, viral: 500 },
+  10: { bolt: 150000, tickets: 500, viral: 2000 },
+};
+
 export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, onClose }) => {
   const { user: telegramUser } = useTelegramAuth();
   const { user } = useViralMining(telegramUser);
   const [offers, setOffers] = useState<LimitedOffer[]>([]);
   const [loading, setLoading] = useState(true);
-  const [userClaims, setUserClaims] = useState<string[]>([]);
   const [selectedOffer, setSelectedOffer] = useState<LimitedOffer | null>(null);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
 
@@ -52,15 +60,6 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
 
       if (offersError) throw offersError;
       setOffers(offersData || []);
-
-      if (user?.id) {
-        const { data: claimsData } = await supabase
-          .from('limited_server_offer_claims')
-          .select('offer_id')
-          .eq('user_id', user.id);
-        
-        setUserClaims(claimsData?.map(c => c.offer_id) || []);
-      }
     } catch (error) {
       console.error('Error fetching offers:', error);
     } finally {
@@ -81,10 +80,24 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
     if (!selectedOffer || !user?.id) return;
 
     try {
-      await supabase.from('limited_server_offer_claims').insert({
-        user_id: user.id,
-        offer_id: selectedOffer.id,
-      });
+      const content = bundleContents[selectedOffer.price_ton] || bundleContents[1.5];
+      
+      // Update user balances
+      const { data: userData } = await supabase
+        .from('bolt_users')
+        .select('token_balance, viral_balance')
+        .eq('id', user.id)
+        .single();
+
+      if (userData) {
+        await supabase
+          .from('bolt_users')
+          .update({
+            token_balance: (userData.token_balance || 0) + content.bolt,
+            viral_balance: (userData.viral_balance || 0) + content.viral,
+          })
+          .eq('id', user.id);
+      }
 
       await supabase
         .from('limited_server_offers')
@@ -93,17 +106,18 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
 
       await supabase.from('user_servers').insert({
         user_id: user.id,
-        server_id: `limited-${selectedOffer.id}`,
+        server_id: `bundle-${selectedOffer.id}`,
         server_name: selectedOffer.name,
-        tier: 'Limited',
-        hash_rate: 'Special',
+        tier: 'Bundle',
+        hash_rate: 'Premium',
         daily_bolt_yield: selectedOffer.daily_bolt_yield,
         daily_usdt_yield: selectedOffer.daily_usdt_yield,
         daily_ton_yield: selectedOffer.daily_ton_yield,
+        daily_viral_yield: content.viral / 10,
         is_active: true,
       });
 
-      toast.success('Server purchased successfully!');
+      toast.success('Bundle purchased successfully!');
       fetchOffers();
     } catch (error) {
       console.error('Error recording purchase:', error);
@@ -116,97 +130,99 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
     return Math.max(0, offer.max_purchases - offer.current_purchases);
   };
 
-  const hasUserClaimed = (offerId: string) => userClaims.includes(offerId);
   const isSoldOut = (offer: LimitedOffer) => getRemainingSlots(offer) === 0;
-
-  const displayOffers = offers.slice(0, 5);
 
   return (
     <>
       <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-        <DialogContent className="max-w-[95vw] w-full max-h-[50vh] p-0 gap-0 bg-background border-border overflow-hidden rounded-2xl">
-          <DialogHeader className="p-4 pb-2 border-b border-border">
+        <DialogContent className="max-w-[95vw] w-full max-h-[55vh] p-0 gap-0 bg-background border-border overflow-hidden rounded-2xl">
+          <DialogHeader className="p-3 pb-2 border-b border-border">
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-lg font-bold text-foreground">Limited Offers</DialogTitle>
-                <p className="text-xs text-muted-foreground mt-0.5">Only 20 slots per server</p>
+                <DialogTitle className="text-base font-bold text-foreground">Bundle Packages</DialogTitle>
+                <p className="text-[10px] text-primary mt-0.5">
+                  Selected from 30,000 users - 50% OFF
+                </p>
               </div>
               <button 
                 onClick={onClose} 
-                className="w-8 h-8 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
+                className="w-7 h-7 flex items-center justify-center rounded-full bg-muted hover:bg-muted/80 transition-colors"
               >
                 <X className="w-4 h-4 text-foreground" />
               </button>
             </div>
           </DialogHeader>
 
-          <div className="p-4 overflow-x-auto">
+          <div className="p-3 overflow-x-auto">
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <div className="flex items-center justify-center py-6">
+                <Loader2 className="w-5 h-5 animate-spin text-primary" />
               </div>
-            ) : displayOffers.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8 text-sm">No offers available</p>
+            ) : offers.length === 0 ? (
+              <p className="text-center text-muted-foreground py-6 text-sm">No offers available</p>
             ) : (
-              <div className="flex gap-3 pb-2" style={{ minWidth: 'max-content' }}>
-                {displayOffers.map((offer, index) => {
+              <div className="flex gap-2 pb-2" style={{ minWidth: 'max-content' }}>
+                {offers.map((offer, index) => {
                   const remaining = getRemainingSlots(offer);
-                  const claimed = hasUserClaimed(offer.id);
                   const soldOut = isSoldOut(offer);
-                  const disabled = claimed || soldOut;
+                  const content = bundleContents[offer.price_ton] || bundleContents[1.5];
 
                   return (
                     <motion.div
                       key={offer.id}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className={`flex-shrink-0 w-[200px] p-4 rounded-xl border transition-all ${
-                        claimed
-                          ? 'bg-primary/5 border-primary/30'
-                          : soldOut
+                      className={`flex-shrink-0 w-[140px] p-3 rounded-xl border transition-all ${
+                        soldOut
                           ? 'bg-muted/30 border-border opacity-60'
-                          : 'bg-card border-border'
+                          : 'bg-card border-border hover:border-primary/50'
                       }`}
                     >
-                      {/* Header */}
-                      <div className="mb-3">
-                        <h3 className="font-semibold text-foreground text-sm">{offer.name}</h3>
-                        <p className="text-[10px] text-muted-foreground">
-                          {remaining}/{offer.max_purchases} left
-                        </p>
+                      {/* 50% OFF Badge */}
+                      <div className="bg-destructive/90 text-destructive-foreground text-[10px] font-bold px-2 py-0.5 rounded mb-2 inline-block">
+                        50% OFF
+                      </div>
+
+                      {/* Name */}
+                      <h3 className="font-semibold text-foreground text-xs mb-1">{offer.name}</h3>
+                      <p className="text-[9px] text-muted-foreground mb-2">
+                        {remaining}/{offer.max_purchases} left
+                      </p>
+
+                      {/* Contents */}
+                      <div className="space-y-1 mb-2 text-[10px]">
+                        <div className="flex items-center gap-1">
+                          <Zap className="w-3 h-3 text-sky-500" />
+                          <span className="text-muted-foreground">Server included</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <BoltIcon size={12} />
+                          <span className="text-yellow-500">{content.bolt.toLocaleString()} BOLT</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Ticket className="w-3 h-3 text-purple-500" />
+                          <span className="text-purple-500">{content.tickets} Tickets</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <ViralIcon size={12} />
+                          <span className="text-pink-500">{content.viral} VIRAL</span>
+                        </div>
                       </div>
 
                       {/* Price */}
-                      <div className="mb-3 py-2 px-3 rounded-lg bg-sky-500/10 text-center">
-                        <span className="font-bold text-sky-500">{offer.price_ton} TON</span>
-                      </div>
-
-                      {/* Yields */}
-                      <div className="space-y-1 mb-3 text-xs">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">BOLT/day</span>
-                          <span className="font-medium text-yellow-500">+{offer.daily_bolt_yield}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">USDT/day</span>
-                          <span className="font-medium text-emerald-500">${offer.daily_usdt_yield.toFixed(2)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">TON/day</span>
-                          <span className="font-medium text-sky-500">+{offer.daily_ton_yield}</span>
-                        </div>
+                      <div className="mb-2 py-1.5 px-2 rounded bg-sky-500/10 text-center">
+                        <span className="font-bold text-sky-500 text-sm">{offer.price_ton} TON</span>
                       </div>
 
                       {/* Button */}
                       <Button
                         onClick={() => handleBuyClick(offer)}
-                        disabled={disabled}
-                        className="w-full h-9 text-xs font-semibold rounded-lg"
-                        variant={claimed ? 'outline' : 'default'}
+                        disabled={soldOut}
+                        className="w-full h-7 text-[10px] font-semibold rounded-lg"
                         size="sm"
                       >
-                        {claimed ? 'Owned' : soldOut ? 'Sold Out' : 'Buy'}
+                        {soldOut ? 'Sold Out' : 'Buy Bundle'}
                       </Button>
                     </motion.div>
                   );
