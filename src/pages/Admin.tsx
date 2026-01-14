@@ -206,12 +206,12 @@ const Admin: React.FC = () => {
             <AdminDailyCodes codes={codes} setCodes={setCodes} onCodesUpdate={loadCodes} />
           </TabsContent>
 
-          <TabsContent value="marketing">
-            <AdminMarketing />
-          </TabsContent>
-
           <TabsContent value="home">
             <AdminHomeSections />
+          </TabsContent>
+
+          <TabsContent value="marketing">
+            <AdminMarketing />
           </TabsContent>
 
           <TabsContent value="banners">
