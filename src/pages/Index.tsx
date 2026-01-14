@@ -14,6 +14,7 @@ import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import DailyStreakModal from '@/components/DailyStreakModal';
 import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
 import UserAvatar from '@/components/UserAvatar';
+import PromoBanner from '@/components/home/PromoBanner';
 
 interface HomeSection {
   id: string;
@@ -220,6 +221,11 @@ const Index = () => {
               </motion.button>
             )}
           </div>
+        </FadeUp>
+
+        {/* Animated Promo Banner */}
+        <FadeUp delay={0.1}>
+          <PromoBanner />
         </FadeUp>
 
         {/* Image-based Sections */}
