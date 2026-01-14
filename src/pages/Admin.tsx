@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Settings, Users, Activity, Target, Clock, TrendingUp, Shield, Plus, Star, Wallet, Megaphone, Image } from "lucide-react";
+import { Settings, Users, Activity, Target, Clock, TrendingUp, Shield, Plus, Star, Wallet, Megaphone, Image, LayoutGrid } from "lucide-react";
 import AdminMetrics from "@/components/admin/AdminMetrics";
 import AdminUserManagement from "@/components/admin/AdminUserManagement";
 import AdminTaskManagement from "@/components/admin/AdminTaskManagement";
@@ -17,6 +17,7 @@ import AdminStarsPayments from "@/components/admin/AdminStarsPayments";
 import AdminTonPayments from "@/components/admin/AdminTonPayments";
 import AdminMarketing from "@/components/admin/AdminMarketing";
 import AdminBanners from "@/components/admin/AdminBanners";
+import AdminHomeSections from "@/components/admin/AdminHomeSections";
 import { BoltUser, BoltTask, BoltMiningSession, BoltDailyCode } from "@/types/bolt";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
 import { isAdmin, ADMIN_TELEGRAM_ID } from "@/lib/admin-constants";
@@ -176,11 +177,12 @@ const Admin: React.FC = () => {
         <AdminMetrics metrics={metrics} />
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-9 mb-6">
+          <TabsList className="grid w-full grid-cols-10 mb-6">
             <TabsTrigger value="users"><Users className="w-4 h-4" /></TabsTrigger>
             <TabsTrigger value="mining"><Activity className="w-4 h-4" /></TabsTrigger>
             <TabsTrigger value="tasks"><Target className="w-4 h-4" /></TabsTrigger>
             <TabsTrigger value="daily"><Clock className="w-4 h-4" /></TabsTrigger>
+            <TabsTrigger value="home"><LayoutGrid className="w-4 h-4" /></TabsTrigger>
             <TabsTrigger value="marketing"><Megaphone className="w-4 h-4" /></TabsTrigger>
             <TabsTrigger value="banners"><Image className="w-4 h-4" /></TabsTrigger>
             <TabsTrigger value="stars"><Star className="w-4 h-4" /></TabsTrigger>
@@ -202,6 +204,10 @@ const Admin: React.FC = () => {
 
           <TabsContent value="daily">
             <AdminDailyCodes codes={codes} setCodes={setCodes} onCodesUpdate={loadCodes} />
+          </TabsContent>
+
+          <TabsContent value="home">
+            <AdminHomeSections />
           </TabsContent>
 
           <TabsContent value="marketing">
