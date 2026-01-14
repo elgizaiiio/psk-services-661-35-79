@@ -152,27 +152,29 @@ const AdminHomeSections: React.FC = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `home-section-${Date.now()}.${fileExt}`;
-    const filePath = `home-sections/${fileName}`;
+    toast.loading('Uploading image...', { id: 'upload' });
 
-    const { error: uploadError, data } = await supabase.storage
-      .from('public')
-      .upload(filePath, file);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `section-${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('home-images')
+      .upload(fileName, file, { upsert: true });
 
     if (uploadError) {
-      toast.error('Failed to upload image');
+      toast.error('Failed to upload image: ' + uploadError.message, { id: 'upload' });
+      console.error('Upload error:', uploadError);
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage.from('public').getPublicUrl(filePath);
+    const { data: { publicUrl } } = supabase.storage.from('home-images').getPublicUrl(fileName);
 
     if (sectionId) {
       handleUpdateSection(sectionId, { image_url: publicUrl });
     } else {
       setNewSection({ ...newSection, image_url: publicUrl });
     }
-    toast.success('Image uploaded');
+    toast.success('Image uploaded successfully', { id: 'upload' });
   };
 
   if (loading) {
