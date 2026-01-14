@@ -41,7 +41,7 @@ const Index = () => {
         .eq('is_active', true)
         .order('display_order', { ascending: true });
       
-      setSections((data || []) as HomeSection[]);
+      setSections((data || []) as unknown as HomeSection[]);
       setSectionsLoading(false);
     };
     fetchSections();

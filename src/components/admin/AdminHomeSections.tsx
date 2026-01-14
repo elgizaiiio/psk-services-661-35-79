@@ -53,7 +53,7 @@ const AdminHomeSections: React.FC = () => {
     if (error) {
       toast.error('Failed to load sections');
     } else {
-      setSections((data || []) as HomeSection[]);
+      setSections((data || []) as unknown as HomeSection[]);
     }
     setLoading(false);
   };
