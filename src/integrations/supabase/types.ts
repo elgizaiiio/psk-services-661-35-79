@@ -1681,6 +1681,39 @@ export type Database = {
         }
         Relationships: []
       }
+      home_sections: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string
+          internal_route: string
+          is_active: boolean
+          layout_type: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url: string
+          internal_route: string
+          is_active?: boolean
+          layout_type?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string
+          internal_route?: string
+          is_active?: boolean
+          layout_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       limited_server_offer_claims: {
         Row: {
           claimed_at: string
