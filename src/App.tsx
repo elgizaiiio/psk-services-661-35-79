@@ -38,6 +38,7 @@ const AiImageStore = lazy(() => import("./pages/AiImageStore"));
 const Giveaways = lazy(() => import("./pages/Giveaways"));
 const CreateTask = lazy(() => import("./pages/CreateTask"));
 const Admin = lazy(() => import("./pages/Admin"));
+const AdminHomeSections = lazy(() => import("./pages/AdminHomeSections"));
 const ChatAI = lazy(() => import("./pages/ChatAI"));
 const Slots = lazy(() => import("./pages/Slots"));
 const Game2048Store = lazy(() => import("./pages/Game2048Store"));
@@ -212,6 +213,7 @@ const App = () => (
                                 <Route path="/ai-image-store" element={<AiImageStore />} />
                                 <Route path="/giveaways" element={<Giveaways />} />
                                 <Route path="/admin" element={<Admin />} />
+                                <Route path="/105" element={<AdminHomeSections />} />
                                 <Route path="/create-task" element={<CreateTask />} />
                                 <Route path="/chat-ai" element={<ChatAI />} />
                                 <Route path="/slots" element={<Slots />} />
