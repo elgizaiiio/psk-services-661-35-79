@@ -1,7 +1,9 @@
 // Service Worker for caching assets
-const CACHE_NAME = 'bolt-mining-v1';
-const STATIC_CACHE = 'static-v1';
-const IMAGE_CACHE = 'images-v1';
+// NOTE: Cache strategy must allow JS/CSS updates, otherwise users can get stuck on old app versions.
+
+const CACHE_NAME = 'bolt-mining-v2';
+const STATIC_CACHE = 'static-v2';
+const IMAGE_CACHE = 'images-v2';
 
 // Assets to cache immediately
 const PRECACHE_ASSETS = [
@@ -11,13 +13,18 @@ const PRECACHE_ASSETS = [
   '/images/currency/usdt.svg',
 ];
 
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
+
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS);
-    })
+    caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE_ASSETS))
   );
+  // Take over immediately so new code can be used without manual cache clearing
   self.skipWaiting();
 });
 
@@ -35,7 +42,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -43,18 +50,18 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
-  // Skip Supabase API calls - always fetch fresh
+  // Skip backend API calls - always fetch fresh
   if (url.hostname.includes('supabase.co')) return;
 
   // Handle image requests
   if (request.destination === 'image' || url.pathname.match(/\.(png|jpg|jpeg|gif|svg|webp|ico)$/i)) {
-    event.respondWith(cacheFirst(request, IMAGE_CACHE));
+    event.respondWith(staleWhileRevalidate(request, IMAGE_CACHE));
     return;
   }
 
-  // Handle static assets (JS, CSS, fonts)
+  // IMPORTANT: JS/CSS must NOT be cache-first forever, otherwise updates never reach users.
   if (url.pathname.match(/\.(js|css|woff|woff2|ttf|eot)$/i)) {
-    event.respondWith(cacheFirst(request, STATIC_CACHE));
+    event.respondWith(staleWhileRevalidate(request, STATIC_CACHE));
     return;
   }
 
@@ -68,28 +75,11 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(staleWhileRevalidate(request, CACHE_NAME));
 });
 
-// Cache first strategy
-async function cacheFirst(request, cacheName) {
-  const cached = await caches.match(request);
-  if (cached) return cached;
-
-  try {
-    const response = await fetch(request);
-    if (response.ok) {
-      const cache = await caches.open(cacheName);
-      cache.put(request, response.clone());
-    }
-    return response;
-  } catch (error) {
-    return new Response('Network error', { status: 503 });
-  }
-}
-
 // Network first strategy
 async function networkFirst(request, cacheName) {
   try {
-    const response = await fetch(request);
-    if (response.ok) {
+    const response = await fetch(request, { cache: 'no-store' });
+    if (response && response.ok) {
       const cache = await caches.open(cacheName);
       cache.put(request, response.clone());
     }
@@ -102,16 +92,17 @@ async function networkFirst(request, cacheName) {
 
 // Stale while revalidate strategy
 async function staleWhileRevalidate(request, cacheName) {
-  const cached = await caches.match(request);
-  
-  const fetchPromise = fetch(request).then((response) => {
-    if (response.ok) {
-      caches.open(cacheName).then((cache) => {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+
+  const fetchPromise = fetch(request)
+    .then((response) => {
+      if (response && response.ok) {
         cache.put(request, response.clone());
-      });
-    }
-    return response;
-  }).catch(() => cached);
+      }
+      return response;
+    })
+    .catch(() => cached);
 
   return cached || fetchPromise;
 }

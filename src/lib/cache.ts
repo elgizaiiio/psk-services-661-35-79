@@ -117,15 +117,57 @@ export async function preloadImages(urls: string[]): Promise<void> {
 
 // Register service worker
 export async function registerServiceWorker(): Promise<void> {
-  if ('serviceWorker' in navigator) {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/',
-      });
-      console.log('SW registered:', registration.scope);
-    } catch (error) {
-      console.log('SW registration failed:', error);
+  if (!('serviceWorker' in navigator)) return;
+
+  try {
+    const registration = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/',
+    });
+
+    // Ask the browser to check for an updated SW as soon as possible
+    registration.update?.();
+
+    // If a new SW is already waiting, activate it
+    if (registration.waiting) {
+      registration.waiting.postMessage({ type: 'SKIP_WAITING' });
     }
+
+    registration.addEventListener('updatefound', () => {
+      const installing = registration.installing;
+      if (!installing) return;
+
+      installing.addEventListener('statechange', () => {
+        // When a new SW is installed and there's an existing controller, reload once to get fresh assets
+        if (installing.state === 'installed' && navigator.serviceWorker.controller) {
+          try {
+            const key = 'sw_reloaded';
+            if (sessionStorage.getItem(key) !== 'true') {
+              sessionStorage.setItem(key, 'true');
+              window.location.reload();
+            }
+          } catch {
+            window.location.reload();
+          }
+        }
+      });
+    });
+
+    // Also reload when the controller changes (new SW took over)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      try {
+        const key = 'sw_controller_reloaded';
+        if (sessionStorage.getItem(key) !== 'true') {
+          sessionStorage.setItem(key, 'true');
+          window.location.reload();
+        }
+      } catch {
+        window.location.reload();
+      }
+    });
+
+    console.log('SW registered:', registration.scope);
+  } catch (error) {
+    console.log('SW registration failed:', error);
   }
 }
 
