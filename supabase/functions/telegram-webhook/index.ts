@@ -1022,7 +1022,7 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
   // Check if user is admin FIRST before anything else
   if (!ADMIN_IDS.includes(telegramId)) {
     // Only respond to admin commands with error
-    if (messageText.startsWith('/101') || messageText.startsWith('/102')) {
+    if (messageText.startsWith('/101') || messageText.startsWith('/102') || messageText.startsWith('/105')) {
       await sendTelegramMessage(chatId, 'You are not authorized to use this command');
       return true;
     }
@@ -1058,7 +1058,8 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
 /101 payments - Payment transactions
 /101 partnerships - View pending partnerships
 /101 broadcast - Send message to all
-/102 - Add new task`;
+/102 - Add new task
+/105 - Home page sections`;
 
     const keyboard = {
       inline_keyboard: [
@@ -1066,6 +1067,12 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
           {
             text: '📊 Open Full Panel',
             web_app: { url: `${WEBAPP_URL}/admin` }
+          }
+        ],
+        [
+          {
+            text: '🖼️ Home Sections',
+            web_app: { url: `${WEBAPP_URL}/105` }
           }
         ],
         [
@@ -1098,6 +1105,35 @@ async function handleAdminCommand(chatId: number, telegramId: number, messageTex
     };
 
     await sendTelegramMessage(chatId, statsMessage, keyboard);
+    return true;
+  }
+
+  // Handle /105 command - Home Page Sections Management
+  if (messageText === '/105') {
+    const sectionsMessage = `<b>🖼️ إدارة أقسام الصفحة الرئيسية</b>
+
+يمكنك من خلال هذه الصفحة:
+• إضافة صور جديدة للصفحة الرئيسية
+• تعديل الصور الحالية
+• تغيير ترتيب الأقسام
+• تفعيل/إلغاء تفعيل الأقسام
+
+<b>أحجام الصور الموصى بها:</b>
+📐 مستطيل: 800×400 px (نسبة 2:1)
+📐 مربع: 400×400 px (نسبة 1:1)`;
+
+    const keyboard = {
+      inline_keyboard: [
+        [
+          {
+            text: '🖼️ فتح إدارة الأقسام',
+            web_app: { url: `${WEBAPP_URL}/105` }
+          }
+        ]
+      ]
+    };
+
+    await sendTelegramMessage(chatId, sectionsMessage, keyboard);
     return true;
   }
 
