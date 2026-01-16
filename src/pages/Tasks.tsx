@@ -287,8 +287,10 @@ const Tasks = () => {
       return;
     }
 
-    // Partner tasks - complete immediately without verification
-    if (taskCategory === 'partners' || (joinTask && !isOurChannel)) {
+    // Partner tasks - open link and complete immediately without verification
+    if (joinTask && !isOurChannel) {
+      if (taskUrl) window.open(taskUrl, '_blank');
+      
       try {
         await completeTask(taskId);
         toast.success('Task completed! Reward added');
