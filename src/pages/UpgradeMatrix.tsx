@@ -118,7 +118,7 @@ const UpgradeMatrix = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="text-center">
                 <div className="text-2xl font-bold text-neon-green">1,847</div>
-                <div className="text-sm text-muted-foreground">VIRAL Balance</div>
+                <div className="text-sm text-muted-foreground">BOLT Balance</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-neon-blue">×23.5</div>

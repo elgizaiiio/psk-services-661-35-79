@@ -1246,6 +1246,45 @@ export type Database = {
           },
         ]
       }
+      cooling_systems: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          efficiency_boost: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          name_ar: string | null
+          price_bolt: number | null
+          price_ton: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          efficiency_boost?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          name_ar?: string | null
+          price_bolt?: number | null
+          price_ton?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          efficiency_boost?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          name_ar?: string | null
+          price_bolt?: number | null
+          price_ton?: number | null
+        }
+        Relationships: []
+      }
       daily_contest_entries: {
         Row: {
           created_at: string | null
@@ -2169,6 +2208,87 @@ export type Database = {
         }
         Relationships: []
       }
+      mining_images: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+        }
+        Relationships: []
+      }
+      mining_server_types: {
+        Row: {
+          base_income_per_hour: number | null
+          category: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          level: number | null
+          max_level: number | null
+          name: string
+          name_ar: string | null
+          price_bolt: number | null
+          price_ton: number | null
+          tier: string | null
+          upgrade_cost_per_level: number | null
+        }
+        Insert: {
+          base_income_per_hour?: number | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          level?: number | null
+          max_level?: number | null
+          name: string
+          name_ar?: string | null
+          price_bolt?: number | null
+          price_ton?: number | null
+          tier?: string | null
+          upgrade_cost_per_level?: number | null
+        }
+        Update: {
+          base_income_per_hour?: number | null
+          category?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          level?: number | null
+          max_level?: number | null
+          name?: string
+          name_ar?: string | null
+          price_bolt?: number | null
+          price_ton?: number | null
+          tier?: string | null
+          upgrade_cost_per_level?: number | null
+        }
+        Relationships: []
+      }
       notification_queue: {
         Row: {
           attempts: number | null
@@ -3000,6 +3120,65 @@ export type Database = {
           user_count?: number | null
         }
         Relationships: []
+      }
+      user_server_levels: {
+        Row: {
+          cooling_system_id: string | null
+          current_level: number | null
+          experience: number | null
+          id: string
+          purchased_at: string | null
+          server_type_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          cooling_system_id?: string | null
+          current_level?: number | null
+          experience?: number | null
+          id?: string
+          purchased_at?: string | null
+          server_type_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          cooling_system_id?: string | null
+          current_level?: number | null
+          experience?: number | null
+          id?: string
+          purchased_at?: string | null
+          server_type_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_server_levels_cooling_system_id_fkey"
+            columns: ["cooling_system_id"]
+            isOneToOne: false
+            referencedRelation: "cooling_systems"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_server_levels_server_type_id_fkey"
+            columns: ["server_type_id"]
+            isOneToOne: false
+            referencedRelation: "mining_server_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_server_levels_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_server_levels_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_servers: {
         Row: {

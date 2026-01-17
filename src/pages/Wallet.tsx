@@ -13,6 +13,7 @@ import WithdrawModal from '@/components/WithdrawModal';
 import WithdrawSelectModal from '@/components/wallet/WithdrawSelectModal';
 import DepositModal from '@/components/wallet/DepositModal';
 import WalletVerificationModal from '@/components/WalletVerificationModal';
+import RequireServerModal from '@/components/RequireServerModal';
 
 const Wallet: React.FC = () => {
   const { user: tgUser, isLoading: authLoading } = useTelegramAuth();
@@ -27,6 +28,8 @@ const Wallet: React.FC = () => {
   const [verificationOpen, setVerificationOpen] = useState(false);
   const [isWalletVerified, setIsWalletVerified] = useState(false);
   const [pendingWithdrawCurrency, setPendingWithdrawCurrency] = useState<'TON' | 'USDT' | null>(null);
+  const [hasServer, setHasServer] = useState<boolean | null>(null);
+  const [requireServerOpen, setRequireServerOpen] = useState(false);
   useTelegramBackButton();
 
   const boltBalance = user?.token_balance ?? 0;
@@ -39,6 +42,27 @@ const Wallet: React.FC = () => {
       .then(data => setTonPrice(data?.["the-open-network"]?.usd ?? null))
       .catch(() => {});
   }, []);
+
+  // Check if user has a server
+  useEffect(() => {
+    const checkUserServers = async () => {
+      if (!user?.id) return;
+      
+      try {
+        const { count } = await supabase
+          .from('user_servers')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('is_active', true);
+        
+        setHasServer((count || 0) > 0);
+      } catch {
+        setHasServer(false);
+      }
+    };
+
+    checkUserServers();
+  }, [user?.id]);
 
   // Check if current wallet is verified
   useEffect(() => {
@@ -74,6 +98,26 @@ const Wallet: React.FC = () => {
     }
   };
 
+  const handleWithdrawSelect = (currency: 'TON' | 'USDT') => {
+    setWithdrawSelectOpen(false);
+    
+    // First check if wallet is verified
+    if (!isWalletVerified) {
+      setPendingWithdrawCurrency(currency);
+      setVerificationOpen(true);
+      return;
+    }
+    
+    // Then check if user has a server
+    if (!hasServer) {
+      setRequireServerOpen(true);
+      return;
+    }
+    
+    // All checks passed, open withdraw modal
+    setWithdrawModal({ open: true, currency });
+  };
+
   if (!wallet?.account?.address) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-6 pb-24">
@@ -101,7 +145,7 @@ const Wallet: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-28">
+    <div className="min-h-screen bg-background pb-20">
       <Helmet><title>Wallet</title></Helmet>
       <div className="max-w-md mx-auto px-5 pt-8">
         
@@ -261,16 +305,7 @@ const Wallet: React.FC = () => {
       <WithdrawSelectModal
         open={withdrawSelectOpen}
         onClose={() => setWithdrawSelectOpen(false)}
-        onSelectCurrency={(currency) => {
-          setWithdrawSelectOpen(false);
-          // Check if wallet is verified before allowing withdrawal
-          if (!isWalletVerified) {
-            setPendingWithdrawCurrency(currency);
-            setVerificationOpen(true);
-          } else {
-            setWithdrawModal({ open: true, currency });
-          }
-        }}
+        onSelectCurrency={handleWithdrawSelect}
         tonBalance={tonBalance}
         usdtBalance={usdtBalance}
       />
@@ -288,14 +323,25 @@ const Wallet: React.FC = () => {
           onVerified={() => {
             setIsWalletVerified(true);
             setVerificationOpen(false);
-            // Open withdraw modal after verification
+            // After verification, check if user has server
             if (pendingWithdrawCurrency) {
-              setWithdrawModal({ open: true, currency: pendingWithdrawCurrency });
-              setPendingWithdrawCurrency(null);
+              if (!hasServer) {
+                setRequireServerOpen(true);
+                setPendingWithdrawCurrency(null);
+              } else {
+                setWithdrawModal({ open: true, currency: pendingWithdrawCurrency });
+                setPendingWithdrawCurrency(null);
+              }
             }
           }}
         />
       )}
+
+      {/* Require Server Modal */}
+      <RequireServerModal
+        open={requireServerOpen}
+        onClose={() => setRequireServerOpen(false)}
+      />
 
       {/* Withdraw Modal */}
       {withdrawModal && user && (
