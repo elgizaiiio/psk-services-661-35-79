@@ -13,7 +13,6 @@ import WithdrawModal from '@/components/WithdrawModal';
 import WithdrawSelectModal from '@/components/wallet/WithdrawSelectModal';
 import DepositModal from '@/components/wallet/DepositModal';
 import WalletVerificationModal from '@/components/WalletVerificationModal';
-import RequireServerModal from '@/components/RequireServerModal';
 
 const Wallet: React.FC = () => {
   const { user: tgUser, isLoading: authLoading } = useTelegramAuth();
@@ -28,8 +27,6 @@ const Wallet: React.FC = () => {
   const [verificationOpen, setVerificationOpen] = useState(false);
   const [isWalletVerified, setIsWalletVerified] = useState(false);
   const [pendingWithdrawCurrency, setPendingWithdrawCurrency] = useState<'TON' | 'USDT' | null>(null);
-  const [hasServer, setHasServer] = useState<boolean | null>(null);
-  const [requireServerOpen, setRequireServerOpen] = useState(false);
   useTelegramBackButton();
 
   const boltBalance = user?.token_balance ?? 0;
@@ -64,27 +61,6 @@ const Wallet: React.FC = () => {
 
     checkWalletVerification();
   }, [user?.id, wallet?.account?.address]);
-
-  // Check if user has any server
-  useEffect(() => {
-    const checkUserServers = async () => {
-      if (!user?.id) return;
-      
-      try {
-        const { data, error } = await supabase
-          .from('user_server_levels')
-          .select('id')
-          .eq('user_id', user.id)
-          .limit(1);
-        
-        setHasServer(data && data.length > 0);
-      } catch {
-        setHasServer(false);
-      }
-    };
-
-    checkUserServers();
-  }, [user?.id]);
 
   const isLoading = authLoading || miningLoading;
   const totalUSD = usdtBalance + (tonBalance * (tonPrice || 0));
@@ -287,12 +263,7 @@ const Wallet: React.FC = () => {
         onClose={() => setWithdrawSelectOpen(false)}
         onSelectCurrency={(currency) => {
           setWithdrawSelectOpen(false);
-          // First check if user has a server
-          if (!hasServer) {
-            setRequireServerOpen(true);
-            return;
-          }
-          // Then check if wallet is verified
+          // Check if wallet is verified before allowing withdrawal
           if (!isWalletVerified) {
             setPendingWithdrawCurrency(currency);
             setVerificationOpen(true);
@@ -302,12 +273,6 @@ const Wallet: React.FC = () => {
         }}
         tonBalance={tonBalance}
         usdtBalance={usdtBalance}
-      />
-
-      {/* Require Server Modal */}
-      <RequireServerModal
-        isOpen={requireServerOpen}
-        onClose={() => setRequireServerOpen(false)}
       />
 
       {/* Wallet Verification Modal */}
