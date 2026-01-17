@@ -70,7 +70,7 @@ const BottomNavigation = () => {
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
     >
       <div className="bg-card border-t border-border">
-        <div className="flex items-center justify-around py-2 pb-[env(safe-area-inset-bottom,8px)] max-w-md mx-auto">
+        <div className="flex items-center justify-around py-2 pb-[env(safe-area-inset-bottom,0px)] max-w-md mx-auto">
           {navItems.map((item, index) => renderNavItem(item, index))}
         </div>
       </div>

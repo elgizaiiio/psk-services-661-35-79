@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
-import { Zap, Snowflake, TrendingUp, ArrowLeft } from 'lucide-react';
+import { Zap, Snowflake, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -26,6 +26,7 @@ interface ServerType {
   base_income_per_hour: number;
   upgrade_cost_per_level: number;
   price_bolt: number;
+  price_ton: number;
   display_order: number;
 }
 
@@ -42,6 +43,7 @@ interface CoolingSystem {
   image_url: string | null;
   efficiency_boost: number;
   price_bolt: number;
+  price_ton: number;
 }
 
 const tierColors: Record<string, { bg: string; border: string; icon: string }> = {
@@ -106,10 +108,12 @@ const ServersBoost = () => {
     return level?.current_level || 0;
   };
 
-  const getUpgradeCost = (server: ServerType): number => {
+  // Get upgrade cost in TON
+  const getUpgradeCostTon = (server: ServerType): number => {
     const currentLevel = getUserLevel(server.id);
-    if (currentLevel === 0) return server.price_bolt;
-    return server.upgrade_cost_per_level * (currentLevel + 1);
+    if (currentLevel === 0) return server.price_ton || 0.1;
+    // Upgrade cost increases per level
+    return (server.price_ton || 0.1) * (currentLevel + 1) * 0.5;
   };
 
   const getIncomePerHour = (server: ServerType): number => {
@@ -121,9 +125,11 @@ const ServersBoost = () => {
   const handleUpgrade = async (server: ServerType) => {
     if (!user) return;
     
-    const cost = getUpgradeCost(server);
-    if ((user.token_balance || 0) < cost) {
-      toast.error('رصيد غير كافٍ');
+    const costTon = getUpgradeCostTon(server);
+    const userTonBalance = (user as any).ton_balance || 0;
+    
+    if (userTonBalance < costTon) {
+      toast.error('Insufficient TON balance');
       return;
     }
 
@@ -148,18 +154,16 @@ const ServersBoost = () => {
           .eq('server_type_id', server.id);
       }
 
-      // Deduct balance
+      // Deduct TON balance
       await supabase
         .from('bolt_users')
-        .update({ token_balance: (user.token_balance || 0) - cost })
+        .update({ ton_balance: userTonBalance - costTon })
         .eq('id', user.id);
 
-      // Refresh page to get updated data
+      toast.success(currentLevel === 0 ? 'Server purchased!' : 'Upgraded!');
       window.location.reload();
-      
-      toast.success(currentLevel === 0 ? 'تم شراء السيرفر! 🎉' : 'تمت الترقية! ⬆️');
     } catch (error) {
-      toast.error('حدث خطأ');
+      toast.error('An error occurred');
     } finally {
       setUpgrading(null);
     }
@@ -172,7 +176,7 @@ const ServersBoost = () => {
     const level = getUserLevel(server.id);
     const colors = tierColors[server.tier] || tierColors.basic;
     const income = getIncomePerHour(server);
-    const cost = getUpgradeCost(server);
+    const costTon = getUpgradeCostTon(server);
     const isMaxLevel = level >= server.max_level;
 
     return (
@@ -217,19 +221,19 @@ const ServersBoost = () => {
 
           {/* Server name */}
           <h3 className="font-semibold text-sm text-foreground mb-1">
-            {server.name_ar || server.name}
+            {server.name}
           </h3>
 
           {/* Income */}
           <div className="flex items-center gap-1 text-xs text-muted-foreground mb-3">
             <TrendingUp className="w-3 h-3" />
-            <span>الدخل: {income}/ساعة</span>
+            <span>Income: {income}/hr</span>
           </div>
 
-          {/* Upgrade cost */}
-          <div className="flex items-center justify-center gap-1 text-sm font-bold text-primary">
-            <Zap className="w-4 h-4" />
-            {isMaxLevel ? 'MAX' : cost.toLocaleString()}
+          {/* Upgrade cost in TON */}
+          <div className="flex items-center justify-center gap-1 text-sm font-bold text-blue-400">
+            <img src="/images/currency/ton.png" alt="TON" className="w-4 h-4" />
+            {isMaxLevel ? 'MAX' : costTon.toFixed(2)}
           </div>
         </Card>
       </motion.div>
@@ -261,9 +265,9 @@ const ServersBoost = () => {
           <BackButton />
           <h1 className="text-xl font-bold text-foreground">Boost</h1>
           
-          <div className="ml-auto flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full">
-            <Zap className="w-4 h-4 text-primary" />
-            <span className="font-bold text-sm">{(user?.token_balance || 0).toLocaleString()}</span>
+          <div className="ml-auto flex items-center gap-2 bg-blue-500/10 px-3 py-1.5 rounded-full">
+            <img src="/images/currency/ton.png" alt="TON" className="w-4 h-4" />
+            <span className="font-bold text-sm text-blue-400">{((user as any)?.ton_balance || 0).toFixed(2)}</span>
           </div>
         </div>
 
@@ -291,7 +295,7 @@ const ServersBoost = () => {
         <div className="px-4 mt-6">
           <div className="flex items-center gap-2 mb-4">
             <Snowflake className="w-5 h-5 text-cyan-400" />
-            <h2 className="text-lg font-bold text-foreground">أنظمة التبريد</h2>
+            <h2 className="text-lg font-bold text-foreground">Cooling Systems</h2>
           </div>
 
           <div className="space-y-3">
@@ -305,16 +309,16 @@ const ServersBoost = () => {
                     <Snowflake className="w-5 h-5 text-cyan-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-sm">{cooling.name_ar || cooling.name}</h3>
+                    <h3 className="font-semibold text-sm">{cooling.name}</h3>
                     <p className="text-xs text-muted-foreground">
-                      +{(cooling.efficiency_boost * 100).toFixed(0)}% كفاءة
+                      +{(cooling.efficiency_boost * 100).toFixed(0)}% efficiency
                     </p>
                   </div>
                 </div>
                 
                 <Button size="sm" variant="outline" className="border-cyan-500/30">
-                  <Zap className="w-3 h-3 mr-1" />
-                  {cooling.price_bolt}
+                  <img src="/images/currency/ton.png" alt="TON" className="w-3 h-3 mr-1" />
+                  {(cooling.price_ton || 0.5).toFixed(2)}
                 </Button>
               </Card>
             ))}
