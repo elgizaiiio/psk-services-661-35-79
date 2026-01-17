@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -87,9 +87,9 @@ const MiningNew = () => {
   const handleStartMining = async () => {
     try {
       await startMining();
-      toast.success('Mining started successfully!');
+      toast.success('بدأ التعدين بنجاح! ⛏️');
     } catch (error) {
-      toast.error('Failed to start mining');
+      toast.error('فشل بدء التعدين');
     }
   };
 
@@ -104,20 +104,17 @@ const MiningNew = () => {
 
       if (error) throw error;
 
-      toast.success(`Claimed ${tokensEarned} BOLT!`);
+      // Refresh page to get updated data
       window.location.reload();
+      toast.success(`تم المطالبة بـ ${tokensEarned} BOLT! 🎉`);
     } catch (error) {
-      toast.error('Failed to claim rewards');
+      toast.error('فشل المطالبة بالمكافآت');
     } finally {
       setIsClaiming(false);
     }
   };
 
   const userLevel = Math.floor((user?.token_balance || 0) / 10000) + 1;
-
-  // Calculate multi-currency earnings
-  const usdtEarned = tokensEarned * 0.001;
-  const tonEarned = tokensEarned * 0.0001;
 
   return (
     <>
@@ -133,12 +130,12 @@ const MiningNew = () => {
               key={i}
               className="absolute w-1 h-1 bg-primary/30 rounded-full"
               initial={{ 
-                x: Math.random() * (typeof window !== 'undefined' ? window.innerWidth : 400), 
+                x: Math.random() * window.innerWidth, 
                 y: -10,
                 opacity: 0.5 
               }}
               animate={{ 
-                y: (typeof window !== 'undefined' ? window.innerHeight : 800) + 10,
+                y: window.innerHeight + 10,
                 opacity: 0
               }}
               transition={{ 
@@ -231,7 +228,7 @@ const MiningNew = () => {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-primary" />
-                      <span className="text-sm text-muted-foreground">Time Remaining</span>
+                      <span className="text-sm text-muted-foreground">الوقت المتبقي</span>
                     </div>
                     <span className="font-mono font-bold text-foreground">{timeRemaining || '24:00:00'}</span>
                   </div>
@@ -239,7 +236,7 @@ const MiningNew = () => {
                   <Progress value={progress} className="h-3 mb-3" />
                   
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">Earned</span>
+                    <span className="text-muted-foreground">المكتسب</span>
                     <div className="flex items-center gap-1">
                       <Zap className="w-4 h-4 text-primary" />
                       <span className="font-bold text-primary">+{tokensEarned.toLocaleString()} BOLT</span>
@@ -249,7 +246,7 @@ const MiningNew = () => {
 
                 {/* Multi-currency earnings */}
                 <Card className="p-4 bg-gradient-to-br from-card to-card/50 border-primary/20">
-                  <h3 className="text-sm font-semibold mb-3 text-muted-foreground">Mined Currencies</h3>
+                  <h3 className="text-sm font-semibold mb-3 text-muted-foreground">العملات المُعدَّنة</h3>
                   <div className="grid grid-cols-3 gap-3">
                     <div className="text-center p-3 bg-primary/10 rounded-lg">
                       <p className="text-xs text-muted-foreground">BOLT</p>
@@ -257,11 +254,11 @@ const MiningNew = () => {
                     </div>
                     <div className="text-center p-3 bg-green-500/10 rounded-lg">
                       <p className="text-xs text-muted-foreground">USDT</p>
-                      <p className="font-bold text-green-500">+{usdtEarned.toFixed(4)}</p>
+                      <p className="font-bold text-green-500">+{(tokensEarned * 0.001).toFixed(4)}</p>
                     </div>
                     <div className="text-center p-3 bg-blue-500/10 rounded-lg">
                       <p className="text-xs text-muted-foreground">TON</p>
-                      <p className="font-bold text-blue-500">+{tonEarned.toFixed(5)}</p>
+                      <p className="font-bold text-blue-500">+{(tokensEarned * 0.0001).toFixed(5)}</p>
                     </div>
                   </div>
                 </Card>
@@ -282,12 +279,12 @@ const MiningNew = () => {
                   ) : canClaim ? (
                     <>
                       <Gift className="w-5 h-5 mr-2" />
-                      Claim
+                      مطالبة
                     </>
                   ) : (
                     <>
                       <Clock className="w-5 h-5 mr-2" />
-                      Mining in progress...
+                      جاري التعدين...
                     </>
                   )}
                 </Button>
@@ -303,7 +300,7 @@ const MiningNew = () => {
                 className="w-full h-14 text-lg font-bold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
               >
                 <Zap className="w-5 h-5 mr-2" />
-                Start Mining (24h)
+                ابدأ التعدين (24 ساعة)
               </Button>
             </motion.div>
           )}
@@ -315,7 +312,7 @@ const MiningNew = () => {
             className="w-full h-12 border-primary/30 hover:bg-primary/10"
           >
             <Sparkles className="w-4 h-4 mr-2" />
-            Boost Mining Power
+            عزز قوة التعدين
           </Button>
         </div>
       </div>

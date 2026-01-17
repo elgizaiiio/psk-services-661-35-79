@@ -59,6 +59,3 @@ verify_jwt = false
 
 [functions.smart-user-notifications]
 verify_jwt = false
-
-[functions.send-usdt-withdrawal-notice]
-verify_jwt = false
