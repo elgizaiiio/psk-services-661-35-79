@@ -25,7 +25,8 @@ const Skins = lazy(() => import("./pages/Skins"));
 const AiGenerator = lazy(() => import("./pages/AiGenerator"));
 const Profile = lazy(() => import("./pages/Profile"));
 const Wallet = lazy(() => import("./pages/Wallet"));
-const Mining = lazy(() => import("./pages/Mining"));
+const Mining = lazy(() => import("./pages/MiningNew"));
+const ServersBoost = lazy(() => import("./pages/ServersBoost"));
 const Invite = lazy(() => import("./pages/Invite"));
 const PremiumPackages = lazy(() => import("./pages/PremiumPackages"));
 const EliteAddOns = lazy(() => import("./pages/EliteAddOns"));
@@ -194,6 +195,7 @@ const App = () => (
                               <Routes>
                                 <Route path="/" element={<Index />} />
                                 <Route path="/mining" element={<Mining />} />
+                                <Route path="/boost" element={<ServersBoost />} />
                                 <Route path="/apps" element={<Apps />} />
                                 <Route path="/ai-generator" element={<AiGenerator />} />
                                 <Route path="/profile" element={<Profile />} />

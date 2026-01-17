@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, ListTodo, Wallet, Users, RotateCw } from 'lucide-react';
+import { Home, ListTodo, Users, RotateCw, Pickaxe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 
@@ -13,9 +13,9 @@ const BottomNavigation = () => {
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
     { icon: ListTodo, label: 'Tasks', path: '/tasks' },
+    { icon: Pickaxe, label: 'Mining', path: '/mining' },
     { icon: RotateCw, label: 'Spin', path: '/spin' },
     { icon: Users, label: 'Invite', path: '/invite' },
-    { icon: Wallet, label: 'Wallet', path: '/wallet' },
   ];
 
   const handleNavigation = (path: string) => {
@@ -64,13 +64,13 @@ const BottomNavigation = () => {
 
   return (
     <motion.div 
-      className="fixed bottom-0 left-0 right-0 z-50 px-4 pb-4"
+      className="fixed bottom-0 left-0 right-0 z-50"
       initial={{ y: 100 }}
       animate={{ y: 0 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
     >
-      <div className="bg-card border border-border rounded-2xl max-w-md mx-auto">
-        <div className="flex items-center justify-around py-2">
+      <div className="bg-card border-t border-border">
+        <div className="flex items-center justify-around py-2 pb-[env(safe-area-inset-bottom,8px)] max-w-md mx-auto">
           {navItems.map((item, index) => renderNavItem(item, index))}
         </div>
       </div>
