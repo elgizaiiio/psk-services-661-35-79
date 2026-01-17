@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { Loader2, X, Zap, Ticket } from 'lucide-react';
 import { motion } from 'motion/react';
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
-import { BoltIcon, ViralIcon } from '@/components/ui/currency-icons';
+import { BoltIcon } from '@/components/ui/currency-icons';
 
 interface LimitedOffer {
   id: string;
@@ -26,12 +26,12 @@ interface LimitedOfferModalProps {
   onClose: () => void;
 }
 
-// Bundle content details
-const bundleContents: Record<number, { bolt: number; tickets: number; viral: number }> = {
-  1.5: { bolt: 5000, tickets: 10, viral: 50 },
-  3: { bolt: 15000, tickets: 30, viral: 200 },
-  5: { bolt: 50000, tickets: 100, viral: 500 },
-  10: { bolt: 150000, tickets: 500, viral: 2000 },
+// Bundle content details (removed viral)
+const bundleContents: Record<number, { bolt: number; tickets: number }> = {
+  1.5: { bolt: 5000, tickets: 10 },
+  3: { bolt: 15000, tickets: 30 },
+  5: { bolt: 50000, tickets: 100 },
+  10: { bolt: 150000, tickets: 500 },
 };
 
 export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, onClose }) => {
@@ -82,10 +82,10 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
     try {
       const content = bundleContents[selectedOffer.price_ton] || bundleContents[1.5];
       
-      // Update user balances
+      // Update user balances (removed viral)
       const { data: userData } = await supabase
         .from('bolt_users')
-        .select('token_balance, viral_balance')
+        .select('token_balance')
         .eq('id', user.id)
         .single();
 
@@ -94,7 +94,6 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
           .from('bolt_users')
           .update({
             token_balance: (userData.token_balance || 0) + content.bolt,
-            viral_balance: (userData.viral_balance || 0) + content.viral,
           })
           .eq('id', user.id);
       }
@@ -113,7 +112,6 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
         daily_bolt_yield: selectedOffer.daily_bolt_yield,
         daily_usdt_yield: selectedOffer.daily_usdt_yield,
         daily_ton_yield: selectedOffer.daily_ton_yield,
-        daily_viral_yield: content.viral / 10,
         is_active: true,
       });
 
@@ -139,9 +137,9 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
           <DialogHeader className="p-3 pb-2 border-b border-border">
             <div className="flex items-center justify-between">
               <div>
-                <DialogTitle className="text-base font-bold text-foreground">Bundle Packages</DialogTitle>
+                <DialogTitle className="text-base font-bold text-foreground">Starter Bundles</DialogTitle>
                 <p className="text-[10px] text-primary mt-0.5">
-                  Selected from 30,000 users - 50% OFF
+                  Special offer - 50% OFF
                 </p>
               </div>
               <button 
@@ -196,7 +194,7 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
                         <span className="text-[9px] text-muted-foreground whitespace-nowrap">{remaining} left</span>
                       </div>
 
-                      {/* Contents */}
+                      {/* Contents (removed viral) */}
                       <div className="space-y-1 mb-2 text-[10px]">
                         <div className="flex items-center gap-1">
                           <Zap className="w-3 h-3 text-sky-500" />
@@ -209,10 +207,6 @@ export const LimitedOfferModal: React.FC<LimitedOfferModalProps> = ({ isOpen, on
                         <div className="flex items-center gap-1">
                           <Ticket className="w-3 h-3 text-purple-500" />
                           <span className="text-purple-500">{content.tickets} Tickets</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <ViralIcon size={12} />
-                          <span className="text-pink-500">{content.viral} VIRAL</span>
                         </div>
                       </div>
 

@@ -179,50 +179,13 @@ const Index = () => {
   };
 
   return (
-    <PageWrapper className="min-h-screen bg-background pb-28">
+    <PageWrapper className="min-h-screen bg-background pb-20">
       <Helmet><title>Bolt Mining</title></Helmet>
       <DailyStreakModal />
       <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
 
-      <div className="max-w-md mx-auto px-4 pt-6 space-y-4">
+      <div className="max-w-md mx-auto px-4 pt-4 space-y-3">
         
-        {/* Header */}
-        <FadeUp>
-          <div className="flex items-center justify-between py-2">
-            <motion.button 
-              onClick={() => handleNavigate('/profile')} 
-              whileTap={{ scale: 0.95 }} 
-              className="flex items-center gap-3"
-            >
-              <UserAvatar user={telegramUser} size="sm" />
-              <div className="text-left">
-                <p className="text-sm font-medium text-foreground">{telegramUser?.first_name}</p>
-                <p className="text-[10px] text-muted-foreground">Welcome back</p>
-              </div>
-            </motion.button>
-            {!isConnected ? (
-              <Button 
-                onClick={() => connectWallet()} 
-                disabled={isConnecting} 
-                size="sm" 
-                variant="outline" 
-                className="h-9 px-4 text-xs rounded-full gap-1.5"
-              >
-                <Wallet className="w-3.5 h-3.5" />
-                Connect
-              </Button>
-            ) : (
-              <motion.button 
-                onClick={() => handleNavigate('/wallet')} 
-                whileTap={{ scale: 0.95 }}
-                className="h-9 px-4 rounded-full bg-primary/10 text-primary text-xs font-medium flex items-center gap-1.5"
-              >
-                <Wallet className="w-3.5 h-3.5" /> Wallet
-              </motion.button>
-            )}
-          </div>
-        </FadeUp>
-
         {/* Animated Promo Banner */}
         <FadeUp delay={0.1}>
           <PromoBanner />
