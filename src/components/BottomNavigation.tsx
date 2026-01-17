@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, ListTodo, Users, RotateCw } from 'lucide-react';
+import { Home, ListTodo, Users, RotateCw, Wallet } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 
@@ -15,6 +15,7 @@ const BottomNavigation = () => {
     { icon: ListTodo, label: 'Tasks', path: '/tasks' },
     { icon: RotateCw, label: 'Spin', path: '/spin' },
     { icon: Users, label: 'Invite', path: '/invite' },
+    { icon: Wallet, label: 'Wallet', path: '/wallet' },
   ];
 
   const handleNavigation = (path: string) => {
@@ -37,7 +38,7 @@ const BottomNavigation = () => {
         key={item.label}
         onClick={() => handleNavigation(item.path)}
         className={cn(
-          "flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-colors relative",
+          "flex flex-col items-center gap-1 py-2 px-3 rounded-xl transition-colors relative",
           isActive 
             ? "text-primary" 
             : "text-muted-foreground"

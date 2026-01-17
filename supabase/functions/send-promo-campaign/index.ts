@@ -44,21 +44,24 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { campaign_type } = await req.json();
-    console.log(`Starting campaign: ${campaign_type}`);
+    const { campaign_type, batch_size = 500, offset = 0 } = await req.json();
+    console.log(`Starting campaign: ${campaign_type}, batch: ${batch_size}, offset: ${offset}`);
 
     let sentCount = 0;
     let updatedCount = 0;
+    let failedCount = 0;
 
     if (campaign_type === 'withdraw_5_usdt') {
-      // Get all users
+      // Get batch of users - NO filtering by notifications_enabled
       const { data: users, error } = await supabase
         .from('bolt_users')
         .select('id, telegram_id, first_name, usdt_balance')
         .not('telegram_id', 'is', null)
-        .neq('bot_blocked', true);
+        .range(offset, offset + batch_size - 1);
 
       if (error) throw error;
+
+      console.log(`Processing ${users?.length || 0} users`);
 
       for (const user of users || []) {
         // Give $5 USDT to users who have less than $5
@@ -85,19 +88,39 @@ Withdraw your earnings now and enjoy your rewards!
 ⏰ Don't wait - claim your money today!`;
 
         const sent = await sendTelegramMessage(user.telegram_id, message);
-        if (sent) sentCount++;
+        if (sent) {
+          sentCount++;
+        } else {
+          failedCount++;
+        }
 
         // Small delay to avoid rate limits
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 35));
       }
 
+      const hasMore = (users?.length || 0) === batch_size;
+      
+      console.log(`Batch complete: ${sentCount} sent, ${failedCount} failed, ${updatedCount} updated`);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          sent: sentCount,
+          failed: failedCount,
+          updated: updatedCount,
+          hasMore,
+          nextOffset: hasMore ? offset + batch_size : null
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
     } else if (campaign_type === 'servers_spin_promo') {
-      // Get all users for servers and spin promotion
+      // Get batch of users - NO filtering
       const { data: users, error } = await supabase
         .from('bolt_users')
         .select('id, telegram_id, first_name')
         .not('telegram_id', 'is', null)
-        .neq('bot_blocked', true);
+        .range(offset, offset + batch_size - 1);
 
       if (error) throw error;
 
@@ -121,20 +144,28 @@ Spin daily for a chance to win real crypto rewards!
 
         const sent = await sendTelegramMessage(user.telegram_id, message);
         if (sent) sentCount++;
+        else failedCount++;
 
-        await new Promise(r => setTimeout(r, 50));
+        await new Promise(r => setTimeout(r, 35));
       }
+
+      const hasMore = (users?.length || 0) === batch_size;
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          sent: sentCount,
+          failed: failedCount,
+          hasMore,
+          nextOffset: hasMore ? offset + batch_size : null
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log(`Campaign complete: ${sentCount} messages sent, ${updatedCount} balances updated`);
-
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        sent: sentCount,
-        updated: updatedCount
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ success: false, error: 'Unknown campaign type' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
