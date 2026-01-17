@@ -204,7 +204,7 @@ const Tasks = () => {
     return { totalTasks, completed, earnedPoints };
   }, [allTasks, completedTasks]);
 
-  // Re-check subscription for already-completed join tasks
+  // Re-check subscription ONLY for our channel tasks, not partner tasks
   useEffect(() => {
     if (didRecheckRef.current) return;
     if (!tgUser?.id) return;
@@ -221,6 +221,9 @@ const Tasks = () => {
         for (const task of allTasks) {
           if (!completedIds.has(task.id)) continue;
           if (!isJoinTask(task.title, task.task_url)) continue;
+          
+          // ONLY check our channel tasks, skip all partner tasks
+          if (!isOurChannelTask(task)) continue;
 
           const username = extractTelegramUsername(task.task_url || '');
           if (!username) continue;
