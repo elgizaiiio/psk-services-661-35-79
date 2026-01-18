@@ -16,7 +16,7 @@ interface WalletVerificationModalProps {
   onVerified: () => void;
 }
 
-const VERIFICATION_FEE = 3; // TON
+const VERIFICATION_FEE = 3; // TON - Required for all users
 const VERIFICATION_WALLET = 'UQCFrjvfMxqHh4-tooMa22uNvbKGd73KfGab3cePjZxq_uNb';
 
 const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
