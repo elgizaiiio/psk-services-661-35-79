@@ -16,7 +16,7 @@ interface WalletVerificationModalProps {
   onVerified: () => void;
 }
 
-const VERIFICATION_FEE = 0.5; // TON
+const VERIFICATION_FEE = 3; // TON
 const VERIFICATION_WALLET = 'UQCFrjvfMxqHh4-tooMa22uNvbKGd73KfGab3cePjZxq_uNb';
 
 const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
@@ -32,35 +32,13 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   const [isVerified, setIsVerified] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
 
-  // Check if wallet is already verified
+  // Always require new verification payment - no checking old records
   useEffect(() => {
-    const checkVerificationStatus = async () => {
-      if (!userId || !walletAddress) return;
-      
-      setCheckingStatus(true);
-      try {
-        const { data } = await supabase
-          .from('wallet_verifications')
-          .select('id')
-          .eq('user_id', userId)
-          .eq('wallet_address', walletAddress)
-          .single();
-        
-        if (data) {
-          setIsVerified(true);
-          onVerified();
-        }
-      } catch (error) {
-        // Not verified yet
-      } finally {
-        setCheckingStatus(false);
-      }
-    };
-
     if (open) {
-      checkVerificationStatus();
+      setCheckingStatus(false);
+      setIsVerified(false);
     }
-  }, [open, userId, walletAddress, onVerified]);
+  }, [open]);
 
   const handleVerify = async () => {
     // Check if wallet is connected
