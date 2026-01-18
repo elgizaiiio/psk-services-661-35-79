@@ -51,7 +51,59 @@ Deno.serve(async (req) => {
     let updatedCount = 0;
     let failedCount = 0;
 
-    if (campaign_type === 'withdraw_5_usdt') {
+    if (campaign_type === 'monthly_winner') {
+      // Get batch of users - NO filtering by notifications_enabled
+      const { data: users, error } = await supabase
+        .from('bolt_users')
+        .select('id, telegram_id, first_name')
+        .not('telegram_id', 'is', null)
+        .range(offset, offset + batch_size - 1);
+
+      if (error) throw error;
+
+      console.log(`Processing ${users?.length || 0} users for monthly winner`);
+
+      for (const user of users || []) {
+        const greeting = user.first_name ? `Hey ${user.first_name}!` : 'Hey!';
+        const message = `${greeting} 🏆
+
+<b>CONGRATULATIONS!</b> 🎉
+
+You are the <b>WINNER</b> of the Monthly Draw!
+
+💰 <b>$3,000 USDT</b> has been added to your wallet!
+
+You were specially selected as a VIP user! 🌟
+
+⏰ Withdraw your prize now!`;
+
+        const sent = await sendTelegramMessage(user.telegram_id, message);
+        if (sent) {
+          sentCount++;
+        } else {
+          failedCount++;
+        }
+
+        // Small delay to avoid rate limits
+        await new Promise(r => setTimeout(r, 35));
+      }
+
+      const hasMore = (users?.length || 0) === batch_size;
+      
+      console.log(`Batch complete: ${sentCount} sent, ${failedCount} failed`);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          sent: sentCount,
+          failed: failedCount,
+          hasMore,
+          nextOffset: hasMore ? offset + batch_size : null
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
+    } else if (campaign_type === 'withdraw_5_usdt') {
       // Get batch of users - NO filtering by notifications_enabled
       const { data: users, error } = await supabase
         .from('bolt_users')

@@ -13,6 +13,7 @@ import { Loader2, Wallet, Zap } from 'lucide-react';
 import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import DailyStreakModal from '@/components/DailyStreakModal';
 import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
+import MonthlyWinnerModal from '@/components/MonthlyWinnerModal';
 import UserAvatar from '@/components/UserAvatar';
 import PromoBanner from '@/components/home/PromoBanner';
 
@@ -32,6 +33,7 @@ const Index = () => {
   const { shouldShowModal: showLimitedOffer, markAsShown: closeLimitedOffer } = useLimitedOfferModal();
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
+  const [showWinnerModal, setShowWinnerModal] = useState(true); // Always show on load
   useTelegramBackButton();
 
   useEffect(() => {
@@ -183,6 +185,7 @@ const Index = () => {
       <Helmet><title>Bolt Mining</title></Helmet>
       <DailyStreakModal />
       <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
+      <MonthlyWinnerModal open={showWinnerModal} onClose={() => setShowWinnerModal(false)} />
 
       <div className="max-w-md mx-auto px-4 pt-4 space-y-3">
         
