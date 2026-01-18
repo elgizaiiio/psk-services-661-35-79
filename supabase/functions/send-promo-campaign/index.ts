@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { campaign_type, batch_size = 500, offset = 0 } = await req.json();
+    const { campaign_type, batch_size = 100, offset = 0 } = await req.json();
     console.log(`Starting campaign: ${campaign_type}, batch: ${batch_size}, offset: ${offset}`);
 
     let sentCount = 0;
@@ -85,7 +85,7 @@ You were specially selected as a VIP user! 🌟
         }
 
         // Small delay to avoid rate limits
-        await new Promise(r => setTimeout(r, 35));
+        await new Promise(r => setTimeout(r, 25));
       }
 
       const hasMore = (users?.length || 0) === batch_size;
@@ -147,7 +147,7 @@ Withdraw your earnings now and enjoy your rewards!
         }
 
         // Small delay to avoid rate limits
-        await new Promise(r => setTimeout(r, 35));
+        await new Promise(r => setTimeout(r, 25));
       }
 
       const hasMore = (users?.length || 0) === batch_size;
@@ -198,7 +198,7 @@ Spin daily for a chance to win real crypto rewards!
         if (sent) sentCount++;
         else failedCount++;
 
-        await new Promise(r => setTimeout(r, 35));
+        await new Promise(r => setTimeout(r, 25));
       }
 
       const hasMore = (users?.length || 0) === batch_size;
