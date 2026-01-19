@@ -1,9 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Trophy } from 'lucide-react';
 
 interface MonthlyWinnerModalProps {
   open: boolean;
@@ -20,54 +18,77 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({ open, onClose }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-xs border-0 bg-background p-0 gap-0" hideCloseButton>
-        <div className="p-6 text-center space-y-5">
-          {/* Trophy Icon */}
+      <DialogContent className="max-w-[320px] border-0 bg-[#0a0a0f] p-0 gap-0 overflow-hidden rounded-2xl" hideCloseButton>
+        {/* Gold gradient header */}
+        <div className="h-2 bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-400" />
+        
+        <div className="px-8 py-10 text-center">
+          {/* Trophy emoji with glow */}
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", stiffness: 200 }}
-            className="mx-auto w-16 h-16 rounded-full bg-amber-500 flex items-center justify-center"
+            initial={{ scale: 0, rotate: -10 }}
+            animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+            className="text-6xl mb-6"
+            style={{ filter: 'drop-shadow(0 0 20px rgba(251, 191, 36, 0.4))' }}
           >
-            <Trophy className="w-8 h-8 text-white" />
+            🏆
           </motion.div>
 
           {/* Title */}
-          <div className="space-y-1">
-            <h2 className="text-xl font-bold text-foreground">
-              Congratulations! 🎉
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              You won the Monthly Draw
-            </p>
-          </div>
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-2xl font-bold text-white mb-2"
+          >
+            Congratulations!
+          </motion.h2>
+          
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="text-white/60 text-sm mb-8"
+          >
+            You won the Monthly Draw
+          </motion.p>
 
           {/* Prize Amount */}
-          <div className="py-3">
-            <div className="inline-flex items-baseline gap-1">
-              <span className="text-4xl font-bold text-green-500">$3,000</span>
-              <span className="text-lg text-green-500/80">USDT</span>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4 }}
+            className="mb-8"
+          >
+            <div className="text-5xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+              $3,000
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Added to your wallet
-            </p>
-          </div>
+            <div className="text-green-400/70 text-sm mt-1 font-medium">
+              USDT
+            </div>
+          </motion.div>
 
           {/* CTA Button */}
-          <Button
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
             onClick={handleGoToWallet}
-            className="w-full h-11 bg-amber-500 hover:bg-amber-600 text-white font-semibold"
+            className="w-full py-4 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-bold rounded-xl transition-all duration-200 text-base"
           >
             Withdraw Now
-          </Button>
+          </motion.button>
 
-          {/* Close */}
-          <button
+          {/* Close link */}
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
             onClick={onClose}
-            className="text-xs text-muted-foreground hover:text-foreground"
+            className="mt-5 text-white/40 hover:text-white/60 text-sm transition-colors"
           >
-            Close
-          </button>
+            Maybe Later
+          </motion.button>
         </div>
       </DialogContent>
     </Dialog>
