@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useNavigate } from 'react-router-dom';
+import monthlyWinnerImg from '@/assets/monthly-winner.png';
 
 interface MonthlyWinnerModalProps {
   open: boolean;
@@ -18,52 +19,48 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({ open, onClose }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-[320px] border-0 bg-[#0a0a0f] p-0 gap-0 overflow-hidden rounded-2xl" hideCloseButton>
-        {/* Gold gradient header */}
-        <div className="h-2 bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-400" />
+      <DialogContent className="max-w-[320px] border border-border bg-background p-0 gap-0 overflow-hidden rounded-2xl" hideCloseButton>
+        {/* Image */}
+        <motion.img
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          src={monthlyWinnerImg}
+          alt="Monthly Winner"
+          className="w-full h-44 object-cover"
+        />
         
-        <div className="px-8 py-10 text-center">
-          {/* Trophy emoji with glow */}
-          <motion.div
-            initial={{ scale: 0, rotate: -10 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
-            className="text-6xl mb-6"
-            style={{ filter: 'drop-shadow(0 0 20px rgba(251, 191, 36, 0.4))' }}
-          >
-            🏆
-          </motion.div>
-
+        <div className="p-6 text-center">
           {/* Title */}
           <motion.h2
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="text-2xl font-bold text-white mb-2"
+            transition={{ delay: 0.1 }}
+            className="text-xl font-bold text-foreground mb-2"
           >
-            Congratulations!
+            Monthly Winner
           </motion.h2>
           
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-white/60 text-sm mb-8"
+            transition={{ delay: 0.2 }}
+            className="text-muted-foreground text-sm mb-6"
           >
-            You won the Monthly Draw
+            You have been selected as this month's winner
           </motion.p>
 
           {/* Prize Amount */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="mb-8"
+            transition={{ delay: 0.3 }}
+            className="mb-6"
           >
-            <div className="text-5xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">
+            <div className="text-4xl font-bold text-green-500">
               $3,000
             </div>
-            <div className="text-green-400/70 text-sm mt-1 font-medium">
+            <div className="text-green-500/70 text-sm mt-1">
               USDT
             </div>
           </motion.div>
@@ -72,9 +69,9 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({ open, onClose }
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+            transition={{ delay: 0.4 }}
             onClick={handleGoToWallet}
-            className="w-full py-4 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-bold rounded-xl transition-all duration-200 text-base"
+            className="w-full py-3.5 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl transition-colors"
           >
             Withdraw Now
           </motion.button>
@@ -83,9 +80,9 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({ open, onClose }
           <motion.button
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
+            transition={{ delay: 0.5 }}
             onClick={onClose}
-            className="mt-5 text-white/40 hover:text-white/60 text-sm transition-colors"
+            className="mt-4 text-muted-foreground hover:text-foreground text-sm transition-colors"
           >
             Maybe Later
           </motion.button>
