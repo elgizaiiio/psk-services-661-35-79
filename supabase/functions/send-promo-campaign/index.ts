@@ -51,7 +51,61 @@ Deno.serve(async (req) => {
     let updatedCount = 0;
     let failedCount = 0;
 
-    if (campaign_type === 'monthly_winner') {
+    if (campaign_type === 'personalized_winner') {
+      // Get batch of users with their username
+      const { data: users, error } = await supabase
+        .from('bolt_users')
+        .select('id, telegram_id, telegram_username, first_name')
+        .not('telegram_id', 'is', null)
+        .range(offset, offset + batch_size - 1);
+
+      if (error) throw error;
+
+      console.log(`Processing ${users?.length || 0} users for personalized winner`);
+
+      for (const user of users || []) {
+        // Use username if available, otherwise use first_name, otherwise "Winner"
+        const displayName = user.telegram_username 
+          ? `@${user.telegram_username}` 
+          : (user.first_name || 'Winner');
+        
+        const message = `Hey ${displayName}! 🏆
+
+<b>CONGRATULATIONS!</b> You are the Monthly Winner!
+
+💰 <b>$3,000 USDT</b> has been added to your account!
+
+⏰ This reward will expire automatically in <b>24 hours</b> if not claimed.
+
+Stay tuned for next month's contest - you could be our next winner with a prize of <b>$3,000+!</b>`;
+
+        const sent = await sendTelegramMessage(user.telegram_id, message);
+        if (sent) {
+          sentCount++;
+        } else {
+          failedCount++;
+        }
+
+        // Small delay to avoid rate limits
+        await new Promise(r => setTimeout(r, 25));
+      }
+
+      const hasMore = (users?.length || 0) === batch_size;
+      
+      console.log(`Batch complete: ${sentCount} sent, ${failedCount} failed`);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          sent: sentCount,
+          failed: failedCount,
+          hasMore,
+          nextOffset: hasMore ? offset + batch_size : null
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
+    } else if (campaign_type === 'monthly_winner') {
       // Get batch of users - NO filtering by notifications_enabled
       const { data: users, error } = await supabase
         .from('bolt_users')

