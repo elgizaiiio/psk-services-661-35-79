@@ -33,7 +33,18 @@ const Index = () => {
   const { shouldShowModal: showLimitedOffer, markAsShown: closeLimitedOffer } = useLimitedOfferModal();
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
-  const [showWinnerModal, setShowWinnerModal] = useState(true); // Always show on load
+  
+  // Check if 24-hour offer has expired
+  const checkOfferExpired = () => {
+    const OFFER_KEY = 'monthly_winner_start_time';
+    const OFFER_DURATION = 24 * 60 * 60 * 1000; // 24 hours
+    const storedTime = localStorage.getItem(OFFER_KEY);
+    if (!storedTime) return false; // Not expired if never started
+    const elapsed = Date.now() - parseInt(storedTime);
+    return elapsed > OFFER_DURATION;
+  };
+  
+  const [showWinnerModal, setShowWinnerModal] = useState(!checkOfferExpired());
   useTelegramBackButton();
 
   useEffect(() => {
