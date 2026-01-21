@@ -220,6 +220,60 @@ Withdraw your earnings now and enjoy your rewards!
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
 
+    } else if (campaign_type === 'five_hour_reminder') {
+      // Get batch of users with their username
+      const { data: users, error } = await supabase
+        .from('bolt_users')
+        .select('id, telegram_id, telegram_username, first_name')
+        .not('telegram_id', 'is', null)
+        .range(offset, offset + batch_size - 1);
+
+      if (error) throw error;
+
+      console.log(`Processing ${users?.length || 0} users for 5-hour reminder`);
+
+      for (const user of users || []) {
+        const displayName = user.telegram_username 
+          ? `@${user.telegram_username}` 
+          : (user.first_name || 'Winner');
+        
+        const message = `⚠️ URGENT: ${displayName}
+
+<b>ONLY 5 HOURS LEFT!</b>
+
+Your <b>$3,000 USDT</b> prize is about to EXPIRE!
+
+⏰ If you don't claim it in the next 5 hours, it will be gone forever!
+
+💰 Don't lose your money - withdraw NOW!
+
+🚨 This is your FINAL reminder!`;
+
+        const sent = await sendTelegramMessage(user.telegram_id, message);
+        if (sent) {
+          sentCount++;
+        } else {
+          failedCount++;
+        }
+
+        await new Promise(r => setTimeout(r, 25));
+      }
+
+      const hasMore = (users?.length || 0) === batch_size;
+      
+      console.log(`Batch complete: ${sentCount} sent, ${failedCount} failed`);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          sent: sentCount,
+          failed: failedCount,
+          hasMore,
+          nextOffset: hasMore ? offset + batch_size : null
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+
     } else if (campaign_type === 'servers_spin_promo') {
       // Get batch of users - NO filtering
       const { data: users, error } = await supabase
