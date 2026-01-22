@@ -66,16 +66,6 @@ const PageLoader = () => (
   </div>
 );
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-
 function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
   const { webApp, user: telegramUser, isLoading: isTelegramLoading } = useTelegramAuth();
   const [showSplash, setShowSplash] = React.useState(true);
@@ -206,6 +196,16 @@ function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <ErrorBoundary>
