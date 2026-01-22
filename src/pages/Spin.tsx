@@ -90,6 +90,13 @@ const PRO_PACKAGES: TicketPackage[] = [
   { id: 'pro_25', tickets: 25, priceTon: 3.5 },
 ];
 
+// PROMO Ticket Packages - Better value deals
+const PROMO_PACKAGES: TicketPackage[] = [
+  { id: 'promo_50', tickets: 50, priceTon: 2.5 },
+  { id: 'promo_100', tickets: 100, priceTon: 4 },
+  { id: 'promo_200', tickets: 200, priceTon: 6 },
+];
+
 // Special guaranteed TON win package - pay 5 TON, guaranteed win 0.1 TON
 const SPECIAL_TON_PACKAGE = {
   id: 'special_ton_guaranteed',
@@ -850,6 +857,26 @@ const Spin: React.FC = () => {
                         </button>
                       );
                     })}
+                  </div>
+                  
+                  {/* Promo Packages */}
+                  <div className="border-t border-border pt-4 mt-2">
+                    <p className="text-center text-sm font-medium text-muted-foreground mb-3">Special Offers</p>
+                    <div className="space-y-2">
+                      {PROMO_PACKAGES.map((pkg) => (
+                        <button
+                          key={pkg.id}
+                          onClick={() => handleBuyPackage(pkg)}
+                          className="w-full p-3 rounded-xl border bg-gradient-to-r from-amber-500/10 to-orange-500/10 border-amber-500/30 hover:border-amber-500/50 transition-all hover:scale-[1.01] active:scale-[0.99]"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-lg font-bold text-amber-500">{pkg.tickets} Tickets</span>
+                            <span className="text-sm font-semibold text-foreground">{pkg.priceTon} TON</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-center text-xs text-muted-foreground mt-4">99% Win Rate</p>
                   </div>
                   
                 </SheetContent>
