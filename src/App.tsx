@@ -79,9 +79,40 @@ const queryClient = new QueryClient({
 function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
   const { webApp, user: telegramUser, isLoading: isTelegramLoading } = useTelegramAuth();
   const [showSplash, setShowSplash] = React.useState(true);
+  const [isBlocked, setIsBlocked] = React.useState(false);
+  const [checkingBlocked, setCheckingBlocked] = React.useState(true);
   const handleSplashComplete = React.useCallback(() => setShowSplash(false), []);
 
   useReferralHandler();
+
+  // Check if user is blocked
+  useEffect(() => {
+    const checkBlockedStatus = async () => {
+      if (!telegramUser?.id) {
+        setCheckingBlocked(false);
+        return;
+      }
+      
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data } = await supabase
+          .from('bolt_users')
+          .select('bot_blocked')
+          .eq('telegram_id', telegramUser.id)
+          .maybeSingle();
+        
+        if (data?.bot_blocked === true) {
+          setIsBlocked(true);
+        }
+      } catch (e) {
+        console.error('Error checking blocked status:', e);
+      } finally {
+        setCheckingBlocked(false);
+      }
+    };
+
+    checkBlockedStatus();
+  }, [telegramUser?.id]);
 
   // Preview mode (testing outside Telegram)
   const isPreviewMode = (() => {
@@ -149,12 +180,22 @@ function TelegramWebAppWrapper({ children }: { children: React.ReactNode }) {
     return <SplashScreen onComplete={handleSplashComplete} />;
   }
 
-  // Show loader while checking Telegram auth (skip in preview mode)
-  if (isTelegramLoading && !isPreviewMode) {
+  // Show loader while checking Telegram auth or blocked status (skip in preview mode)
+  if ((isTelegramLoading || checkingBlocked) && !isPreviewMode) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
+    );
+  }
+
+  // Show blocked screen if user is blocked
+  if (isBlocked) {
+    const BlockedScreen = React.lazy(() => import('./components/BlockedScreen'));
+    return (
+      <React.Suspense fallback={<div className="fixed inset-0 bg-black" />}>
+        <BlockedScreen />
+      </React.Suspense>
     );
   }
 

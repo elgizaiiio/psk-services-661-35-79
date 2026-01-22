@@ -44,12 +44,40 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const { campaign_type, batch_size = 100, offset = 0 } = await req.json();
+    const body = await req.json();
+    const { campaign_type, batch_size = 100, offset = 0, message, target_telegram_ids } = body;
     console.log(`Starting campaign: ${campaign_type}, batch: ${batch_size}, offset: ${offset}`);
 
     let sentCount = 0;
     let updatedCount = 0;
     let failedCount = 0;
+    
+    // Handle direct message campaign first
+    if (campaign_type === 'direct_message') {
+      if (!message || !target_telegram_ids || !Array.isArray(target_telegram_ids)) {
+        return new Response(
+          JSON.stringify({ success: false, error: 'Message and target_telegram_ids are required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      for (const telegramId of target_telegram_ids) {
+        const sent = await sendTelegramMessage(telegramId, message);
+        if (sent) sentCount++;
+        else failedCount++;
+        
+        await new Promise(r => setTimeout(r, 25));
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          sent: sentCount,
+          failed: failedCount
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     if (campaign_type === 'personalized_winner') {
       // Get batch of users with their username
