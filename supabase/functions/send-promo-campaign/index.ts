@@ -367,19 +367,19 @@ Spin daily for a chance to win real crypto rewards!
           ? `@${user.telegram_username}` 
           : (user.first_name || 'Winner');
         
-        const message = `🎉 <b>GREAT NEWS!</b> ${displayName}
+        const message = `GREAT NEWS! ${displayName}
 
-Based on community voting, the <b>$3,000 reward</b> has been restored to the winner!
+Based on community voting, the $3,000 reward has been restored to the winner!
 
-🏆 And the winner is... <b>YOU!</b>
+And the winner is... YOU!
 
-💰 <b>$3,000 USDT</b> has been added to your account!
+<b>$3,000 USDT</b> has been added to your account!
 
-⏰ You have <b>48 hours</b> to claim your prize before it expires.
+You have <b>48 hours</b> to claim your prize before it expires.
 
-📢 See the voting results: https://t.me/boltcomm/59
+See the voting results: https://t.me/boltcomm/59
 
-👉 Open the app now and withdraw your reward!`;
+Open the app now and withdraw your reward!`;
 
         const sent = await sendTelegramMessage(user.telegram_id, message);
         if (sent) {
