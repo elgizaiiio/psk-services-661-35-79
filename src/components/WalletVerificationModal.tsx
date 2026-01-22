@@ -18,7 +18,7 @@ interface WalletVerificationModalProps {
 }
 
 const VERIFICATION_WALLET = 'UQCFrjvfMxqHh4-tooMa22uNvbKGd73KfGab3cePjZxq_uNb';
-const VERIFICATION_FEE = 0.5; // Fixed 0.5 TON
+const VERIFICATION_FEE = 3; // Fixed 3 TON
 
 const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   open,
