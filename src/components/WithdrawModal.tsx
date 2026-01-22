@@ -45,6 +45,24 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      // CRITICAL: Check for existing pending withdrawal in last 24 hours
+      const yesterday = new Date();
+      yesterday.setHours(yesterday.getHours() - 24);
+      
+      const { data: recentWithdrawals } = await supabase
+        .from('withdrawal_requests')
+        .select('id, created_at')
+        .eq('user_id', userId)
+        .eq('status', 'pending')
+        .gte('created_at', yesterday.toISOString())
+        .limit(1);
+
+      if (recentWithdrawals && recentWithdrawals.length > 0) {
+        toast.error('You already have a pending withdrawal. Please wait 24 hours between requests.');
+        setIsSubmitting(false);
+        return;
+      }
+
       // CRITICAL: Server-side verification check before allowing withdrawal
       // Check if user has paid 3 TON verification fee
       const { data: verificationData, error: verificationError } = await supabase
