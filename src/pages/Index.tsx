@@ -13,7 +13,6 @@ import { Loader2, Wallet, Zap } from 'lucide-react';
 import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import DailyStreakModal from '@/components/DailyStreakModal';
 import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
-import MonthlyWinnerModal from '@/components/MonthlyWinnerModal';
 import UserAvatar from '@/components/UserAvatar';
 import PromoBanner from '@/components/home/PromoBanner';
 
@@ -34,17 +33,6 @@ const Index = () => {
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
   
-  // Check if 24-hour offer has expired
-  const checkOfferExpired = () => {
-    const OFFER_KEY = 'monthly_winner_start_time';
-    const OFFER_DURATION = 24 * 60 * 60 * 1000; // 24 hours
-    const storedTime = localStorage.getItem(OFFER_KEY);
-    if (!storedTime) return false; // Not expired if never started
-    const elapsed = Date.now() - parseInt(storedTime);
-    return elapsed > OFFER_DURATION;
-  };
-  
-  const [showWinnerModal, setShowWinnerModal] = useState(!checkOfferExpired());
   useTelegramBackButton();
 
   useEffect(() => {
@@ -196,9 +184,8 @@ const Index = () => {
       <Helmet><title>Bolt Mining</title></Helmet>
       <DailyStreakModal />
       <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
-      <MonthlyWinnerModal open={showWinnerModal} onClose={() => setShowWinnerModal(false)} />
 
-      <div className="max-w-md mx-auto px-4 pt-4 space-y-3">
+      <div className="max-w-md mx-auto px-4 pt-6 space-y-3">
         
         {/* Animated Promo Banner */}
         <FadeUp delay={0.1}>
