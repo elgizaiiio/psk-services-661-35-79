@@ -45,6 +45,36 @@ const WithdrawModal: React.FC<WithdrawModalProps> = ({
 
     setIsSubmitting(true);
     try {
+      // CRITICAL: Server-side verification check before allowing withdrawal
+      // Check if user has paid 3 TON verification fee
+      const { data: verificationData, error: verificationError } = await supabase
+        .from('wallet_verifications')
+        .select('id, verification_fee')
+        .eq('user_id', userId)
+        .gte('verification_fee', 3)
+        .limit(1);
+
+      if (verificationError || !verificationData || verificationData.length === 0) {
+        toast.error('Wallet verification required. Please pay 3 TON verification fee first.');
+        setIsSubmitting(false);
+        onClose();
+        return;
+      }
+
+      // Check if user has an active mining server
+      const { count: serverCount } = await supabase
+        .from('user_servers')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', userId)
+        .eq('is_active', true);
+
+      if (!serverCount || serverCount === 0) {
+        toast.error('Server required. Please purchase a mining server first.');
+        setIsSubmitting(false);
+        onClose();
+        return;
+      }
+
       const { data: userData } = await supabase
         .from('bolt_users')
         .select('telegram_username, first_name, telegram_id')
