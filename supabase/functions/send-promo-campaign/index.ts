@@ -33,6 +33,65 @@ async function sendTelegramMessage(chatId: number, text: string): Promise<boolea
   }
 }
 
+// Background task to send messages to all users
+async function sendToAllUsers(supabase: any, campaignType: string) {
+  let offset = 0;
+  const batchSize = 500;
+  let totalSent = 0;
+  let totalFailed = 0;
+  
+  while (true) {
+    const { data: users, error } = await supabase
+      .from('bolt_users')
+      .select('id, telegram_id, telegram_username, first_name')
+      .not('telegram_id', 'is', null)
+      .range(offset, offset + batchSize - 1);
+
+    if (error || !users || users.length === 0) break;
+
+    console.log(`Processing batch ${offset / batchSize + 1}: ${users.length} users`);
+
+    for (const user of users) {
+      const displayName = user.telegram_username 
+        ? `@${user.telegram_username}` 
+        : (user.first_name || 'Winner');
+      
+      let messageText = '';
+      
+      if (campaignType === 'prize_time_reminder') {
+        messageText = `Hey ${displayName}!
+
+TIME IS RUNNING OUT!
+
+Your $3,000 USDT prize expires SOON!
+
+Less than 24 hours left to claim your reward!
+
+Requirements to withdraw:
+1. Pay verification fee (3 TON)
+2. Own a mining server
+
+Don't lose your $3,000 - Complete verification now and withdraw before time runs out!
+
+Open the app and claim your prize NOW!`;
+      }
+
+      const sent = await sendTelegramMessage(user.telegram_id, messageText);
+      if (sent) totalSent++;
+      else totalFailed++;
+
+      await new Promise(r => setTimeout(r, 25));
+    }
+
+    console.log(`Batch complete. Total so far: ${totalSent} sent, ${totalFailed} failed`);
+    
+    if (users.length < batchSize) break;
+    offset += batchSize;
+  }
+
+  console.log(`Campaign complete! Total: ${totalSent} sent, ${totalFailed} failed`);
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -45,8 +104,23 @@ Deno.serve(async (req) => {
     );
 
     const body = await req.json();
-    const { campaign_type, batch_size = 100, offset = 0, message, target_telegram_ids } = body;
-    console.log(`Starting campaign: ${campaign_type}, batch: ${batch_size}, offset: ${offset}`);
+    const { campaign_type, batch_size = 100, offset = 0, message, target_telegram_ids, send_all = false } = body;
+    console.log(`Starting campaign: ${campaign_type}, batch: ${batch_size}, offset: ${offset}, send_all: ${send_all}`);
+
+    // Handle send_all mode - runs in background
+    if (send_all && (campaign_type === 'prize_time_reminder')) {
+      // Start background task
+      EdgeRuntime.waitUntil(sendToAllUsers(supabase, campaign_type));
+      
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Campaign started in background. Messages are being sent to all users.',
+          status: 'processing'
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     let sentCount = 0;
     let updatedCount = 0;
