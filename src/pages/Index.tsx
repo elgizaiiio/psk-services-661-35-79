@@ -14,7 +14,7 @@ import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import DailyStreakModal from '@/components/DailyStreakModal';
 import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
 import WelcomeModal from '@/components/WelcomeModal';
-import MonthlyWinnerModal from '@/components/MonthlyWinnerModal';
+// MonthlyWinnerModal disabled - contest ended
 import UserAvatar from '@/components/UserAvatar';
 import PromoBanner from '@/components/home/PromoBanner';
 
@@ -35,7 +35,6 @@ const Index = () => {
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-  const [showWinnerModal, setShowWinnerModal] = useState(false);
   
   useTelegramBackButton();
 
@@ -50,28 +49,13 @@ const Index = () => {
     }
   }, [telegramUser?.id]);
 
-  // Show winner modal after welcome modal closes or if already seen welcome
-  useEffect(() => {
-    if (telegramUser?.id && !showWelcomeModal) {
-      const welcomeKey = `welcome_shown_${telegramUser.id}`;
-      const hasSeenWelcome = localStorage.getItem(welcomeKey);
-      if (hasSeenWelcome) {
-        // Show winner modal after a short delay
-        const timer = setTimeout(() => {
-          setShowWinnerModal(true);
-        }, 500);
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [telegramUser?.id, showWelcomeModal]);
+  // MonthlyWinnerModal removed - contest ended
 
   const handleWelcomeClose = () => {
     if (telegramUser?.id) {
       localStorage.setItem(`welcome_shown_${telegramUser.id}`, 'true');
     }
     setShowWelcomeModal(false);
-    // Show winner modal after welcome
-    setTimeout(() => setShowWinnerModal(true), 300);
   };
 
   useEffect(() => {
@@ -228,11 +212,7 @@ const Index = () => {
         onClose={handleWelcomeClose}
         userName={telegramUser?.first_name}
       />
-      <MonthlyWinnerModal
-        isOpen={showWinnerModal}
-        onClose={() => setShowWinnerModal(false)}
-        userName={telegramUser?.username || telegramUser?.first_name}
-      />
+      {/* MonthlyWinnerModal removed - contest ended */}
 
       <div className="max-w-md mx-auto px-4 pt-6 space-y-3">
         
