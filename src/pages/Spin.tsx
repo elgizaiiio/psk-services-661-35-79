@@ -30,45 +30,46 @@ interface TicketPackage {
   priceTon: number;
 }
 
-// Normal Wheel Rewards - TON/USDT probability is 0 (impossible to win)
+// Normal Wheel Rewards - Exciting real prizes
 const NORMAL_REWARDS: SpinReward[] = [
-  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 0 },
-  { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 27 },
-  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 0 },
-  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 22 },
+  { id: 'ton_5', label: '5', type: 'ton', value: 5, probability: 0.5 },
+  { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 25 },
+  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 0.3 },
+  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 20 },
   { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 25 },
-  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 0 },
+  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 0.2 },
   { id: 'bolt_200', label: '200', type: 'bolt', value: 200, probability: 15 },
-  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0 },
-  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 8.5 },
-  { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 2.5 },
+  { id: 'usdt_25', label: '25', type: 'usdt', value: 25, probability: 0.1 },
+  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 10.4 },
+  { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 3.5 },
 ];
 
-// PRO Wheel Rewards - TON/USDT probability is 0 (impossible to win)
+// PRO Wheel Rewards - Bigger prizes with real TON/USDT
 const PRO_REWARDS: SpinReward[] = [
-  { id: 'ton_3_pro', label: '3', type: 'ton', value: 3, probability: 0 },
-  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 28 },
-  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0 },
-  { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 21 },
-  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 18 },
-  { id: 'ton_5_pro', label: '5', type: 'ton', value: 5, probability: 0 },
-  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 17 },
-  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 0 },
-  { id: 'bolt_10000', label: '10K', type: 'bolt', value: 10000, probability: 12 },
-  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 0 },
+  { id: 'ton_5_pro', label: '5', type: 'ton', value: 5, probability: 1.5 },
+  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 24 },
+  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 1 },
+  { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 18 },
+  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 20 },
+  { id: 'ton_10_pro', label: '10', type: 'ton', value: 10, probability: 0.8 },
+  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 15 },
+  { id: 'usdt_25', label: '25', type: 'usdt', value: 25, probability: 0.5 },
+  { id: 'bolt_10000', label: '10K', type: 'bolt', value: 10000, probability: 12.7 },
+  { id: 'ton_25', label: '25', type: 'ton', value: 25, probability: 0.5 },
+  { id: 'usdt_50', label: '50', type: 'usdt', value: 50, probability: 0.3 },
+  { id: 'mining_x2_pro', label: '2x', type: 'booster', value: 48, probability: 5.7 },
 ];
 
-// USDT Premium Wheel - Always wins 1 USDT (100% probability)
+// USDT Premium Wheel - Guaranteed USDT wins (min 10, up to 1000)
 const USDT_REWARDS: SpinReward[] = [
-  { id: 'usdt_1_premium', label: '1', type: 'usdt', value: 1, probability: 100 },
-  { id: 'usdt_5_premium', label: '5', type: 'usdt', value: 5, probability: 0 },
-  { id: 'usdt_10_premium', label: '10', type: 'usdt', value: 10, probability: 0 },
-  { id: 'usdt_25_premium', label: '25', type: 'usdt', value: 25, probability: 0 },
-  { id: 'usdt_50_premium', label: '50', type: 'usdt', value: 50, probability: 0 },
-  { id: 'usdt_100_premium', label: '100', type: 'usdt', value: 100, probability: 0 },
-  { id: 'usdt_250_premium', label: '250', type: 'usdt', value: 250, probability: 0 },
-  { id: 'usdt_500_premium', label: '500', type: 'usdt', value: 500, probability: 0 },
-  { id: 'usdt_777_premium', label: '777', type: 'usdt', value: 777, probability: 0 },
+  { id: 'usdt_10_premium', label: '10', type: 'usdt', value: 10, probability: 60 },
+  { id: 'usdt_25_premium', label: '25', type: 'usdt', value: 25, probability: 20 },
+  { id: 'usdt_50_premium', label: '50', type: 'usdt', value: 50, probability: 10 },
+  { id: 'usdt_100_premium', label: '100', type: 'usdt', value: 100, probability: 5 },
+  { id: 'usdt_250_premium', label: '250', type: 'usdt', value: 250, probability: 3 },
+  { id: 'usdt_500_premium', label: '500', type: 'usdt', value: 500, probability: 1.5 },
+  { id: 'usdt_777_premium', label: '777', type: 'usdt', value: 777, probability: 0.4 },
+  { id: 'usdt_1000_premium', label: '1K', type: 'usdt', value: 1000, probability: 0.1 },
 ];
 
 // USDT Wheel Price
