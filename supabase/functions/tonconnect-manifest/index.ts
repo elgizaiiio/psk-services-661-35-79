@@ -37,13 +37,13 @@ serve(async (req) => {
     
     // Fallback manifest
     const fallbackManifest = {
-      url: "https://viral.elgiza.site",
+      url: "https://elh.elgiza.site",
       name: "BOLT Mining",
-      iconUrl: "https://viral.elgiza.site/favicon.ico",
+      iconUrl: "https://elh.elgiza.site/favicon.ico",
       description: "BOLT Mining - Connect your TON wallet to start mining BOLT tokens and earn rewards",
-      image: "https://viral.elgiza.site/og-image.png",
-      termsOfUseUrl: "https://viral.elgiza.site/terms",
-      privacyPolicyUrl: "https://viral.elgiza.site/privacy"
+      image: "https://elh.elgiza.site/og-image.png",
+      termsOfUseUrl: "https://elh.elgiza.site/terms",
+      privacyPolicyUrl: "https://elh.elgiza.site/privacy"
     };
 
     return new Response(JSON.stringify(fallbackManifest, null, 2), {
