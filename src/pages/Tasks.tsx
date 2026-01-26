@@ -12,7 +12,6 @@ import { Target, Check, ExternalLink, Loader2, AlertCircle, Home, Users, Calenda
 import { toast } from 'sonner';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { TonIcon, UsdtIcon, BoltIcon } from '@/components/ui/currency-icons';
-import tasksHeaderImg from '@/assets/tasks-header.png';
 import { BoltTask } from '@/types/bolt';
 import { supabase } from '@/integrations/supabase/client';
 import { WatchAdCard } from '@/components/ads/WatchAdCard';
@@ -291,23 +290,15 @@ const Tasks = () => {
       return;
     }
 
-    // Partner tasks - open URL and complete immediately
+    // Partner tasks - complete immediately on click without verification
     if (!isOurChannel) {
-      // Open the task URL first
-      if (taskUrl) {
-        window.open(taskUrl, '_blank');
+      try {
+        await completeTask(taskId);
+        toast.success('Task completed! Reward added');
+      } catch {
+        toast.error('Failed to complete task');
       }
-      
-      // Give reward after short delay
-      setTimeout(async () => {
-        try {
-          await completeTask(taskId);
-          toast.success('Task completed! Reward added');
-        } catch {
-          toast.error('Failed to complete task');
-        }
-        setProcessingTask(null);
-      }, 1500);
+      setProcessingTask(null);
       return;
     }
 
@@ -524,13 +515,32 @@ const Tasks = () => {
             <p className="text-sm text-muted-foreground">Complete tasks to earn BOLT</p>
           </FadeUp>
 
+          <div className="grid grid-cols-2 gap-4">
+            <FadeUp>
+              <div className="p-4 rounded-xl bg-card border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Completed</p>
+                <p className="text-2xl font-bold text-foreground">
+                  <AnimatedNumber value={stats.completed} duration={0.6} />/{stats.totalTasks}
+                </p>
+              </div>
+            </FadeUp>
+            <FadeUp>
+              <div className="p-4 rounded-xl bg-card border border-border">
+                <p className="text-xs text-muted-foreground mb-1">Earned</p>
+                <p className="text-2xl font-bold text-primary">
+                  <AnimatedNumber value={stats.earnedPoints} duration={0.6} />
+                </p>
+              </div>
+            </FadeUp>
+          </div>
+
           <FadeUp>
-            <div className="rounded-2xl overflow-hidden">
-              <img 
-                src={tasksHeaderImg} 
-                alt="Tasks" 
-                className="w-full h-auto object-cover"
-              />
+            <div className="p-4 rounded-xl bg-card border border-border">
+              <div className="flex justify-between text-sm mb-2">
+                <span className="text-muted-foreground">Progress</span>
+                <span className="font-medium text-foreground">{Math.round(progress)}%</span>
+              </div>
+              <AnimatedProgress value={progress} />
             </div>
           </FadeUp>
 

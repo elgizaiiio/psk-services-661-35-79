@@ -64,8 +64,7 @@ const Wallet: React.FC = () => {
     checkUserServers();
   }, [user?.id]);
 
-  // Check if current wallet is verified with 3 TON fee
-  // IMPORTANT: Old verifications (0.5 TON) are NOT valid - must pay 3 TON
+  // Check if current wallet is verified
   useEffect(() => {
     const checkWalletVerification = async () => {
       if (!user?.id || !wallet?.account?.address) return;
@@ -73,10 +72,9 @@ const Wallet: React.FC = () => {
       try {
         const { data } = await supabase
           .from('wallet_verifications')
-          .select('id, verification_fee')
+          .select('id')
           .eq('user_id', user.id)
           .eq('wallet_address', wallet.account.address)
-          .gte('verification_fee', 3) // Must have paid at least 3 TON
           .single();
         
         setIsWalletVerified(!!data);

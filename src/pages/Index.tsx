@@ -32,7 +32,6 @@ const Index = () => {
   const { shouldShowModal: showLimitedOffer, markAsShown: closeLimitedOffer } = useLimitedOfferModal();
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
-  
   useTelegramBackButton();
 
   useEffect(() => {
@@ -185,7 +184,7 @@ const Index = () => {
       <DailyStreakModal />
       <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
 
-      <div className="max-w-md mx-auto px-4 pt-6 space-y-3">
+      <div className="max-w-md mx-auto px-4 pt-4 space-y-3">
         
         {/* Animated Promo Banner */}
         <FadeUp delay={0.1}>

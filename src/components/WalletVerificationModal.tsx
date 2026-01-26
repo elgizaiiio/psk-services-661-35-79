@@ -7,7 +7,6 @@ import { toast } from 'sonner';
 import { Loader2, X } from 'lucide-react';
 import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { getValidUntil, tonToNano } from '@/lib/ton-constants';
-import verificationImg from '@/assets/verification-security.png';
 
 interface WalletVerificationModalProps {
   open: boolean;
@@ -17,8 +16,8 @@ interface WalletVerificationModalProps {
   onVerified: () => void;
 }
 
+const VERIFICATION_FEE = 0.5; // TON
 const VERIFICATION_WALLET = 'UQCFrjvfMxqHh4-tooMa22uNvbKGd73KfGab3cePjZxq_uNb';
-const VERIFICATION_FEE = 0.5; // Fixed 0.5 TON
 
 const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   open,
@@ -33,13 +32,35 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   const [isVerified, setIsVerified] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
 
-  // Always require new verification payment - no checking old records
+  // Check if wallet is already verified
   useEffect(() => {
+    const checkVerificationStatus = async () => {
+      if (!userId || !walletAddress) return;
+      
+      setCheckingStatus(true);
+      try {
+        const { data } = await supabase
+          .from('wallet_verifications')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('wallet_address', walletAddress)
+          .single();
+        
+        if (data) {
+          setIsVerified(true);
+          onVerified();
+        }
+      } catch (error) {
+        // Not verified yet
+      } finally {
+        setCheckingStatus(false);
+      }
+    };
+
     if (open) {
-      setCheckingStatus(false);
-      setIsVerified(false);
+      checkVerificationStatus();
     }
-  }, [open]);
+  }, [open, userId, walletAddress, onVerified]);
 
   const handleVerify = async () => {
     // Check if wallet is connected
@@ -139,11 +160,11 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[320px] border border-border bg-background p-0 gap-0 overflow-hidden rounded-2xl" hideCloseButton>
+      <DialogContent className="max-w-xs border-0 bg-background p-0 gap-0" hideCloseButton>
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <span className="font-semibold text-foreground">Human Verification</span>
-          <button onClick={handleClose} className="text-muted-foreground hover:text-foreground transition-colors" disabled={isLoading}>
+          <span className="font-semibold text-foreground">Wallet Verification</span>
+          <button onClick={handleClose} className="text-muted-foreground" disabled={isLoading}>
             <X className="w-5 h-5" />
           </button>
         </div>
@@ -157,7 +178,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
               exit={{ opacity: 0, scale: 0.95 }}
               className="py-10 text-center px-6"
             >
-              <p className="text-lg font-semibold text-emerald-500 mb-1">Verified</p>
+              <p className="text-lg font-semibold text-green-500 mb-1">✓ Verified</p>
               <p className="text-sm text-muted-foreground">
                 You can now withdraw
               </p>
@@ -168,48 +189,38 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="space-y-0"
+              className="p-6 space-y-4"
             >
-              {/* Security Image */}
-              <img
-                src={verificationImg}
-                alt="Security Verification"
-                className="w-full h-40 object-cover"
-              />
-
-              <div className="p-6 space-y-4">
-                {/* Explanation Text */}
-                <div className="text-center space-y-3">
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    To protect our community, we verify that all users are real humans and not bots or fake accounts
-                  </p>
-                  
-                  <div className="pt-2">
-                    <p className="text-xs text-muted-foreground mb-1">Verification Fee</p>
-                    <p className="text-2xl font-bold text-foreground">
-                      {VERIFICATION_FEE} TON
-                    </p>
-                  </div>
-                </div>
-
-                {/* Verify Button */}
-                <Button
-                  onClick={handleVerify}
-                  disabled={isLoading || !wallet?.account}
-                  className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Processing...
-                    </>
-                  ) : !wallet?.account ? (
-                    'Connect wallet first'
-                  ) : (
-                    'Verify Now'
-                  )}
-                </Button>
+              {/* Simple Text */}
+              <div className="text-center space-y-2">
+                <p className="text-sm text-muted-foreground">
+                  Verify your wallet ownership
+                </p>
+                <p className="text-2xl font-bold text-foreground">
+                  {VERIFICATION_FEE} TON
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  One-time fee • Refunded to your wallet
+                </p>
               </div>
+
+              {/* Verify Button */}
+              <Button
+                onClick={handleVerify}
+                disabled={isLoading || !wallet?.account}
+                className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : !wallet?.account ? (
+                  'Connect wallet first'
+                ) : (
+                  'Verify Wallet'
+                )}
+              </Button>
             </motion.div>
           )}
         </AnimatePresence>
