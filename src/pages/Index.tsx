@@ -13,8 +13,6 @@ import { Loader2, Wallet, Zap } from 'lucide-react';
 import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import DailyStreakModal from '@/components/DailyStreakModal';
 import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
-import WelcomeModal from '@/components/WelcomeModal';
-// MonthlyWinnerModal disabled - contest ended
 import UserAvatar from '@/components/UserAvatar';
 import PromoBanner from '@/components/home/PromoBanner';
 
@@ -34,29 +32,8 @@ const Index = () => {
   const { shouldShowModal: showLimitedOffer, markAsShown: closeLimitedOffer } = useLimitedOfferModal();
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   
   useTelegramBackButton();
-
-  // Check if first visit for welcome modal
-  useEffect(() => {
-    if (telegramUser?.id) {
-      const welcomeKey = `welcome_shown_${telegramUser.id}`;
-      const hasSeenWelcome = localStorage.getItem(welcomeKey);
-      if (!hasSeenWelcome) {
-        setShowWelcomeModal(true);
-      }
-    }
-  }, [telegramUser?.id]);
-
-  // MonthlyWinnerModal removed - contest ended
-
-  const handleWelcomeClose = () => {
-    if (telegramUser?.id) {
-      localStorage.setItem(`welcome_shown_${telegramUser.id}`, 'true');
-    }
-    setShowWelcomeModal(false);
-  };
 
   useEffect(() => {
     const fetchSections = async () => {
@@ -207,12 +184,6 @@ const Index = () => {
       <Helmet><title>Bolt Mining</title></Helmet>
       <DailyStreakModal />
       <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
-      <WelcomeModal 
-        isOpen={showWelcomeModal} 
-        onClose={handleWelcomeClose}
-        userName={telegramUser?.first_name}
-      />
-      {/* MonthlyWinnerModal removed - contest ended */}
 
       <div className="max-w-md mx-auto px-4 pt-6 space-y-3">
         

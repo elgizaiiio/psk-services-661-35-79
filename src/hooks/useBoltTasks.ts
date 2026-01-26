@@ -22,7 +22,6 @@ export const useBoltTasks = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      console.log('[Tasks] Loaded tasks count:', (data || []).length, 'Social tasks:', (data || []).filter((t: any) => t.category === 'social').length);
       setTasks((data || []) as unknown as BoltTask[]);
     } catch (err: any) {
       console.error('Error loading tasks:', err);

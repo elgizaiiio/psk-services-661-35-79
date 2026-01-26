@@ -81,7 +81,7 @@ const WelcomeModal = ({ isOpen, onClose, userName }: WelcomeModalProps) => {
                 transition={{ delay: 0.3 }}
               >
                 <h2 className="text-2xl font-bold text-foreground mb-2">
-                  Welcome {userName || 'Back'}!
+                  Welcome {userName || 'Back'}! 🎉
                 </h2>
                 <p className="text-muted-foreground mb-6">
                   Welcome to Bolt Mining
@@ -99,7 +99,7 @@ const WelcomeModal = ({ isOpen, onClose, userName }: WelcomeModalProps) => {
               >
                 <Gift className="w-5 h-5 text-primary" />
                 <span className="text-sm font-medium text-primary">
-                  You received 100 welcome coins!
+                  🎁 You received 100 welcome coins!
                 </span>
               </motion.div>
 

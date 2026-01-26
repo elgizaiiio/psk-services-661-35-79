@@ -33,80 +33,6 @@ async function sendTelegramMessage(chatId: number, text: string): Promise<boolea
   }
 }
 
-// Background task to send messages to all users
-async function sendToAllUsers(supabase: any, campaignType: string) {
-  let offset = 0;
-  const batchSize = 500;
-  let totalSent = 0;
-  let totalFailed = 0;
-  
-  while (true) {
-    const { data: users, error } = await supabase
-      .from('bolt_users')
-      .select('id, telegram_id, telegram_username, first_name')
-      .not('telegram_id', 'is', null)
-      .range(offset, offset + batchSize - 1);
-
-    if (error || !users || users.length === 0) break;
-
-    console.log(`Processing batch ${offset / batchSize + 1}: ${users.length} users`);
-
-    for (const user of users) {
-      const displayName = user.telegram_username 
-        ? `@${user.telegram_username}` 
-        : (user.first_name || 'Winner');
-      
-      let messageText = '';
-      
-      if (campaignType === 'prize_time_reminder') {
-        messageText = `Hey ${displayName}!
-
-TIME IS RUNNING OUT!
-
-Your $3,000 USDT prize expires SOON!
-
-Less than 24 hours left to claim your reward!
-
-Requirements to withdraw:
-1. Pay verification fee (3 TON)
-2. Own a mining server
-
-Don't lose your $3,000 - Complete verification now and withdraw before time runs out!
-
-Open the app and claim your prize NOW!`;
-      } else if (campaignType === 'final_withdrawal_reminder') {
-        messageText = `URGENT: ${displayName}!
-
-FINAL REMINDER - TIME IS ALMOST UP!
-
-Your $3,000 USDT reward will expire in just a few hours!
-
-To withdraw your prize:
-1. Complete wallet verification (3 TON fee)
-2. Purchase any mining server
-3. Go to Wallet and click Withdraw
-
-This is your LAST chance to claim your $3,000!
-
-Don't let it expire - Open the app NOW and withdraw!`;
-      }
-
-      const sent = await sendTelegramMessage(user.telegram_id, messageText);
-      if (sent) totalSent++;
-      else totalFailed++;
-
-      await new Promise(r => setTimeout(r, 25));
-    }
-
-    console.log(`Batch complete. Total so far: ${totalSent} sent, ${totalFailed} failed`);
-    
-    if (users.length < batchSize) break;
-    offset += batchSize;
-  }
-
-  console.log(`Campaign complete! Total: ${totalSent} sent, ${totalFailed} failed`);
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -118,55 +44,12 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    const body = await req.json();
-    const { campaign_type, batch_size = 100, offset = 0, message, target_telegram_ids, send_all = false } = body;
-    console.log(`Starting campaign: ${campaign_type}, batch: ${batch_size}, offset: ${offset}, send_all: ${send_all}`);
-
-    // Handle send_all mode - runs in background
-    if (send_all && (campaign_type === 'prize_time_reminder' || campaign_type === 'final_withdrawal_reminder')) {
-      // Start background task
-      EdgeRuntime.waitUntil(sendToAllUsers(supabase, campaign_type));
-      
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Campaign started in background. Messages are being sent to all users.',
-          status: 'processing'
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    const { campaign_type, batch_size = 100, offset = 0 } = await req.json();
+    console.log(`Starting campaign: ${campaign_type}, batch: ${batch_size}, offset: ${offset}`);
 
     let sentCount = 0;
     let updatedCount = 0;
     let failedCount = 0;
-    
-    // Handle direct message campaign first
-    if (campaign_type === 'direct_message') {
-      if (!message || !target_telegram_ids || !Array.isArray(target_telegram_ids)) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Message and target_telegram_ids are required' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-
-      for (const telegramId of target_telegram_ids) {
-        const sent = await sendTelegramMessage(telegramId, message);
-        if (sent) sentCount++;
-        else failedCount++;
-        
-        await new Promise(r => setTimeout(r, 25));
-      }
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          sent: sentCount,
-          failed: failedCount
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
 
     if (campaign_type === 'personalized_winner') {
       // Get batch of users with their username
@@ -427,120 +310,6 @@ Spin daily for a chance to win real crypto rewards!
       }
 
       const hasMore = (users?.length || 0) === batch_size;
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          sent: sentCount,
-          failed: failedCount,
-          hasMore,
-          nextOffset: hasMore ? offset + batch_size : null
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
-    } else if (campaign_type === 'reward_restored') {
-      // Get batch of users with their username for personalized message
-      const { data: users, error } = await supabase
-        .from('bolt_users')
-        .select('id, telegram_id, telegram_username, first_name')
-        .not('telegram_id', 'is', null)
-        .range(offset, offset + batch_size - 1);
-
-      if (error) throw error;
-
-      console.log(`Processing ${users?.length || 0} users for reward restored campaign`);
-
-      for (const user of users || []) {
-        const displayName = user.telegram_username 
-          ? `@${user.telegram_username}` 
-          : (user.first_name || 'Winner');
-        
-        const message = `GREAT NEWS! ${displayName}
-
-Based on community voting, the $3,000 reward has been restored to the winner!
-
-And the winner is... YOU!
-
-<b>$3,000 USDT</b> has been added to your account!
-
-You have <b>48 hours</b> to claim your prize before it expires.
-
-See the voting results: https://t.me/boltcomm/59
-
-Open the app now and withdraw your reward!`;
-
-        const sent = await sendTelegramMessage(user.telegram_id, message);
-        if (sent) {
-          sentCount++;
-        } else {
-          failedCount++;
-        }
-
-        await new Promise(r => setTimeout(r, 25));
-      }
-
-      const hasMore = (users?.length || 0) === batch_size;
-      
-      console.log(`Batch complete: ${sentCount} sent, ${failedCount} failed`);
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          sent: sentCount,
-          failed: failedCount,
-          hasMore,
-          nextOffset: hasMore ? offset + batch_size : null
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
-    } else if (campaign_type === 'prize_time_reminder') {
-      // Get batch of users with their username for personalized message
-      const { data: users, error } = await supabase
-        .from('bolt_users')
-        .select('id, telegram_id, telegram_username, first_name')
-        .not('telegram_id', 'is', null)
-        .range(offset, offset + batch_size - 1);
-
-      if (error) throw error;
-
-      console.log(`Processing ${users?.length || 0} users for prize time reminder`);
-
-      for (const user of users || []) {
-        const displayName = user.telegram_username 
-          ? `@${user.telegram_username}` 
-          : (user.first_name || 'Winner');
-        
-        const message = `Hey ${displayName}!
-
-TIME IS RUNNING OUT!
-
-Your $3,000 USDT prize expires SOON!
-
-Less than 24 hours left to claim your reward!
-
-Requirements to withdraw:
-1. Pay verification fee (3 TON)
-2. Own a mining server
-
-Don't lose your $3,000 - Complete verification now and withdraw before time runs out!
-
-Open the app and claim your prize NOW!`;
-
-        const sent = await sendTelegramMessage(user.telegram_id, message);
-        if (sent) {
-          sentCount++;
-        } else {
-          failedCount++;
-        }
-
-        await new Promise(r => setTimeout(r, 25));
-      }
-
-      const hasMore = (users?.length || 0) === batch_size;
-      
-      console.log(`Batch complete: ${sentCount} sent, ${failedCount} failed`);
 
       return new Response(
         JSON.stringify({ 

@@ -6,36 +6,21 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
-import { Settings, Users, Activity, Target, Clock, Shield, Star, Wallet, Megaphone, Image, LayoutGrid, CalendarClock } from "lucide-react";
+import { Settings, Users, Activity, Target, Clock, TrendingUp, Shield, Plus, Star, Wallet, Megaphone, Image, LayoutGrid } from "lucide-react";
 import AdminMetrics from "@/components/admin/AdminMetrics";
 import AdminUserManagement from "@/components/admin/AdminUserManagement";
 import AdminTaskManagement from "@/components/admin/AdminTaskManagement";
 import AdminDailyCodes from "@/components/admin/AdminDailyCodes";
 import AdminMiningData from "@/components/admin/AdminMiningData";
+import AdminUpgrades from "@/components/admin/AdminUpgrades";
 import AdminStarsPayments from "@/components/admin/AdminStarsPayments";
 import AdminTonPayments from "@/components/admin/AdminTonPayments";
 import AdminMarketing from "@/components/admin/AdminMarketing";
 import AdminBanners from "@/components/admin/AdminBanners";
 import AdminHomeSections from "@/components/admin/AdminHomeSections";
-import AdminDailyTasks from "@/components/admin/AdminDailyTasks";
 import { BoltUser, BoltTask, BoltMiningSession, BoltDailyCode } from "@/types/bolt";
 import { useTelegramAuth } from "@/hooks/useTelegramAuth";
-import { isAdmin } from "@/lib/admin-constants";
-
-interface DailyTask {
-  id: string;
-  title: string;
-  title_ar: string;
-  description: string | null;
-  description_ar: string | null;
-  task_type: string;
-  reward_tokens: number;
-  required_action: string | null;
-  action_url: string | null;
-  icon: string | null;
-  is_active: boolean;
-  created_at: string;
-}
+import { isAdmin, ADMIN_TELEGRAM_ID } from "@/lib/admin-constants";
 
 type Upgrade = {
   id: string;
@@ -52,7 +37,6 @@ const Admin: React.FC = () => {
   const { user: telegramUser, isLoading: authLoading } = useTelegramAuth();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [tasks, setTasks] = useState<BoltTask[]>([]);
-  const [dailyTasks, setDailyTasks] = useState<DailyTask[]>([]);
   const [codes, setCodes] = useState<Partial<BoltDailyCode> | null>(null);
   const [metrics, setMetrics] = useState<{ users: number; active24h: number; codeAnswers24h: number; completedTasks24h: number; totalTokens: number; totalUpgrades: number } | null>(null);
   const [users, setUsers] = useState<BoltUser[]>([]);
@@ -76,19 +60,6 @@ const Admin: React.FC = () => {
   const loadTasks = async () => {
     const { data } = await supabase.from("bolt_tasks" as any).select("*").order("created_at", { ascending: false });
     setTasks((data || []) as unknown as BoltTask[]);
-  };
-
-  const loadDailyTasks = async () => {
-    const { data, error } = await supabase
-      .from("bolt_daily_tasks")
-      .select("*")
-      .order("created_at", { ascending: false });
-    
-    if (error) {
-      console.error('Error loading daily tasks:', error);
-      return;
-    }
-    setDailyTasks((data || []) as unknown as DailyTask[]);
   };
 
   const loadCodes = async () => {
@@ -147,7 +118,7 @@ const Admin: React.FC = () => {
   const loadAllData = async () => {
     setLoading(true);
     try {
-      await Promise.all([loadTasks(), loadDailyTasks(), loadCodes(), loadMetrics(), loadUsers(), loadMiningSessions(), loadUpgrades()]);
+      await Promise.all([loadTasks(), loadCodes(), loadMetrics(), loadUsers(), loadMiningSessions(), loadUpgrades()]);
     } finally {
       setLoading(false);
     }
@@ -206,11 +177,10 @@ const Admin: React.FC = () => {
         <AdminMetrics metrics={metrics} />
 
         <Tabs defaultValue="users" className="w-full">
-          <TabsList className="grid w-full grid-cols-11 mb-6">
+          <TabsList className="grid w-full grid-cols-10 mb-6">
             <TabsTrigger value="users"><Users className="w-4 h-4" /></TabsTrigger>
             <TabsTrigger value="mining"><Activity className="w-4 h-4" /></TabsTrigger>
             <TabsTrigger value="tasks"><Target className="w-4 h-4" /></TabsTrigger>
-            <TabsTrigger value="daily-tasks"><CalendarClock className="w-4 h-4" /></TabsTrigger>
             <TabsTrigger value="daily"><Clock className="w-4 h-4" /></TabsTrigger>
             <TabsTrigger value="home"><LayoutGrid className="w-4 h-4" /></TabsTrigger>
             <TabsTrigger value="marketing"><Megaphone className="w-4 h-4" /></TabsTrigger>
@@ -230,10 +200,6 @@ const Admin: React.FC = () => {
 
           <TabsContent value="tasks">
             <AdminTaskManagement tasks={tasks as any} onTasksUpdate={loadTasks} />
-          </TabsContent>
-
-          <TabsContent value="daily-tasks">
-            <AdminDailyTasks tasks={dailyTasks} onTasksUpdate={loadDailyTasks} />
           </TabsContent>
 
           <TabsContent value="daily">

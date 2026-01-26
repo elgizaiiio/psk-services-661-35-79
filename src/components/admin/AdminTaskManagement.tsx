@@ -38,7 +38,7 @@ const AdminTaskManagement: React.FC<AdminTaskManagementProps> = ({ tasks, onTask
     if (!newTask.title) return toast.error("Please enter task title");
     if (!newTask.task_url) return toast.error("Please enter task URL");
     
-    const { error } = await supabase.from("bolt_tasks").insert({
+    const { error } = await supabase.from("bolt_tasks" as any).insert({
       title: newTask.title,
       task_url: newTask.task_url || null,
       icon: newTask.icon || null,
@@ -47,34 +47,25 @@ const AdminTaskManagement: React.FC<AdminTaskManagementProps> = ({ tasks, onTask
       category: newTask.category || "social"
     });
     
-    if (error) {
-      console.error("Add task error:", error);
-      return toast.error("Failed to add task: " + error.message);
-    }
+    if (error) return toast.error("Failed to add task");
     toast.success("Task added successfully");
     setNewTask({ title: '', task_url: '', icon: '', points: '', category: 'social' });
-    await onTasksUpdate();
+    onTasksUpdate();
   };
 
   const updateTask = async (id: string, patch: Partial<Task>) => {
-    const { error } = await supabase.from("bolt_tasks").update(patch).eq("id", id);
-    if (error) {
-      console.error("Update task error:", error);
-      return toast.error("Failed to update task: " + error.message);
-    }
+    const { error } = await supabase.from("bolt_tasks" as any).update(patch).eq("id", id);
+    if (error) return toast.error("Failed to update task");
     toast.success("Task updated");
-    await onTasksUpdate();
+    onTasksUpdate();
   };
 
   const deleteTask = async (id: string) => {
     if (!confirm("Are you sure you want to delete this task?")) return;
-    const { error } = await supabase.from("bolt_tasks").delete().eq("id", id);
-    if (error) {
-      console.error("Delete task error:", error);
-      return toast.error("Failed to delete task: " + error.message);
-    }
+    const { error } = await supabase.from("bolt_tasks" as any).delete().eq("id", id);
+    if (error) return toast.error("Failed to delete task");
     toast.success("Task deleted");
-    await onTasksUpdate();
+    onTasksUpdate();
   };
 
   const editTask = (task: Task) => {

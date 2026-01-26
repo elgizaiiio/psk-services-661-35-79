@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
-const WEBAPP_URL = 'https://elh.elgiza.site';
+const WEBAPP_URL = 'https://viral.elgiza.site';
 
 // Admin Telegram ID that can use /101 and /102 commands
 const ADMIN_IDS = [6657246146];
