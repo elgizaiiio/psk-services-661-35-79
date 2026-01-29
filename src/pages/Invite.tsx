@@ -55,7 +55,7 @@ const Invite: React.FC = () => {
           {/* Page Title */}
           <FadeUp>
             <h1 className="text-2xl font-bold text-foreground">Invite Friends</h1>
-            <p className="text-sm text-muted-foreground">Earn BOLT for every friend who joins</p>
+            <p className="text-sm text-muted-foreground">Earn 50% commission from your friends' payments</p>
           </FadeUp>
 
           {/* Contest Banner */}
@@ -75,9 +75,9 @@ const Invite: React.FC = () => {
             </FadeUp>
             <FadeUp>
               <div className="p-5 rounded-xl bg-card border border-border">
-                <p className="text-xs text-muted-foreground mb-1">BOLT Earned</p>
+                <p className="text-xs text-muted-foreground mb-1">Commission Earned</p>
                 <p className="text-3xl font-bold text-primary">
-                  <AnimatedNumber value={boltUser?.referral_bonus || 0} decimals={0} duration={0.8} />
+                  <AnimatedNumber value={(boltUser as any)?.total_commission_ton || 0} decimals={2} duration={0.8} /> TON
                 </p>
               </div>
             </FadeUp>
@@ -90,15 +90,19 @@ const Invite: React.FC = () => {
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-muted-foreground">Each Friend</span>
-                  <span className="text-primary font-semibold">+100 BOLT</span>
+                  <span className="text-primary font-semibold">+100 BOLT + 1 Spin Ticket</span>
+                </div>
+                <div className="flex justify-between items-center p-3 rounded-lg bg-primary/10 border border-primary/20">
+                  <span className="text-sm font-medium text-foreground">💰 Commission</span>
+                  <span className="text-primary font-bold">50% of their payments</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">5 Friends Bonus</span>
-                  <span className="text-primary font-semibold">+500 BOLT</span>
+                  <span className="text-sm text-muted-foreground">3 Friends Milestone</span>
+                  <span className="text-primary font-semibold">+0.1 TON</span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">10 Friends Bonus</span>
-                  <span className="text-primary font-semibold">+1,500 BOLT</span>
+                  <span className="text-sm text-muted-foreground">10 Friends Milestone</span>
+                  <span className="text-primary font-semibold">+1 USDT</span>
                 </div>
               </div>
             </div>
