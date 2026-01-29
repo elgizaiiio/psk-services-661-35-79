@@ -1483,6 +1483,57 @@ export type Database = {
         }
         Relationships: []
       }
+      eth_withdrawals: {
+        Row: {
+          amount: number
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          id: string
+          status: string
+          tx_hash: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Insert: {
+          amount: number
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          status?: string
+          tx_hash?: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Update: {
+          amount?: number
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          status?: string
+          tx_hash?: string | null
+          user_id?: string
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "eth_withdrawals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "eth_withdrawals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       free_server_ad_progress: {
         Row: {
           ads_watched: number | null
@@ -1803,6 +1854,7 @@ export type Database = {
           created_at: string | null
           current_purchases: number | null
           daily_bolt_yield: number
+          daily_eth_yield: number | null
           daily_ton_yield: number
           daily_usdt_yield: number
           expires_at: string | null
@@ -1817,6 +1869,7 @@ export type Database = {
           created_at?: string | null
           current_purchases?: number | null
           daily_bolt_yield: number
+          daily_eth_yield?: number | null
           daily_ton_yield: number
           daily_usdt_yield: number
           expires_at?: string | null
@@ -1831,6 +1884,7 @@ export type Database = {
           created_at?: string | null
           current_purchases?: number | null
           daily_bolt_yield?: number
+          daily_eth_yield?: number | null
           daily_ton_yield?: number
           daily_usdt_yield?: number
           expires_at?: string | null
