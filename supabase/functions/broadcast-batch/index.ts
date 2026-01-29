@@ -1,4 +1,3 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
@@ -8,62 +7,15 @@ const corsHeaders = {
 
 const SECRET_KEY = 'BATCH_BROADCAST_2024';
 
-serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+declare const EdgeRuntime: { waitUntil: (promise: Promise<unknown>) => void };
 
-  try {
-    const { secretKey, offset = 0, batchSize = 100 } = await req.json();
+async function sendBatchInBackground(offset: number, batchSize: number) {
+  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+  const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
 
-    if (secretKey !== SECRET_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-
-    if (!botToken) {
-      return new Response(
-        JSON.stringify({ error: 'Bot token not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Get batch of users
-    const { data: users, error } = await supabase
-      .from('bolt_users')
-      .select('telegram_id, first_name')
-      .not('telegram_id', 'is', null)
-      .eq('bot_blocked', false)
-      .range(offset, offset + batchSize - 1);
-
-    if (error) {
-      return new Response(
-        JSON.stringify({ error: error.message }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!users || users.length === 0) {
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: 'Broadcast complete - no more users',
-          sent: 0,
-          nextOffset: null
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const message = `Hey {firstName}!
+  const message = `Hey {firstName}!
 
 Important Updates
 
@@ -77,9 +29,27 @@ New Features:
 
 Start earning now. Open the app and claim your rewards.`;
 
-    let sent = 0;
-    let failed = 0;
-    let blocked = 0;
+  let currentOffset = offset;
+  let totalSent = 0;
+  let totalBlocked = 0;
+  let totalFailed = 0;
+  let hasMore = true;
+
+  console.log(`[broadcast-batch] Starting from offset ${offset}`);
+
+  while (hasMore) {
+    const { data: users, error } = await supabase
+      .from('bolt_users')
+      .select('telegram_id, first_name')
+      .not('telegram_id', 'is', null)
+      .eq('bot_blocked', false)
+      .range(currentOffset, currentOffset + batchSize - 1);
+
+    if (error || !users || users.length === 0) {
+      console.log(`[broadcast-batch] No more users at offset ${currentOffset}`);
+      hasMore = false;
+      break;
+    }
 
     for (const user of users) {
       try {
@@ -104,38 +74,72 @@ Start earning now. Open the app and claim your rewards.`;
         const result = await response.json();
 
         if (result.ok) {
-          sent++;
+          totalSent++;
         } else {
           if (result.error_code === 403) {
-            blocked++;
+            totalBlocked++;
             await supabase
               .from('bolt_users')
               .update({ bot_blocked: true })
               .eq('telegram_id', user.telegram_id);
+          } else if (result.error_code === 429) {
+            // Rate limited - wait and continue
+            const retryAfter = result.parameters?.retry_after || 5;
+            console.log(`[broadcast-batch] Rate limited, waiting ${retryAfter}s`);
+            await new Promise(r => setTimeout(r, retryAfter * 1000));
           } else {
-            failed++;
+            totalFailed++;
           }
         }
       } catch (e) {
-        failed++;
+        totalFailed++;
       }
 
-      // Small delay to avoid rate limits
-      await new Promise(r => setTimeout(r, 30));
+      // 35ms delay between messages
+      await new Promise(r => setTimeout(r, 35));
     }
 
-    const nextOffset = users.length === batchSize ? offset + batchSize : null;
+    currentOffset += batchSize;
+    console.log(`[broadcast-batch] Progress: offset=${currentOffset}, sent=${totalSent}, blocked=${totalBlocked}, failed=${totalFailed}`);
+
+    if (users.length < batchSize) {
+      hasMore = false;
+    }
+  }
+
+  console.log(`[broadcast-batch] COMPLETE! Total sent=${totalSent}, blocked=${totalBlocked}, failed=${totalFailed}`);
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { secretKey, offset = 0, batchSize = 500 } = await req.json();
+
+    if (secretKey !== SECRET_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+    if (!botToken) {
+      return new Response(
+        JSON.stringify({ error: 'Bot token not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Run in background to avoid timeout
+    EdgeRuntime.waitUntil(sendBatchInBackground(offset, batchSize));
 
     return new Response(
       JSON.stringify({
         success: true,
-        sent,
-        failed,
-        blocked,
-        processedCount: users.length,
-        currentOffset: offset,
-        nextOffset,
-        message: nextOffset ? `Batch complete. Next offset: ${nextOffset}` : 'All users processed'
+        message: `Broadcast started from offset ${offset}. Check logs for progress.`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
