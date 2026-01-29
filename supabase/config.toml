@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.send-mass-broadcast]
 verify_jwt = false
+
+[functions.broadcast-batch]
+verify_jwt = false
