@@ -33,47 +33,45 @@ async function sendTelegramMessage(chatId: number, text: string): Promise<boolea
   }
 }
 
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+async function processAllUsers(supabase: any, campaignType: string) {
+  console.log(`Starting background processing for campaign: ${campaignType}`);
+  
+  let offset = 0;
+  const batchSize = 500;
+  let totalSent = 0;
+  let totalFailed = 0;
+  let totalUpdated = 0;
 
-  try {
-    const supabase = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
+  while (true) {
+    const { data: users, error } = await supabase
+      .from('bolt_users')
+      .select('id, telegram_id, first_name, usdt_balance')
+      .not('telegram_id', 'is', null)
+      .range(offset, offset + batchSize - 1);
 
-    const { campaign_type, batch_size = 500, offset = 0 } = await req.json();
-    console.log(`Starting campaign: ${campaign_type}, batch: ${batch_size}, offset: ${offset}`);
+    if (error) {
+      console.error('Error fetching users:', error);
+      break;
+    }
 
-    let sentCount = 0;
-    let updatedCount = 0;
-    let failedCount = 0;
+    if (!users || users.length === 0) {
+      console.log('No more users to process');
+      break;
+    }
 
-    if (campaign_type === 'withdraw_5_usdt') {
-      // Get batch of users - NO filtering by notifications_enabled
-      const { data: users, error } = await supabase
-        .from('bolt_users')
-        .select('id, telegram_id, first_name, usdt_balance')
-        .not('telegram_id', 'is', null)
-        .range(offset, offset + batch_size - 1);
+    console.log(`Processing batch at offset ${offset}, users: ${users.length}`);
 
-      if (error) throw error;
-
-      console.log(`Processing ${users?.length || 0} users`);
-
-      for (const user of users || []) {
+    for (const user of users) {
+      if (campaignType === 'withdraw_5_usdt') {
         // Give $5 USDT to users who have less than $5
         if ((user.usdt_balance || 0) < 5) {
           await supabase
             .from('bolt_users')
             .update({ usdt_balance: 5 })
             .eq('id', user.id);
-          updatedCount++;
+          totalUpdated++;
         }
 
-        // Send promotional message
         const greeting = user.first_name ? `Hey ${user.first_name}!` : 'Hey!';
         const message = `${greeting} 🎉
 
@@ -88,43 +86,9 @@ Withdraw your earnings now and enjoy your rewards!
 ⏰ Don't wait - claim your money today!`;
 
         const sent = await sendTelegramMessage(user.telegram_id, message);
-        if (sent) {
-          sentCount++;
-        } else {
-          failedCount++;
-        }
-
-        // Small delay to avoid rate limits
-        await new Promise(r => setTimeout(r, 35));
-      }
-
-      const hasMore = (users?.length || 0) === batch_size;
-      
-      console.log(`Batch complete: ${sentCount} sent, ${failedCount} failed, ${updatedCount} updated`);
-
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          sent: sentCount,
-          failed: failedCount,
-          updated: updatedCount,
-          hasMore,
-          nextOffset: hasMore ? offset + batch_size : null
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-
-    } else if (campaign_type === 'servers_spin_promo') {
-      // Get batch of users - NO filtering
-      const { data: users, error } = await supabase
-        .from('bolt_users')
-        .select('id, telegram_id, first_name')
-        .not('telegram_id', 'is', null)
-        .range(offset, offset + batch_size - 1);
-
-      if (error) throw error;
-
-      for (const user of users || []) {
+        if (sent) totalSent++;
+        else totalFailed++;
+      } else if (campaignType === 'servers_spin_promo') {
         const greeting = user.first_name ? `${user.first_name}` : 'Friend';
         const message = `Hey ${greeting}! 🚀
 
@@ -143,29 +107,54 @@ Spin daily for a chance to win real crypto rewards!
 ⚡ Start earning now - every second counts!`;
 
         const sent = await sendTelegramMessage(user.telegram_id, message);
-        if (sent) sentCount++;
-        else failedCount++;
-
-        await new Promise(r => setTimeout(r, 35));
+        if (sent) totalSent++;
+        else totalFailed++;
       }
 
-      const hasMore = (users?.length || 0) === batch_size;
+      // Small delay to avoid rate limits
+      await new Promise(r => setTimeout(r, 25));
+    }
 
+    offset += batchSize;
+    
+    // Log progress
+    console.log(`Progress: sent=${totalSent}, failed=${totalFailed}, updated=${totalUpdated}`);
+  }
+
+  console.log(`Campaign complete! Total sent: ${totalSent}, failed: ${totalFailed}, updated: ${totalUpdated}`);
+}
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { campaign_type } = await req.json();
+    console.log(`Received campaign request: ${campaign_type}`);
+
+    if (!campaign_type) {
       return new Response(
-        JSON.stringify({ 
-          success: true, 
-          sent: sentCount,
-          failed: failedCount,
-          hasMore,
-          nextOffset: hasMore ? offset + batch_size : null
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        JSON.stringify({ success: false, error: 'campaign_type is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // Start background processing
+    EdgeRuntime.waitUntil(processAllUsers(supabase, campaign_type));
+
+    // Return immediately
     return new Response(
-      JSON.stringify({ success: false, error: 'Unknown campaign type' }),
-      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      JSON.stringify({ 
+        success: true, 
+        message: `Campaign "${campaign_type}" started in background. Check logs for progress.`
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error) {
