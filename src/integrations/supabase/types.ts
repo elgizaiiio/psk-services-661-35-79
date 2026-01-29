@@ -915,6 +915,8 @@ export type Database = {
           telegram_username: string | null
           token_balance: number
           ton_balance: number | null
+          total_commission_ton: number | null
+          total_commission_usdt: number | null
           total_referrals: number
           updated_at: string
           usdt_balance: number
@@ -938,6 +940,8 @@ export type Database = {
           telegram_username?: string | null
           token_balance?: number
           ton_balance?: number | null
+          total_commission_ton?: number | null
+          total_commission_usdt?: number | null
           total_referrals?: number
           updated_at?: string
           usdt_balance?: number
@@ -961,6 +965,8 @@ export type Database = {
           telegram_username?: string | null
           token_balance?: number
           ton_balance?: number | null
+          total_commission_ton?: number | null
+          total_commission_usdt?: number | null
           total_referrals?: number
           updated_at?: string
           usdt_balance?: number
@@ -2518,6 +2524,80 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      referral_commissions: {
+        Row: {
+          commission_amount: number
+          commission_percent: number
+          created_at: string
+          currency: string
+          id: string
+          original_amount: number
+          paid_at: string | null
+          payment_id: string
+          payment_type: string
+          referred_id: string
+          referrer_id: string
+          status: string
+        }
+        Insert: {
+          commission_amount?: number
+          commission_percent?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          original_amount?: number
+          paid_at?: string | null
+          payment_id: string
+          payment_type?: string
+          referred_id: string
+          referrer_id: string
+          status?: string
+        }
+        Update: {
+          commission_amount?: number
+          commission_percent?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          original_amount?: number
+          paid_at?: string | null
+          payment_id?: string
+          payment_type?: string
+          referred_id?: string
+          referrer_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_commissions_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_commissions_referred_id_fkey"
+            columns: ["referred_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_commissions_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_commissions_referrer_id_fkey"
+            columns: ["referrer_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       referral_contests: {
         Row: {
