@@ -20,7 +20,7 @@ async function sendTelegramMessage(chatId: number, text: string): Promise<boolea
         parse_mode: 'HTML',
         reply_markup: {
           inline_keyboard: [[
-            { text: '💰 Withdraw Now', url: 'https://t.me/Boltminingbot/app' }
+            { text: '💰 Withdraw Now', url: 'https://elh.elgiza.site/' }
           ]]
         }
       }),
