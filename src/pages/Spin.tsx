@@ -30,32 +30,32 @@ interface TicketPackage {
   priceTon: number;
 }
 
-// Normal Wheel Rewards - includes ETH and Viral, TON/USDT at 0%
+// Normal Wheel Rewards - All 5 currencies
 const NORMAL_REWARDS: SpinReward[] = [
-  { id: 'viral_50', label: '50', type: 'viral', value: 50, probability: 15 },
-  { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 20 },
+  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 25 },
+  { id: 'viral_50', label: '50', type: 'viral', value: 50, probability: 20 },
+  { id: 'bolt_200', label: '200', type: 'bolt', value: 200, probability: 15 },
   { id: 'viral_100', label: '100', type: 'viral', value: 100, probability: 12 },
-  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 18 },
-  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 20 },
-  { id: 'bolt_200', label: '200', type: 'bolt', value: 200, probability: 10 },
-  { id: 'viral_200', label: '200', type: 'viral', value: 200, probability: 5 },
-  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 5 },
-  { id: 'eth_small', label: '0.0001', type: 'eth', value: 0.0001, probability: 2.5 },
-  { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 2.5 },
+  { id: 'eth_small', label: '0.0001', type: 'eth', value: 0.0001, probability: 8 },
+  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 8 },
+  { id: 'usdt_01', label: '0.1', type: 'usdt', value: 0.1, probability: 5 },
+  { id: 'ton_01', label: '0.01', type: 'ton', value: 0.01, probability: 4 },
+  { id: 'viral_200', label: '200', type: 'viral', value: 200, probability: 2 },
+  { id: 'ton_05', label: '0.05', type: 'ton', value: 0.05, probability: 1 },
 ];
 
-// PRO Wheel Rewards - includes ETH and Viral, TON/USDT at 0%
+// PRO Wheel Rewards - All 5 currencies with higher values
 const PRO_REWARDS: SpinReward[] = [
-  { id: 'viral_500', label: '500', type: 'viral', value: 500, probability: 15 },
   { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 22 },
+  { id: 'viral_500', label: '500', type: 'viral', value: 500, probability: 18 },
+  { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 15 },
+  { id: 'eth_medium', label: '0.0005', type: 'eth', value: 0.0005, probability: 12 },
   { id: 'viral_1000', label: '1K', type: 'viral', value: 1000, probability: 10 },
-  { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 18 },
-  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 15 },
-  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 10 },
-  { id: 'eth_medium', label: '0.0005', type: 'eth', value: 0.0005, probability: 3 },
-  { id: 'viral_2000', label: '2K', type: 'viral', value: 2000, probability: 4 },
-  { id: 'bolt_10000', label: '10K', type: 'bolt', value: 10000, probability: 2 },
-  { id: 'eth_large', label: '0.001', type: 'eth', value: 0.001, probability: 1 },
+  { id: 'usdt_05', label: '0.5', type: 'usdt', value: 0.5, probability: 8 },
+  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 6 },
+  { id: 'ton_02', label: '0.02', type: 'ton', value: 0.02, probability: 4 },
+  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 3 },
+  { id: 'ton_1', label: '0.1', type: 'ton', value: 0.1, probability: 2 },
 ];
 
 // USDT Premium Wheel - Always wins 1 USDT (100% probability)
