@@ -443,6 +443,24 @@ Deno.serve(async (req) => {
 
         await sendTelegramNotification(referrer.telegram_id, notificationText)
       }
+
+      // Award free spin ticket to referrer
+      const { data: spinTicketData } = await supabase
+        .from('user_spin_tickets')
+        .select('referral_tickets_count')
+        .eq('user_id', referrer.id)
+        .maybeSingle();
+
+      const currentReferralTickets = spinTicketData?.referral_tickets_count || 0;
+      
+      await supabase
+        .from('user_spin_tickets')
+        .upsert({
+          user_id: referrer.id,
+          referral_tickets_count: currentReferralTickets + 1,
+        }, { onConflict: 'user_id' });
+      
+      console.log(`🎟️ Free spin ticket awarded to referrer: ${referrer.id}`);
     }
 
     // Create social notification

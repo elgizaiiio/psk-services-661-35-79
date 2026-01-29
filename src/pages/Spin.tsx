@@ -124,6 +124,7 @@ const Spin: React.FC = () => {
   const [result, setResult] = useState<SpinReward | null>(null);
   const [normalTickets, setNormalTickets] = useState(0);
   const [proTickets, setProTickets] = useState(0);
+  const [referralTickets, setReferralTickets] = useState(0);
   const [freeTicketAvailable, setFreeTicketAvailable] = useState(false);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<TicketPackage | null>(null);
@@ -139,7 +140,7 @@ const Spin: React.FC = () => {
   const rewards = wheelType === 'usdt' ? USDT_REWARDS : wheelType === 'pro' ? PRO_REWARDS : NORMAL_REWARDS;
   const packages = wheelType === 'normal' ? NORMAL_PACKAGES : PRO_PACKAGES;
   const wheelColors = wheelType === 'usdt' ? USDT_COLORS : wheelType === 'pro' ? PRO_COLORS : NORMAL_COLORS;
-  const currentTickets = wheelType === 'normal' ? normalTickets : proTickets;
+  const currentTickets = wheelType === 'normal' ? (normalTickets + referralTickets) : proTickets;
   const segmentAngle = 360 / rewards.length;
 
   // Load user tickets
@@ -176,6 +177,7 @@ const Spin: React.FC = () => {
       if (existingData) {
         setNormalTickets(existingData.tickets_count || 0);
         setProTickets(existingData.pro_tickets_count || 0);
+        setReferralTickets((existingData as any).referral_tickets_count || 0);
         const alreadyClaimedToday = existingData.free_ticket_date === today;
         setFreeTicketAvailable(!alreadyClaimedToday);
       } else {
@@ -187,6 +189,7 @@ const Spin: React.FC = () => {
     if (data) {
       setNormalTickets(data.tickets_count || 0);
       setProTickets(data.pro_tickets_count || 0);
+      setReferralTickets((data as any).referral_tickets_count || 0);
       const alreadyClaimedToday = data.free_ticket_date === today;
       setFreeTicketAvailable(!alreadyClaimedToday);
     }
@@ -342,11 +345,20 @@ const Spin: React.FC = () => {
 
     // Deduct ticket based on wheel type
     if (wheelType === 'normal') {
-      await supabase
-        .from('user_spin_tickets')
-        .update({ tickets_count: normalTickets - 1 })
-        .eq('user_id', user.id);
-      setNormalTickets(prev => prev - 1);
+      // Use referral tickets first, then normal tickets
+      if (referralTickets > 0) {
+        await supabase
+          .from('user_spin_tickets')
+          .update({ referral_tickets_count: referralTickets - 1 })
+          .eq('user_id', user.id);
+        setReferralTickets(prev => prev - 1);
+      } else {
+        await supabase
+          .from('user_spin_tickets')
+          .update({ tickets_count: normalTickets - 1 })
+          .eq('user_id', user.id);
+        setNormalTickets(prev => prev - 1);
+      }
     } else {
       await supabase
         .from('user_spin_tickets')
@@ -528,13 +540,23 @@ const Spin: React.FC = () => {
             <div className="flex items-center justify-between">
               <h1 className="text-lg font-bold text-foreground">Lucky Spin</h1>
               {wheelType !== 'usdt' && (
-                <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${
-                  wheelType === 'pro' 
-                    ? 'bg-amber-500/20 text-amber-500' 
-                    : 'bg-primary/20 text-primary'
-                }`}>
-                  <Ticket className="w-4 h-4" />
-                  <span>{currentTickets}</span>
+                <div className="flex items-center gap-2">
+                  {/* Referral Tickets Badge */}
+                  {wheelType === 'normal' && referralTickets > 0 && (
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-500">
+                      <Gift className="w-3.5 h-3.5" />
+                      <span>{referralTickets}</span>
+                    </div>
+                  )}
+                  {/* Regular Tickets Badge */}
+                  <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-semibold ${
+                    wheelType === 'pro' 
+                      ? 'bg-amber-500/20 text-amber-500' 
+                      : 'bg-primary/20 text-primary'
+                  }`}>
+                    <Ticket className="w-4 h-4" />
+                    <span>{wheelType === 'normal' ? normalTickets : proTickets}</span>
+                  </div>
                 </div>
               )}
               {wheelType === 'usdt' && (

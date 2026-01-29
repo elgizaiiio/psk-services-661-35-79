@@ -3326,6 +3326,7 @@ export type Database = {
           free_ticket_date: string | null
           id: string
           pro_tickets_count: number | null
+          referral_tickets_count: number
           tickets_count: number
           updated_at: string
           user_id: string
@@ -3335,6 +3336,7 @@ export type Database = {
           free_ticket_date?: string | null
           id?: string
           pro_tickets_count?: number | null
+          referral_tickets_count?: number
           tickets_count?: number
           updated_at?: string
           user_id: string
@@ -3344,6 +3346,7 @@ export type Database = {
           free_ticket_date?: string | null
           id?: string
           pro_tickets_count?: number | null
+          referral_tickets_count?: number
           tickets_count?: number
           updated_at?: string
           user_id?: string
