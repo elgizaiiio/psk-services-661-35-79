@@ -57,6 +57,7 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Rules = lazy(() => import("./pages/Rules"));
 const CasinoTest = lazy(() => import("./pages/CasinoTest"));
+const FreeProTicket = lazy(() => import("./pages/FreeProTicket"));
 
 // Loading component
 const PageLoader = () => (
@@ -182,6 +183,12 @@ const App = () => (
                   <Route path="/auth" element={
                     <Suspense fallback={<PageLoader />}>
                       <Auth />
+                    </Suspense>
+                  } />
+                  {/* Free PRO Ticket gift page */}
+                  <Route path="/free-pro" element={
+                    <Suspense fallback={<PageLoader />}>
+                      <FreeProTicket />
                     </Suspense>
                   } />
                   {/* All routes with Telegram auth */}
