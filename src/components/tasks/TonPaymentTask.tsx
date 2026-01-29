@@ -5,6 +5,7 @@ import { TonIcon, BoltIcon } from '@/components/ui/currency-icons';
 import { toast } from 'sonner';
 import { useTonConnectUI } from '@tonconnect/ui-react';
 import { supabase } from '@/integrations/supabase/client';
+import { TON_PAYMENT_ADDRESS, getValidUntil, tonToNano } from '@/lib/ton-constants';
 
 interface TonPaymentTaskProps {
   userId: string;
@@ -14,7 +15,6 @@ interface TonPaymentTaskProps {
 
 const PAYMENT_AMOUNT = 0.5; // TON
 const REWARD_AMOUNT = 200; // BOLT
-const ADMIN_WALLET = 'UQBYkuShEeeXsFapHtT4LNALrprfZ9rF3hCP3lYorBvro7SM';
 
 const TonPaymentTask: React.FC<TonPaymentTaskProps> = ({ userId, taskId, onComplete }) => {
   const [tonConnectUI] = useTonConnectUI();
@@ -30,11 +30,11 @@ const TonPaymentTask: React.FC<TonPaymentTaskProps> = ({ userId, taskId, onCompl
     try {
       // Create TON transaction
       const transaction = {
-        validUntil: Math.floor(Date.now() / 1000) + 600, // 10 minutes
+        validUntil: getValidUntil(),
         messages: [
           {
-            address: ADMIN_WALLET,
-            amount: (PAYMENT_AMOUNT * 1e9).toString(), // Convert to nanoTON
+            address: TON_PAYMENT_ADDRESS,
+            amount: tonToNano(PAYMENT_AMOUNT),
           },
         ],
       };
