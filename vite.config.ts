@@ -18,6 +18,10 @@ export default defineConfig(({ mode }) => ({
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', '@tanstack/react-query'],
   },
   build: {
     outDir: 'dist',
@@ -36,10 +40,9 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks: {
-          vendor: ['react', 'react-dom'],
+          'react-vendor': ['react', 'react-dom', '@tanstack/react-query'],
           ui: ['@radix-ui/react-dialog', '@radix-ui/react-toast'],
           router: ['react-router-dom'],
-          query: ['@tanstack/react-query'],
           supabase: ['@supabase/supabase-js'],
         },
       },
