@@ -11,7 +11,6 @@ import { toast } from 'sonner';
 import { PageWrapper } from '@/components/ui/motion-wrapper';
 import { BoltIcon, UsdtIcon, TonIcon, EthIcon, ViralIcon } from '@/components/ui/currency-icons';
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
-import { LimitedOfferBadge } from '@/components/offers/LimitedOfferBadge';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 
@@ -266,8 +265,7 @@ const MiningServers = () => {
           </motion.div>
         )}
 
-        {/* Limited Offer Banner */}
-        <LimitedOfferBadge variant="inline" className="mt-2" />
+        {/* Server List */}
 
         {/* Server List */}
         <div className="space-y-3">

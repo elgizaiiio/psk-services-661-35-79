@@ -737,24 +737,56 @@ const Spin: React.FC = () => {
           {/* Spin Button */}
           <FadeUp>
             {wheelType === 'usdt' ? (
-              <Button
-                onClick={() => setShowUsdtSpinPayment(true)}
-                disabled={isSpinning || processingUsdtSpin}
-                className="w-full h-12 text-base font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white"
-                size="lg"
-              >
-                {isSpinning || processingUsdtSpin ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Spinning...
-                  </>
-                ) : (
-                  <>
-                    <TonIcon size={20} className="mr-2" />
-                    SPIN for 5 TON
-                  </>
-                )}
-              </Button>
+              <div className="space-y-3">
+                {/* USDT Wheel Spin Packages */}
+                <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/30">
+                  <p className="text-center text-sm font-bold text-emerald-500 mb-3">
+                    777 Premium Spins - Win USDT!
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { spins: 1, price: 5 },
+                      { spins: 3, price: 12 },
+                      { spins: 5, price: 18 },
+                    ].map((pkg) => (
+                      <button
+                        key={pkg.spins}
+                        onClick={() => {
+                          // For now, use single spin logic
+                          setShowUsdtSpinPayment(true);
+                        }}
+                        disabled={isSpinning || processingUsdtSpin}
+                        className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all"
+                      >
+                        <div className="text-lg font-bold text-emerald-500">{pkg.spins}x</div>
+                        <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                          <TonIcon size={12} />
+                          {pkg.price}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                
+                <Button
+                  onClick={() => setShowUsdtSpinPayment(true)}
+                  disabled={isSpinning || processingUsdtSpin}
+                  className="w-full h-12 text-base font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white"
+                  size="lg"
+                >
+                  {isSpinning || processingUsdtSpin ? (
+                    <>
+                      <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                      Spinning...
+                    </>
+                  ) : (
+                    <>
+                      <UsdtIcon size={20} className="mr-2" />
+                      SPIN for 5 TON
+                    </>
+                  )}
+                </Button>
+              </div>
             ) : (
               <Button
                 onClick={handleSpin}
@@ -866,7 +898,7 @@ const Spin: React.FC = () => {
                   {/* Special Offers Banner */}
                   <div className="py-3 px-4 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-xl border border-amber-500/30 mb-4">
                     <p className="text-center text-sm font-bold text-amber-500">
-                      🔥 Special Offers - Save up to 40%!
+                      Special Offers - Save up to 40%
                     </p>
                   </div>
 
@@ -875,7 +907,6 @@ const Spin: React.FC = () => {
                       // Calculate discount percentage
                       const basePrice = pkg.tickets * (wheelType === 'pro' ? 0.25 : 0.1);
                       const discount = Math.round((1 - pkg.priceTon / basePrice) * 100);
-                      const isHot = index >= 2; // Last 2 packages are "hot"
                       
                       return (
                         <button
@@ -884,9 +915,7 @@ const Spin: React.FC = () => {
                           className={`relative p-4 rounded-xl border transition-all hover:scale-[1.02] active:scale-[0.98] ${
                             wheelType === 'pro'
                               ? 'bg-gradient-to-br from-purple-500/10 to-purple-700/10 border-purple-500/30 hover:border-purple-500/50'
-                              : isHot 
-                                ? 'bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/40 hover:border-amber-500/60'
-                                : 'bg-card border-border hover:border-primary/50'
+                              : 'bg-card border-border hover:border-primary/50'
                           }`}
                         >
                           {/* Discount Badge */}
@@ -895,18 +924,11 @@ const Spin: React.FC = () => {
                               -{discount}%
                             </div>
                           )}
-                          
-                          {/* Hot Badge */}
-                          {isHot && (
-                            <div className="absolute -top-2 -left-2 px-2 py-0.5 rounded-full bg-orange-500 text-white text-xs font-bold">
-                              HOT
-                            </div>
-                          )}
 
                           <div className="flex flex-col items-center gap-2">
                             <div className="flex items-center gap-1">
-                              <Ticket className={`w-5 h-5 ${wheelType === 'pro' ? 'text-purple-500' : isHot ? 'text-amber-500' : 'text-primary'}`} />
-                              <span className={`text-2xl font-bold ${wheelType === 'pro' ? 'text-purple-500' : isHot ? 'text-amber-500' : 'text-primary'}`}>{pkg.tickets}</span>
+                              <Ticket className={`w-5 h-5 ${wheelType === 'pro' ? 'text-purple-500' : 'text-primary'}`} />
+                              <span className={`text-2xl font-bold ${wheelType === 'pro' ? 'text-purple-500' : 'text-primary'}`}>{pkg.tickets}</span>
                             </div>
                             <div className="flex items-center gap-1">
                               <TonIcon size={14} />

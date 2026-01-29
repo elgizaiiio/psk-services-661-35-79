@@ -225,7 +225,7 @@ const Wallet: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setWithdrawSelectOpen(true)}
+            onClick={() => setVerificationOpen(true)}
             className="flex flex-col items-center gap-2"
           >
             <div className="w-14 h-14 rounded-full bg-orange-500/10 flex items-center justify-center">
@@ -347,23 +347,8 @@ const Wallet: React.FC = () => {
           onVerified={() => {
             setIsWalletVerified(true);
             setVerificationOpen(false);
-            // After verification, check if user has server then proceed to correct modal
-            if (pendingWithdrawCurrency) {
-              if (!hasServer) {
-                setRequireServerOpen(true);
-                setPendingWithdrawCurrency(null);
-              } else {
-                // Open the correct modal based on currency
-                if (pendingWithdrawCurrency === 'VIRAL') {
-                  setViralWithdrawOpen(true);
-                } else if (pendingWithdrawCurrency === 'ETH') {
-                  setEthWithdrawOpen(true);
-                } else {
-                  setWithdrawModal({ open: true, currency: pendingWithdrawCurrency as 'TON' | 'USDT' });
-                }
-                setPendingWithdrawCurrency(null);
-              }
-            }
+            // After verification, open withdraw select modal
+            setWithdrawSelectOpen(true);
           }}
         />
       )}
