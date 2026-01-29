@@ -10,6 +10,7 @@ export interface UserServer {
   daily_bolt_yield: number;
   daily_usdt_yield: number;
   daily_ton_yield: number;
+  daily_eth_yield: number;
   daily_viral_yield: number;
   purchased_at: string;
   is_active: boolean;
@@ -79,6 +80,7 @@ export const useUserServers = (userId: string | null) => {
     let totalBolt = 0;
     let totalUsdt = 0;
     let totalTon = 0;
+    let totalEth = 0;
     let totalViral = 0;
     let earliestClaim: Date | null = null;
 
@@ -97,6 +99,7 @@ export const useUserServers = (userId: string | null) => {
       totalBolt += (server.daily_bolt_yield / 24) * claimableHours;
       totalUsdt += (server.daily_usdt_yield / 24) * claimableHours;
       totalTon += ((server.daily_ton_yield || 0) / 24) * claimableHours;
+      totalEth += ((server.daily_eth_yield || 0) / 24) * claimableHours;
       totalViral += ((server.daily_viral_yield || 0) / 24) * claimableHours;
     }
 
@@ -108,6 +111,7 @@ export const useUserServers = (userId: string | null) => {
       pendingBolt: Math.floor(totalBolt),
       pendingUsdt: Math.round(totalUsdt * 100) / 100,
       pendingTon: Math.round(totalTon * 10000) / 10000,
+      pendingEth: Math.round(totalEth * 1000000) / 1000000,
       pendingViral: Math.floor(totalViral),
       hoursSinceClaim: Math.floor(hoursSinceFirstClaim),
       canClaim: hoursSinceFirstClaim >= 1,
@@ -131,6 +135,8 @@ export const useUserServers = (userId: string | null) => {
       claimedBolt: data.claimed_bolt || 0,
       claimedUsdt: data.claimed_usdt || 0,
       claimedTon: data.claimed_ton || 0,
+      claimedEth: data.claimed_eth || 0,
+      claimedViral: data.claimed_viral || 0,
     };
   }, [userId, fetchServers]);
 
@@ -141,7 +147,9 @@ export const useUserServers = (userId: string | null) => {
     hashRate: string,
     dailyBoltYield: number,
     dailyUsdtYield: number,
-    dailyTonYield: number = 0
+    dailyTonYield: number = 0,
+    dailyEthYield: number = 0,
+    dailyViralYield: number = 0
   ) => {
     if (!userId) throw new Error('User not found');
 
@@ -160,6 +168,8 @@ export const useUserServers = (userId: string | null) => {
         daily_bolt_yield: dailyBoltYield,
         daily_usdt_yield: dailyUsdtYield,
         daily_ton_yield: dailyTonYield,
+        daily_eth_yield: dailyEthYield,
+        daily_viral_yield: dailyViralYield,
       })
       .select()
       .single();
@@ -184,6 +194,7 @@ export const useUserServers = (userId: string | null) => {
     const totalBoltPerDay = servers.reduce((sum, s) => sum + s.daily_bolt_yield, 0);
     const totalUsdtPerDay = servers.reduce((sum, s) => sum + s.daily_usdt_yield, 0);
     const totalTonPerDay = servers.reduce((sum, s) => sum + (s.daily_ton_yield || 0), 0);
+    const totalEthPerDay = servers.reduce((sum, s) => sum + (s.daily_eth_yield || 0), 0);
     const totalViralPerDay = servers.reduce((sum, s) => sum + (s.daily_viral_yield || 0), 0);
     const totalHashRate = servers.reduce((sum, s) => {
       const rate = parseFloat(s.hash_rate.replace(/[^0-9.]/g, ''));
@@ -195,6 +206,7 @@ export const useUserServers = (userId: string | null) => {
       totalBoltPerDay,
       totalUsdtPerDay,
       totalTonPerDay,
+      totalEthPerDay,
       totalViralPerDay,
       totalHashRate,
     };

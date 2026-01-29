@@ -901,6 +901,7 @@ export type Database = {
           bot_blocked: boolean | null
           created_at: string
           daily_message_count: number | null
+          eth_balance: number | null
           first_name: string | null
           id: string
           last_message_date: string | null
@@ -926,6 +927,7 @@ export type Database = {
           bot_blocked?: boolean | null
           created_at?: string
           daily_message_count?: number | null
+          eth_balance?: number | null
           first_name?: string | null
           id?: string
           last_message_date?: string | null
@@ -951,6 +953,7 @@ export type Database = {
           bot_blocked?: boolean | null
           created_at?: string
           daily_message_count?: number | null
+          eth_balance?: number | null
           first_name?: string | null
           id?: string
           last_message_date?: string | null
@@ -3263,6 +3266,7 @@ export type Database = {
       user_servers: {
         Row: {
           daily_bolt_yield: number
+          daily_eth_yield: number | null
           daily_ton_yield: number
           daily_usdt_yield: number
           daily_viral_yield: number | null
@@ -3277,6 +3281,7 @@ export type Database = {
         }
         Insert: {
           daily_bolt_yield?: number
+          daily_eth_yield?: number | null
           daily_ton_yield?: number
           daily_usdt_yield?: number
           daily_viral_yield?: number | null
@@ -3291,6 +3296,7 @@ export type Database = {
         }
         Update: {
           daily_bolt_yield?: number
+          daily_eth_yield?: number | null
           daily_ton_yield?: number
           daily_usdt_yield?: number
           daily_viral_yield?: number | null

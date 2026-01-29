@@ -93,7 +93,7 @@ const Invite: React.FC = () => {
                   <span className="text-primary font-semibold">+100 BOLT + 1 Spin Ticket</span>
                 </div>
                 <div className="flex justify-between items-center p-3 rounded-lg bg-primary/10 border border-primary/20">
-                  <span className="text-sm font-medium text-foreground">💰 Commission</span>
+                  <span className="text-sm font-medium text-foreground">Commission</span>
                   <span className="text-primary font-bold">50% of their payments</span>
                 </div>
                 <div className="flex justify-between items-center">

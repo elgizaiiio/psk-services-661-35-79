@@ -50,3 +50,12 @@ export const ViralIcon: React.FC<CurrencyIconProps> = ({ className, size = 20 })
     </span>
   </div>
 );
+
+export const EthIcon: React.FC<CurrencyIconProps> = ({ className, size = 20 }) => (
+  <img 
+    src="https://www.joinhu4.io/checkout/_next/static/media/eth.8e5a63b6.svg" 
+    alt="ETH" 
+    className={cn("inline-block", className)}
+    style={{ width: size, height: size }}
+  />
+);
