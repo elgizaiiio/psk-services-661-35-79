@@ -657,29 +657,33 @@ const Spin: React.FC = () => {
                   {/* Icons overlay */}
                   {rewards.map((reward, index) => {
                     const midAngle = (index * segmentAngle + segmentAngle / 2 - 90) * (Math.PI / 180);
-                    const radius = 85;
-                    const x = 50 + (radius / 2.6) * Math.cos(midAngle);
-                    const y = 50 + (radius / 2.6) * Math.sin(midAngle);
+                    const radius = 80;
+                    const x = 50 + (radius / 2.5) * Math.cos(midAngle);
+                    const y = 50 + (radius / 2.5) * Math.sin(midAngle);
                     const rot = index * segmentAngle + segmentAngle / 2;
                     
                     return (
                       <div
                         key={reward.id}
-                        className="absolute flex flex-col items-center gap-0.5"
+                        className="absolute flex flex-col items-center gap-1"
                         style={{
                           left: `${x}%`,
                           top: `${y}%`,
                           transform: `translate(-50%, -50%) rotate(${rot}deg)`,
                         }}
                       >
-                        <div className="w-5 h-5 flex items-center justify-center">
-                          {reward.type === 'bolt' && <BoltIcon size={18} />}
-                          {reward.type === 'ton' && <TonIcon size={18} />}
-                          {reward.type === 'usdt' && <UsdtIcon size={18} />}
-                          {reward.type === 'booster' && <Zap className="w-4 h-4 text-white" />}
-                          {reward.type === 'nothing' && <X className="w-4 h-4 text-white/70" />}
+                        <div className="w-7 h-7 flex items-center justify-center bg-white/20 rounded-full backdrop-blur-sm">
+                          {reward.type === 'bolt' && <BoltIcon size={22} />}
+                          {reward.type === 'ton' && <TonIcon size={22} />}
+                          {reward.type === 'usdt' && <UsdtIcon size={22} />}
+                          {reward.type === 'eth' && <EthIcon size={22} />}
+                          {reward.type === 'viral' && <ViralIcon size={22} />}
+                          {reward.type === 'booster' && <Zap className="w-5 h-5 text-yellow-300 fill-yellow-300" />}
+                          {reward.type === 'nothing' && <X className="w-5 h-5 text-white/80" />}
                         </div>
-                        <span className="text-[10px] font-bold text-white drop-shadow-md">{reward.label}</span>
+                        <span className="text-xs font-bold text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]">
+                          {reward.label}
+                        </span>
                       </div>
                     );
                   })}
