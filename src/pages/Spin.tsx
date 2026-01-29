@@ -863,27 +863,65 @@ const Spin: React.FC = () => {
                       {wheelType === 'pro' ? 'PRO Ticket Packages' : 'Ticket Packages'}
                     </SheetTitle>
                   </SheetHeader>
-                  <div className="grid grid-cols-2 gap-3 py-4">
-                    {packages.map((pkg) => {
+                  {/* Special Offers Banner */}
+                  <div className="py-3 px-4 bg-gradient-to-r from-amber-500/20 to-orange-500/20 rounded-xl border border-amber-500/30 mb-4">
+                    <p className="text-center text-sm font-bold text-amber-500">
+                      🔥 Special Offers - Save up to 40%!
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3 py-2">
+                    {packages.map((pkg, index) => {
+                      // Calculate discount percentage
+                      const basePrice = pkg.tickets * (wheelType === 'pro' ? 0.25 : 0.1);
+                      const discount = Math.round((1 - pkg.priceTon / basePrice) * 100);
+                      const isHot = index >= 2; // Last 2 packages are "hot"
+                      
                       return (
                         <button
                           key={pkg.id}
                           onClick={() => handleBuyPackage(pkg)}
-                          className={`p-4 rounded-xl border transition-all hover:scale-[1.02] active:scale-[0.98] ${
+                          className={`relative p-4 rounded-xl border transition-all hover:scale-[1.02] active:scale-[0.98] ${
                             wheelType === 'pro'
                               ? 'bg-gradient-to-br from-purple-500/10 to-purple-700/10 border-purple-500/30 hover:border-purple-500/50'
-                              : 'bg-card border-border hover:border-primary/50'
+                              : isHot 
+                                ? 'bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/40 hover:border-amber-500/60'
+                                : 'bg-card border-border hover:border-primary/50'
                           }`}
                         >
+                          {/* Discount Badge */}
+                          {discount > 0 && (
+                            <div className="absolute -top-2 -right-2 px-2 py-0.5 rounded-full bg-green-500 text-white text-xs font-bold">
+                              -{discount}%
+                            </div>
+                          )}
+                          
+                          {/* Hot Badge */}
+                          {isHot && (
+                            <div className="absolute -top-2 -left-2 px-2 py-0.5 rounded-full bg-orange-500 text-white text-xs font-bold">
+                              HOT
+                            </div>
+                          )}
+
                           <div className="flex flex-col items-center gap-2">
-                            <span className={`text-2xl font-bold ${wheelType === 'pro' ? 'text-purple-500' : 'text-primary'}`}>{pkg.tickets}</span>
-                            <span className="text-sm font-semibold text-foreground">{pkg.priceTon} TON</span>
+                            <div className="flex items-center gap-1">
+                              <Ticket className={`w-5 h-5 ${wheelType === 'pro' ? 'text-purple-500' : isHot ? 'text-amber-500' : 'text-primary'}`} />
+                              <span className={`text-2xl font-bold ${wheelType === 'pro' ? 'text-purple-500' : isHot ? 'text-amber-500' : 'text-primary'}`}>{pkg.tickets}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <TonIcon size={14} />
+                              <span className="text-sm font-semibold text-foreground">{pkg.priceTon} TON</span>
+                            </div>
                           </div>
                         </button>
                       );
                     })}
                   </div>
-                  
+
+                  {/* 99% Win Rate Text */}
+                  <p className="text-center text-xs text-muted-foreground mt-3">
+                    99% Win Rate - Almost Everyone Wins!
+                  </p>
                 </SheetContent>
               </Sheet>
             </div>
