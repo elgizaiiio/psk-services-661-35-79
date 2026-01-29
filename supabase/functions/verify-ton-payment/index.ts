@@ -280,6 +280,59 @@ serve(async (req) => {
         }
       }
 
+      // === REFERRAL COMMISSION: 50% to referrer ===
+      try {
+        // Get the paying user's info including who referred them
+        const { data: payingUser } = await supabaseClient
+          .from('bolt_users')
+          .select('id, referred_by')
+          .eq('telegram_id', parseInt(payment.user_id, 10))
+          .single();
+
+        if (payingUser?.referred_by) {
+          const commissionPercent = 50;
+          const commissionAmount = (payment.amount_ton * commissionPercent) / 100;
+          
+          // Create commission record
+          await supabaseClient
+            .from('referral_commissions')
+            .insert({
+              referrer_id: payingUser.referred_by,
+              referred_id: payingUser.id,
+              payment_id: paymentId,
+              payment_type: 'ton',
+              original_amount: payment.amount_ton,
+              commission_amount: commissionAmount,
+              commission_percent: commissionPercent,
+              currency: 'TON',
+              status: 'paid',
+              paid_at: new Date().toISOString()
+            });
+
+          // Add commission to referrer's TON balance
+          const { data: referrer } = await supabaseClient
+            .from('bolt_users')
+            .select('id, ton_balance, total_commission_ton')
+            .eq('id', payingUser.referred_by)
+            .single();
+
+          if (referrer) {
+            await supabaseClient
+              .from('bolt_users')
+              .update({
+                ton_balance: (referrer.ton_balance || 0) + commissionAmount,
+                total_commission_ton: (referrer.total_commission_ton || 0) + commissionAmount
+              })
+              .eq('id', referrer.id);
+
+            console.log(`Referral commission: ${commissionAmount} TON paid to referrer ${referrer.id}`);
+          }
+        }
+      } catch (commissionError) {
+        console.error('Error processing referral commission:', commissionError);
+        // Don't fail the payment verification if commission fails
+      }
+
       console.log(`Payment ${paymentId} confirmed with txHash: ${txHash}`);
 
       return new Response(JSON.stringify({ ok: true, status: "confirmed", payment: updated }), {
