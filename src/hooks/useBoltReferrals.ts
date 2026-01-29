@@ -102,6 +102,22 @@ export const useBoltReferrals = (userId: string | undefined) => {
           updated_at: new Date().toISOString() 
         }).eq('id', referrerData.id);
       }
+
+      // Award free spin ticket to referrer for each referral
+      const { data: spinTicketData } = await supabase
+        .from('user_spin_tickets')
+        .select('referral_tickets_count')
+        .eq('user_id', referrerData.id)
+        .maybeSingle();
+
+      const currentReferralTickets = (spinTicketData as any)?.referral_tickets_count || 0;
+      
+      await supabase
+        .from('user_spin_tickets')
+        .upsert({
+          user_id: referrerData.id,
+          referral_tickets_count: currentReferralTickets + 1,
+        }, { onConflict: 'user_id' });
       return true;
     } catch (err: any) { 
       console.error('Error processing referral:', err); 
