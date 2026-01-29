@@ -6,7 +6,7 @@ import BoltIcon from "@/components/ui/bolt-icon";
 import { useNavigate } from "react-router-dom";
 
 const Auth = () => {
-  const telegramBotUrl = "https://t.me/Boltminingbot?start=mining";
+  const telegramAppUrl = "https://t.me/Boltminingbot/App";
   const navigate = useNavigate();
 
   // Check for preview mode via URL param or localStorage
@@ -15,7 +15,7 @@ const Auth = () => {
   const isPreviewModeStorage = localStorage.getItem('previewMode') === 'true';
 
   const handleOpenTelegram = () => {
-    window.open(telegramBotUrl, "_blank");
+    window.location.href = telegramAppUrl;
   };
 
   const handlePreviewMode = () => {
@@ -91,9 +91,7 @@ const Auth = () => {
                 Or open this link in Telegram:
               </p>
               <a
-                href={telegramBotUrl}
-                target="_blank"
-                rel="noopener noreferrer"
+                href={telegramAppUrl}
                 className="text-primary hover:underline text-sm font-medium"
               >
                 @Boltminingbot
