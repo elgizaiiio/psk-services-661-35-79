@@ -7,8 +7,7 @@ import { useBoltTasks } from '@/hooks/useBoltTasks';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useChannelSubscription } from '@/hooks/useChannelSubscription';
 import { useAdsGramRewarded } from '@/hooks/useAdsGramRewarded';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Target, Check, ExternalLink, Loader2, AlertCircle, Home, Users, Calendar, Pickaxe, UserPlus, Play } from 'lucide-react';
+import { Target, Check, ExternalLink, Loader2, AlertCircle, UserPlus, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { TonIcon, UsdtIcon, BoltIcon } from '@/components/ui/currency-icons';
@@ -63,60 +62,11 @@ const checkReferralRequirement = (title: string, totalReferrals: number): boolea
   return false;
 };
 
-// Helper to check mining requirements
-const checkMiningRequirement = async (title: string, userId: string): Promise<boolean> => {
-  const lowerTitle = title.toLowerCase();
-  
-  if (lowerTitle.includes('start mining')) {
-    const { count } = await supabase
-      .from('bolt_mining_sessions')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId);
-    return (count || 0) >= 1;
-  }
-  
-  if (lowerTitle.includes('mine for 1 hour') || lowerTitle.includes('1 hour')) {
-    const { count } = await supabase
-      .from('bolt_mining_sessions')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId)
-      .eq('is_active', false)
-      .not('completed_at', 'is', null);
-    return (count || 0) >= 1;
-  }
-  
-  if (lowerTitle.includes('upgrade mining power') || lowerTitle.includes('upgrade')) {
-    const { data } = await supabase
-      .from('bolt_users')
-      .select('mining_power')
-      .eq('id', userId)
-      .single();
-    return (data?.mining_power || 1) > 1;
-  }
-  
-  if (lowerTitle.includes('claim mining') || lowerTitle.includes('claim rewards')) {
-    const { data } = await supabase
-      .from('bolt_mining_sessions')
-      .select('total_mined')
-      .eq('user_id', userId)
-      .eq('is_active', false)
-      .not('completed_at', 'is', null)
-      .gt('total_mined', 0)
-      .limit(1);
-    return (data?.length || 0) >= 1;
-  }
-  
-  return false;
-};
-
 // Get task icon based on category
 const getTaskIcon = (task: BoltTask) => {
   const category = (task.category || '').toLowerCase();
   const title = (task.title || '').toLowerCase();
 
-  if (category === 'mining' || title.includes('mining') || title.includes('mine')) {
-    return <Pickaxe className="w-6 h-6 text-amber-500" />;
-  }
   if (category === 'referral' || title.includes('invite') || title.includes('referral')) {
     return <UserPlus className="w-6 h-6 text-purple-500" />;
   }
@@ -152,7 +102,6 @@ const Tasks = () => {
   const loading = tasksLoading || userLoading;
   const { checkSubscription, isChecking } = useChannelSubscription('boltcomm');
   const { showAd: showTaskAd, isReady: taskAdReady, isLoading: taskAdLoading } = useAdsGramRewarded();
-  const [activeTab, setActiveTab] = useState('main');
   const [processingTask, setProcessingTask] = useState<string | null>(null);
   const [showingTaskAd, setShowingTaskAd] = useState(false);
   const didRecheckRef = useRef(false);
@@ -161,41 +110,20 @@ const Tasks = () => {
 
   const isTaskCompleted = (taskId: string) => completedTasks.some(ct => ct.task_id === taskId);
 
+  // Get all available tasks (not completed, excluding mining category)
   const availableTasks = useMemo(() => {
     const completed = new Set(completedTasks.map((c) => c.task_id));
-    return allTasks.filter((t) => !completed.has(t.id));
+    return allTasks.filter((t) => {
+      if (completed.has(t.id)) return false;
+      // Exclude mining tasks
+      const category = (t.category || '').toLowerCase();
+      const title = (t.title || '').toLowerCase();
+      if (category === 'mining' || title.includes('mining') || title.includes('mine')) return false;
+      // Exclude ads category
+      if (category === 'ads') return false;
+      return true;
+    });
   }, [allTasks, completedTasks]);
-
-  // Categorize tasks into Main, Partners, Daily (excluding mining tasks)
-  const isDailyTabTask = (task: BoltTask) => {
-    const category = (task.category || '').toLowerCase();
-    // Only daily and referral, NOT mining
-    return category === 'daily' || category === 'referral';
-  };
-
-  // Check if task is a mining task (to exclude)
-  const isMiningTask = (task: BoltTask) => {
-    const category = (task.category || '').toLowerCase();
-    const title = (task.title || '').toLowerCase();
-    return category === 'mining' || title.includes('mining') || title.includes('mine');
-  };
-
-  const mainTasks = useMemo(() => {
-    // Main tab should only contain our channel join task(s)
-    return availableTasks.filter((task) => isOurChannelTask(task) && isJoinTask(task.title, task.task_url));
-  }, [availableTasks]);
-
-  const partnerTasks = useMemo(() => {
-    // Partner tab: everything else (excluding our channel + Daily tab tasks + ads category + mining tasks)
-    return availableTasks.filter(
-      (task) => !isOurChannelTask(task) && !isDailyTabTask(task) && !isMiningTask(task) && (task.category || '').toLowerCase() !== 'ads'
-    );
-  }, [availableTasks]);
-
-  const dailyTasks = useMemo(() => {
-    // Daily tab includes daily + referral tasks (NOT mining)
-    return availableTasks.filter((task) => isDailyTabTask(task) && !isMiningTask(task));
-  }, [availableTasks]);
 
   const stats = useMemo(() => {
     const totalTasks = allTasks.length;
@@ -204,7 +132,7 @@ const Tasks = () => {
     return { totalTasks, completed, earnedPoints };
   }, [allTasks, completedTasks]);
 
-  // Re-check subscription ONLY for our channel tasks, not partner tasks
+  // Re-check subscription ONLY for our channel tasks
   useEffect(() => {
     if (didRecheckRef.current) return;
     if (!tgUser?.id) return;
@@ -266,7 +194,7 @@ const Tasks = () => {
     const task = allTasks.find(t => t.id === taskId);
     const isOurChannel = task ? isOurChannelTask(task) : false;
 
-    // Only verify subscription for OUR channel tasks, not partner tasks
+    // Only verify subscription for OUR channel tasks
     const joinTask = isJoinTask(taskTitle, taskUrl);
     if (joinTask && tgUser?.id && isOurChannel) {
       if (taskUrl) window.open(taskUrl, '_blank');
@@ -318,28 +246,6 @@ const Tasks = () => {
         const match = taskTitle.match(/invite\s+(\d+)/i);
         const required = match ? parseInt(match[1], 10) : 1;
         toast.error(`You need ${required} referrals. You have ${totalReferrals}.`);
-        
-        if (taskUrl?.startsWith('/')) {
-          navigate(taskUrl);
-        }
-      }
-      setProcessingTask(null);
-      return;
-    }
-
-    // Mining tasks - verify mining activity
-    if (taskCategory === 'mining') {
-      const miningVerified = await checkMiningRequirement(taskTitle, boltUser.id);
-
-      if (miningVerified) {
-        try {
-          await completeTask(taskId);
-          toast.success('Mining task completed! Reward added');
-        } catch {
-          toast.error('Failed to complete task');
-        }
-      } else {
-        toast.error('Complete the required mining action first');
         
         if (taskUrl?.startsWith('/')) {
           navigate(taskUrl);
@@ -466,7 +372,7 @@ const Tasks = () => {
     );
   };
 
-  // Ad Task Card for Partners tab - same style as other tasks
+  // Ad Task Card - same style as other tasks
   const renderAdTaskCard = () => (
     <motion.button
       onClick={handleWatchTaskAd}
@@ -482,7 +388,7 @@ const Tasks = () => {
         </div>
 
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-foreground">Watch Partner Ad</p>
+          <p className="font-medium text-foreground">Watch Ad</p>
           <p className="text-xs flex items-center gap-1 text-primary">
             <BoltIcon size={14} />
             +10 BOLT
@@ -503,7 +409,7 @@ const Tasks = () => {
       <div className="max-w-md mx-auto px-5 pt-6">
         <Helmet>
           <title>Tasks | Earn BOLT Rewards</title>
-          <meta name="description" content="Complete social, mining, and referral tasks to earn BOLT rewards." />
+          <meta name="description" content="Complete tasks to earn BOLT rewards." />
           <link rel="canonical" href={`${origin}/tasks`} />
           <meta property="og:title" content="Tasks" />
           <meta property="og:description" content="Complete tasks to earn BOLT rewards." />
@@ -544,82 +450,34 @@ const Tasks = () => {
             </div>
           </FadeUp>
 
+          {/* Rewarded Ads Card */}
           <FadeUp>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="w-full grid grid-cols-3 h-12 bg-card border border-border rounded-xl p-1 mb-6">
-                <TabsTrigger
-                  value="main"
-                  className="rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-1.5"
-                >
-                  <Home className="w-4 h-4" />
-                  Main
-                </TabsTrigger>
-                <TabsTrigger
-                  value="partners"
-                  className="rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-1.5"
-                >
-                  <Users className="w-4 h-4" />
-                  Partners
-                </TabsTrigger>
-                <TabsTrigger
-                  value="daily"
-                  className="rounded-lg text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground flex items-center gap-1.5"
-                >
-                  <Calendar className="w-4 h-4" />
-                  Daily
-                </TabsTrigger>
-              </TabsList>
+            <WatchAdCard 
+              userId={boltUser?.id} 
+              telegramId={tgUser?.id}
+              onRewardClaimed={refreshTasks}
+            />
+          </FadeUp>
 
-              <AnimatePresence mode="wait">
-                {/* Main Tab - Our Channel Only */}
-                <TabsContent value="main" className="space-y-3 mt-0">
-                  {mainTasks.map((task, i) => renderTaskItem(task, i))}
-                  
-                  {mainTasks.length === 0 && (
-                    <div className="text-center py-12">
-                      <Check className="w-12 h-12 mx-auto text-emerald-500/50 mb-3" />
-                      <p className="text-sm text-muted-foreground">All main tasks completed!</p>
-                    </div>
-                  )}
-                </TabsContent>
+          {/* Ad Task Card */}
+          <FadeUp>
+            {renderAdTaskCard()}
+          </FadeUp>
 
-                {/* Partners Tab - Partner tasks + Task Ads */}
-                <TabsContent value="partners" className="space-y-3 mt-0">
-                  {/* Task Ad Card */}
-                  {renderAdTaskCard()}
-                  
-                  {/* Partner Tasks */}
-                  {partnerTasks.map((task, i) => renderTaskItem(task, i + 1))}
-                  
-                  {partnerTasks.length === 0 && (
-                    <div className="text-center py-8">
-                      <Users className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
-                      <p className="text-sm text-muted-foreground">More partner tasks coming soon</p>
-                    </div>
-                  )}
-                </TabsContent>
-
-                {/* Daily Tab - Daily tasks + Rewarded Ads */}
-                <TabsContent value="daily" className="space-y-3 mt-0">
-                  {/* Rewarded Ads Card */}
-                  <WatchAdCard 
-                    userId={boltUser?.id} 
-                    telegramId={tgUser?.id}
-                    onRewardClaimed={refreshTasks}
-                  />
-                  
-                  {/* Daily Tasks */}
-                  {dailyTasks.map((task, i) => renderTaskItem(task, i))}
-                  
-                  {dailyTasks.length === 0 && (
-                    <div className="text-center py-8">
-                      <Calendar className="w-10 h-10 mx-auto text-muted-foreground/30 mb-2" />
-                      <p className="text-sm text-muted-foreground">Check back for daily tasks</p>
-                    </div>
-                  )}
-                </TabsContent>
+          {/* All Tasks - Unified List */}
+          <FadeUp>
+            <div className="space-y-3">
+              <AnimatePresence mode="popLayout">
+                {availableTasks.map((task, i) => renderTaskItem(task, i))}
               </AnimatePresence>
-            </Tabs>
+              
+              {availableTasks.length === 0 && (
+                <div className="text-center py-12">
+                  <Check className="w-12 h-12 mx-auto text-emerald-500/50 mb-3" />
+                  <p className="text-sm text-muted-foreground">All tasks completed!</p>
+                </div>
+              )}
+            </div>
           </FadeUp>
         </StaggerContainer>
       </div>
