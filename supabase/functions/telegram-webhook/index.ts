@@ -2330,33 +2330,52 @@ User joined from AdsGram ad!`);
         }
       }
 
+      // Handle free-pro gift link
+      if (referralParam === 'free-pro') {
+        const webAppUrl = `${WEBAPP_URL}/free-pro`;
+        const giftMessage = `Welcome ${firstName}!
+
+You have a free PRO Spin Ticket waiting for you.
+
+Click the button below to claim your gift.`;
+
+        const keyboard = {
+          inline_keyboard: [
+            [{ text: 'Claim Gift', web_app: { url: webAppUrl } }],
+            [{ text: 'Home', web_app: { url: WEBAPP_URL } }]
+          ]
+        };
+
+        await sendTelegramMessage(chatId, giftMessage, keyboard);
+        console.log('Gift message sent for free-pro');
+        return new Response(JSON.stringify({ ok: true }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
       let webAppUrl = WEBAPP_URL;
       if (referralParam && !referralParam.startsWith('adclick_') && !referralParam.startsWith('adg_')) {
         webAppUrl = `${WEBAPP_URL}?ref=${encodeURIComponent(referralParam)}`;
       }
 
-      const welcomeMessage = `🚀 <b>Welcome ${firstName}!</b>
+      const welcomeMessage = `Welcome ${firstName}!
 
-🎰 <b>High Win Rate Active!</b>
+Start mining BOLT and win real USDT and TON prizes.
 
-Start mining BOLT and win real USDT & TON prizes!
-
-• Features:
+Features:
 - Real USDT winning chances
 - Direct TON rewards
 - Free daily bonuses
 - Instant withdrawals
 
-🏆 <b>$10,000 Contest LIVE!</b>
-
-⏰ Don't miss out - Start now!`;
+$10,000 Contest is LIVE!`;
 
       const keyboard = {
         inline_keyboard: [
-          [{ text: '🚀 Start Mining Now', web_app: { url: webAppUrl } }],
-          [{ text: '🏆 View Contest', web_app: { url: `${WEBAPP_URL}/contest` } }],
-          [{ text: '✅ Withdrawal Proofs', url: 'https://t.me/boltwithdrawals' }],
-          [{ text: '📢 Join Community', url: 'https://t.me/boltcomm' }]
+          [{ text: 'Start Mining Now', web_app: { url: webAppUrl } }],
+          [{ text: 'View Contest', web_app: { url: `${WEBAPP_URL}/contest` } }],
+          [{ text: 'Withdrawal Proofs', url: 'https://t.me/boltwithdrawals' }],
+          [{ text: 'Join Community', url: 'https://t.me/boltcomm' }]
         ]
       };
 
