@@ -5,7 +5,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-telegram-id',
 };
 
-const MIN_ETH_WITHDRAWAL = 0.001;
+const MIN_ETH_WITHDRAWAL = 1;
 
 interface WithdrawRequest {
   userId: string;
