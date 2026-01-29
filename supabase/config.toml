@@ -62,3 +62,9 @@ verify_jwt = false
 
 [functions.withdraw-viral]
 verify_jwt = false
+
+[functions.withdraw-eth]
+verify_jwt = false
+
+[functions.send-mass-broadcast]
+verify_jwt = false
