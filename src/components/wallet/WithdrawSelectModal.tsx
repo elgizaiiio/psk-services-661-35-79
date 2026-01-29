@@ -1,14 +1,15 @@
 import React from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ArrowUpRight, X } from 'lucide-react';
-import { TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
+import { TonIcon, UsdtIcon, ViralIcon } from '@/components/ui/currency-icons';
 
 interface WithdrawSelectModalProps {
   open: boolean;
   onClose: () => void;
-  onSelectCurrency: (currency: 'TON' | 'USDT') => void;
+  onSelectCurrency: (currency: 'TON' | 'USDT' | 'VIRAL') => void;
   tonBalance: number;
   usdtBalance: number;
+  viralBalance?: number;
 }
 
 const WithdrawSelectModal: React.FC<WithdrawSelectModalProps> = ({
@@ -17,14 +18,26 @@ const WithdrawSelectModal: React.FC<WithdrawSelectModalProps> = ({
   onSelectCurrency,
   tonBalance,
   usdtBalance,
+  viralBalance = 0,
 }) => {
   const currencies = [
+    { 
+      id: 'VIRAL' as const, 
+      name: 'VIRAL', 
+      fullName: 'Viral Token',
+      balance: viralBalance, 
+      icon: <ViralIcon size={36} />,
+      minWithdraw: 100,
+      isInstant: true,
+    },
     { 
       id: 'TON' as const, 
       name: 'TON', 
       fullName: 'Toncoin',
       balance: tonBalance, 
       icon: <TonIcon size={36} />,
+      minWithdraw: 1,
+      isInstant: false,
     },
     { 
       id: 'USDT' as const, 
@@ -32,6 +45,8 @@ const WithdrawSelectModal: React.FC<WithdrawSelectModalProps> = ({
       fullName: 'Tether USD',
       balance: usdtBalance, 
       icon: <UsdtIcon size={36} />,
+      minWithdraw: 5,
+      isInstant: false,
     },
   ];
 
@@ -56,20 +71,27 @@ const WithdrawSelectModal: React.FC<WithdrawSelectModalProps> = ({
           {currencies.map((currency) => (
             <button
               key={currency.id}
-              onClick={() => currency.balance > 0 && onSelectCurrency(currency.id)}
-              disabled={currency.balance <= 0}
+              onClick={() => currency.balance >= currency.minWithdraw && onSelectCurrency(currency.id)}
+              disabled={currency.balance < currency.minWithdraw}
               className="w-full flex items-center justify-between p-4 rounded-xl bg-muted/20 hover:bg-muted/40 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="flex items-center gap-3">
                 {currency.icon}
                 <div className="text-left">
-                  <p className="font-medium text-foreground">{currency.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-foreground">{currency.name}</p>
+                    {currency.isInstant && (
+                      <span className="px-1.5 py-0.5 text-[10px] font-medium bg-green-500/20 text-green-500 rounded">
+                        Instant
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">{currency.fullName}</p>
                 </div>
               </div>
               <div className="text-right">
                 <p className="font-medium text-foreground">{currency.balance.toFixed(2)}</p>
-                <p className="text-xs text-muted-foreground">Available</p>
+                <p className="text-xs text-muted-foreground">Min: {currency.minWithdraw}</p>
               </div>
             </button>
           ))}

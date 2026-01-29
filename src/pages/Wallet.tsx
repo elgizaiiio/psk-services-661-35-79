@@ -6,11 +6,12 @@ import { useViralMining } from "@/hooks/useViralMining";
 import { useTelegramBackButton } from "@/hooks/useTelegramBackButton";
 import { Eye, EyeOff, Loader2, Wallet as WalletIcon, ArrowUpRight, ArrowDownLeft, Copy, Check } from "lucide-react";
 import { TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
-import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
+import { BoltIcon, TonIcon, UsdtIcon, ViralIcon, EthIcon } from '@/components/ui/currency-icons';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import WithdrawModal from '@/components/WithdrawModal';
 import WithdrawSelectModal from '@/components/wallet/WithdrawSelectModal';
+import ViralWithdrawModal from '@/components/wallet/ViralWithdrawModal';
 import DepositModal from '@/components/wallet/DepositModal';
 import WalletVerificationModal from '@/components/WalletVerificationModal';
 import RequireServerModal from '@/components/RequireServerModal';
@@ -20,14 +21,16 @@ const Wallet: React.FC = () => {
   const { user, loading: miningLoading } = useViralMining(tgUser);
   const wallet = useTonWallet();
   const [tonPrice, setTonPrice] = useState<number | null>(null);
+  const [ethPrice, setEthPrice] = useState<number | null>(null);
   const [showBalance, setShowBalance] = useState(true);
   const [withdrawSelectOpen, setWithdrawSelectOpen] = useState(false);
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; currency: 'TON' | 'USDT' } | null>(null);
+  const [viralWithdrawOpen, setViralWithdrawOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [verificationOpen, setVerificationOpen] = useState(false);
   const [isWalletVerified, setIsWalletVerified] = useState(false);
-  const [pendingWithdrawCurrency, setPendingWithdrawCurrency] = useState<'TON' | 'USDT' | null>(null);
+  const [pendingWithdrawCurrency, setPendingWithdrawCurrency] = useState<'TON' | 'USDT' | 'VIRAL' | null>(null);
   const [hasServer, setHasServer] = useState<boolean | null>(null);
   const [requireServerOpen, setRequireServerOpen] = useState(false);
   useTelegramBackButton();
@@ -35,12 +38,18 @@ const Wallet: React.FC = () => {
   const boltBalance = user?.token_balance ?? 0;
   const usdtBalance = (user as any)?.usdt_balance ?? 0;
   const tonBalance = (user as any)?.ton_balance ?? 0;
+  const viralBalance = (user as any)?.viral_balance ?? 0;
+  const ethBalance = (user as any)?.eth_balance ?? 0;
 
   useEffect(() => {
-    fetch("https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd")
-      .then(res => res.json())
-      .then(data => setTonPrice(data?.["the-open-network"]?.usd ?? null))
-      .catch(() => {});
+    Promise.all([
+      fetch("https://api.coingecko.com/api/v3/simple/price?ids=the-open-network&vs_currencies=usd")
+        .then(res => res.json())
+        .then(data => setTonPrice(data?.["the-open-network"]?.usd ?? null)),
+      fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd")
+        .then(res => res.json())
+        .then(data => setEthPrice(data?.["ethereum"]?.usd ?? null))
+    ]).catch(() => {});
   }, []);
 
   // Check if user has a server
@@ -87,7 +96,7 @@ const Wallet: React.FC = () => {
   }, [user?.id, wallet?.account?.address]);
 
   const isLoading = authLoading || miningLoading;
-  const totalUSD = usdtBalance + (tonBalance * (tonPrice || 0));
+  const totalUSD = usdtBalance + (tonBalance * (tonPrice || 0)) + (ethBalance * (ethPrice || 0));
 
   const copyAddress = () => {
     if (wallet?.account?.address) {
@@ -98,8 +107,14 @@ const Wallet: React.FC = () => {
     }
   };
 
-  const handleWithdrawSelect = (currency: 'TON' | 'USDT') => {
+  const handleWithdrawSelect = (currency: 'TON' | 'USDT' | 'VIRAL') => {
     setWithdrawSelectOpen(false);
+    
+    // Viral has instant withdrawal - no verification needed
+    if (currency === 'VIRAL') {
+      setViralWithdrawOpen(true);
+      return;
+    }
     
     // First check if wallet is verified
     if (!isWalletVerified) {
@@ -246,6 +261,20 @@ const Wallet: React.FC = () => {
         <div className="space-y-2">
           {[
             { 
+              name: 'VIRAL', 
+              fullName: 'Viral Token',
+              balance: viralBalance, 
+              value: 0, 
+              icon: <ViralIcon size={40} />,
+            },
+            { 
+              name: 'ETH', 
+              fullName: 'Ethereum',
+              balance: ethBalance, 
+              value: ethBalance * (ethPrice || 0), 
+              icon: <EthIcon size={40} />,
+            },
+            { 
               name: 'BOLT', 
               fullName: 'Bolt Token',
               balance: boltBalance, 
@@ -280,7 +309,7 @@ const Wallet: React.FC = () => {
               </div>
               <div className="text-right">
                 <p className="font-medium text-foreground">
-                  {showBalance ? asset.balance.toLocaleString(undefined, { maximumFractionDigits: 2 }) : '••••'}
+                  {showBalance ? asset.balance.toLocaleString(undefined, { maximumFractionDigits: asset.name === 'ETH' ? 6 : 2 }) : '••••'}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {showBalance ? `$${asset.value.toFixed(2)}` : '••••'}
@@ -308,6 +337,7 @@ const Wallet: React.FC = () => {
         onSelectCurrency={handleWithdrawSelect}
         tonBalance={tonBalance}
         usdtBalance={usdtBalance}
+        viralBalance={viralBalance}
       />
 
       {/* Wallet Verification Modal */}
@@ -324,12 +354,12 @@ const Wallet: React.FC = () => {
             setIsWalletVerified(true);
             setVerificationOpen(false);
             // After verification, check if user has server
-            if (pendingWithdrawCurrency) {
+            if (pendingWithdrawCurrency && pendingWithdrawCurrency !== 'VIRAL') {
               if (!hasServer) {
                 setRequireServerOpen(true);
                 setPendingWithdrawCurrency(null);
               } else {
-                setWithdrawModal({ open: true, currency: pendingWithdrawCurrency });
+                setWithdrawModal({ open: true, currency: pendingWithdrawCurrency as 'TON' | 'USDT' });
                 setPendingWithdrawCurrency(null);
               }
             }
@@ -343,7 +373,18 @@ const Wallet: React.FC = () => {
         onClose={() => setRequireServerOpen(false)}
       />
 
-      {/* Withdraw Modal */}
+      {/* Viral Withdraw Modal (Instant) */}
+      {user && (
+        <ViralWithdrawModal
+          open={viralWithdrawOpen}
+          onClose={() => setViralWithdrawOpen(false)}
+          userId={user.id}
+          balance={viralBalance}
+          onSuccess={() => window.location.reload()}
+        />
+      )}
+
+      {/* Withdraw Modal (TON/USDT) */}
       {withdrawModal && user && (
         <WithdrawModal
           open={withdrawModal.open}

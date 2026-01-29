@@ -3417,6 +3417,60 @@ export type Database = {
           },
         ]
       }
+      viral_withdrawals: {
+        Row: {
+          amount: number
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          jetton_address: string | null
+          status: string
+          tx_hash: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Insert: {
+          amount: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          jetton_address?: string | null
+          status?: string
+          tx_hash?: string | null
+          user_id: string
+          wallet_address: string
+        }
+        Update: {
+          amount?: number
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          jetton_address?: string | null
+          status?: string
+          tx_hash?: string | null
+          user_id?: string
+          wallet_address?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "viral_withdrawals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "viral_withdrawals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wallet_verifications: {
         Row: {
           created_at: string
