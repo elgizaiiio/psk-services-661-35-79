@@ -75,15 +75,17 @@ async function processAllUsers(supabase: any, campaignType: string) {
         const greeting = user.first_name ? `Hey ${user.first_name}!` : 'Hey!';
         const message = `${greeting} 🎉
 
-<b>Congratulations!</b> You've been specially selected!
+<b>We're Back!</b> 🚀
 
-You're one of our premium users, and we've added <b>$5 USDT</b> to your account as a thank you for being with us!
+Great news - we're back to work and better than ever!
 
-💰 Your current balance: <b>$5+ USDT</b>
+To thank you for your patience during our downtime, we've added <b>$5 USDT</b> to your wallet as compensation!
 
-Withdraw your earnings now and enjoy your rewards!
+💰 Your bonus: <b>$5 USDT</b>
 
-⏰ Don't wait - claim your money today!`;
+Come back and start earning again!
+
+⚡ We missed you - let's get back to mining!`;
 
         const sent = await sendTelegramMessage(user.telegram_id, message);
         if (sent) totalSent++;
