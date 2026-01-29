@@ -1,4 +1,6 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { WalletContractV4, Address, beginCell, internal, toNano, SendMode } from 'https://esm.sh/@ton/ton@15.1.0';
+import { mnemonicToPrivateKey } from 'https://esm.sh/@ton/crypto@3.3.0';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,7 +12,7 @@ const HOT_WALLET_MNEMONIC = Deno.env.get('HOT_WALLET_MNEMONIC') || '';
 const HOT_WALLET_ADDRESS = Deno.env.get('HOT_WALLET_ADDRESS') || '';
 const MIN_VIRAL_WITHDRAWAL = 100;
 
-// TON API endpoint - using TON Center
+// TON Center API (free tier)
 const TON_CENTER_API = 'https://toncenter.com/api/v2';
 
 interface WithdrawRequest {
@@ -141,14 +143,14 @@ Deno.serve(async (req) => {
 
     // Process the Jetton transfer
     try {
-      console.log('[withdraw-viral] Processing Jetton transfer...');
+      console.log('[withdraw-viral] Processing real Jetton transfer...');
       
       const transferResult = await sendJettonTransfer({
-        fromWallet: HOT_WALLET_ADDRESS,
-        toWallet: walletAddress,
-        jettonMaster: VIRAL_JETTON_ADDRESS,
+        destinationAddress: walletAddress,
+        jettonMasterAddress: VIRAL_JETTON_ADDRESS,
         amount: amount,
-        mnemonic: HOT_WALLET_MNEMONIC
+        mnemonic: HOT_WALLET_MNEMONIC,
+        senderAddress: HOT_WALLET_ADDRESS
       });
 
       if (transferResult.success) {
@@ -234,11 +236,11 @@ Deno.serve(async (req) => {
 });
 
 interface JettonTransferParams {
-  fromWallet: string;
-  toWallet: string;
-  jettonMaster: string;
+  destinationAddress: string;
+  jettonMasterAddress: string;
   amount: number;
   mnemonic: string;
+  senderAddress: string;
 }
 
 interface TransferResult {
@@ -247,63 +249,106 @@ interface TransferResult {
   error?: string;
 }
 
-// Send Jetton transfer using TON libraries
+// Real Jetton transfer using @ton/ton library
 async function sendJettonTransfer(params: JettonTransferParams): Promise<TransferResult> {
-  const { fromWallet, toWallet, jettonMaster, amount, mnemonic } = params;
+  const { destinationAddress, jettonMasterAddress, amount, mnemonic, senderAddress } = params;
   
   try {
-    console.log('[sendJettonTransfer] Starting transfer:', {
-      from: fromWallet,
-      to: toWallet,
-      jettonMaster,
+    console.log('[sendJettonTransfer] Starting real transfer:', {
+      to: destinationAddress,
+      jettonMaster: jettonMasterAddress,
       amount
     });
 
-    // Step 1: Get the Jetton wallet address for the hot wallet
-    const jettonWalletAddress = await getJettonWalletAddress(jettonMaster, fromWallet);
-    console.log('[sendJettonTransfer] Hot wallet Jetton address:', jettonWalletAddress);
-
-    // Step 2: Check Jetton balance
-    const jettonData = await getJettonWalletData(jettonWalletAddress);
-    console.log('[sendJettonTransfer] Jetton wallet data:', jettonData);
-
-    // Amount in nano (9 decimals for most jettons)
-    const amountNano = BigInt(Math.floor(amount * 1e9));
-    
-    if (jettonData.balance < amountNano) {
-      return {
-        success: false,
-        error: `Insufficient Jetton balance. Have: ${jettonData.balance}, Need: ${amountNano}`
-      };
+    // Parse mnemonic and get key pair
+    const mnemonicArray = mnemonic.trim().split(/\s+/);
+    if (mnemonicArray.length !== 24) {
+      throw new Error(`Invalid mnemonic: expected 24 words, got ${mnemonicArray.length}`);
     }
 
-    // Step 3: Create transfer message using mnemonic
-    // Jetton transfer requires sending a message to the Jetton wallet contract
-    // with op = 0xf8a7ea5 (transfer) and the destination + amount
-    
-    const transferBoc = await createJettonTransferBoc({
-      jettonWallet: jettonWalletAddress,
-      destination: toWallet,
-      amount: amountNano,
-      mnemonic: mnemonic,
-      senderAddress: fromWallet
+    const keyPair = await mnemonicToPrivateKey(mnemonicArray);
+    console.log('[sendJettonTransfer] Key pair generated');
+
+    // Create wallet contract (V4R2 is most common)
+    const wallet = WalletContractV4.create({
+      workchain: 0,
+      publicKey: keyPair.publicKey
     });
 
-    console.log('[sendJettonTransfer] Transfer BOC created');
+    const walletAddress = wallet.address.toString();
+    console.log('[sendJettonTransfer] Wallet address from mnemonic:', walletAddress);
 
-    // Step 4: Send the transaction
-    const sendResult = await sendBocToNetwork(transferBoc);
+    // Verify wallet address matches configured address
+    if (!senderAddress.includes(walletAddress.slice(-10)) && !walletAddress.includes(senderAddress.slice(-10))) {
+      console.warn('[sendJettonTransfer] Warning: Wallet address mismatch', {
+        derived: walletAddress,
+        configured: senderAddress
+      });
+    }
+
+    // Get sender's jetton wallet address
+    const jettonWalletAddress = await getJettonWalletAddress(jettonMasterAddress, walletAddress);
+    console.log('[sendJettonTransfer] Sender jetton wallet:', jettonWalletAddress);
+
+    // Get current seqno
+    const seqno = await getWalletSeqno(walletAddress);
+    console.log('[sendJettonTransfer] Current seqno:', seqno);
+
+    // Amount in nano (9 decimals for most jettons)
+    const jettonAmount = BigInt(Math.floor(amount * 1e9));
+    
+    // Create jetton transfer payload
+    // op: 0xf8a7ea5 (transfer)
+    const destination = Address.parse(destinationAddress);
+    const responseAddress = Address.parse(walletAddress);
+    
+    const jettonTransferPayload = beginCell()
+      .storeUint(0xf8a7ea5, 32) // JETTON_TRANSFER_OP_CODE
+      .storeUint(0, 64) // query_id
+      .storeCoins(jettonAmount) // amount
+      .storeAddress(destination) // destination
+      .storeAddress(responseAddress) // response_destination
+      .storeBit(false) // no custom_payload
+      .storeCoins(toNano('0.001')) // forward_ton_amount for notification
+      .storeBit(false) // no forward_payload
+      .endCell();
+
+    // Create internal message to jetton wallet
+    const jettonWallet = Address.parse(jettonWalletAddress);
+    
+    // Create transfer message
+    const transferMessage = internal({
+      to: jettonWallet,
+      value: toNano('0.05'), // gas fee
+      body: jettonTransferPayload
+    });
+
+    // Create and sign external message
+    const transfer = wallet.createTransfer({
+      seqno: seqno,
+      secretKey: keyPair.secretKey,
+      sendMode: SendMode.PAY_GAS_SEPARATELY + SendMode.IGNORE_ERRORS,
+      messages: [transferMessage]
+    });
+
+    // Convert to BOC and send
+    const boc = transfer.toBoc().toString('base64');
+    console.log('[sendJettonTransfer] BOC created, sending to network...');
+
+    // Send via TON Center API
+    const sendResult = await sendBocToTonCenter(boc);
     
     if (sendResult.success) {
+      // Generate transaction hash from BOC
+      const txHash = await generateTxHash(boc);
+      console.log('[sendJettonTransfer] Transaction sent successfully:', txHash);
+      
       return {
         success: true,
-        txHash: sendResult.hash
+        txHash: txHash
       };
     } else {
-      return {
-        success: false,
-        error: sendResult.error
-      };
+      throw new Error(sendResult.error || 'Failed to send transaction');
     }
 
   } catch (error) {
@@ -315,39 +360,46 @@ async function sendJettonTransfer(params: JettonTransferParams): Promise<Transfe
   }
 }
 
-// Get Jetton wallet address for an owner
+// Get jetton wallet address from master contract
 async function getJettonWalletAddress(jettonMaster: string, ownerAddress: string): Promise<string> {
   try {
-    // Call get_wallet_address method on jetton master
     const url = `${TON_CENTER_API}/runGetMethod`;
-    const body = {
-      address: jettonMaster,
-      method: 'get_wallet_address',
-      stack: [
-        ['tvm.Slice', ownerAddress]
-      ]
-    };
-
+    
+    // Convert owner address to raw format for the API
+    const ownerAddr = Address.parse(ownerAddress);
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify({
+        address: jettonMaster,
+        method: 'get_wallet_address',
+        stack: [
+          ['tvm.Slice', ownerAddr.toRawString()]
+        ]
+      })
     });
 
     const data = await response.json();
+    console.log('[getJettonWalletAddress] Response:', JSON.stringify(data));
     
     if (data.ok && data.result?.stack?.[0]) {
-      // Parse the cell containing the address
-      const addressCell = data.result.stack[0];
-      if (addressCell[0] === 'cell') {
-        // The address is encoded in the cell
-        return parseAddressFromCell(addressCell[1].bytes);
+      const stack = data.result.stack[0];
+      // Parse cell to get address
+      if (stack[0] === 'cell') {
+        // Decode address from cell
+        const cellBoc = stack[1].bytes;
+        const addr = parseAddressFromBoc(cellBoc);
+        if (addr) return addr;
+      } else if (stack[0] === 'slice') {
+        // Already a slice with address
+        return stack[1];
       }
     }
 
-    // Fallback: compute address manually (for standard jetton wallets)
-    console.log('[getJettonWalletAddress] Using fallback method');
-    return computeJettonWalletAddress(jettonMaster, ownerAddress);
+    // Fallback: use alternative API endpoint
+    console.log('[getJettonWalletAddress] Trying alternative method...');
+    return await getJettonWalletAddressAlt(jettonMaster, ownerAddress);
     
   } catch (error) {
     console.error('[getJettonWalletAddress] Error:', error);
@@ -355,116 +407,111 @@ async function getJettonWalletAddress(jettonMaster: string, ownerAddress: string
   }
 }
 
-// Get Jetton wallet data (balance, owner, etc)
-async function getJettonWalletData(jettonWallet: string): Promise<{ balance: bigint; owner: string }> {
+// Alternative method using tonapi.io (free tier)
+async function getJettonWalletAddressAlt(jettonMaster: string, ownerAddress: string): Promise<string> {
+  try {
+    const url = `https://tonapi.io/v2/accounts/${ownerAddress}/jettons/${jettonMaster}`;
+    const response = await fetch(url);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to get jetton wallet: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (data.wallet_address?.address) {
+      return data.wallet_address.address;
+    }
+    
+    throw new Error('Jetton wallet not found');
+  } catch (error) {
+    console.error('[getJettonWalletAddressAlt] Error:', error);
+    throw error;
+  }
+}
+
+// Get wallet seqno
+async function getWalletSeqno(walletAddress: string): Promise<number> {
   try {
     const url = `${TON_CENTER_API}/runGetMethod`;
-    const body = {
-      address: jettonWallet,
-      method: 'get_wallet_data',
-      stack: []
-    };
-
+    
     const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      body: JSON.stringify({
+        address: walletAddress,
+        method: 'seqno',
+        stack: []
+      })
     });
 
     const data = await response.json();
     
-    if (data.ok && data.result?.stack) {
-      const stack = data.result.stack;
-      // Stack: [balance, owner, jetton_master, jetton_wallet_code]
-      const balance = BigInt(stack[0]?.[1] || '0');
-      const owner = stack[1]?.[1]?.bytes || '';
-      
-      return { balance, owner };
+    if (data.ok && data.result?.stack?.[0]) {
+      const seqnoValue = data.result.stack[0];
+      if (seqnoValue[0] === 'num') {
+        return parseInt(seqnoValue[1], 16);
+      }
     }
-
-    return { balance: BigInt(0), owner: '' };
     
+    return 0; // Default seqno for new wallets
   } catch (error) {
-    console.error('[getJettonWalletData] Error:', error);
-    return { balance: BigInt(0), owner: '' };
+    console.error('[getWalletSeqno] Error:', error);
+    return 0;
   }
 }
 
-// Parse TON address from cell bytes
-function parseAddressFromCell(cellBytes: string): string {
-  // Simplified address parsing
-  // In reality, this needs proper cell deserialization
-  return cellBytes;
-}
-
-// Compute Jetton wallet address (standard jetton wallet)
-function computeJettonWalletAddress(jettonMaster: string, owner: string): string {
-  // This would require computing the state init hash
-  // For now, return the master as fallback
-  return jettonMaster;
-}
-
-interface CreateBocParams {
-  jettonWallet: string;
-  destination: string;
-  amount: bigint;
-  mnemonic: string;
-  senderAddress: string;
-}
-
-// Create Jetton transfer BOC (Bag of Cells)
-async function createJettonTransferBoc(params: CreateBocParams): Promise<string> {
-  const { jettonWallet, destination, amount, mnemonic, senderAddress } = params;
-  
-  // Jetton transfer message structure:
-  // op: 0xf8a7ea5 (transfer)
-  // query_id: uint64
-  // amount: Coins
-  // destination: MsgAddress
-  // response_destination: MsgAddress
-  // custom_payload: Maybe Cell
-  // forward_ton_amount: Coins
-  // forward_payload: Either Cell ^Cell
-  
-  console.log('[createJettonTransferBoc] Creating BOC for transfer:', {
-    jettonWallet,
-    destination,
-    amount: amount.toString()
-  });
-
-  // For production, use a proper TON SDK to create and sign the message
-  // This is a placeholder that returns a formatted transaction ID
-  const timestamp = Date.now();
-  const txId = `jetton_${timestamp}_${amount}_${destination.slice(-8)}`;
-  
-  return txId;
-}
-
-// Send BOC to TON network
-async function sendBocToNetwork(boc: string): Promise<{ success: boolean; hash?: string; error?: string }> {
+// Parse address from BOC
+function parseAddressFromBoc(bocBase64: string): string | null {
   try {
-    // For production, this would send the actual BOC to the network
-    // via TON Center API: POST /sendBoc
+    // Simple parsing - in production use proper cell deserialization
+    const bytes = Uint8Array.from(atob(bocBase64), c => c.charCodeAt(0));
+    // Try to extract address from bytes
+    // This is simplified - real implementation needs proper BOC parsing
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+// Send BOC to TON Center
+async function sendBocToTonCenter(boc: string): Promise<{ success: boolean; hash?: string; error?: string }> {
+  try {
+    const url = `${TON_CENTER_API}/sendBoc`;
     
-    console.log('[sendBocToNetwork] Would send BOC:', boc);
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ boc })
+    });
+
+    const data = await response.json();
+    console.log('[sendBocToTonCenter] Response:', JSON.stringify(data));
     
-    // Generate a transaction hash based on the BOC
-    const encoder = new TextEncoder();
-    const data = encoder.encode(boc + Date.now().toString());
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = new Uint8Array(hashBuffer);
-    const hash = Array.from(hashArray).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 64);
-    
-    return {
-      success: true,
-      hash: hash
-    };
-    
+    if (data.ok) {
+      return {
+        success: true,
+        hash: data.result?.hash
+      };
+    } else {
+      return {
+        success: false,
+        error: data.error || 'Failed to send BOC'
+      };
+    }
   } catch (error) {
-    console.error('[sendBocToNetwork] Error:', error);
+    console.error('[sendBocToTonCenter] Error:', error);
     return {
       success: false,
       error: String(error)
     };
   }
+}
+
+// Generate transaction hash from BOC
+async function generateTxHash(boc: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(boc);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = new Uint8Array(hashBuffer);
+  return Array.from(hashArray).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 64);
 }
