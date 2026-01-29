@@ -44,7 +44,7 @@ serve(async (req) => {
     if (!servers || servers.length === 0) {
       console.log('[claim-server-rewards] No active servers found');
       return new Response(
-        JSON.stringify({ error: 'No active servers', claimed_bolt: 0, claimed_usdt: 0 }),
+        JSON.stringify({ error: 'No active servers', claimed_bolt: 0, claimed_usdt: 0, claimed_ton: 0, claimed_eth: 0, claimed_viral: 0 }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -53,6 +53,8 @@ serve(async (req) => {
     let totalBoltClaimed = 0;
     let totalUsdtClaimed = 0;
     let totalTonClaimed = 0;
+    let totalEthClaimed = 0;
+    let totalViralClaimed = 0;
     const MIN_HOURS = 1; // Minimum 1 hour between claims
     const MAX_HOURS = 24; // Maximum accumulation of 24 hours
 
@@ -77,12 +79,16 @@ serve(async (req) => {
       const boltReward = (server.daily_bolt_yield / 24) * claimableHours;
       const usdtReward = (server.daily_usdt_yield / 24) * claimableHours;
       const tonReward = ((server.daily_ton_yield || 0) / 24) * claimableHours;
+      const ethReward = ((server.daily_eth_yield || 0) / 24) * claimableHours;
+      const viralReward = ((server.daily_viral_yield || 0) / 24) * claimableHours;
 
-      console.log(`[claim-server-rewards] Server ${server.server_name}: ${claimableHours.toFixed(2)} hours = +${boltReward.toFixed(2)} BOLT, +${usdtReward.toFixed(4)} USDT, +${tonReward.toFixed(6)} TON`);
+      console.log(`[claim-server-rewards] Server ${server.server_name}: ${claimableHours.toFixed(2)} hours = +${boltReward.toFixed(2)} BOLT, +${usdtReward.toFixed(4)} USDT, +${tonReward.toFixed(6)} TON, +${ethReward.toFixed(8)} ETH, +${viralReward.toFixed(0)} VIRAL`);
 
       totalBoltClaimed += boltReward;
       totalUsdtClaimed += usdtReward;
       totalTonClaimed += tonReward;
+      totalEthClaimed += ethReward;
+      totalViralClaimed += viralReward;
 
       // Update last_claim_at
       await supabase
@@ -95,12 +101,14 @@ serve(async (req) => {
     totalBoltClaimed = Math.floor(totalBoltClaimed);
     totalUsdtClaimed = Math.round(totalUsdtClaimed * 100) / 100;
     totalTonClaimed = Math.round(totalTonClaimed * 10000) / 10000;
+    totalEthClaimed = Math.round(totalEthClaimed * 1000000) / 1000000;
+    totalViralClaimed = Math.floor(totalViralClaimed);
 
-    if (totalBoltClaimed > 0 || totalUsdtClaimed > 0 || totalTonClaimed > 0) {
+    if (totalBoltClaimed > 0 || totalUsdtClaimed > 0 || totalTonClaimed > 0 || totalEthClaimed > 0 || totalViralClaimed > 0) {
       // Update user balances
       const { data: userData, error: userError } = await supabase
         .from('bolt_users')
-        .select('token_balance, usdt_balance, ton_balance')
+        .select('token_balance, usdt_balance, ton_balance, eth_balance, viral_balance')
         .eq('id', user_id)
         .single();
 
@@ -112,6 +120,8 @@ serve(async (req) => {
       const newBoltBalance = (userData.token_balance || 0) + totalBoltClaimed;
       const newUsdtBalance = (userData.usdt_balance || 0) + totalUsdtClaimed;
       const newTonBalance = (userData.ton_balance || 0) + totalTonClaimed;
+      const newEthBalance = (userData.eth_balance || 0) + totalEthClaimed;
+      const newViralBalance = (userData.viral_balance || 0) + totalViralClaimed;
 
       const { error: updateError } = await supabase
         .from('bolt_users')
@@ -119,6 +129,8 @@ serve(async (req) => {
           token_balance: newBoltBalance,
           usdt_balance: newUsdtBalance,
           ton_balance: newTonBalance,
+          eth_balance: newEthBalance,
+          viral_balance: newViralBalance,
           updated_at: now.toISOString(),
         })
         .eq('id', user_id);
@@ -128,7 +140,7 @@ serve(async (req) => {
         throw updateError;
       }
 
-      console.log(`[claim-server-rewards] Successfully claimed: ${totalBoltClaimed} BOLT, ${totalUsdtClaimed} USDT, ${totalTonClaimed} TON for user ${user_id}`);
+      console.log(`[claim-server-rewards] Successfully claimed: ${totalBoltClaimed} BOLT, ${totalUsdtClaimed} USDT, ${totalTonClaimed} TON, ${totalEthClaimed} ETH, ${totalViralClaimed} VIRAL for user ${user_id}`);
     }
 
     return new Response(
@@ -137,6 +149,8 @@ serve(async (req) => {
         claimed_bolt: totalBoltClaimed,
         claimed_usdt: totalUsdtClaimed,
         claimed_ton: totalTonClaimed,
+        claimed_eth: totalEthClaimed,
+        claimed_viral: totalViralClaimed,
         servers_count: servers.length,
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

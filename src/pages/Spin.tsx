@@ -12,14 +12,14 @@ import { toast } from 'sonner';
 import { Loader2, Gift, Zap, Ticket, Sparkles, X, Crown, ShoppingCart, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
-import { BoltIcon, TonIcon, UsdtIcon } from '@/components/ui/currency-icons';
+import { BoltIcon, TonIcon, UsdtIcon, EthIcon, ViralIcon } from '@/components/ui/currency-icons';
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 interface SpinReward {
   id: string;
   label: string;
-  type: 'bolt' | 'ton' | 'usdt' | 'booster' | 'nothing';
+  type: 'bolt' | 'ton' | 'usdt' | 'eth' | 'viral' | 'booster' | 'nothing';
   value: number;
   probability: number;
 }
@@ -30,32 +30,32 @@ interface TicketPackage {
   priceTon: number;
 }
 
-// Normal Wheel Rewards - TON/USDT probability is 0 (impossible to win)
+// Normal Wheel Rewards - includes ETH and Viral, TON/USDT at 0%
 const NORMAL_REWARDS: SpinReward[] = [
-  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 0 },
-  { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 27 },
-  { id: 'usdt_1', label: '1', type: 'usdt', value: 1, probability: 0 },
-  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 22 },
-  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 25 },
-  { id: 'ton_3', label: '3', type: 'ton', value: 3, probability: 0 },
-  { id: 'bolt_200', label: '200', type: 'bolt', value: 200, probability: 15 },
-  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0 },
-  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 8.5 },
+  { id: 'viral_50', label: '50', type: 'viral', value: 50, probability: 15 },
+  { id: 'bolt_50', label: '50', type: 'bolt', value: 50, probability: 20 },
+  { id: 'viral_100', label: '100', type: 'viral', value: 100, probability: 12 },
+  { id: 'bolt_100', label: '100', type: 'bolt', value: 100, probability: 18 },
+  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 20 },
+  { id: 'bolt_200', label: '200', type: 'bolt', value: 200, probability: 10 },
+  { id: 'viral_200', label: '200', type: 'viral', value: 200, probability: 5 },
+  { id: 'bolt_500', label: '500', type: 'bolt', value: 500, probability: 5 },
+  { id: 'eth_small', label: '0.0001', type: 'eth', value: 0.0001, probability: 2.5 },
   { id: 'mining_x2', label: '2x', type: 'booster', value: 24, probability: 2.5 },
 ];
 
-// PRO Wheel Rewards - TON/USDT probability is 0 (impossible to win)
+// PRO Wheel Rewards - includes ETH and Viral, TON/USDT at 0%
 const PRO_REWARDS: SpinReward[] = [
-  { id: 'ton_3_pro', label: '3', type: 'ton', value: 3, probability: 0 },
-  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 28 },
-  { id: 'usdt_3', label: '3', type: 'usdt', value: 3, probability: 0 },
-  { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 21 },
-  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 18 },
-  { id: 'ton_5_pro', label: '5', type: 'ton', value: 5, probability: 0 },
-  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 17 },
-  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 0 },
-  { id: 'bolt_10000', label: '10K', type: 'bolt', value: 10000, probability: 12 },
-  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 0 },
+  { id: 'viral_500', label: '500', type: 'viral', value: 500, probability: 15 },
+  { id: 'bolt_1000', label: '1K', type: 'bolt', value: 1000, probability: 22 },
+  { id: 'viral_1000', label: '1K', type: 'viral', value: 1000, probability: 10 },
+  { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 18 },
+  { id: 'nothing', label: 'X', type: 'nothing', value: 0, probability: 15 },
+  { id: 'bolt_5000', label: '5K', type: 'bolt', value: 5000, probability: 10 },
+  { id: 'eth_medium', label: '0.0005', type: 'eth', value: 0.0005, probability: 3 },
+  { id: 'viral_2000', label: '2K', type: 'viral', value: 2000, probability: 4 },
+  { id: 'bolt_10000', label: '10K', type: 'bolt', value: 10000, probability: 2 },
+  { id: 'eth_large', label: '0.001', type: 'eth', value: 0.001, probability: 1 },
 ];
 
 // USDT Premium Wheel - Always wins 1 USDT (100% probability)
@@ -217,7 +217,7 @@ const Spin: React.FC = () => {
   const applyReward = async (reward: SpinReward, multiplier: number = 1, wheelTypeUsed: string = wheelType) => {
     if (!user?.id) return;
 
-    const finalValue = reward.type === 'bolt' ? reward.value * multiplier : reward.value;
+    const finalValue = reward.type === 'bolt' || reward.type === 'viral' ? reward.value * multiplier : reward.value;
 
     try {
       await supabase.from('spin_history').insert({
@@ -236,6 +236,16 @@ const Spin: React.FC = () => {
         await supabase
           .from('bolt_users')
           .update({ usdt_balance: ((user as any).usdt_balance || 0) + reward.value })
+          .eq('id', user.id);
+      } else if (reward.type === 'eth') {
+        await supabase
+          .from('bolt_users')
+          .update({ eth_balance: ((user as any).eth_balance || 0) + reward.value })
+          .eq('id', user.id);
+      } else if (reward.type === 'viral') {
+        await supabase
+          .from('bolt_users')
+          .update({ viral_balance: ((user as any).viral_balance || 0) + finalValue })
           .eq('id', user.id);
       } else if (reward.type === 'booster') {
         const expiresAt = new Date(Date.now() + reward.value * 60 * 60 * 1000);
