@@ -109,7 +109,7 @@ const FreeProTicket = () => {
               </div>
 
               <Button
-                onClick={() => window.location.href = "https://t.me/Boltminingbot/App?startapp=freepro"}
+                onClick={() => window.location.href = "https://t.me/Boltminingbot/App?startapp=free-pro"}
                 size="lg"
                 className="w-full gap-2 text-lg py-6 bg-gradient-to-r from-purple-500 to-purple-700"
               >

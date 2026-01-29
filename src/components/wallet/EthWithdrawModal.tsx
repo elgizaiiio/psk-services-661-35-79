@@ -16,7 +16,7 @@ interface EthWithdrawModalProps {
   onSuccess?: () => void;
 }
 
-const MIN_WITHDRAWAL = 0.001;
+const MIN_WITHDRAWAL = 1;
 
 const EthWithdrawModal: React.FC<EthWithdrawModalProps> = ({
   open,
