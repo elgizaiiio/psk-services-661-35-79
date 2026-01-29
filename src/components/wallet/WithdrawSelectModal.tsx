@@ -56,7 +56,7 @@ const WithdrawSelectModal: React.FC<WithdrawSelectModalProps> = ({
       fullName: 'Tether USD',
       balance: usdtBalance, 
       icon: <UsdtIcon size={36} />,
-      minWithdraw: 5,
+      minWithdraw: 8,
       isInstant: false,
     },
   ];
