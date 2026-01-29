@@ -120,10 +120,9 @@ const Tasks = () => {
     const completed = new Set(completedTasks.map((c) => c.task_id));
     return allTasks.filter((t) => {
       if (completed.has(t.id)) return false;
-      // Exclude mining tasks
+      // Only exclude tasks with mining category (internal mining tasks)
       const category = (t.category || '').toLowerCase();
-      const title = (t.title || '').toLowerCase();
-      if (category === 'mining' || title.includes('mining') || title.includes('mine')) return false;
+      if (category === 'mining') return false;
       // Exclude ads category
       if (category === 'ads') return false;
       return true;
