@@ -136,6 +136,13 @@ const Spin: React.FC = () => {
   const [watchingAd, setWatchingAd] = useState(false);
   const [showUsdtSpinPayment, setShowUsdtSpinPayment] = useState(false);
   const [processingUsdtSpin, setProcessingUsdtSpin] = useState(false);
+  const [selectedUsdtPackage, setSelectedUsdtPackage] = useState<{ spins: number; price: number }>({ spins: 1, price: 5 });
+
+  // Handle USDT spin package purchase
+  const handleUsdtSpinPurchase = (spins: number, price: number) => {
+    setSelectedUsdtPackage({ spins, price });
+    setShowUsdtSpinPayment(true);
+  };
 
   const rewards = wheelType === 'usdt' ? USDT_REWARDS : wheelType === 'pro' ? PRO_REWARDS : NORMAL_REWARDS;
   const packages = wheelType === 'normal' ? NORMAL_PACKAGES : PRO_PACKAGES;
@@ -738,38 +745,52 @@ const Spin: React.FC = () => {
           <FadeUp>
             {wheelType === 'usdt' ? (
               <div className="space-y-3">
-                {/* USDT Wheel Spin Packages */}
+                {/* 777 Premium Spins Packages */}
                 <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/30">
                   <p className="text-center text-sm font-bold text-emerald-500 mb-3">
                     777 Premium Spins - Win USDT!
                   </p>
                   <div className="grid grid-cols-3 gap-2">
-                    {[
-                      { spins: 1, price: 5 },
-                      { spins: 3, price: 12 },
-                      { spins: 5, price: 18 },
-                    ].map((pkg) => (
-                      <button
-                        key={pkg.spins}
-                        onClick={() => {
-                          // For now, use single spin logic
-                          setShowUsdtSpinPayment(true);
-                        }}
-                        disabled={isSpinning || processingUsdtSpin}
-                        className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all"
-                      >
-                        <div className="text-lg font-bold text-emerald-500">{pkg.spins}x</div>
-                        <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                          <TonIcon size={12} />
-                          {pkg.price}
-                        </div>
-                      </button>
-                    ))}
+                    <button
+                      onClick={() => handleUsdtSpinPurchase(1, 5)}
+                      disabled={isSpinning || processingUsdtSpin}
+                      className="p-3 rounded-xl border border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 transition-all"
+                    >
+                      <div className="text-lg font-bold text-emerald-500">1x</div>
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                        <TonIcon size={12} />
+                        <span>5</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => handleUsdtSpinPurchase(3, 12)}
+                      disabled={isSpinning || processingUsdtSpin}
+                      className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/10 transition-all relative"
+                    >
+                      <div className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-amber-500 text-[10px] font-bold rounded text-black">-20%</div>
+                      <div className="text-lg font-bold text-amber-500">3x</div>
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                        <TonIcon size={12} />
+                        <span>12</span>
+                      </div>
+                    </button>
+                    <button
+                      onClick={() => handleUsdtSpinPurchase(5, 18)}
+                      disabled={isSpinning || processingUsdtSpin}
+                      className="p-3 rounded-xl border border-red-500/30 bg-red-500/5 hover:bg-red-500/10 transition-all relative"
+                    >
+                      <div className="absolute -top-2 -right-2 px-1.5 py-0.5 bg-red-500 text-[10px] font-bold rounded text-white">-28%</div>
+                      <div className="text-lg font-bold text-red-500">5x</div>
+                      <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                        <TonIcon size={12} />
+                        <span>18</span>
+                      </div>
+                    </button>
                   </div>
                 </div>
                 
                 <Button
-                  onClick={() => setShowUsdtSpinPayment(true)}
+                  onClick={() => handleUsdtSpinPurchase(1, 5)}
                   disabled={isSpinning || processingUsdtSpin}
                   className="w-full h-12 text-base font-bold rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-700 hover:from-emerald-600 hover:to-emerald-800 text-white"
                   size="lg"
@@ -781,7 +802,7 @@ const Spin: React.FC = () => {
                     </>
                   ) : (
                     <>
-                      <UsdtIcon size={20} className="mr-2" />
+                      <TonIcon size={20} className="mr-2" />
                       SPIN for 5 TON
                     </>
                   )}
@@ -983,10 +1004,10 @@ const Spin: React.FC = () => {
       <UnifiedPaymentModal
         isOpen={showUsdtSpinPayment}
         onClose={() => setShowUsdtSpinPayment(false)}
-        amount={USDT_SPIN_PRICE_TON}
-        description="USDT Premium Spin - Win up to 777 USDT!"
+        amount={selectedUsdtPackage.price}
+        description={`${selectedUsdtPackage.spins}x USDT Premium Spin - Win up to 777 USDT!`}
         productType="spin_tickets"
-        credits={1}
+        credits={selectedUsdtPackage.spins}
         onSuccess={handleUsdtSpinAfterPayment}
       />
     </PageWrapper>
