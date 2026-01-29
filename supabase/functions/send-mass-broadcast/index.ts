@@ -14,10 +14,13 @@ serve(async (req) => {
   }
 
   try {
-    const { message, adminTelegramId, inlineButton } = await req.json();
+    const { message, adminTelegramId, inlineButton, secretKey } = await req.json();
 
-    // Verify admin
-    if (!adminTelegramId || !ADMIN_TELEGRAM_IDS.includes(Number(adminTelegramId))) {
+    // Verify admin - allow either admin telegram ID or secret key
+    const isAdmin = ADMIN_TELEGRAM_IDS.includes(Number(adminTelegramId));
+    const hasSecretKey = secretKey === 'MASS_BROADCAST_2024_SECURE';
+    
+    if (!isAdmin && !hasSecretKey) {
       return new Response(
         JSON.stringify({ error: 'Unauthorized - Admin only' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
