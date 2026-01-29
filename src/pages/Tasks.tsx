@@ -63,6 +63,8 @@ const checkReferralRequirement = (title: string, totalReferrals: number): boolea
 };
 
 // Get task icon based on category
+const DEFAULT_TASK_IMAGE = '/images/default-task.jpg';
+
 const getTaskIcon = (task: BoltTask) => {
   const category = (task.category || '').toLowerCase();
   const title = (task.title || '').toLowerCase();
@@ -70,20 +72,23 @@ const getTaskIcon = (task: BoltTask) => {
   if (category === 'referral' || title.includes('invite') || title.includes('referral')) {
     return <UserPlus className="w-6 h-6 text-purple-500" />;
   }
-  if (task.icon) {
-    return (
-      <img
-        src={task.icon}
-        alt={task.title || 'Task icon'}
-        className="w-full h-full object-cover"
-        onError={(e) => {
-          const target = e.target as HTMLImageElement;
-          target.style.display = 'none';
-        }}
-      />
-    );
-  }
-  return <Target className="w-6 h-6 text-muted-foreground" />;
+  
+  // Always show an image - use task icon or default
+  const imageSrc = task.icon || DEFAULT_TASK_IMAGE;
+  return (
+    <img
+      src={imageSrc}
+      alt={task.title || 'Task icon'}
+      className="w-full h-full object-cover"
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        // On error, use default image
+        if (target.src !== DEFAULT_TASK_IMAGE) {
+          target.src = DEFAULT_TASK_IMAGE;
+        }
+      }}
+    />
+  );
 };
 
 const Tasks = () => {
@@ -190,6 +195,15 @@ const Tasks = () => {
     hapticFeedback?.impact?.('medium');
     setProcessingTask(taskId);
 
+    // Always open the task URL first
+    if (taskUrl) {
+      if (taskUrl.startsWith('/')) {
+        navigate(taskUrl);
+      } else {
+        window.open(taskUrl, '_blank');
+      }
+    }
+
     // Find the task to check if it's our channel or partner task
     const task = allTasks.find(t => t.id === taskId);
     const isOurChannel = task ? isOurChannelTask(task) : false;
@@ -197,8 +211,6 @@ const Tasks = () => {
     // Only verify subscription for OUR channel tasks
     const joinTask = isJoinTask(taskTitle, taskUrl);
     if (joinTask && tgUser?.id && isOurChannel) {
-      if (taskUrl) window.open(taskUrl, '_blank');
-
       setTimeout(async () => {
         const username = extractTelegramUsername(taskUrl);
         const subscribed = username ? await checkSubscription(tgUser.id, username) : false;
@@ -246,20 +258,11 @@ const Tasks = () => {
         const match = taskTitle.match(/invite\s+(\d+)/i);
         const required = match ? parseInt(match[1], 10) : 1;
         toast.error(`You need ${required} referrals. You have ${totalReferrals}.`);
-        
-        if (taskUrl?.startsWith('/')) {
-          navigate(taskUrl);
-        }
       }
       setProcessingTask(null);
       return;
     }
 
-    // Generic task flow (fallback)
-    if (taskUrl) {
-      if (taskUrl.startsWith('/')) navigate(taskUrl);
-      else window.open(taskUrl, '_blank');
-    }
     setProcessingTask(null);
   };
 
