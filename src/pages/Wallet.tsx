@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import WithdrawModal from '@/components/WithdrawModal';
 import WithdrawSelectModal from '@/components/wallet/WithdrawSelectModal';
 import ViralWithdrawModal from '@/components/wallet/ViralWithdrawModal';
+import EthWithdrawModal from '@/components/wallet/EthWithdrawModal';
 import DepositModal from '@/components/wallet/DepositModal';
 import WalletVerificationModal from '@/components/WalletVerificationModal';
 import RequireServerModal from '@/components/RequireServerModal';
@@ -27,10 +28,11 @@ const Wallet: React.FC = () => {
   const [depositModalOpen, setDepositModalOpen] = useState(false);
   const [withdrawModal, setWithdrawModal] = useState<{ open: boolean; currency: 'TON' | 'USDT' } | null>(null);
   const [viralWithdrawOpen, setViralWithdrawOpen] = useState(false);
+  const [ethWithdrawOpen, setEthWithdrawOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [verificationOpen, setVerificationOpen] = useState(false);
   const [isWalletVerified, setIsWalletVerified] = useState(false);
-  const [pendingWithdrawCurrency, setPendingWithdrawCurrency] = useState<'TON' | 'USDT' | 'VIRAL' | null>(null);
+  const [pendingWithdrawCurrency, setPendingWithdrawCurrency] = useState<'TON' | 'USDT' | 'VIRAL' | 'ETH' | null>(null);
   const [hasServer, setHasServer] = useState<boolean | null>(null);
   const [requireServerOpen, setRequireServerOpen] = useState(false);
   useTelegramBackButton();
@@ -107,12 +109,18 @@ const Wallet: React.FC = () => {
     }
   };
 
-  const handleWithdrawSelect = (currency: 'TON' | 'USDT' | 'VIRAL') => {
+  const handleWithdrawSelect = (currency: 'TON' | 'USDT' | 'VIRAL' | 'ETH') => {
     setWithdrawSelectOpen(false);
     
     // Viral has instant withdrawal - no verification needed
     if (currency === 'VIRAL') {
       setViralWithdrawOpen(true);
+      return;
+    }
+    
+    // ETH requires separate modal with address input
+    if (currency === 'ETH') {
+      setEthWithdrawOpen(true);
       return;
     }
     
@@ -338,6 +346,7 @@ const Wallet: React.FC = () => {
         tonBalance={tonBalance}
         usdtBalance={usdtBalance}
         viralBalance={viralBalance}
+        ethBalance={ethBalance}
       />
 
       {/* Wallet Verification Modal */}
@@ -354,7 +363,7 @@ const Wallet: React.FC = () => {
             setIsWalletVerified(true);
             setVerificationOpen(false);
             // After verification, check if user has server
-            if (pendingWithdrawCurrency && pendingWithdrawCurrency !== 'VIRAL') {
+            if (pendingWithdrawCurrency && pendingWithdrawCurrency !== 'VIRAL' && pendingWithdrawCurrency !== 'ETH') {
               if (!hasServer) {
                 setRequireServerOpen(true);
                 setPendingWithdrawCurrency(null);
@@ -380,6 +389,17 @@ const Wallet: React.FC = () => {
           onClose={() => setViralWithdrawOpen(false)}
           userId={user.id}
           balance={viralBalance}
+          onSuccess={() => window.location.reload()}
+        />
+      )}
+
+      {/* ETH Withdraw Modal */}
+      {user && (
+        <EthWithdrawModal
+          open={ethWithdrawOpen}
+          onClose={() => setEthWithdrawOpen(false)}
+          userId={user.id}
+          balance={ethBalance}
           onSuccess={() => window.location.reload()}
         />
       )}

@@ -1,15 +1,16 @@
 import React from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ArrowUpRight, X } from 'lucide-react';
-import { TonIcon, UsdtIcon, ViralIcon } from '@/components/ui/currency-icons';
+import { TonIcon, UsdtIcon, ViralIcon, EthIcon } from '@/components/ui/currency-icons';
 
 interface WithdrawSelectModalProps {
   open: boolean;
   onClose: () => void;
-  onSelectCurrency: (currency: 'TON' | 'USDT' | 'VIRAL') => void;
+  onSelectCurrency: (currency: 'TON' | 'USDT' | 'VIRAL' | 'ETH') => void;
   tonBalance: number;
   usdtBalance: number;
   viralBalance?: number;
+  ethBalance?: number;
 }
 
 const WithdrawSelectModal: React.FC<WithdrawSelectModalProps> = ({
@@ -19,6 +20,7 @@ const WithdrawSelectModal: React.FC<WithdrawSelectModalProps> = ({
   tonBalance,
   usdtBalance,
   viralBalance = 0,
+  ethBalance = 0,
 }) => {
   const currencies = [
     { 
@@ -29,6 +31,15 @@ const WithdrawSelectModal: React.FC<WithdrawSelectModalProps> = ({
       icon: <ViralIcon size={36} />,
       minWithdraw: 100,
       isInstant: true,
+    },
+    { 
+      id: 'ETH' as const, 
+      name: 'ETH', 
+      fullName: 'Ethereum',
+      balance: ethBalance, 
+      icon: <EthIcon size={36} />,
+      minWithdraw: 0.001,
+      isInstant: false,
     },
     { 
       id: 'TON' as const, 
@@ -90,7 +101,9 @@ const WithdrawSelectModal: React.FC<WithdrawSelectModalProps> = ({
                 </div>
               </div>
               <div className="text-right">
-                <p className="font-medium text-foreground">{currency.balance.toFixed(2)}</p>
+                <p className="font-medium text-foreground">
+                  {currency.id === 'ETH' ? currency.balance.toFixed(6) : currency.balance.toFixed(2)}
+                </p>
                 <p className="text-xs text-muted-foreground">Min: {currency.minWithdraw}</p>
               </div>
             </button>
