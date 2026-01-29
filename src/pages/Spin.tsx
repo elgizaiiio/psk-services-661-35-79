@@ -38,10 +38,10 @@ const NORMAL_REWARDS: SpinReward[] = [
   { id: 'viral_500', label: '500', type: 'viral', value: 500, probability: 12 },
   { id: 'eth_small', label: '0.001', type: 'eth', value: 0.001, probability: 10 },
   { id: 'bolt_2000', label: '2K', type: 'bolt', value: 2000, probability: 8 },
-  { id: 'usdt_05', label: '0.5', type: 'usdt', value: 0.5, probability: 6 },
-  { id: 'ton_05', label: '0.05', type: 'ton', value: 0.05, probability: 4 },
+  { id: 'usdt_10', label: '10', type: 'usdt', value: 10, probability: 6 },
+  { id: 'ton_5', label: '5', type: 'ton', value: 5, probability: 4 },
   { id: 'viral_1000', label: '1K', type: 'viral', value: 1000, probability: 3 },
-  { id: 'ton_1', label: '0.1', type: 'ton', value: 0.1, probability: 2 },
+  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 2 },
 ];
 
 // PRO Wheel Rewards - All 5 currencies with premium values
@@ -51,11 +51,11 @@ const PRO_REWARDS: SpinReward[] = [
   { id: 'bolt_10000', label: '10K', type: 'bolt', value: 10000, probability: 14 },
   { id: 'eth_medium', label: '0.005', type: 'eth', value: 0.005, probability: 12 },
   { id: 'viral_5000', label: '5K', type: 'viral', value: 5000, probability: 10 },
-  { id: 'usdt_2', label: '2', type: 'usdt', value: 2, probability: 9 },
+  { id: 'usdt_20', label: '20', type: 'usdt', value: 20, probability: 9 },
   { id: 'bolt_25000', label: '25K', type: 'bolt', value: 25000, probability: 7 },
-  { id: 'ton_05', label: '0.5', type: 'ton', value: 0.5, probability: 5 },
-  { id: 'usdt_5', label: '5', type: 'usdt', value: 5, probability: 4 },
-  { id: 'ton_1', label: '1', type: 'ton', value: 1, probability: 3 },
+  { id: 'ton_10', label: '10', type: 'ton', value: 10, probability: 5 },
+  { id: 'usdt_50', label: '50', type: 'usdt', value: 50, probability: 4 },
+  { id: 'ton_25', label: '25', type: 'ton', value: 25, probability: 3 },
 ];
 
 // USDT Premium Wheel - Always wins 1 USDT (100% probability)
