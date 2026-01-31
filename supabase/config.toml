@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.broadcast-batch]
 verify_jwt = false
+
+[functions.bolt-town-daily-reset]
+verify_jwt = false

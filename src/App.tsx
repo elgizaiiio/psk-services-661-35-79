@@ -58,6 +58,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Rules = lazy(() => import("./pages/Rules"));
 const CasinoTest = lazy(() => import("./pages/CasinoTest"));
 const FreeProTicket = lazy(() => import("./pages/FreeProTicket"));
+const BoltTown = lazy(() => import("./pages/BoltTown"));
 
 // Loading component
 const PageLoader = () => (
@@ -239,6 +240,7 @@ const App = () => (
                                 <Route path="/privacy" element={<PrivacyPolicy />} />
                                 <Route path="/rules" element={<Rules />} />
                                 <Route path="/casino-test" element={<CasinoTest />} />
+                                <Route path="/bolt-town" element={<BoltTown />} />
                               </Routes>
                             </Suspense>
                           </ErrorBoundary>

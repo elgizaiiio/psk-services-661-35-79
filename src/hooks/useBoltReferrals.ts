@@ -2,6 +2,44 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BoltUser, BoltReferral } from '@/types/bolt';
 
+// Helper to add Bolt Town referral points
+const addBoltTownReferralPoints = async (userId: string, bonusForTask = false) => {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    // Get or create today's points record
+    const { data: existing } = await supabase
+      .from('bolt_town_daily_points')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .maybeSingle();
+
+    if (existing) {
+      const updates: Record<string, any> = {
+        referral_points: (existing.referral_points || 0) + 10,
+      };
+      if (bonusForTask) {
+        updates.referral_bonus_points = (existing.referral_bonus_points || 0) + 5;
+      }
+      await supabase
+        .from('bolt_town_daily_points')
+        .update(updates)
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('bolt_town_daily_points')
+        .insert({
+          user_id: userId,
+          date: today,
+          referral_points: 10,
+          referral_bonus_points: bonusForTask ? 5 : 0,
+        });
+    }
+  } catch (err) {
+    console.error('Error adding Bolt Town referral points:', err);
+  }
+};
+
 interface ReferralWithUser extends BoltReferral { referred?: BoltUser; }
 
 export const useBoltReferrals = (userId: string | undefined) => {
@@ -101,6 +139,9 @@ export const useBoltReferrals = (userId: string | undefined) => {
           referral_bonus: (u.referral_bonus || 0) + 100, 
           updated_at: new Date().toISOString() 
         }).eq('id', referrerData.id);
+
+        // Add Bolt Town competition points (+10 for referral)
+        await addBoltTownReferralPoints(referrerData.id, false);
       }
 
       // Award free spin ticket to referrer for each referral
