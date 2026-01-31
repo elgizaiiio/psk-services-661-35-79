@@ -14,7 +14,7 @@ import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import DailyStreakModal from '@/components/DailyStreakModal';
 import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
 import UserAvatar from '@/components/UserAvatar';
-import PromoBanner from '@/components/home/PromoBanner';
+
 import boltTownHomeUnderBanner from '@/assets/bolt-town-home-under-banner.png';
 
 interface HomeSection {
@@ -187,13 +187,8 @@ const Index = () => {
 
       <div className="max-w-md mx-auto px-4 pt-4 space-y-3">
         
-        {/* Animated Promo Banner */}
+        {/* Competition Image - Rectangle Banner */}
         <FadeUp delay={0.1}>
-          <PromoBanner />
-        </FadeUp>
-
-        {/* Competition Image under the promo banners */}
-        <FadeUp delay={0.12}>
           <motion.button
             onClick={() => handleNavigate('/bolt-town')}
             whileTap={{ scale: 0.98 }}
@@ -203,7 +198,7 @@ const Index = () => {
             <img
               src={boltTownHomeUnderBanner}
               alt="Bolt Town daily competition"
-              className="w-full h-auto object-cover"
+              className="w-full h-auto aspect-[2/1] object-cover"
               loading="lazy"
             />
           </motion.button>
