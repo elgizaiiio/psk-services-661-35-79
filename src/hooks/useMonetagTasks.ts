@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { 
   isTelegramEnvironment,
-  loadMonetagSDK,
+  initMonetagSDK,
   showRewardedPopup 
 } from '@/lib/monetag';
 
@@ -28,7 +28,7 @@ export const useMonetagTasks = (): UseMonetagTasksReturn => {
     let mounted = true;
 
     const init = async () => {
-      const ready = await loadMonetagSDK();
+      const ready = await initMonetagSDK();
       if (mounted) {
         if (ready) {
           setIsReady(true);
