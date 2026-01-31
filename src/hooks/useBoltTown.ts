@@ -292,6 +292,30 @@ export const useBoltTown = () => {
     }
   }, [boltUser?.id, getOrCreateTodayPoints]);
 
+  const addServerPurchasePoints = useCallback(async () => {
+    if (!boltUser?.id) return false;
+
+    try {
+      const todayPoints = await getOrCreateTodayPoints();
+      if (!todayPoints) return false;
+
+      // Add 100 points for server purchase under task_points
+      const { error } = await supabase
+        .from('bolt_town_daily_points')
+        .update({
+          task_points: (todayPoints.task_points || 0) + 100,
+        })
+        .eq('id', todayPoints.id);
+
+      if (error) throw error;
+      await loadMyPoints();
+      return true;
+    } catch (err) {
+      console.error('Error adding server purchase points:', err);
+      return false;
+    }
+  }, [boltUser?.id, getOrCreateTodayPoints]);
+
   // Load my points
   const loadMyPoints = useCallback(async () => {
     if (!boltUser?.id) return;
@@ -386,6 +410,7 @@ export const useBoltTown = () => {
     addTaskPoints,
     addAdPoints,
     addActivityPoints,
+    addServerPurchasePoints,
     getTimeUntilReset,
     refreshLeaderboard: loadLeaderboard,
     refreshMyPoints: loadMyPoints,

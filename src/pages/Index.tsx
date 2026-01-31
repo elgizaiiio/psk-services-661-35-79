@@ -15,6 +15,7 @@ import DailyStreakModal from '@/components/DailyStreakModal';
 import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
 import UserAvatar from '@/components/UserAvatar';
 import PromoBanner from '@/components/home/PromoBanner';
+import boltTownBanner from '@/assets/bolt-town-banner.png';
 
 interface HomeSection {
   id: string;
@@ -185,6 +186,25 @@ const Index = () => {
       <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
 
       <div className="max-w-md mx-auto px-4 pt-4 space-y-3">
+        
+        {/* Bolt Town Competition Banner */}
+        <FadeUp delay={0.05}>
+          <motion.button
+            onClick={() => handleNavigate('/bolt-town')}
+            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.01 }}
+            className="w-full overflow-hidden rounded-2xl relative"
+          >
+            <img
+              src={boltTownBanner}
+              alt="Bolt Town Competition"
+              className="w-full h-auto aspect-[2/1] object-cover"
+            />
+            <div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+              <p className="text-white text-sm font-semibold">Daily 2.5 USDT Prize</p>
+            </div>
+          </motion.button>
+        </FadeUp>
         
         {/* Animated Promo Banner */}
         <FadeUp delay={0.1}>

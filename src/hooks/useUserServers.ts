@@ -185,6 +185,30 @@ export const useUserServers = (userId: string | null) => {
         .eq('server_id', serverId);
     }
 
+    // Add 100 Bolt Town points for server purchase
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const { data: existingPoints } = await supabase
+        .from('bolt_town_daily_points')
+        .select('id, task_points')
+        .eq('user_id', userId)
+        .eq('date', today)
+        .maybeSingle();
+
+      if (existingPoints) {
+        await supabase
+          .from('bolt_town_daily_points')
+          .update({ task_points: (existingPoints.task_points || 0) + 100 })
+          .eq('id', existingPoints.id);
+      } else {
+        await supabase
+          .from('bolt_town_daily_points')
+          .insert({ user_id: userId, date: today, task_points: 100 });
+      }
+    } catch (err) {
+      console.error('Error adding Bolt Town points for server purchase:', err);
+    }
+
     await fetchServers();
     await fetchInventory();
     return data;
