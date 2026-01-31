@@ -193,7 +193,7 @@ const Index = () => {
             onClick={() => handleNavigate('/bolt-town')}
             whileTap={{ scale: 0.98 }}
             whileHover={{ scale: 1.01 }}
-            className="w-full overflow-hidden rounded-2xl"
+            className="w-full overflow-hidden rounded-2xl relative"
           >
             <img
               src={boltTownHomeUnderBanner}
@@ -201,6 +201,10 @@ const Index = () => {
               className="w-full h-auto aspect-[2/1] object-cover"
               loading="lazy"
             />
+            {/* $2.5 Daily Overlay */}
+            <div className="absolute top-3 right-3 bg-primary/90 backdrop-blur-sm px-3 py-1.5 rounded-full">
+              <span className="text-primary-foreground font-bold text-sm">$2.5 Daily</span>
+            </div>
           </motion.button>
         </FadeUp>
 
