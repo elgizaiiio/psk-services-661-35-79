@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Trophy, Medal, Crown, User } from 'lucide-react';
+import { Trophy, Medal, Crown } from 'lucide-react';
 import { LeaderboardEntry } from '@/hooks/useBoltTown';
 import { cn } from '@/lib/utils';
 
@@ -14,27 +14,40 @@ interface BoltTownLeaderboardProps {
 const getRankIcon = (rank: number) => {
   switch (rank) {
     case 1:
-      return <Crown className="w-5 h-5 text-yellow-400" />;
+      return <Crown className="w-4 h-4 text-yellow-400" />;
     case 2:
-      return <Medal className="w-5 h-5 text-gray-300" />;
+      return <Medal className="w-4 h-4 text-gray-300" />;
     case 3:
-      return <Medal className="w-5 h-5 text-amber-600" />;
+      return <Medal className="w-4 h-4 text-amber-600" />;
     default:
       return null;
   }
 };
 
-const getRankColor = (rank: number) => {
+const getRankBg = (rank: number) => {
   switch (rank) {
     case 1:
-      return 'from-yellow-500/20 to-yellow-600/10 border-yellow-500/30';
+      return 'bg-gradient-to-r from-yellow-500/20 to-yellow-600/5 border-yellow-500/30';
     case 2:
-      return 'from-gray-300/20 to-gray-400/10 border-gray-300/30';
+      return 'bg-gradient-to-r from-gray-300/20 to-gray-400/5 border-gray-300/30';
     case 3:
-      return 'from-amber-500/20 to-amber-600/10 border-amber-500/30';
+      return 'bg-gradient-to-r from-amber-500/20 to-amber-600/5 border-amber-500/30';
     default:
-      return 'from-background to-background border-border';
+      return 'bg-card border-border';
   }
+};
+
+const getInitials = (name: string) => {
+  return name.slice(0, 2).toUpperCase();
+};
+
+const getAvatarColor = (userId: string) => {
+  const colors = [
+    'bg-red-500', 'bg-blue-500', 'bg-green-500', 'bg-purple-500',
+    'bg-pink-500', 'bg-indigo-500', 'bg-teal-500', 'bg-orange-500'
+  ];
+  const index = userId.charCodeAt(0) % colors.length;
+  return colors[index];
 };
 
 export const BoltTownLeaderboard: React.FC<BoltTownLeaderboardProps> = ({
@@ -45,43 +58,38 @@ export const BoltTownLeaderboard: React.FC<BoltTownLeaderboardProps> = ({
 }) => {
   return (
     <div className="space-y-2">
-      {/* Header */}
-      <div className="flex items-center justify-between px-2 py-1 text-xs text-muted-foreground">
-        <span>Rank</span>
-        <span>Player</span>
-        <span>Points</span>
-      </div>
-
       {/* My Position (if not in top 50) */}
       {myUserId && myRank && myRank > 50 && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="p-3 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30"
+          className="p-3 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 mb-3"
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="w-8 text-center font-bold text-primary">#{myRank}</span>
-              <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
-                <User className="w-4 h-4 text-primary" />
-              </div>
-              <span className="font-medium text-primary">You</span>
+          <div className="flex items-center gap-3">
+            <div className="w-7 h-7 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+              Y
             </div>
-            <span className="font-bold text-primary">{myPoints || 0}</span>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-primary">You</p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">#{myRank}</p>
+              <p className="text-sm font-bold text-primary">{myPoints || 0} pts</p>
+            </div>
           </div>
         </motion.div>
       )}
 
       {/* Leaderboard List */}
-      <div className="space-y-1.5 max-h-80 overflow-y-auto">
-        {leaderboard.length === 0 ? (
-          <div className="text-center py-8 text-muted-foreground">
-            <Trophy className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p>No participants yet today</p>
-            <p className="text-xs">Be the first to earn points!</p>
-          </div>
-        ) : (
-          leaderboard.map((entry, index) => {
+      {leaderboard.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <Trophy className="w-8 h-8 mx-auto mb-2 opacity-50" />
+          <p className="text-sm">No participants yet</p>
+          <p className="text-xs">Be the first to earn points!</p>
+        </div>
+      ) : (
+        <div className="space-y-1.5">
+          {leaderboard.map((entry, index) => {
             const isMe = entry.user_id === myUserId;
             const displayName = entry.telegram_username
               ? `@${entry.telegram_username}`
@@ -94,42 +102,53 @@ export const BoltTownLeaderboard: React.FC<BoltTownLeaderboardProps> = ({
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.02 }}
                 className={cn(
-                  'p-3 rounded-xl border bg-gradient-to-r transition-all',
-                  getRankColor(entry.rank),
-                  isMe && 'ring-2 ring-primary ring-offset-2 ring-offset-background'
+                  'flex items-center gap-3 p-2.5 rounded-xl border transition-all',
+                  getRankBg(entry.rank),
+                  isMe && 'ring-1 ring-primary'
                 )}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 text-center">
-                      {getRankIcon(entry.rank) || (
-                        <span className="text-sm font-medium text-muted-foreground">
-                          #{entry.rank}
-                        </span>
-                      )}
-                    </div>
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                      <User className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                    <span className={cn(
-                      'font-medium text-sm truncate max-w-[120px]',
-                      isMe && 'text-primary'
-                    )}>
-                      {isMe ? 'You' : displayName}
+                {/* Rank */}
+                <div className="w-6 flex justify-center">
+                  {getRankIcon(entry.rank) || (
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {entry.rank}
                     </span>
-                  </div>
-                  <span className={cn(
-                    'font-bold',
+                  )}
+                </div>
+
+                {/* Avatar */}
+                <div className={cn(
+                  'w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold',
+                  isMe ? 'bg-primary' : getAvatarColor(entry.user_id)
+                )}>
+                  {isMe ? 'Y' : getInitials(displayName)}
+                </div>
+
+                {/* Name */}
+                <div className="flex-1 min-w-0">
+                  <p className={cn(
+                    'text-sm font-medium truncate',
+                    isMe && 'text-primary'
+                  )}>
+                    {isMe ? 'You' : displayName}
+                  </p>
+                </div>
+
+                {/* Points */}
+                <div className="text-right">
+                  <p className={cn(
+                    'text-sm font-bold',
                     entry.rank <= 3 ? 'text-foreground' : 'text-muted-foreground'
                   )}>
                     {entry.total_points}
-                  </span>
+                  </p>
+                  <p className="text-[10px] text-muted-foreground">pts</p>
                 </div>
               </motion.div>
             );
-          })
-        )}
-      </div>
+          })}
+        </div>
+      )}
     </div>
   );
 };
