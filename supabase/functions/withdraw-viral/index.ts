@@ -275,19 +275,16 @@ async function sendJettonTransfer(params: JettonTransferParams): Promise<Transfe
       publicKey: keyPair.publicKey
     });
 
-    const walletAddress = wallet.address.toString();
-    console.log('[sendJettonTransfer] Wallet address from mnemonic:', walletAddress);
+    const derivedWalletAddress = wallet.address.toString();
+    console.log('[sendJettonTransfer] Wallet address from mnemonic:', derivedWalletAddress);
+    
+    // Use the CONFIGURED address (from secret) since mnemonic might derive different address
+    // depending on wallet version. The configured address is the actual hot wallet.
+    const actualWalletAddress = senderAddress;
+    console.log('[sendJettonTransfer] Using configured wallet address:', actualWalletAddress);
 
-    // Verify wallet address matches configured address
-    if (!senderAddress.includes(walletAddress.slice(-10)) && !walletAddress.includes(senderAddress.slice(-10))) {
-      console.warn('[sendJettonTransfer] Warning: Wallet address mismatch', {
-        derived: walletAddress,
-        configured: senderAddress
-      });
-    }
-
-    // Get sender's jetton wallet address
-    const jettonWalletAddress = await getJettonWalletAddress(jettonMasterAddress, walletAddress);
+    // Get sender's jetton wallet address using the configured wallet
+    const jettonWalletAddress = await getJettonWalletAddress(jettonMasterAddress, actualWalletAddress);
     console.log('[sendJettonTransfer] Sender jetton wallet:', jettonWalletAddress);
 
     // Get current seqno
@@ -300,7 +297,7 @@ async function sendJettonTransfer(params: JettonTransferParams): Promise<Transfe
     // Create jetton transfer payload
     // op: 0xf8a7ea5 (transfer)
     const destination = Address.parse(destinationAddress);
-    const responseAddress = Address.parse(walletAddress);
+    const responseAddress = Address.parse(actualWalletAddress);
     
     const jettonTransferPayload = beginCell()
       .storeUint(0xf8a7ea5, 32) // JETTON_TRANSFER_OP_CODE
@@ -362,11 +359,58 @@ async function sendJettonTransfer(params: JettonTransferParams): Promise<Transfe
 
 // Get jetton wallet address from master contract
 async function getJettonWalletAddress(jettonMaster: string, ownerAddress: string): Promise<string> {
+  // Try tonapi.io first (more reliable)
   try {
+    console.log('[getJettonWalletAddress] Using tonapi.io for:', ownerAddress);
+    
+    // Normalize address format - tonapi needs friendly format
+    let friendlyAddress = ownerAddress;
+    if (ownerAddress.startsWith('0:') || ownerAddress.startsWith('-1:')) {
+      // Convert raw to friendly using Address class
+      try {
+        const addr = Address.parseRaw(ownerAddress);
+        friendlyAddress = addr.toString({ bounceable: true, urlSafe: true });
+      } catch {
+        // Keep original if parsing fails
+      }
+    }
+    
+    const url = `https://tonapi.io/v2/accounts/${encodeURIComponent(friendlyAddress)}/jettons/${encodeURIComponent(jettonMaster)}`;
+    console.log('[getJettonWalletAddress] Request URL:', url);
+    
+    const response = await fetch(url, {
+      headers: { 'Accept': 'application/json' }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      if (data.wallet_address?.address) {
+        console.log('[getJettonWalletAddress] Found wallet:', data.wallet_address.address);
+        return data.wallet_address.address;
+      }
+    }
+    
+    console.log('[getJettonWalletAddress] tonapi.io failed, status:', response.status);
+  } catch (error) {
+    console.error('[getJettonWalletAddress] tonapi.io error:', error);
+  }
+
+  // Fallback to TON Center
+  try {
+    console.log('[getJettonWalletAddress] Trying TON Center...');
     const url = `${TON_CENTER_API}/runGetMethod`;
     
-    // Convert owner address to raw format for the API
-    const ownerAddr = Address.parse(ownerAddress);
+    // Convert owner address to correct format
+    let ownerAddr: Address;
+    try {
+      if (ownerAddress.startsWith('0:') || ownerAddress.startsWith('-1:')) {
+        ownerAddr = Address.parseRaw(ownerAddress);
+      } else {
+        ownerAddr = Address.parse(ownerAddress);
+      }
+    } catch {
+      ownerAddr = Address.parse(ownerAddress);
+    }
     
     const response = await fetch(url, {
       method: 'POST',
@@ -381,52 +425,23 @@ async function getJettonWalletAddress(jettonMaster: string, ownerAddress: string
     });
 
     const data = await response.json();
-    console.log('[getJettonWalletAddress] Response:', JSON.stringify(data));
+    console.log('[getJettonWalletAddress] TON Center response:', JSON.stringify(data));
     
     if (data.ok && data.result?.stack?.[0]) {
       const stack = data.result.stack[0];
-      // Parse cell to get address
       if (stack[0] === 'cell') {
-        // Decode address from cell
         const cellBoc = stack[1].bytes;
         const addr = parseAddressFromBoc(cellBoc);
         if (addr) return addr;
       } else if (stack[0] === 'slice') {
-        // Already a slice with address
         return stack[1];
       }
     }
-
-    // Fallback: use alternative API endpoint
-    console.log('[getJettonWalletAddress] Trying alternative method...');
-    return await getJettonWalletAddressAlt(jettonMaster, ownerAddress);
-    
   } catch (error) {
-    console.error('[getJettonWalletAddress] Error:', error);
-    throw error;
+    console.error('[getJettonWalletAddress] TON Center error:', error);
   }
-}
 
-// Alternative method using tonapi.io (free tier)
-async function getJettonWalletAddressAlt(jettonMaster: string, ownerAddress: string): Promise<string> {
-  try {
-    const url = `https://tonapi.io/v2/accounts/${ownerAddress}/jettons/${jettonMaster}`;
-    const response = await fetch(url);
-    
-    if (!response.ok) {
-      throw new Error(`Failed to get jetton wallet: ${response.status}`);
-    }
-    
-    const data = await response.json();
-    if (data.wallet_address?.address) {
-      return data.wallet_address.address;
-    }
-    
-    throw new Error('Jetton wallet not found');
-  } catch (error) {
-    console.error('[getJettonWalletAddressAlt] Error:', error);
-    throw error;
-  }
+  throw new Error('Could not get jetton wallet address');
 }
 
 // Get wallet seqno
