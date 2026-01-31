@@ -119,8 +119,39 @@ export const WatchAdCard: React.FC<WatchAdCardProps> = ({
       const adCompleted = await showAd();
 
       if (adCompleted) {
-        // Ad completed successfully - reward is given via server callback
-        // But we also update the local count for UX
+        // Save ad view to database for persistence
+        const { error: insertError } = await supabase
+          .from('ad_views')
+          .insert({
+            telegram_id: telegramId,
+            user_id: userId,
+            ad_type: 'watch_card',
+            reward_bolt: REWARD_BOLT,
+            reward_usdt: REWARD_USDT,
+          });
+
+        if (insertError) {
+          console.error('Error saving ad view:', insertError);
+        }
+
+        // Update user balance directly
+        const { data: userData } = await supabase
+          .from('bolt_users')
+          .select('token_balance, usdt_balance')
+          .eq('id', userId)
+          .single();
+
+        if (userData) {
+          await supabase
+            .from('bolt_users')
+            .update({
+              token_balance: (userData.token_balance || 0) + REWARD_BOLT,
+              usdt_balance: (userData.usdt_balance || 0) + REWARD_USDT,
+            })
+            .eq('id', userId);
+        }
+
+        // Update local count for UX
         setDailyCount(prev => prev + 1);
         toast.success(`+${REWARD_BOLT} BOLT +${REWARD_USDT} USDT!`);
         
