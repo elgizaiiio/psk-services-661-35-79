@@ -17,6 +17,63 @@ interface ReferralRequest {
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 
+// Helper to compute Bolt Town total points
+const computeBoltTownTotalPoints = (p: any): number => {
+  const n = (v: unknown) => {
+    const num = Number(v);
+    return Number.isFinite(num) ? num : 0;
+  };
+  return (
+    n(p.referral_points) +
+    n(p.referral_bonus_points) +
+    n(p.task_points) +
+    n(p.special_task_points) +
+    n(p.ad_points) +
+    n(p.activity_points) +
+    n(p.streak_bonus)
+  );
+};
+
+// Helper to add Bolt Town referral points
+async function addBoltTownReferralPoints(supabase: any, userId: string) {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const { data: existing } = await supabase
+      .from('bolt_town_daily_points')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .maybeSingle();
+
+    if (existing) {
+      const nextReferralPoints = (existing.referral_points || 0) + 10;
+      await supabase
+        .from('bolt_town_daily_points')
+        .update({
+          referral_points: nextReferralPoints,
+          total_points: computeBoltTownTotalPoints({
+            ...existing,
+            referral_points: nextReferralPoints,
+          }),
+        })
+        .eq('id', existing.id);
+      console.log(`🏆 Added 10 Bolt Town referral points for user ${userId}`);
+    } else {
+      await supabase
+        .from('bolt_town_daily_points')
+        .insert({
+          user_id: userId,
+          date: today,
+          referral_points: 10,
+          total_points: 10,
+        });
+      console.log(`🏆 Created Bolt Town record with 10 referral points for user ${userId}`);
+    }
+  } catch (err) {
+    console.error('Error adding Bolt Town referral points:', err);
+  }
+}
+
 async function sendTelegramNotification(chatId: number, text: string) {
   if (!TELEGRAM_BOT_TOKEN) {
     console.log('TELEGRAM_BOT_TOKEN not configured, skipping notification');
@@ -411,6 +468,9 @@ Deno.serve(async (req) => {
         console.log(`💰 Bonus of ${totalBonus} tokens given to referrer: ${referrer.id}`)
         if (tonReward > 0) console.log(`💎 TON reward of ${tonReward} given to referrer`)
         if (usdtReward > 0) console.log(`💵 USDT reward of ${usdtReward} given to referrer`)
+        
+        // Add Bolt Town competition points (+10 for referral)
+        await addBoltTownReferralPoints(supabase, referrer.id);
       }
 
       // Send Telegram notification to referrer
