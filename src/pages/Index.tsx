@@ -16,6 +16,7 @@ import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
 import UserAvatar from '@/components/UserAvatar';
 import PromoBanner from '@/components/home/PromoBanner';
 import boltTownBanner from '@/assets/bolt-town-banner.png';
+import boltTownHomeUnderBanner from '@/assets/bolt-town-home-under-banner.png';
 
 interface HomeSection {
   id: string;
@@ -209,6 +210,23 @@ const Index = () => {
         {/* Animated Promo Banner */}
         <FadeUp delay={0.1}>
           <PromoBanner />
+        </FadeUp>
+
+        {/* Competition Image under the promo banners */}
+        <FadeUp delay={0.12}>
+          <motion.button
+            onClick={() => handleNavigate('/bolt-town')}
+            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.01 }}
+            className="w-full overflow-hidden rounded-2xl"
+          >
+            <img
+              src={boltTownHomeUnderBanner}
+              alt="Bolt Town daily competition"
+              className="w-full h-auto object-cover"
+              loading="lazy"
+            />
+          </motion.button>
         </FadeUp>
 
         {/* Image-based Sections */}

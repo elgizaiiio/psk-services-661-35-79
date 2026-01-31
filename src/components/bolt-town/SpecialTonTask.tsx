@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Star, Loader2, Check, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { TonIcon } from '@/components/ui/currency-icons';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
 import { useBoltTown } from '@/hooks/useBoltTown';
@@ -72,16 +70,6 @@ export const SpecialTonTask: React.FC<SpecialTonTaskProps> = ({
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-3">
-        <div className={cn(
-          'w-12 h-12 rounded-xl flex items-center justify-center',
-          isCompleted ? 'bg-emerald-500/20' : 'bg-amber-500/20'
-        )}>
-          {isCompleted ? (
-            <Check className="w-6 h-6 text-emerald-400" />
-          ) : (
-            <Star className="w-6 h-6 text-amber-400" />
-          )}
-        </div>
         <div className="flex-1">
           <h3 className="font-bold text-foreground">Special Daily Task</h3>
           <p className="text-xs text-muted-foreground">
@@ -89,7 +77,6 @@ export const SpecialTonTask: React.FC<SpecialTonTaskProps> = ({
           </p>
         </div>
         <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/20">
-          <Zap className="w-4 h-4 text-primary" />
           <span className="font-bold text-primary">+{SPECIAL_TASK_POINTS}</span>
         </div>
       </div>
@@ -100,7 +87,6 @@ export const SpecialTonTask: React.FC<SpecialTonTaskProps> = ({
           <div className="flex items-center justify-between p-3 rounded-lg bg-background/50 mb-3">
             <span className="text-sm text-muted-foreground">Cost</span>
             <div className="flex items-center gap-1.5">
-              <TonIcon size={18} />
               <span className="font-bold text-foreground">{SPECIAL_TASK_PRICE_TON} TON</span>
             </div>
           </div>
@@ -112,14 +98,13 @@ export const SpecialTonTask: React.FC<SpecialTonTaskProps> = ({
           >
             {isPaying || isProcessing ? (
               <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                <span className="mr-2 inline-flex h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
                 Processing...
               </>
             ) : !isConnected ? (
               'Connect Wallet to Pay'
             ) : (
               <>
-                <Star className="w-5 h-5 mr-2" />
                 Pay {SPECIAL_TASK_PRICE_TON} TON
               </>
             )}
@@ -130,7 +115,6 @@ export const SpecialTonTask: React.FC<SpecialTonTaskProps> = ({
       {isCompleted && (
         <div className="text-center py-2">
           <p className="text-emerald-400 font-medium flex items-center justify-center gap-2">
-            <Check className="w-4 h-4" />
             Task completed! Come back tomorrow.
           </p>
         </div>

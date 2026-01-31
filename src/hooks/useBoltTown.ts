@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
+import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
 
 export interface BoltTownPoints {
   id: string;
@@ -74,6 +75,7 @@ export const useBoltTown = () => {
         .insert({
           user_id: boltUser.id,
           date: today,
+          total_points: 0,
         })
         .select()
         .single();
@@ -194,6 +196,11 @@ export const useBoltTown = () => {
         updates.referral_bonus_points = (todayPoints.referral_bonus_points || 0) + 5;
       }
 
+      updates.total_points = computeBoltTownTotalPoints({
+        ...todayPoints,
+        ...updates,
+      });
+
       const { error } = await supabase
         .from('bolt_town_daily_points')
         .update(updates)
@@ -225,6 +232,11 @@ export const useBoltTown = () => {
         updates.task_points = (todayPoints.task_points || 0) + 5;
       }
 
+      updates.total_points = computeBoltTownTotalPoints({
+        ...todayPoints,
+        ...updates,
+      });
+
       const { error } = await supabase
         .from('bolt_town_daily_points')
         .update(updates)
@@ -247,10 +259,15 @@ export const useBoltTown = () => {
       if (!todayPoints) return false;
 
       // No limit on ads - just add 2 points per ad
+      const nextAdPoints = (todayPoints.ad_points || 0) + 2;
       const { error } = await supabase
         .from('bolt_town_daily_points')
         .update({
-          ad_points: (todayPoints.ad_points || 0) + 2,
+          ad_points: nextAdPoints,
+          total_points: computeBoltTownTotalPoints({
+            ...todayPoints,
+            ad_points: nextAdPoints,
+          }),
         })
         .eq('id', todayPoints.id);
 
@@ -278,6 +295,11 @@ export const useBoltTown = () => {
         updates.streak_bonus = (todayPoints.streak_bonus || 0) + 5;
       }
 
+      updates.total_points = computeBoltTownTotalPoints({
+        ...todayPoints,
+        ...updates,
+      });
+
       const { error } = await supabase
         .from('bolt_town_daily_points')
         .update(updates)
@@ -300,10 +322,15 @@ export const useBoltTown = () => {
       if (!todayPoints) return false;
 
       // Add 100 points for server purchase under task_points
+      const nextTaskPoints = (todayPoints.task_points || 0) + 100;
       const { error } = await supabase
         .from('bolt_town_daily_points')
         .update({
-          task_points: (todayPoints.task_points || 0) + 100,
+          task_points: nextTaskPoints,
+          total_points: computeBoltTownTotalPoints({
+            ...todayPoints,
+            task_points: nextTaskPoints,
+          }),
         })
         .eq('id', todayPoints.id);
 

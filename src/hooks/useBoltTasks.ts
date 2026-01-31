@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { BoltTask, BoltCompletedTask } from '@/types/bolt';
+import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
 
 // Helper to add Bolt Town task points
 const addBoltTownTaskPoints = async (userId: string) => {
@@ -16,14 +17,26 @@ const addBoltTownTaskPoints = async (userId: string) => {
       .maybeSingle();
 
     if (existing) {
+      const nextTaskPoints = (existing.task_points || 0) + 5;
       await supabase
         .from('bolt_town_daily_points')
-        .update({ task_points: (existing.task_points || 0) + 5 })
+        .update({
+          task_points: nextTaskPoints,
+          total_points: computeBoltTownTotalPoints({
+            ...(existing as any),
+            task_points: nextTaskPoints,
+          }),
+        })
         .eq('id', existing.id);
     } else {
       await supabase
         .from('bolt_town_daily_points')
-        .insert({ user_id: userId, date: today, task_points: 5 });
+        .insert({
+          user_id: userId,
+          date: today,
+          task_points: 5,
+          total_points: 5,
+        });
     }
   } catch (err) {
     console.error('Error adding Bolt Town task points:', err);
