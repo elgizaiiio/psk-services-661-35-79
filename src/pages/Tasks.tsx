@@ -6,7 +6,7 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltTasks } from '@/hooks/useBoltTasks';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useChannelSubscription } from '@/hooks/useChannelSubscription';
-import { useAdsGramRewarded } from '@/hooks/useAdsGramRewarded';
+import { useMonetagRewarded } from '@/hooks/useMonetagRewarded';
 import { Target, Check, ExternalLink, Loader2, AlertCircle, UserPlus, Play } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
@@ -106,7 +106,7 @@ const Tasks = () => {
   } = useBoltTasks();
   const loading = tasksLoading || userLoading;
   const { checkSubscription, isChecking } = useChannelSubscription('boltcomm');
-  const { showAd: showTaskAd, isReady: taskAdReady, isLoading: taskAdLoading } = useAdsGramRewarded();
+  const { showAd: showTaskAd, isReady: taskAdReady, isLoading: taskAdLoading } = useMonetagRewarded();
   const [processingTask, setProcessingTask] = useState<string | null>(null);
   const [showingTaskAd, setShowingTaskAd] = useState(false);
   const didRecheckRef = useRef(false);
