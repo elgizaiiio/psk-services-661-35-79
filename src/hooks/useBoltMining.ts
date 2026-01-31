@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BoltUser, BoltMiningSession, TelegramUser } from '@/types/bolt';
 import { createLogger } from '@/lib/logger';
+import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
 
 const logger = createLogger('BoltMining');
 
@@ -27,19 +28,27 @@ const addBoltTownActivityPoints = async (userId: string, isStreak = false) => {
         updates.streak_bonus = 5;
       }
       if (Object.keys(updates).length > 0) {
+        updates.total_points = computeBoltTownTotalPoints({
+          ...(existing as any),
+          ...updates,
+        });
         await supabase
           .from('bolt_town_daily_points')
           .update(updates)
           .eq('id', existing.id);
       }
     } else {
+      const base = {
+        user_id: userId,
+        date: today,
+        activity_points: 1,
+        streak_bonus: isStreak ? 5 : 0,
+      };
       await supabase
         .from('bolt_town_daily_points')
         .insert({
-          user_id: userId,
-          date: today,
-          activity_points: 1,
-          streak_bonus: isStreak ? 5 : 0,
+          ...base,
+          total_points: computeBoltTownTotalPoints(base),
         });
     }
   } catch (err) {

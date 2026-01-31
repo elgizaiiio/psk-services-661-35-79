@@ -6,6 +6,7 @@ import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import { useMonetagRewarded } from '@/hooks/useMonetagRewarded';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
 
 // Helper to add Bolt Town ad points (no limit!)
 const addBoltTownAdPoints = async (userId: string) => {
@@ -19,14 +20,26 @@ const addBoltTownAdPoints = async (userId: string) => {
       .maybeSingle();
 
     if (existing) {
+      const nextAdPoints = (existing.ad_points || 0) + 2;
       await supabase
         .from('bolt_town_daily_points')
-        .update({ ad_points: (existing.ad_points || 0) + 2 })
+        .update({
+          ad_points: nextAdPoints,
+          total_points: computeBoltTownTotalPoints({
+            ...(existing as any),
+            ad_points: nextAdPoints,
+          }),
+        })
         .eq('id', existing.id);
     } else {
       await supabase
         .from('bolt_town_daily_points')
-        .insert({ user_id: userId, date: today, ad_points: 2 });
+        .insert({
+          user_id: userId,
+          date: today,
+          ad_points: 2,
+          total_points: 2,
+        });
     }
   } catch (err) {
     console.error('Error adding Bolt Town ad points:', err);

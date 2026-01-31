@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BoltUser, BoltReferral } from '@/types/bolt';
+import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
 
 // Helper to add Bolt Town referral points
 const addBoltTownReferralPoints = async (userId: string, bonusForTask = false) => {
@@ -21,18 +22,28 @@ const addBoltTownReferralPoints = async (userId: string, bonusForTask = false) =
       if (bonusForTask) {
         updates.referral_bonus_points = (existing.referral_bonus_points || 0) + 5;
       }
+
+      updates.total_points = computeBoltTownTotalPoints({
+        ...(existing as any),
+        ...updates,
+      });
+
       await supabase
         .from('bolt_town_daily_points')
         .update(updates)
         .eq('id', existing.id);
     } else {
+      const base = {
+        user_id: userId,
+        date: today,
+        referral_points: 10,
+        referral_bonus_points: bonusForTask ? 5 : 0,
+      };
       await supabase
         .from('bolt_town_daily_points')
         .insert({
-          user_id: userId,
-          date: today,
-          referral_points: 10,
-          referral_bonus_points: bonusForTask ? 5 : 0,
+          ...base,
+          total_points: computeBoltTownTotalPoints(base),
         });
     }
   } catch (err) {
