@@ -185,7 +185,7 @@ const Index = () => {
       <DailyStreakModal />
       <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
 
-      <div className="max-w-md mx-auto px-4 pt-4 space-y-3">
+      <div className="max-w-md mx-auto px-4 pt-14 space-y-3">
         
         {/* Competition Image - Rectangle Banner */}
         <FadeUp delay={0.1}>
