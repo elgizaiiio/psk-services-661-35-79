@@ -7,6 +7,8 @@ const corsHeaders = {
 };
 
 const ADMIN_TELEGRAM_IDS = [6657246146];
+const BATCH_SIZE = 200; // Smaller batch to avoid CPU timeout
+const DELAY_BETWEEN_MESSAGES = 30; // 30ms delay
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,7 +16,18 @@ serve(async (req) => {
   }
 
   try {
-    const { message, adminTelegramId, inlineButton, secretKey } = await req.json();
+    const { 
+      message, 
+      adminTelegramId, 
+      inlineButton, 
+      secretKey,
+      // For chained calls
+      offset = 0,
+      totalSent = 0,
+      totalFailed = 0,
+      totalBlocked = 0,
+      isChainedCall = false
+    } = await req.json();
 
     // Verify admin - allow either admin telegram ID or secret key
     const isAdmin = ADMIN_TELEGRAM_IDS.includes(Number(adminTelegramId));
@@ -47,130 +60,164 @@ serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get ALL users using pagination - no filters
-    let allUsers: any[] = [];
-    let offset = 0;
-    const pageSize = 1000;
-    
-    while (true) {
-      const { data: users, error } = await supabase
-        .from('bolt_users')
-        .select('telegram_id, first_name')
-        .not('telegram_id', 'is', null)
-        .range(offset, offset + pageSize - 1);
-      
-      if (error) {
-        console.error('Error fetching users:', error);
-        break;
-      }
-      
-      if (!users || users.length === 0) break;
-      
-      allUsers = allUsers.concat(users);
-      offset += pageSize;
-      
-      if (users.length < pageSize) break;
-    }
+    // Get users for this batch only
+    const { data: users, error: fetchError } = await supabase
+      .from('bolt_users')
+      .select('telegram_id, first_name')
+      .not('telegram_id', 'is', null)
+      .eq('bot_blocked', false)
+      .range(offset, offset + BATCH_SIZE - 1);
 
-    if (allUsers.length === 0) {
+    if (fetchError) {
+      console.error('Error fetching users:', fetchError);
       return new Response(
-        JSON.stringify({ error: 'No users found' }),
+        JSON.stringify({ error: 'Failed to fetch users' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`Starting mass broadcast to ALL ${allUsers.length} users`);
+    // Get total count for progress tracking (only on first call)
+    let totalUsers = 0;
+    if (!isChainedCall) {
+      const { count } = await supabase
+        .from('bolt_users')
+        .select('*', { count: 'exact', head: true })
+        .not('telegram_id', 'is', null)
+        .eq('bot_blocked', false);
+      totalUsers = count || 0;
+      console.log(`Starting mass broadcast to ${totalUsers} users`);
+    }
 
-    // Start background processing
-    const sendBroadcast = async () => {
-      let sent = 0;
-      let failed = 0;
-      let blocked = 0;
-
-      const BATCH_SIZE = 500;
-      const DELAY_BETWEEN_MESSAGES = 25; // 25ms = ~40 messages/second
-
-      for (let i = 0; i < allUsers.length; i += BATCH_SIZE) {
-        const batch = allUsers.slice(i, i + BATCH_SIZE);
-        
-        for (const user of batch) {
-          try {
-            // Personalize message
-            const personalizedMessage = message.replace('{firstName}', user.first_name || 'User');
-
-            const body: any = {
-              chat_id: user.telegram_id,
-              text: personalizedMessage,
-              parse_mode: 'HTML',
-              disable_web_page_preview: false,
-            };
-
-            // Add inline button if provided
-            if (inlineButton) {
-              body.reply_markup = {
-                inline_keyboard: [[inlineButton]]
-              };
-            }
-
-            const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(body),
-            });
-
-            const result = await response.json();
-
-            if (result.ok) {
-              sent++;
-            } else {
-              if (result.error_code === 403) {
-                blocked++;
-                await supabase
-                  .from('bolt_users')
-                  .update({ bot_blocked: true })
-                  .eq('telegram_id', user.telegram_id);
-              } else {
-                failed++;
-                console.error(`Failed to send to ${user.telegram_id}:`, result.description);
-              }
-            }
-          } catch (error) {
-            failed++;
-            console.error(`Error sending to ${user.telegram_id}:`, error);
-          }
-
-          await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_MESSAGES));
-        }
-
-        console.log(`Progress: ${i + batch.length}/${allUsers.length} (sent: ${sent}, failed: ${failed}, blocked: ${blocked})`);
-      }
-
-      console.log(`Broadcast complete: sent=${sent}, failed=${failed}, blocked=${blocked}`);
-
-      // Notify admin of completion
+    if (!users || users.length === 0) {
+      // No more users, broadcast complete
+      const finalMessage = `✅ Broadcast Complete!\n\nTotal Sent: ${totalSent}\nFailed: ${totalFailed}\nBlocked: ${totalBlocked}`;
+      
       await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          chat_id: adminTelegramId,
-          text: `Broadcast Complete\n\nTotal: ${allUsers.length}\nSent: ${sent}\nFailed: ${failed}\nBlocked: ${blocked}`,
+          chat_id: adminTelegramId || ADMIN_TELEGRAM_IDS[0],
+          text: finalMessage,
           parse_mode: 'HTML',
         }),
       });
+
+      console.log(`Broadcast complete: sent=${totalSent}, failed=${totalFailed}, blocked=${totalBlocked}`);
+
+      return new Response(
+        JSON.stringify({
+          success: true,
+          complete: true,
+          sent: totalSent,
+          failed: totalFailed,
+          blocked: totalBlocked
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Process this batch
+    let sent = 0;
+    let failed = 0;
+    let blocked = 0;
+
+    for (const user of users) {
+      try {
+        const personalizedMessage = message.replace('{firstName}', user.first_name || 'User');
+
+        const body: any = {
+          chat_id: user.telegram_id,
+          text: personalizedMessage,
+          parse_mode: 'HTML',
+          disable_web_page_preview: false,
+        };
+
+        if (inlineButton) {
+          body.reply_markup = {
+            inline_keyboard: [[inlineButton]]
+          };
+        }
+
+        const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+        const result = await response.json();
+
+        if (result.ok) {
+          sent++;
+        } else {
+          if (result.error_code === 403) {
+            blocked++;
+            await supabase
+              .from('bolt_users')
+              .update({ bot_blocked: true })
+              .eq('telegram_id', user.telegram_id);
+          } else {
+            failed++;
+          }
+        }
+      } catch (error) {
+        failed++;
+      }
+
+      await new Promise(resolve => setTimeout(resolve, DELAY_BETWEEN_MESSAGES));
+    }
+
+    const newTotalSent = totalSent + sent;
+    const newTotalFailed = totalFailed + failed;
+    const newTotalBlocked = totalBlocked + blocked;
+    const newOffset = offset + users.length;
+
+    console.log(`Progress: ${newOffset} processed (sent: ${newTotalSent}, failed: ${newTotalFailed}, blocked: ${newTotalBlocked})`);
+
+    // Chain to next batch using EdgeRuntime.waitUntil
+    const chainNextBatch = async () => {
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/send-mass-broadcast`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            message,
+            adminTelegramId,
+            inlineButton,
+            secretKey,
+            offset: newOffset,
+            totalSent: newTotalSent,
+            totalFailed: newTotalFailed,
+            totalBlocked: newTotalBlocked,
+            isChainedCall: true
+          }),
+        });
+      } catch (err) {
+        console.error('Failed to chain next batch:', err);
+      }
     };
 
-    // Use EdgeRuntime.waitUntil for background processing
+    // Use EdgeRuntime.waitUntil for chaining
     if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
-      EdgeRuntime.waitUntil(sendBroadcast());
+      EdgeRuntime.waitUntil(chainNextBatch());
     } else {
-      // Fallback: run in background without waiting
-      sendBroadcast().catch(console.error);
+      chainNextBatch().catch(console.error);
     }
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Broadcast started to ${allUsers.length} users. You will be notified when complete.`
+        message: isChainedCall 
+          ? `Batch processed: ${newOffset} users (${newTotalSent} sent)`
+          : `Broadcast started. Processing in batches of ${BATCH_SIZE}. You will be notified when complete.`,
+        progress: {
+          processed: newOffset,
+          sent: newTotalSent,
+          failed: newTotalFailed,
+          blocked: newTotalBlocked
+        }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
