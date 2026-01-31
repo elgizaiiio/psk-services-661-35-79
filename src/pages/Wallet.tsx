@@ -75,11 +75,42 @@ const Wallet: React.FC = () => {
     checkUserServers();
   }, [user?.id]);
 
-  // Check if current wallet is verified
-  // Wallet verification is now required for every withdrawal - always false until paid
+  // Check if current wallet has been verified in the current session
+  // Verification is required once per session (page load)
   useEffect(() => {
-    // Always require fresh verification payment
-    setIsWalletVerified(false);
+    const checkWalletVerification = async () => {
+      if (!user?.id || !wallet?.account?.address) {
+        setIsWalletVerified(false);
+        return;
+      }
+      
+      try {
+        // Check for verification within the last 30 minutes (session-based)
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+        
+        const { data: verification } = await supabase
+          .from('wallet_verifications')
+          .select('id, verified_at')
+          .eq('user_id', user.id)
+          .eq('wallet_address', wallet.account.address)
+          .gte('verified_at', thirtyMinutesAgo)
+          .order('verified_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (verification) {
+          console.log('[Wallet] Found recent verification:', verification.verified_at);
+          setIsWalletVerified(true);
+        } else {
+          setIsWalletVerified(false);
+        }
+      } catch (err) {
+        console.error('[Wallet] Error checking verification:', err);
+        setIsWalletVerified(false);
+      }
+    };
+
+    checkWalletVerification();
   }, [user?.id, wallet?.account?.address]);
 
   const isLoading = authLoading || miningLoading;
