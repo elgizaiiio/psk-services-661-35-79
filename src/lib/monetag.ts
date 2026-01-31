@@ -1,16 +1,14 @@
 // Monetag SDK Manager for Telegram Mini Apps
+// Using official NPM package: monetag-tg-sdk
 // Zone ID: 10545446
 
-declare global {
-  interface Window {
-    show_10545446?: (type?: 'pop') => Promise<void>;
-  }
-}
+import createAdHandler from 'monetag-tg-sdk';
 
-const MAX_RETRIES = 15;
-const RETRY_DELAY = 400;
+const ZONE_ID = 10545446;
 
-let sdkLoadPromise: Promise<boolean> | null = null;
+// Create ad handler instance
+let adHandler: ReturnType<typeof createAdHandler> | null = null;
+let initPromise: Promise<boolean> | null = null;
 
 /**
  * Check if we're in Telegram environment
@@ -21,43 +19,29 @@ export function isTelegramEnvironment(): boolean {
 }
 
 /**
- * Wait for Monetag SDK to be ready
+ * Initialize Monetag SDK
  */
-export function loadMonetagSDK(): Promise<boolean> {
-  if (sdkLoadPromise) return sdkLoadPromise;
+export function initMonetagSDK(): Promise<boolean> {
+  if (initPromise) return initPromise;
 
-  sdkLoadPromise = new Promise((resolve) => {
-    // Check if already loaded
-    if (typeof window.show_10545446 === 'function') {
-      console.log('[Monetag] SDK already available');
-      resolve(true);
-      return;
-    }
-
-    let retryCount = 0;
-
-    const checkSDK = () => {
-      if (typeof window.show_10545446 === 'function') {
-        console.log('[Monetag] SDK loaded successfully');
-        resolve(true);
-        return;
-      }
-
-      if (retryCount >= MAX_RETRIES) {
-        console.error('[Monetag] SDK failed to load after', MAX_RETRIES, 'retries');
+  initPromise = new Promise((resolve) => {
+    try {
+      if (!isTelegramEnvironment()) {
+        console.log('[Monetag] Not in Telegram environment');
         resolve(false);
         return;
       }
 
-      retryCount++;
-      console.log(`[Monetag] Waiting for SDK... attempt ${retryCount}/${MAX_RETRIES}`);
-      setTimeout(checkSDK, RETRY_DELAY);
-    };
-
-    checkSDK();
+      adHandler = createAdHandler(ZONE_ID);
+      console.log('[Monetag] SDK initialized with zone:', ZONE_ID);
+      resolve(true);
+    } catch (err) {
+      console.error('[Monetag] Failed to initialize:', err);
+      resolve(false);
+    }
   });
 
-  return sdkLoadPromise;
+  return initPromise;
 }
 
 /**
@@ -65,7 +49,7 @@ export function loadMonetagSDK(): Promise<boolean> {
  */
 export async function isMonetagReady(): Promise<boolean> {
   if (!isTelegramEnvironment()) return false;
-  return await loadMonetagSDK();
+  return await initMonetagSDK();
 }
 
 /**
@@ -77,15 +61,15 @@ export async function showRewardedInterstitial(): Promise<{ success: boolean; er
     return { success: false, error: 'Ads only work in Telegram' };
   }
 
-  const isReady = await loadMonetagSDK();
+  const isReady = await initMonetagSDK();
   
-  if (!isReady || typeof window.show_10545446 !== 'function') {
+  if (!isReady || !adHandler) {
     return { success: false, error: 'Ad service unavailable' };
   }
 
   try {
     console.log('[Monetag] Showing rewarded interstitial...');
-    await window.show_10545446();
+    await adHandler();
     console.log('[Monetag] Ad completed successfully');
     return { success: true };
   } catch (err) {
@@ -103,15 +87,15 @@ export async function showRewardedPopup(): Promise<{ success: boolean; error?: s
     return { success: false, error: 'Ads only work in Telegram' };
   }
 
-  const isReady = await loadMonetagSDK();
+  const isReady = await initMonetagSDK();
   
-  if (!isReady || typeof window.show_10545446 !== 'function') {
+  if (!isReady || !adHandler) {
     return { success: false, error: 'Ad service unavailable' };
   }
 
   try {
     console.log('[Monetag] Showing rewarded popup...');
-    await window.show_10545446('pop');
+    await adHandler({ type: 'pop' });
     console.log('[Monetag] Popup ad completed');
     return { success: true };
   } catch (err) {
