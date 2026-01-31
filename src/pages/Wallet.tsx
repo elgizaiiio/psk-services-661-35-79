@@ -86,13 +86,13 @@ const Wallet: React.FC = () => {
       
       try {
         // Check for verification within the last 30 minutes (session-based)
+        // Only check by user_id since wallet address format may differ (raw vs base64)
         const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
         
         const { data: verification } = await supabase
           .from('wallet_verifications')
-          .select('id, verified_at')
+          .select('id, verified_at, wallet_address')
           .eq('user_id', user.id)
-          .eq('wallet_address', wallet.account.address)
           .gte('verified_at', thirtyMinutesAgo)
           .order('verified_at', { ascending: false })
           .limit(1)
@@ -102,6 +102,7 @@ const Wallet: React.FC = () => {
           console.log('[Wallet] Found recent verification:', verification.verified_at);
           setIsWalletVerified(true);
         } else {
+          console.log('[Wallet] No recent verification found for user:', user.id);
           setIsWalletVerified(false);
         }
       } catch (err) {
