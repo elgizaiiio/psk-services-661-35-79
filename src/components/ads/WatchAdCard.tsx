@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Loader2, Play, Gift, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
-import { useAdsGramRewarded } from '@/hooks/useAdsGramRewarded';
+import { useMonetagRewarded } from '@/hooks/useMonetagRewarded';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -22,7 +22,7 @@ export const WatchAdCard: React.FC<WatchAdCardProps> = ({
   telegramId,
   onRewardClaimed,
 }) => {
-  const { showAd, isReady, isLoading: adLoading } = useAdsGramRewarded();
+  const { showAd, isReady, isLoading: adLoading } = useMonetagRewarded();
   const [dailyCount, setDailyCount] = useState(0);
   const [isProcessing, setIsProcessing] = useState(false);
   const [loading, setLoading] = useState(true);
