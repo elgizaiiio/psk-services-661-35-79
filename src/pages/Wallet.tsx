@@ -93,6 +93,7 @@ const Wallet: React.FC = () => {
           .from('wallet_verifications')
           .select('id, verified_at, wallet_address')
           .eq('user_id', user.id)
+          .eq('currency', 'TON')
           .gte('verified_at', thirtyMinutesAgo)
           .order('verified_at', { ascending: false })
           .limit(1)
@@ -257,7 +258,13 @@ const Wallet: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setVerificationOpen(true)}
+            onClick={() => {
+              if (isWalletVerified) {
+                setWithdrawSelectOpen(true);
+              } else {
+                setVerificationOpen(true);
+              }
+            }}
             className="flex flex-col items-center gap-2"
           >
             <div className="w-14 h-14 rounded-full bg-orange-500/10 flex items-center justify-center">

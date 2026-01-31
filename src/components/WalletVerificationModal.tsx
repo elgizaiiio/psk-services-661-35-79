@@ -41,6 +41,29 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   }, [open]);
 
   const handleVerify = async () => {
+    // If already verified recently, skip asking to pay again
+    try {
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+      const { data: existingVerification } = await supabase
+        .from('wallet_verifications')
+        .select('id, verified_at')
+        .eq('user_id', userId)
+        .eq('currency', 'TON')
+        .gte('verified_at', thirtyMinutesAgo)
+        .order('verified_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (existingVerification) {
+        setIsVerified(true);
+        onVerified();
+        onClose();
+        return;
+      }
+    } catch (e) {
+      // ignore and proceed to payment flow
+    }
+
     // Check if wallet is connected
     if (!wallet?.account) {
       toast.error('Please connect your wallet first');
@@ -89,7 +112,8 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
             tx_hash: result.boc,
             verified_at: new Date().toISOString(),
           }, {
-            onConflict: 'user_id,wallet_address',
+            // Matches UNIQUE (user_id, wallet_address, currency)
+            onConflict: 'user_id,wallet_address,currency',
             ignoreDuplicates: false
           });
 
