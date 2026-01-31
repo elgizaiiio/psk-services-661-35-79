@@ -78,20 +78,23 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
       console.log('Transaction result:', result);
       
       if (result && result.boc) {
-        // Record verification in database
+        // Record verification in database - use upsert to handle existing records
         const { error } = await supabase
           .from('wallet_verifications')
-          .insert({
+          .upsert({
             user_id: userId,
             wallet_address: walletAddress,
             currency: 'TON',
             verification_fee: VERIFICATION_FEE,
             tx_hash: result.boc,
             verified_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id,wallet_address',
+            ignoreDuplicates: false
           });
 
         if (error) {
-          console.error('Wallet verification insert error:', error);
+          console.error('Wallet verification upsert error:', error);
           throw error;
         }
 
