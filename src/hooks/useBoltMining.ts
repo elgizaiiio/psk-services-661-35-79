@@ -5,6 +5,48 @@ import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('BoltMining');
 
+// Helper to add Bolt Town activity points for mining
+const addBoltTownActivityPoints = async (userId: string, isStreak = false) => {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const { data: existing } = await supabase
+      .from('bolt_town_daily_points')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .maybeSingle();
+
+    const updates: Record<string, any> = {};
+
+    if (existing) {
+      // Only add activity points once per day
+      if (existing.activity_points === 0) {
+        updates.activity_points = 1;
+      }
+      if (isStreak && existing.streak_bonus === 0) {
+        updates.streak_bonus = 5;
+      }
+      if (Object.keys(updates).length > 0) {
+        await supabase
+          .from('bolt_town_daily_points')
+          .update(updates)
+          .eq('id', existing.id);
+      }
+    } else {
+      await supabase
+        .from('bolt_town_daily_points')
+        .insert({
+          user_id: userId,
+          date: today,
+          activity_points: 1,
+          streak_bonus: isStreak ? 5 : 0,
+        });
+    }
+  } catch (err) {
+    console.error('Error adding Bolt Town activity points:', err);
+  }
+};
+
 interface MiningProgress {
   progress: number;
   tokensMinedSoFar: number;
@@ -118,6 +160,11 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
       if (result?.session) {
         setActiveMiningSession(result.session as BoltMiningSession);
         logger.info('Mining started', { sessionId: result.session.id });
+        
+        // Add Bolt Town activity points (+1 for daily check-in)
+        if (result?.user?.id) {
+          await addBoltTownActivityPoints(result.user.id, false);
+        }
       }
 
       if (result?.user) {

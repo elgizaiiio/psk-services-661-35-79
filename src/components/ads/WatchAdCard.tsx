@@ -7,6 +7,32 @@ import { useMonetagRewarded } from '@/hooks/useMonetagRewarded';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Helper to add Bolt Town ad points (no limit!)
+const addBoltTownAdPoints = async (userId: string) => {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const { data: existing } = await supabase
+      .from('bolt_town_daily_points')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from('bolt_town_daily_points')
+        .update({ ad_points: (existing.ad_points || 0) + 2 })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('bolt_town_daily_points')
+        .insert({ user_id: userId, date: today, ad_points: 2 });
+    }
+  } catch (err) {
+    console.error('Error adding Bolt Town ad points:', err);
+  }
+};
+
 interface WatchAdCardProps {
   userId?: string;
   telegramId?: number;
@@ -84,6 +110,12 @@ export const WatchAdCard: React.FC<WatchAdCardProps> = ({
         // But we also update the local count for UX
         setDailyCount(prev => prev + 1);
         toast.success(`+${REWARD_BOLT} BOLT +${REWARD_USDT} USDT!`);
+        
+        // Add Bolt Town competition points (+2 per ad, no limit!)
+        if (userId) {
+          await addBoltTownAdPoints(userId);
+        }
+        
         onRewardClaimed?.();
       } else {
         toast.info('Click on the ad to complete and earn rewards');

@@ -806,6 +806,126 @@ export type Database = {
           },
         ]
       }
+      bolt_town_daily_points: {
+        Row: {
+          activity_points: number
+          ad_points: number
+          created_at: string
+          date: string
+          id: string
+          referral_bonus_points: number
+          referral_points: number
+          special_task_done: boolean
+          special_task_points: number
+          streak_bonus: number
+          task_points: number
+          total_points: number | null
+          user_id: string
+        }
+        Insert: {
+          activity_points?: number
+          ad_points?: number
+          created_at?: string
+          date?: string
+          id?: string
+          referral_bonus_points?: number
+          referral_points?: number
+          special_task_done?: boolean
+          special_task_points?: number
+          streak_bonus?: number
+          task_points?: number
+          total_points?: number | null
+          user_id: string
+        }
+        Update: {
+          activity_points?: number
+          ad_points?: number
+          created_at?: string
+          date?: string
+          id?: string
+          referral_bonus_points?: number
+          referral_points?: number
+          special_task_done?: boolean
+          special_task_points?: number
+          streak_bonus?: number
+          task_points?: number
+          total_points?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolt_town_daily_points_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolt_town_daily_points_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bolt_town_daily_winners: {
+        Row: {
+          admin_notified: boolean
+          all_users_notified: boolean
+          created_at: string
+          date: string
+          id: string
+          prize_usdt: number
+          telegram_id: number
+          telegram_username: string | null
+          total_points: number
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          admin_notified?: boolean
+          all_users_notified?: boolean
+          created_at?: string
+          date: string
+          id?: string
+          prize_usdt?: number
+          telegram_id: number
+          telegram_username?: string | null
+          total_points?: number
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          admin_notified?: boolean
+          all_users_notified?: boolean
+          created_at?: string
+          date?: string
+          id?: string
+          prize_usdt?: number
+          telegram_id?: number
+          telegram_username?: string | null
+          total_points?: number
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolt_town_daily_winners_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolt_town_daily_winners_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bolt_upgrade_purchases: {
         Row: {
           amount_paid: number

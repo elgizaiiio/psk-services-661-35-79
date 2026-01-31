@@ -4,6 +4,32 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { BoltTask, BoltCompletedTask } from '@/types/bolt';
 
+// Helper to add Bolt Town task points
+const addBoltTownTaskPoints = async (userId: string) => {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const { data: existing } = await supabase
+      .from('bolt_town_daily_points')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from('bolt_town_daily_points')
+        .update({ task_points: (existing.task_points || 0) + 5 })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('bolt_town_daily_points')
+        .insert({ user_id: userId, date: today, task_points: 5 });
+    }
+  } catch (err) {
+    console.error('Error adding Bolt Town task points:', err);
+  }
+};
+
 export const useBoltTasks = () => {
   const { user: telegramUser } = useTelegramAuth();
   const { user: boltUser, refreshUser } = useBoltMining(telegramUser);
@@ -124,6 +150,9 @@ export const useBoltTasks = () => {
         .eq('id', boltUser.id);
 
       if (updateError) throw updateError;
+
+      // Add Bolt Town competition points (+5 for task)
+      await addBoltTownTaskPoints(boltUser.id);
 
       // Immediately update local state for instant UI feedback (only after successful insert)
       setCompletedTasks((prev) => {
