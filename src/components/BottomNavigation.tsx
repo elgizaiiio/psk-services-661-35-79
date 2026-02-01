@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Home, ListTodo, Users, RotateCw, Wallet } from 'lucide-react';
+import { Home, ListTodo, Users, RotateCw, Wallet, Pickaxe } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 
@@ -12,6 +12,7 @@ const BottomNavigation = () => {
 
   const navItems = [
     { icon: Home, label: 'Home', path: '/' },
+    { icon: Pickaxe, label: 'Mining', path: '/mining' },
     { icon: ListTodo, label: 'Tasks', path: '/tasks' },
     { icon: RotateCw, label: 'Spin', path: '/spin' },
     { icon: Users, label: 'Invite', path: '/invite' },
