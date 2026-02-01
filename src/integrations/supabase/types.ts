@@ -3778,6 +3778,7 @@ export type Database = {
           telegram_username: string
         }[]
       }
+      get_current_bolt_user_id: { Args: never; Returns: string }
       get_current_telegram_id: { Args: never; Returns: string }
       get_current_user_uuid: { Args: never; Returns: string }
       get_my_user_data: {
