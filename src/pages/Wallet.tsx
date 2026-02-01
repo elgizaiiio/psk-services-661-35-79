@@ -14,8 +14,7 @@ import WithdrawSelectModal from '@/components/wallet/WithdrawSelectModal';
 import ViralWithdrawModal from '@/components/wallet/ViralWithdrawModal';
 import EthWithdrawModal from '@/components/wallet/EthWithdrawModal';
 import DepositModal from '@/components/wallet/DepositModal';
-import WalletVerificationModal from '@/components/WalletVerificationModal';
-import RequireServerModal from '@/components/RequireServerModal';
+import WithdrawalRequirementsModal from '@/components/WithdrawalRequirementsModal';
 
 const Wallet: React.FC = () => {
   const { user: tgUser, isLoading: authLoading } = useTelegramAuth();
@@ -30,11 +29,8 @@ const Wallet: React.FC = () => {
   const [viralWithdrawOpen, setViralWithdrawOpen] = useState(false);
   const [ethWithdrawOpen, setEthWithdrawOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [verificationOpen, setVerificationOpen] = useState(false);
-  const [isWalletVerified, setIsWalletVerified] = useState(false);
-  const [pendingWithdrawCurrency, setPendingWithdrawCurrency] = useState<'TON' | 'USDT' | 'VIRAL' | 'ETH' | null>(null);
-  const [hasServer, setHasServer] = useState<boolean | null>(null);
-  const [requireServerOpen, setRequireServerOpen] = useState(false);
+  const [requirementsModalOpen, setRequirementsModalOpen] = useState(false);
+  const [allRequirementsMet, setAllRequirementsMet] = useState(false);
   useTelegramBackButton();
 
   const boltBalance = user?.token_balance ?? 0;
@@ -54,65 +50,80 @@ const Wallet: React.FC = () => {
     ]).catch(() => {});
   }, []);
 
-  // Check if user has a server
+  // Check if all requirements are already met
   useEffect(() => {
-    const checkUserServers = async () => {
-      if (!user?.id) return;
-      
+    const checkAllRequirements = async () => {
+      if (!user?.id || !wallet?.account?.address) return;
+
       try {
-        const { count } = await supabase
+        // Check verification
+        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+        const { data: verification } = await supabase
+          .from('wallet_verifications')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('currency', 'TON')
+          .gte('verified_at', thirtyMinutesAgo)
+          .limit(1)
+          .maybeSingle();
+
+        if (!verification) {
+          setAllRequirementsMet(false);
+          return;
+        }
+
+        // Check server
+        const { count: serverCount } = await supabase
           .from('user_servers')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('is_active', true);
-        
-        setHasServer((count || 0) > 0);
-      } catch {
-        setHasServer(false);
-      }
-    };
 
-    checkUserServers();
-  }, [user?.id]);
-
-  // Check if current wallet has been verified in the current session
-  // Verification is required once per session (page load)
-  useEffect(() => {
-    const checkWalletVerification = async () => {
-      if (!user?.id || !wallet?.account?.address) {
-        setIsWalletVerified(false);
-        return;
-      }
-      
-      try {
-        // Check for verification within the last 30 minutes (session-based)
-        // Only check by user_id since wallet address format may differ (raw vs base64)
-        const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
-        
-        const { data: verification } = await supabase
-          .from('wallet_verifications')
-          .select('id, verified_at, wallet_address')
-          .eq('user_id', user.id)
-          .eq('currency', 'TON')
-          .gte('verified_at', thirtyMinutesAgo)
-          .order('verified_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-        
-        if (verification) {
-          console.log('[Wallet] Found recent verification:', verification.verified_at);
-          setIsWalletVerified(true);
-        } else {
-          console.log('[Wallet] No recent verification found for user:', user.id);
-          setIsWalletVerified(false);
+        if ((serverCount || 0) === 0) {
+          setAllRequirementsMet(false);
+          return;
         }
+
+        // Check spin history (any ticket purchased)
+        const { count: spinCount } = await supabase
+          .from('spin_history')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id);
+
+        if ((spinCount || 0) === 0) {
+          // Also check if user has tickets
+          const { data: tickets } = await supabase
+            .from('user_spin_tickets')
+            .select('tickets_count, pro_tickets_count')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (!tickets || ((tickets.tickets_count || 0) + (tickets.pro_tickets_count || 0)) === 0) {
+            setAllRequirementsMet(false);
+            return;
+          }
+        }
+
+        // Check referrals
+        const { count: referralCount } = await supabase
+          .from('bolt_referrals')
+          .select('*', { count: 'exact', head: true })
+          .eq('referrer_id', user.id);
+
+        if ((referralCount || 0) === 0) {
+          setAllRequirementsMet(false);
+          return;
+        }
+
+        // All requirements met
+        setAllRequirementsMet(true);
       } catch (err) {
-        console.error('[Wallet] Error checking verification:', err);
-        setIsWalletVerified(false);
+        console.error('Error checking requirements:', err);
+        setAllRequirementsMet(false);
       }
     };
 
-    checkWalletVerification();
+    checkAllRequirements();
   }, [user?.id, wallet?.account?.address]);
 
   const isLoading = authLoading || miningLoading;
@@ -127,21 +138,16 @@ const Wallet: React.FC = () => {
     }
   };
 
+  const handleWithdrawClick = () => {
+    if (allRequirementsMet) {
+      setWithdrawSelectOpen(true);
+    } else {
+      setRequirementsModalOpen(true);
+    }
+  };
+
   const handleWithdrawSelect = (currency: 'TON' | 'USDT' | 'VIRAL' | 'ETH') => {
     setWithdrawSelectOpen(false);
-    
-    // ALL withdrawals now require 0.5 TON verification fee first
-    if (!isWalletVerified) {
-      setPendingWithdrawCurrency(currency);
-      setVerificationOpen(true);
-      return;
-    }
-    
-    // Then check if user has a server (for all currencies)
-    if (!hasServer) {
-      setRequireServerOpen(true);
-      return;
-    }
     
     // Viral has instant withdrawal
     if (currency === 'VIRAL') {
@@ -157,6 +163,13 @@ const Wallet: React.FC = () => {
     
     // TON/USDT withdraw modal
     setWithdrawModal({ open: true, currency });
+  };
+
+  const handleAllRequirementsMet = () => {
+    setAllRequirementsMet(true);
+    setRequirementsModalOpen(false);
+    // Open withdraw select modal
+    setWithdrawSelectOpen(true);
   };
 
   if (!wallet?.account?.address) {
@@ -245,7 +258,7 @@ const Wallet: React.FC = () => {
           )}
         </button>
 
-        {/* Action Buttons - No background, no borders */}
+        {/* Action Buttons */}
         <div className="flex items-center justify-center gap-12 mb-10">
           <button
             onClick={() => setDepositModalOpen(true)}
@@ -258,13 +271,7 @@ const Wallet: React.FC = () => {
           </button>
 
           <button
-            onClick={() => {
-              if (isWalletVerified) {
-                setWithdrawSelectOpen(true);
-              } else {
-                setVerificationOpen(true);
-              }
-            }}
+            onClick={handleWithdrawClick}
             className="flex flex-col items-center gap-2"
           >
             <div className="w-14 h-14 rounded-full bg-orange-500/10 flex items-center justify-center">
@@ -362,6 +369,17 @@ const Wallet: React.FC = () => {
         />
       )}
 
+      {/* Withdrawal Requirements Modal */}
+      {user && wallet?.account?.address && (
+        <WithdrawalRequirementsModal
+          open={requirementsModalOpen}
+          onClose={() => setRequirementsModalOpen(false)}
+          userId={user.id}
+          walletAddress={wallet.account.address}
+          onAllRequirementsMet={handleAllRequirementsMet}
+        />
+      )}
+
       {/* Withdraw Select Modal */}
       <WithdrawSelectModal
         open={withdrawSelectOpen}
@@ -371,31 +389,6 @@ const Wallet: React.FC = () => {
         usdtBalance={usdtBalance}
         viralBalance={viralBalance}
         ethBalance={ethBalance}
-      />
-
-      {/* Wallet Verification Modal */}
-      {user && wallet?.account?.address && (
-        <WalletVerificationModal
-          open={verificationOpen}
-          onClose={() => {
-            setVerificationOpen(false);
-            setPendingWithdrawCurrency(null);
-          }}
-          userId={user.id}
-          walletAddress={wallet.account.address}
-          onVerified={() => {
-            setIsWalletVerified(true);
-            setVerificationOpen(false);
-            // After verification, open withdraw select modal
-            setWithdrawSelectOpen(true);
-          }}
-        />
-      )}
-
-      {/* Require Server Modal */}
-      <RequireServerModal
-        open={requireServerOpen}
-        onClose={() => setRequireServerOpen(false)}
       />
 
       {/* Viral Withdraw Modal (Instant) */}
