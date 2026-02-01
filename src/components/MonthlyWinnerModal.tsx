@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, Clock } from 'lucide-react';
-import { getPromoTimeRemaining } from '@/hooks/useMonthlyWinnerModal';
+import { usePromoSettings } from '@/hooks/usePromoSettings';
 
 interface MonthlyWinnerModalProps {
   isOpen: boolean;
@@ -25,20 +25,15 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({
   username = 'User',
 }) => {
   const [showWinner, setShowWinner] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(getPromoTimeRemaining());
+  
+  // Use backend promo settings
+  const { timeRemaining } = usePromoSettings();
 
   useEffect(() => {
     if (isOpen) {
       setShowWinner(false);
     }
   }, [isOpen]);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeRemaining(getPromoTimeRemaining());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleShowWinner = () => {
     setShowWinner(true);

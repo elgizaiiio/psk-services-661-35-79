@@ -7,7 +7,7 @@ import { toast } from 'sonner';
 import { Loader2, X, Clock } from 'lucide-react';
 import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { getValidUntil, tonToNano } from '@/lib/ton-constants';
-import { isPromoActive, getPromoTimeRemaining } from '@/hooks/useMonthlyWinnerModal';
+import { usePromoSettings } from '@/hooks/usePromoSettings';
 
 interface WalletVerificationModalProps {
   open: boolean;
@@ -16,11 +16,6 @@ interface WalletVerificationModalProps {
   walletAddress: string;
   onVerified: () => void;
 }
-
-// Dynamic verification fee based on promo status
-const getVerificationFee = () => {
-  return isPromoActive() ? 3 : 0.5;
-};
 
 const VERIFICATION_WALLET = 'UQCFrjvfMxqHh4-tooMa22uNvbKGd73KfGab3cePjZxq_uNb';
 
@@ -44,33 +39,22 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [showImage, setShowImage] = useState(true);
-  const [timeRemaining, setTimeRemaining] = useState(getPromoTimeRemaining());
-  const [verificationFee, setVerificationFee] = useState(getVerificationFee());
+  
+  // Use backend promo settings
+  const { isPromoActive: promoActive, timeRemaining } = usePromoSettings();
+  
+  // Dynamic verification fee based on promo status
+  const verificationFee = promoActive ? 3 : 0.5;
 
   // Reset state when modal opens
   useEffect(() => {
     if (open) {
       setIsVerified(false);
       setShowImage(true);
-      setVerificationFee(getVerificationFee());
     }
   }, [open]);
 
-  // Update countdown timer
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeRemaining(getPromoTimeRemaining());
-      setVerificationFee(getVerificationFee());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const promoActive = isPromoActive();
-
   const handleVerify = async () => {
-    // Always require new verification - no skipping even if recently verified
-    // This ensures proper identity verification for prize claims
-
     // Check if wallet is connected
     if (!wallet?.account) {
       toast.error('Please connect your wallet first');
@@ -83,7 +67,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
     }
 
     setIsLoading(true);
-    const currentFee = getVerificationFee();
+    const currentFee = verificationFee;
     
     try {
       console.log('Starting wallet verification transaction...');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, RotateCcw } from 'lucide-react';
 
@@ -8,13 +8,32 @@ interface CountdownTimerProps {
 
 export const CountdownTimer: React.FC<CountdownTimerProps> = ({ getTimeUntilReset }) => {
   const [timeLeft, setTimeLeft] = useState(getTimeUntilReset());
+  const lastSyncRef = useRef<number>(Date.now());
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft(getTimeUntilReset());
-    }, 1000);
-
-    return () => clearInterval(interval);
+    // Update every second using requestAnimationFrame for accuracy
+    let animationId: number;
+    let lastUpdate = Date.now();
+    
+    const updateTimer = () => {
+      const now = Date.now();
+      
+      // Re-sync with getTimeUntilReset every 30 seconds for accuracy
+      if (now - lastSyncRef.current >= 30000) {
+        setTimeLeft(getTimeUntilReset());
+        lastSyncRef.current = now;
+      } else if (now - lastUpdate >= 1000) {
+        // Update every second
+        setTimeLeft(prev => Math.max(0, prev - (now - lastUpdate)));
+        lastUpdate = now;
+      }
+      
+      animationId = requestAnimationFrame(updateTimer);
+    };
+    
+    animationId = requestAnimationFrame(updateTimer);
+    
+    return () => cancelAnimationFrame(animationId);
   }, [getTimeUntilReset]);
 
   const hours = Math.floor(timeLeft / (1000 * 60 * 60));
