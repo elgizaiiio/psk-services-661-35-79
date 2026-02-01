@@ -18,9 +18,11 @@ const Contest = () => {
   const [copied, setCopied] = useState(false);
   useTelegramBackButton();
 
+  // Use telegram_id directly (backend now handles ref_ prefix)
   const referralLink = useMemo(() => {
     if (!tgUser?.id) return '';
-    return `https://t.me/Boltminingbot?start=ref_${tgUser.id}`;
+    // Use direct telegram_id - backend will parse it correctly
+    return `https://t.me/Boltminingbot?start=${tgUser.id}`;
   }, [tgUser?.id]);
 
   const handleCopy = async () => {

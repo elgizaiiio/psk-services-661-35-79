@@ -1,32 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { createLogger } from '@/lib/logger';
-import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
+import { getTodayUTCDate } from '@/lib/boltTownPoints';
 
 const logger = createLogger('DailyTasks');
 
-// Add +5 competition points for completing a daily task
+/**
+ * Add +5 competition points for completing a daily task
+ * IMPORTANT: Only updates task_points, NOT total_points (it's a generated column)
+ * NOTE: Database triggers now handle this automatically, but we keep this as backup
+ */
 const addBoltTownTaskPoints = async (userId: string) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayUTCDate();
   try {
     const { data: existing } = await supabase
       .from('bolt_town_daily_points')
-      .select('*')
+      .select('id, task_points')
       .eq('user_id', userId)
       .eq('date', today)
       .maybeSingle();
 
     if (existing) {
-      const nextTaskPoints = (existing.task_points || 0) + 5;
+      const nextTaskPoints = ((existing as any).task_points || 0) + 5;
       await supabase
         .from('bolt_town_daily_points')
-        .update({
-          task_points: nextTaskPoints,
-          total_points: computeBoltTownTotalPoints({
-            ...(existing as any),
-            task_points: nextTaskPoints,
-          }),
-        })
+        .update({ task_points: nextTaskPoints })
         .eq('id', (existing as any).id);
     } else {
       await supabase
@@ -35,7 +33,7 @@ const addBoltTownTaskPoints = async (userId: string) => {
           user_id: userId,
           date: today,
           task_points: 5,
-          total_points: 5,
+          // Don't set total_points - it's auto-calculated
         });
     }
   } catch (err) {
@@ -81,7 +79,7 @@ export const useDailyTasks = (userId: string | null) => {
 
     try {
       setLoading(true);
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayUTCDate();
 
       const { data: dailyTasks, error: tasksError } = await supabase
         .from('bolt_daily_tasks')
@@ -132,8 +130,9 @@ export const useDailyTasks = (userId: string | null) => {
     }
 
     try {
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayUTCDate();
 
+      // Insert completion (triggers will auto-add Bolt Town points)
       const { error: insertError } = await supabase
         .from('bolt_daily_task_completions')
         .insert({
@@ -164,8 +163,9 @@ export const useDailyTasks = (userId: string | null) => {
           .eq('id', userId);
       }
 
-      // Bolt Town competition: +5 points for completing any task
-      await addBoltTownTaskPoints(userId);
+      // Bolt Town points are now handled by database trigger
+      // But keep this as fallback just in case
+      // await addBoltTownTaskPoints(userId);
 
       // Update task state locally instead of refetching to prevent flicker
       setTasks(prevTasks => 

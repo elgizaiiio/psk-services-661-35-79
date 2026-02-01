@@ -6,31 +6,29 @@ import { BoltIcon, UsdtIcon } from '@/components/ui/currency-icons';
 import { useMonetagRewarded } from '@/hooks/useMonetagRewarded';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
+import { getTodayUTCDate } from '@/lib/boltTownPoints';
 
-// Helper to add Bolt Town ad points (no limit!)
+/**
+ * Helper to add Bolt Town ad points (no limit!)
+ * IMPORTANT: Only updates ad_points, NOT total_points (it's a generated column)
+ * NOTE: Database triggers now handle this automatically, but we keep this as backup
+ */
 const addBoltTownAdPoints = async (userId: string) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayUTCDate();
   try {
     const { data: existing } = await supabase
       .from('bolt_town_daily_points')
-      .select('*')
+      .select('id, ad_points')
       .eq('user_id', userId)
       .eq('date', today)
       .maybeSingle();
 
     if (existing) {
-      const nextAdPoints = (existing.ad_points || 0) + 2;
+      const nextAdPoints = ((existing as any).ad_points || 0) + 2;
       await supabase
         .from('bolt_town_daily_points')
-        .update({
-          ad_points: nextAdPoints,
-          total_points: computeBoltTownTotalPoints({
-            ...(existing as any),
-            ad_points: nextAdPoints,
-          }),
-        })
-        .eq('id', existing.id);
+        .update({ ad_points: nextAdPoints })
+        .eq('id', (existing as any).id);
     } else {
       await supabase
         .from('bolt_town_daily_points')
@@ -38,7 +36,7 @@ const addBoltTownAdPoints = async (userId: string) => {
           user_id: userId,
           date: today,
           ad_points: 2,
-          total_points: 2,
+          // Don't set total_points - it's auto-calculated
         });
     }
   } catch (err) {
@@ -119,7 +117,7 @@ export const WatchAdCard: React.FC<WatchAdCardProps> = ({
       const adCompleted = await showAd();
 
       if (adCompleted) {
-        // Save ad view to database for persistence
+        // Save ad view to database (triggers will auto-add Bolt Town points)
         const { error: insertError } = await supabase
           .from('ad_views')
           .insert({
@@ -155,10 +153,11 @@ export const WatchAdCard: React.FC<WatchAdCardProps> = ({
         setDailyCount(prev => prev + 1);
         toast.success(`+${REWARD_BOLT} BOLT +${REWARD_USDT} USDT!`);
         
-        // Add Bolt Town competition points (+2 per ad, no limit!)
-        if (userId) {
-          await addBoltTownAdPoints(userId);
-        }
+        // Bolt Town points are now handled by database trigger
+        // But keep this as fallback just in case
+        // if (userId) {
+        //   await addBoltTownAdPoints(userId);
+        // }
         
         onRewardClaimed?.();
       } else {

@@ -17,7 +17,7 @@ interface ReferralRequest {
 
 const TELEGRAM_BOT_TOKEN = Deno.env.get('TELEGRAM_BOT_TOKEN');
 
-// Helper to compute Bolt Town total points
+// Helper to compute Bolt Town total points (for display only - DB auto-calculates)
 const computeBoltTownTotalPoints = (p: any): number => {
   const n = (v: unknown) => {
     const num = Number(v);
@@ -35,37 +35,33 @@ const computeBoltTownTotalPoints = (p: any): number => {
 };
 
 // Helper to add Bolt Town referral points
+// NOTE: Database triggers now handle this automatically, but we keep this as backup
 async function addBoltTownReferralPoints(supabase: any, userId: string) {
   const today = new Date().toISOString().split('T')[0];
   try {
     const { data: existing } = await supabase
       .from('bolt_town_daily_points')
-      .select('*')
+      .select('id, referral_points')
       .eq('user_id', userId)
       .eq('date', today)
       .maybeSingle();
 
     if (existing) {
       const nextReferralPoints = (existing.referral_points || 0) + 10;
+      // Don't update total_points - it's auto-calculated by DB
       await supabase
         .from('bolt_town_daily_points')
-        .update({
-          referral_points: nextReferralPoints,
-          total_points: computeBoltTownTotalPoints({
-            ...existing,
-            referral_points: nextReferralPoints,
-          }),
-        })
+        .update({ referral_points: nextReferralPoints })
         .eq('id', existing.id);
       console.log(`🏆 Added 10 Bolt Town referral points for user ${userId}`);
     } else {
+      // Don't set total_points - it's auto-calculated by DB
       await supabase
         .from('bolt_town_daily_points')
         .insert({
           user_id: userId,
           date: today,
           referral_points: 10,
-          total_points: 10,
         });
       console.log(`🏆 Created Bolt Town record with 10 referral points for user ${userId}`);
     }

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
-import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
+import { getTodayUTCDate } from '@/lib/boltTownPoints';
 import { createLogger } from '@/lib/logger';
 
 const logger = createLogger('BoltTown');
@@ -49,16 +49,12 @@ export const useBoltTown = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Use UTC date to match server time - using toISOString for consistency
-  const getTodayDate = useCallback(() => {
-    return new Date().toISOString().split('T')[0];
-  }, []);
-
   // Get or create today's points record
+  // IMPORTANT: Do NOT include total_points in insert - it's a generated column
   const getOrCreateTodayPoints = useCallback(async () => {
     if (!boltUser?.id) return null;
 
-    const today = getTodayDate();
+    const today = getTodayUTCDate();
 
     try {
       // Try to get existing record
@@ -73,13 +69,13 @@ export const useBoltTown = () => {
         return existing as unknown as BoltTownPoints;
       }
 
-      // Create new record for today
+      // Create new record for today - WITHOUT total_points (it's generated)
       const { data: created, error: createError } = await supabase
         .from('bolt_town_daily_points')
         .insert({
           user_id: boltUser.id,
           date: today,
-          total_points: 0,
+          // Don't set total_points - it's auto-calculated
         })
         .select()
         .single();
@@ -103,11 +99,11 @@ export const useBoltTown = () => {
       console.error('Error getting/creating today points:', err);
       return null;
     }
-  }, [boltUser?.id, getTodayDate]);
+  }, [boltUser?.id]);
 
-  // Load leaderboard - also loads data from previous days if today is empty
+  // Load leaderboard
   const loadLeaderboard = useCallback(async () => {
-    const today = getTodayDate();
+    const today = getTodayUTCDate();
     logger.info('Loading leaderboard for date:', today);
 
     try {
@@ -174,7 +170,7 @@ export const useBoltTown = () => {
     } catch (err) {
       logger.error('Error loading leaderboard:', err);
     }
-  }, [boltUser?.id, myPoints?.total_points, getTodayDate]);
+  }, [boltUser?.id, myPoints?.total_points]);
 
   // Load previous winners
   const loadPreviousWinners = useCallback(async () => {
@@ -193,6 +189,7 @@ export const useBoltTown = () => {
   }, []);
 
   // Add points for different activities
+  // IMPORTANT: Only update individual point columns, NOT total_points
   const addReferralPoints = useCallback(async (bonusForTask = false) => {
     if (!boltUser?.id) return false;
 
@@ -208,11 +205,7 @@ export const useBoltTown = () => {
         updates.referral_bonus_points = (todayPoints.referral_bonus_points || 0) + 5;
       }
 
-      updates.total_points = computeBoltTownTotalPoints({
-        ...todayPoints,
-        ...updates,
-      });
-
+      // Don't update total_points - it's auto-calculated by DB
       const { error } = await supabase
         .from('bolt_town_daily_points')
         .update(updates)
@@ -244,11 +237,7 @@ export const useBoltTown = () => {
         updates.task_points = (todayPoints.task_points || 0) + 5;
       }
 
-      updates.total_points = computeBoltTownTotalPoints({
-        ...todayPoints,
-        ...updates,
-      });
-
+      // Don't update total_points - it's auto-calculated by DB
       const { error } = await supabase
         .from('bolt_town_daily_points')
         .update(updates)
@@ -272,15 +261,11 @@ export const useBoltTown = () => {
 
       // No limit on ads - just add 2 points per ad
       const nextAdPoints = (todayPoints.ad_points || 0) + 2;
+      
+      // Don't update total_points - it's auto-calculated by DB
       const { error } = await supabase
         .from('bolt_town_daily_points')
-        .update({
-          ad_points: nextAdPoints,
-          total_points: computeBoltTownTotalPoints({
-            ...todayPoints,
-            ad_points: nextAdPoints,
-          }),
-        })
+        .update({ ad_points: nextAdPoints })
         .eq('id', todayPoints.id);
 
       if (error) throw error;
@@ -307,11 +292,7 @@ export const useBoltTown = () => {
         updates.streak_bonus = (todayPoints.streak_bonus || 0) + 5;
       }
 
-      updates.total_points = computeBoltTownTotalPoints({
-        ...todayPoints,
-        ...updates,
-      });
-
+      // Don't update total_points - it's auto-calculated by DB
       const { error } = await supabase
         .from('bolt_town_daily_points')
         .update(updates)
@@ -335,15 +316,11 @@ export const useBoltTown = () => {
 
       // Add 100 points for server purchase under task_points
       const nextTaskPoints = (todayPoints.task_points || 0) + 100;
+      
+      // Don't update total_points - it's auto-calculated by DB
       const { error } = await supabase
         .from('bolt_town_daily_points')
-        .update({
-          task_points: nextTaskPoints,
-          total_points: computeBoltTownTotalPoints({
-            ...todayPoints,
-            task_points: nextTaskPoints,
-          }),
-        })
+        .update({ task_points: nextTaskPoints })
         .eq('id', todayPoints.id);
 
       if (error) throw error;
@@ -362,7 +339,7 @@ export const useBoltTown = () => {
       return;
     }
 
-    const today = getTodayDate();
+    const today = getTodayUTCDate();
     logger.info('Loading my points for date and userId:', { today, userId: boltUser.id });
 
     try {
@@ -382,7 +359,7 @@ export const useBoltTown = () => {
     } catch (err) {
       logger.error('Error loading my points:', err);
     }
-  }, [boltUser?.id, getTodayDate]);
+  }, [boltUser?.id]);
 
   // Calculate time until midnight UTC
   const getTimeUntilReset = useCallback(() => {
@@ -423,7 +400,7 @@ export const useBoltTown = () => {
 
   // Subscribe to realtime updates for leaderboard
   useEffect(() => {
-    const today = getTodayDate();
+    const today = getTodayUTCDate();
 
     const channel = supabase
       .channel('bolt-town-leaderboard')

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
+import { getTodayUTCDate } from '@/lib/boltTownPoints';
 
 export interface UserServer {
   id: string;
@@ -158,7 +158,7 @@ export const useUserServers = (userId: string | null) => {
     const stock = getStock(serverId);
     if (stock.soldOut) throw new Error('Server sold out');
 
-    // Insert user server
+    // Insert user server (triggers will auto-add Bolt Town points)
     const { data, error } = await supabase
       .from('user_servers')
       .insert({
@@ -186,41 +186,8 @@ export const useUserServers = (userId: string | null) => {
         .eq('server_id', serverId);
     }
 
-    // Add 100 Bolt Town points for server purchase
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const { data: existingPoints } = await supabase
-        .from('bolt_town_daily_points')
-        .select('*')
-        .eq('user_id', userId)
-        .eq('date', today)
-        .maybeSingle();
-
-      if (existingPoints) {
-        const nextTaskPoints = ((existingPoints as any).task_points || 0) + 100;
-        await supabase
-          .from('bolt_town_daily_points')
-          .update({
-            task_points: nextTaskPoints,
-            total_points: computeBoltTownTotalPoints({
-              ...(existingPoints as any),
-              task_points: nextTaskPoints,
-            }),
-          })
-          .eq('id', (existingPoints as any).id);
-      } else {
-        await supabase
-          .from('bolt_town_daily_points')
-          .insert({
-            user_id: userId,
-            date: today,
-            task_points: 100,
-            total_points: 100,
-          });
-      }
-    } catch (err) {
-      console.error('Error adding Bolt Town points for server purchase:', err);
-    }
+    // Bolt Town points (+100) are now handled by database trigger
+    // No need to manually add them here
 
     await fetchServers();
     await fetchInventory();

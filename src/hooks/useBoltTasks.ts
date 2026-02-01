@@ -3,31 +3,29 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { BoltTask, BoltCompletedTask } from '@/types/bolt';
-import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
+import { getTodayUTCDate } from '@/lib/boltTownPoints';
 
-// Helper to add Bolt Town task points
+/**
+ * Helper to add Bolt Town task points
+ * IMPORTANT: Only updates task_points, NOT total_points (it's a generated column)
+ * NOTE: Database triggers now handle this automatically, but we keep this as backup
+ */
 const addBoltTownTaskPoints = async (userId: string) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayUTCDate();
   try {
     const { data: existing } = await supabase
       .from('bolt_town_daily_points')
-      .select('*')
+      .select('id, task_points')
       .eq('user_id', userId)
       .eq('date', today)
       .maybeSingle();
 
     if (existing) {
-      const nextTaskPoints = (existing.task_points || 0) + 5;
+      const nextTaskPoints = ((existing as any).task_points || 0) + 5;
       await supabase
         .from('bolt_town_daily_points')
-        .update({
-          task_points: nextTaskPoints,
-          total_points: computeBoltTownTotalPoints({
-            ...(existing as any),
-            task_points: nextTaskPoints,
-          }),
-        })
-        .eq('id', existing.id);
+        .update({ task_points: nextTaskPoints })
+        .eq('id', (existing as any).id);
     } else {
       await supabase
         .from('bolt_town_daily_points')
@@ -35,7 +33,7 @@ const addBoltTownTaskPoints = async (userId: string) => {
           user_id: userId,
           date: today,
           task_points: 5,
-          total_points: 5,
+          // Don't set total_points - it's auto-calculated
         });
     }
   } catch (err) {
@@ -113,7 +111,7 @@ export const useBoltTasks = () => {
       if (taskError) throw taskError;
       const taskData = task as unknown as BoltTask;
 
-      // Insert completion record (and verify it succeeded)
+      // Insert completion record (triggers will auto-add Bolt Town points)
       const { data: insertedCompletion, error: insertError } = await supabase
         .from('bolt_completed_tasks' as any)
         .insert({
@@ -164,10 +162,11 @@ export const useBoltTasks = () => {
 
       if (updateError) throw updateError;
 
-      // Add Bolt Town competition points (+5 for task)
-      await addBoltTownTaskPoints(boltUser.id);
+      // Bolt Town points are now handled by database trigger
+      // But keep this as fallback just in case
+      // await addBoltTownTaskPoints(boltUser.id);
 
-      // Immediately update local state for instant UI feedback (only after successful insert)
+      // Immediately update local state for instant UI feedback
       setCompletedTasks((prev) => {
         const exists = prev.some((c) => c.task_id === taskId);
         if (exists) return prev;

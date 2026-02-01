@@ -54,6 +54,8 @@ function getSupabaseClient() {
 }
 
 // --- Bolt Town competition helpers ---
+// IMPORTANT: Do NOT update total_points - it's a generated column in the database
+// Only update the individual point columns
 function computeBoltTownTotalPoints(p: Record<string, unknown>): number {
   const n = (v: unknown) => {
     const num = Number(v);
@@ -70,36 +72,33 @@ function computeBoltTownTotalPoints(p: Record<string, unknown>): number {
   );
 }
 
+// NOTE: Bolt Town points are now handled by database triggers automatically
+// This function is kept for backwards compatibility but triggers will do the work
 async function addBoltTownReferralPoints(supabase: any, userId: string) {
   const today = new Date().toISOString().split('T')[0];
   try {
     const { data: existing } = await supabase
       .from('bolt_town_daily_points')
-      .select('*')
+      .select('id, referral_points')
       .eq('user_id', userId)
       .eq('date', today)
       .maybeSingle();
 
     if (existing) {
       const nextReferralPoints = (existing.referral_points || 0) + 10;
+      // Don't update total_points - it's auto-calculated by DB
       await supabase
         .from('bolt_town_daily_points')
-        .update({
-          referral_points: nextReferralPoints,
-          total_points: computeBoltTownTotalPoints({
-            ...(existing as any),
-            referral_points: nextReferralPoints,
-          }),
-        })
+        .update({ referral_points: nextReferralPoints })
         .eq('id', existing.id);
     } else {
+      // Don't set total_points - it's auto-calculated by DB
       await supabase
         .from('bolt_town_daily_points')
         .insert({
           user_id: userId,
           date: today,
           referral_points: 10,
-          total_points: 10,
         });
     }
   } catch (err) {
@@ -172,25 +171,37 @@ async function registerUser(
   // Find referrer if referral code provided
   let referrerId: string | null = null;
   if (referralCode && !referralCode.startsWith('adclick_') && !referralCode.startsWith('adg_')) {
+    // Strip ref_ prefix if present (for backwards compatibility with old links)
+    let cleanedCode = referralCode;
+    if (referralCode.startsWith('ref_')) {
+      cleanedCode = referralCode.substring(4);
+      console.log('Stripped ref_ prefix:', referralCode, '->', cleanedCode);
+    }
+    
     // Try to find by username first
     const { data: referrerByUsername } = await supabase
       .from('bolt_users')
       .select('id')
-      .eq('telegram_username', referralCode)
+      .eq('telegram_username', cleanedCode)
       .single();
     
     if (referrerByUsername) {
       referrerId = referrerByUsername.id;
+      console.log('Found referrer by username:', cleanedCode);
     } else {
-      // Try to find by telegram_id
-      const { data: referrerById } = await supabase
-        .from('bolt_users')
-        .select('id')
-        .eq('telegram_id', parseInt(referralCode))
-        .single();
-      
-      if (referrerById) {
-        referrerId = referrerById.id;
+      // Try to find by telegram_id (if it's a number)
+      const telegramIdNum = parseInt(cleanedCode);
+      if (!isNaN(telegramIdNum)) {
+        const { data: referrerById } = await supabase
+          .from('bolt_users')
+          .select('id')
+          .eq('telegram_id', telegramIdNum)
+          .single();
+        
+        if (referrerById) {
+          referrerId = referrerById.id;
+          console.log('Found referrer by telegram_id:', telegramIdNum);
+        }
       }
     }
   }
@@ -284,15 +295,36 @@ async function registerUser(
         .single();
       
       if (activeContest) {
-        // Upsert contest participant
-        await supabase
+        // Check if participant exists
+        const { data: existingParticipant } = await supabase
           .from('contest_participants')
-          .upsert({
-            contest_id: activeContest.id,
-            user_id: referrerId,
-            referral_count: newTotalReferrals,
-            last_referral_at: new Date().toISOString()
-          }, { onConflict: 'contest_id,user_id' });
+          .select('id, referral_count')
+          .eq('contest_id', activeContest.id)
+          .eq('user_id', referrerId)
+          .maybeSingle();
+        
+        if (existingParticipant) {
+          // Increment referral count by 1 (not set to total_referrals)
+          await supabase
+            .from('contest_participants')
+            .update({
+              referral_count: (existingParticipant.referral_count || 0) + 1,
+              last_referral_at: new Date().toISOString()
+            })
+            .eq('id', existingParticipant.id);
+          console.log('Contest participant updated:', referrerId, 'new count:', (existingParticipant.referral_count || 0) + 1);
+        } else {
+          // Create new participant with count = 1
+          await supabase
+            .from('contest_participants')
+            .insert({
+              contest_id: activeContest.id,
+              user_id: referrerId,
+              referral_count: 1,
+              last_referral_at: new Date().toISOString()
+            });
+          console.log('New contest participant created:', referrerId);
+        }
       }
       
       // Send notification to referrer

@@ -1,49 +1,46 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BoltUser, BoltReferral } from '@/types/bolt';
-import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
+import { getTodayUTCDate } from '@/lib/boltTownPoints';
 
-// Helper to add Bolt Town referral points
+/**
+ * Helper to add Bolt Town referral points
+ * IMPORTANT: Only updates referral_points/referral_bonus_points, NOT total_points (it's a generated column)
+ * NOTE: Database triggers now handle this automatically, but we keep this as backup
+ */
 const addBoltTownReferralPoints = async (userId: string, bonusForTask = false) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayUTCDate();
   try {
     // Get or create today's points record
     const { data: existing } = await supabase
       .from('bolt_town_daily_points')
-      .select('*')
+      .select('id, referral_points, referral_bonus_points')
       .eq('user_id', userId)
       .eq('date', today)
       .maybeSingle();
 
     if (existing) {
       const updates: Record<string, any> = {
-        referral_points: (existing.referral_points || 0) + 10,
+        referral_points: ((existing as any).referral_points || 0) + 10,
       };
       if (bonusForTask) {
-        updates.referral_bonus_points = (existing.referral_bonus_points || 0) + 5;
+        updates.referral_bonus_points = ((existing as any).referral_bonus_points || 0) + 5;
       }
 
-      updates.total_points = computeBoltTownTotalPoints({
-        ...(existing as any),
-        ...updates,
-      });
-
+      // Don't update total_points - it's auto-calculated
       await supabase
         .from('bolt_town_daily_points')
         .update(updates)
-        .eq('id', existing.id);
+        .eq('id', (existing as any).id);
     } else {
-      const base = {
-        user_id: userId,
-        date: today,
-        referral_points: 10,
-        referral_bonus_points: bonusForTask ? 5 : 0,
-      };
       await supabase
         .from('bolt_town_daily_points')
         .insert({
-          ...base,
-          total_points: computeBoltTownTotalPoints(base),
+          user_id: userId,
+          date: today,
+          referral_points: 10,
+          referral_bonus_points: bonusForTask ? 5 : 0,
+          // Don't set total_points - it's auto-calculated
         });
     }
   } catch (err) {
@@ -129,6 +126,7 @@ export const useBoltReferrals = (userId: string | undefined) => {
       
       if (existing) return false;
 
+      // Insert referral (triggers will auto-add Bolt Town points)
       await supabase.from('bolt_referrals' as any).insert({ 
         referrer_id: referrerData.id, 
         referred_id: referredUserId, 
@@ -151,8 +149,9 @@ export const useBoltReferrals = (userId: string | undefined) => {
           updated_at: new Date().toISOString() 
         }).eq('id', referrerData.id);
 
-        // Add Bolt Town competition points (+10 for referral)
-        await addBoltTownReferralPoints(referrerData.id, false);
+        // Bolt Town points are now handled by database trigger
+        // But keep this as fallback just in case
+        // await addBoltTownReferralPoints(referrerData.id, false);
       }
 
       // Award free spin ticket to referrer for each referral
