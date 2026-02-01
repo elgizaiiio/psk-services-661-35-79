@@ -32,16 +32,17 @@ interface AnimatedDuckModelProps {
 
 const AnimatedDuckModel: React.FC<AnimatedDuckModelProps> = ({ className = '' }) => {
   return (
-    <div className={`w-full h-48 ${className}`}>
+    <div className={`w-full ${className}`}>
       <Canvas
-        camera={{ position: [0, 1, 3], fov: 50 }}
+        camera={{ position: [0, 0.8, 2.5], fov: 45 }}
         style={{ background: 'transparent' }}
         gl={{ alpha: true, antialias: true }}
       >
         <Suspense fallback={null}>
-          <ambientLight intensity={0.6} />
-          <directionalLight position={[5, 5, 5]} intensity={1} />
-          <pointLight position={[-5, 5, -5]} intensity={0.5} color="#FFD700" />
+          <ambientLight intensity={0.8} />
+          <directionalLight position={[5, 5, 5]} intensity={1.2} />
+          <pointLight position={[-5, 5, -5]} intensity={0.6} color="#FFD700" />
+          <pointLight position={[0, -2, 2]} intensity={0.3} color="#FACC15" />
           
           <DuckModel url="/models/characters/duck-suit.glb" />
           
@@ -49,8 +50,9 @@ const AnimatedDuckModel: React.FC<AnimatedDuckModelProps> = ({ className = '' })
             enableZoom={false}
             enablePan={false}
             minPolarAngle={Math.PI / 3}
-            maxPolarAngle={Math.PI / 2}
-            autoRotate={false}
+            maxPolarAngle={Math.PI / 2.2}
+            autoRotate
+            autoRotateSpeed={1}
           />
         </Suspense>
       </Canvas>
