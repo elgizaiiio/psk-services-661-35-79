@@ -1,17 +1,20 @@
-import React, { Suspense, lazy } from 'react';
+
+import React from 'react';
 import { Helmet } from "react-helmet-async";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
-import { Pickaxe, Zap, Clock, Server, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Pickaxe, Timer, Zap, Clock, Coins, TrendingUp, Server, Wallet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { useTonConnectUI, useTonWallet } from "@tonconnect/ui-react";
+import { useTonConnectUI, TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
 import { useNavigate } from 'react-router-dom';
+import WalletConnectDialog from '@/components/WalletConnectDialog';
 import { useMiningUpgrades } from '@/hooks/useMiningUpgrades';
 
-// Lazy load 3D model for performance
-const AnimatedDuckModel = lazy(() => import('@/components/mining/AnimatedDuckModel'));
 
 const MiningInner = () => {
   const navigate = useNavigate();
@@ -33,17 +36,22 @@ const MiningInner = () => {
 
   const { createMiningUpgradePayment, isUpgrading, isProcessing } = useMiningUpgrades();
 
-  const upgradePrices = { power: 0.5, duration: 0.5 };
+  const upgradePrices = {
+    power: 0.5,
+    duration: 0.5
+  };
 
   const formatTime = (milliseconds: number) => {
     const seconds = Math.floor(milliseconds / 1000);
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const remainingSeconds = seconds % 60;
+
     if (hours > 0) {
       return `${hours}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   const handleStartMining = async () => {
@@ -54,7 +62,7 @@ const MiningInner = () => {
     hapticFeedback.impact('medium');
     try {
       await startMining();
-      toast.success('Mining started!');
+      toast.success('Mining started successfully!');
     } catch (err) {
       toast.error('Failed to start mining');
     }
@@ -62,24 +70,33 @@ const MiningInner = () => {
 
   const handleUpgradeClick = async (type: 'power' | 'duration') => {
     hapticFeedback.impact('light');
+    
     if (!wallet?.account) {
-      toast.error("Connect wallet first");
+      toast.error("Please connect TON wallet from home page first");
       return;
     }
+
     if (!user?.id) {
-      toast.error("User error");
+      toast.error("User ID error");
       return;
     }
+    
     try {
       const success = await createMiningUpgradePayment({
         upgradeType: type,
-        currentValue: type === 'power' ? (user.mining_power || 2) : (user.mining_duration_hours || 4),
+        currentValue: type === 'power' 
+          ? (user.mining_power || 2) 
+          : (user.mining_duration_hours || 4),
         tonAmount: upgradePrices[type],
         userId: user.id
       });
+      
       if (success) {
-        if (type === 'power') await upgradeMiningPower();
-        else await upgradeMiningDuration();
+        if (type === 'power') {
+          await upgradeMiningPower();
+        } else {
+          await upgradeMiningDuration();
+        }
       }
     } catch (error) {
       console.error(`${type} upgrade failed:`, error);
@@ -88,19 +105,26 @@ const MiningInner = () => {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-yellow-400 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 animate-spin text-black" />
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full border-4 border-primary border-t-transparent animate-spin mx-auto mb-4"></div>
+          <p className="text-foreground">Loading...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-yellow-400 flex items-center justify-center p-4">
-        <div className="text-center">
-          <p className="text-black font-bold mb-4">{error}</p>
-          <Button onClick={clearError} className="bg-black text-yellow-400">Try Again</Button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <Card className="p-6 max-w-sm w-full text-center glassmorphism">
+          <Pickaxe className="w-12 h-12 mx-auto mb-4 text-destructive" />
+          <h3 className="font-semibold mb-2 text-foreground">System Error</h3>
+          <p className="text-sm text-destructive mb-4">{error}</p>
+          <Button onClick={clearError} className="w-full">
+            Try Again
+          </Button>
+        </Card>
       </div>
     );
   }
@@ -108,105 +132,161 @@ const MiningInner = () => {
   return (
     <>
       <Helmet>
-        <title>Mining | BOLT</title>
+        <title>Bolt Mining | Cryptocurrency Mining</title>
+        <meta name="description" content="Start mining BOLT cryptocurrency through Telegram app" />
       </Helmet>
 
-      <div className="min-h-screen bg-yellow-400 flex flex-col overflow-hidden">
-        {/* Top Section - Balance & Mining Status */}
-        <div className="pt-14 px-4 pb-2">
-          {/* Balance */}
-          <div className="text-center mb-2">
-            <p className="text-black/60 text-xs font-medium">BOLT Balance</p>
-            <p className="text-3xl font-black text-black">
-              {user?.token_balance?.toFixed(2) || '0.00'}
-            </p>
+      <main className="safe-area pb-16">
+        <div className="max-w-sm mx-auto px-6 pt-16 pb-8 space-y-6">
+          {/* User Avatar */}
+          <div className="text-center">
+            <Avatar className="w-20 h-20 mx-auto border-4 border-primary/20">
+              <AvatarImage 
+                src={user?.photo_url || telegramUser?.photo_url} 
+                alt={user?.first_name || telegramUser?.first_name || 'User'} 
+                className="object-cover"
+              />
+              <AvatarFallback className="bg-gradient-to-br from-primary/30 to-secondary/30 text-primary text-xl font-bold">
+                {(user?.first_name?.[0] || telegramUser?.first_name?.[0] || 'U').toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <h2 className="mt-3 text-lg font-semibold text-foreground">
+              {user?.first_name || telegramUser?.first_name || 'User'}
+            </h2>
           </div>
 
-          {/* Mining Progress or Start Button */}
-          {activeMiningSession ? (
-            <div className="bg-black/10 rounded-2xl p-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-black/70 text-sm font-medium">Mining...</span>
-                <span className="text-black font-bold text-lg font-mono">
-                  {formatTime(miningProgress?.timeRemaining || 0)}
-                </span>
-              </div>
-              <Progress 
-                value={(miningProgress?.progress || 0) * 100} 
-                className="h-3 bg-black/20 [&>div]:bg-black" 
-              />
-              <p className="text-center text-black/60 text-xs mt-1">
-                {((miningProgress?.progress || 0) * 100).toFixed(0)}% complete
-              </p>
+          {/* User Balance */}
+          <Card className="p-6 text-center bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
+            <div className="text-3xl font-bold text-primary mb-2">
+              {user?.token_balance?.toFixed(4) || '0.0000'}
             </div>
-          ) : (
+            <div className="text-sm text-muted-foreground font-medium">BOLT Tokens</div>
+          </Card>
+
+          {/* Start Mining Button */}
+          {!activeMiningSession ? (
             <Button 
               onClick={handleStartMining}
-              className="w-full h-14 text-lg font-black bg-black text-yellow-400 hover:bg-black/90 rounded-2xl"
+              className="w-full h-14 text-lg font-bold bg-gradient-to-r from-primary via-secondary to-accent hover:opacity-90 transition-all duration-300 shadow-lg"
             >
-              <Pickaxe className="w-5 h-5 mr-2" />
+              <Pickaxe className="w-5 h-5 mr-3" />
               Start Mining
             </Button>
+          ) : (
+            <Card className="p-6 text-center bg-gradient-to-br from-primary/5 to-secondary/5 border-primary/20">
+              <div className="space-y-4">
+                <div className="text-2xl font-mono font-bold text-primary">
+                  {formatTime(miningProgress?.timeRemaining || 0)}
+                </div>
+                <Progress 
+                  value={(miningProgress?.progress || 0) * 100} 
+                  className="h-2" 
+                />
+                <div className="text-sm text-muted-foreground">
+                  Mining in progress... {((miningProgress?.progress || 0) * 100).toFixed(1)}%
+                </div>
+              </div>
+            </Card>
           )}
-        </div>
-
-        {/* Center - Big Duck */}
-        <div className="flex-1 flex items-center justify-center min-h-0">
-          <Suspense fallback={
-            <div className="flex items-center justify-center">
-              <Loader2 className="w-10 h-10 animate-spin text-black/40" />
-            </div>
-          }>
-            <AnimatedDuckModel className="w-full h-full max-h-[45vh]" />
-          </Suspense>
-        </div>
-
-        {/* Bottom Section - Action Buttons */}
-        <div className="px-4 pb-20 space-y-2">
-          {/* Upgrade Buttons Row */}
-          <div className="grid grid-cols-2 gap-2">
-            <Button 
-              onClick={() => handleUpgradeClick('power')}
-              disabled={isProcessing || !wallet?.account}
-              className="h-14 bg-black text-yellow-400 hover:bg-black/90 rounded-xl flex flex-col items-center justify-center gap-0.5"
-            >
-              {isProcessing && isUpgrading === 'power' ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <Zap className="w-5 h-5" />
-                  <span className="text-xs font-bold">Power ×{user?.mining_power || 2}</span>
-                </>
-              )}
-            </Button>
-
-            <Button 
-              onClick={() => handleUpgradeClick('duration')}
-              disabled={(user?.mining_duration_hours || 4) >= 24 || isProcessing || !wallet?.account}
-              className="h-14 bg-black text-yellow-400 hover:bg-black/90 rounded-xl flex flex-col items-center justify-center gap-0.5"
-            >
-              {isProcessing && isUpgrading === 'duration' ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
-              ) : (
-                <>
-                  <Clock className="w-5 h-5" />
-                  <span className="text-xs font-bold">Duration {user?.mining_duration_hours || 4}h</span>
-                </>
-              )}
-            </Button>
-          </div>
 
           {/* Servers Button */}
           <Button 
             onClick={() => navigate('/mining-servers')}
-            className="w-full h-12 bg-black/20 text-black hover:bg-black/30 rounded-xl font-bold"
-            variant="ghost"
+            className="w-full h-12 text-base font-semibold bg-gradient-to-r from-accent/20 to-accent/30 border border-accent/30 hover:bg-accent/40 transition-all duration-300"
+            variant="outline"
           >
-            <Server className="w-5 h-5 mr-2" />
-            Mining Servers
+            <Server className="w-5 h-5 mr-3" />
+            Servers
           </Button>
+
+          {/* Upgrades Section */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-bold text-center text-foreground">Upgrades</h3>
+            
+            <div className="space-y-4">
+              {/* Power Upgrade */}
+              <Card className="p-5 bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center">
+                      <Zap className="w-6 h-6 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-foreground">Mining Power</p>
+                      <p className="text-sm text-muted-foreground">
+                        ×{user?.mining_power || 2} → ×{(user?.mining_power || 2) + 2}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge className="bg-primary/20 text-primary border-0 text-sm px-3 py-1">
+                    {upgradePrices.power} TON
+                  </Badge>
+                </div>
+                <Button 
+                  onClick={() => handleUpgradeClick('power')}
+                  disabled={isProcessing || !wallet?.account}
+                  className="w-full h-12 text-base"
+                >
+                  {isProcessing && isUpgrading === 'power' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Upgrade Power'
+                  )}
+                </Button>
+              </Card>
+
+              {/* Duration Upgrade */}
+              <Card className="p-5 bg-gradient-to-r from-secondary/5 to-secondary/10 border-secondary/20">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-full bg-secondary/20 flex items-center justify-center">
+                      <Clock className="w-6 h-6 text-secondary" />
+                    </div>
+                    <div>
+                      <p className="text-base font-semibold text-foreground">Mining Duration</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user?.mining_duration_hours || 4}h → {Math.min(24, (user?.mining_duration_hours || 4) * 2)}h
+                      </p>
+                    </div>
+                  </div>
+                  <Badge className="bg-secondary/20 text-secondary border-0 text-sm px-3 py-1">
+                    {upgradePrices.duration} TON
+                  </Badge>
+                </div>
+                <Button 
+                  onClick={() => handleUpgradeClick('duration')}
+                  disabled={(user?.mining_duration_hours || 4) >= 24 || isProcessing || !wallet?.account}
+                  className="w-full h-12 text-base"
+                  variant="outline"
+                >
+                  {isProcessing && isUpgrading === 'duration' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    'Upgrade Duration'
+                  )}
+                </Button>
+              </Card>
+            </div>
+          </div>
+
+          {/* Wallet Status */}
+          {!wallet?.account && (
+            <Card className="p-4 bg-gradient-to-r from-accent/10 to-accent/5 border-accent/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Wallet className="w-5 h-5 text-accent" />
+                  <div>
+                    <p className="text-base font-semibold text-foreground">Connect Wallet</p>
+                    <p className="text-sm text-muted-foreground">Required for upgrades</p>
+                  </div>
+                </div>
+                <TonConnectButton />
+              </div>
+            </Card>
+          )}
+
         </div>
-      </div>
+      </main>
     </>
   );
 };
