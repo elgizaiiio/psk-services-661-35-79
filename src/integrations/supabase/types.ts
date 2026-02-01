@@ -3795,6 +3795,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      ensure_bolt_town_today_record: {
+        Args: { p_user_id: string }
+        Returns: string
+      }
       get_contest_leaderboard: {
         Args: { contest: string; limit_count?: number }
         Returns: {

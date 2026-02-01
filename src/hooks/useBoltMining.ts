@@ -2,17 +2,21 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { BoltUser, BoltMiningSession, TelegramUser } from '@/types/bolt';
 import { createLogger } from '@/lib/logger';
-import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
+import { getTodayUTCDate } from '@/lib/boltTownPoints';
 
 const logger = createLogger('BoltMining');
 
-// Helper to add Bolt Town activity points for mining
+/**
+ * Helper to add Bolt Town activity points for mining
+ * IMPORTANT: Only updates activity_points/streak_bonus, NOT total_points (it's a generated column)
+ * NOTE: Database triggers now handle this automatically, but we keep this as backup
+ */
 const addBoltTownActivityPoints = async (userId: string, isStreak = false) => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayUTCDate();
   try {
     const { data: existing } = await supabase
       .from('bolt_town_daily_points')
-      .select('*')
+      .select('id, activity_points, streak_bonus')
       .eq('user_id', userId)
       .eq('date', today)
       .maybeSingle();
@@ -20,35 +24,30 @@ const addBoltTownActivityPoints = async (userId: string, isStreak = false) => {
     const updates: Record<string, any> = {};
 
     if (existing) {
+      const existingData = existing as any;
       // Only add activity points once per day
-      if (existing.activity_points === 0) {
+      if (existingData.activity_points === 0) {
         updates.activity_points = 1;
       }
-      if (isStreak && existing.streak_bonus === 0) {
+      if (isStreak && existingData.streak_bonus === 0) {
         updates.streak_bonus = 5;
       }
       if (Object.keys(updates).length > 0) {
-        updates.total_points = computeBoltTownTotalPoints({
-          ...(existing as any),
-          ...updates,
-        });
+        // Don't update total_points - it's auto-calculated
         await supabase
           .from('bolt_town_daily_points')
           .update(updates)
-          .eq('id', existing.id);
+          .eq('id', existingData.id);
       }
     } else {
-      const base = {
-        user_id: userId,
-        date: today,
-        activity_points: 1,
-        streak_bonus: isStreak ? 5 : 0,
-      };
       await supabase
         .from('bolt_town_daily_points')
         .insert({
-          ...base,
-          total_points: computeBoltTownTotalPoints(base),
+          user_id: userId,
+          date: today,
+          activity_points: 1,
+          streak_bonus: isStreak ? 5 : 0,
+          // Don't set total_points - it's auto-calculated
         });
     }
   } catch (err) {
@@ -170,10 +169,11 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
         setActiveMiningSession(result.session as BoltMiningSession);
         logger.info('Mining started', { sessionId: result.session.id });
         
-        // Add Bolt Town activity points (+1 for daily check-in)
-        if (result?.user?.id) {
-          await addBoltTownActivityPoints(result.user.id, false);
-        }
+        // Bolt Town activity points are now handled by database trigger
+        // But keep this as fallback just in case
+        // if (result?.user?.id) {
+        //   await addBoltTownActivityPoints(result.user.id, false);
+        // }
       }
 
       if (result?.user) {
