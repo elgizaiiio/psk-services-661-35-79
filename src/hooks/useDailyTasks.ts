@@ -127,8 +127,8 @@ export const useDailyTasks = (userId: string | null) => {
     if (!userId) return { success: false, error: 'Not authenticated' };
 
     const task = tasks.find(t => t.id === taskId);
-    if (!task || task.is_completed) {
-      return { success: false, error: 'Task already completed or not found' };
+    if (!task) {
+      return { success: false, error: 'Task not found' };
     }
 
     try {
