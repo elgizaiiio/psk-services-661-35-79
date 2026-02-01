@@ -1,8 +1,47 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { createLogger } from '@/lib/logger';
+import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
 
 const logger = createLogger('DailyTasks');
+
+// Add +5 competition points for completing a daily task
+const addBoltTownTaskPoints = async (userId: string) => {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const { data: existing } = await supabase
+      .from('bolt_town_daily_points')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .maybeSingle();
+
+    if (existing) {
+      const nextTaskPoints = (existing.task_points || 0) + 5;
+      await supabase
+        .from('bolt_town_daily_points')
+        .update({
+          task_points: nextTaskPoints,
+          total_points: computeBoltTownTotalPoints({
+            ...(existing as any),
+            task_points: nextTaskPoints,
+          }),
+        })
+        .eq('id', (existing as any).id);
+    } else {
+      await supabase
+        .from('bolt_town_daily_points')
+        .insert({
+          user_id: userId,
+          date: today,
+          task_points: 5,
+          total_points: 5,
+        });
+    }
+  } catch (err) {
+    console.error('Error adding Bolt Town daily-task points:', err);
+  }
+};
 
 interface DailyTask {
   id: string;
@@ -124,6 +163,9 @@ export const useDailyTasks = (userId: string | null) => {
           .update({ token_balance: (typedUserData.token_balance || 0) + task.reward_tokens })
           .eq('id', userId);
       }
+
+      // Bolt Town competition: +5 points for completing any task
+      await addBoltTownTaskPoints(userId);
 
       // Update task state locally instead of refetching to prevent flicker
       setTasks(prevTasks => 

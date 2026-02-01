@@ -53,6 +53,60 @@ function getSupabaseClient() {
   return createClient(supabaseUrl, supabaseKey);
 }
 
+// --- Bolt Town competition helpers ---
+function computeBoltTownTotalPoints(p: Record<string, unknown>): number {
+  const n = (v: unknown) => {
+    const num = Number(v);
+    return Number.isFinite(num) ? num : 0;
+  };
+  return (
+    n(p.referral_points) +
+    n(p.referral_bonus_points) +
+    n(p.task_points) +
+    n(p.special_task_points) +
+    n(p.ad_points) +
+    n(p.activity_points) +
+    n(p.streak_bonus)
+  );
+}
+
+async function addBoltTownReferralPoints(supabase: any, userId: string) {
+  const today = new Date().toISOString().split('T')[0];
+  try {
+    const { data: existing } = await supabase
+      .from('bolt_town_daily_points')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('date', today)
+      .maybeSingle();
+
+    if (existing) {
+      const nextReferralPoints = (existing.referral_points || 0) + 10;
+      await supabase
+        .from('bolt_town_daily_points')
+        .update({
+          referral_points: nextReferralPoints,
+          total_points: computeBoltTownTotalPoints({
+            ...(existing as any),
+            referral_points: nextReferralPoints,
+          }),
+        })
+        .eq('id', existing.id);
+    } else {
+      await supabase
+        .from('bolt_town_daily_points')
+        .insert({
+          user_id: userId,
+          date: today,
+          referral_points: 10,
+          total_points: 10,
+        });
+    }
+  } catch (err) {
+    console.error('Error adding Bolt Town referral points:', err);
+  }
+}
+
 // Process AdsGram direct click from Telegram start parameter
 async function processAdsGramDirectClick(
   telegramId: number,
@@ -216,6 +270,9 @@ async function registerUser(
         console.error('Error updating referrer stats:', updateError);
       } else {
         console.log('Referrer stats updated:', referrerId, { newTotalReferrals, newReferralBonus });
+
+        // Bolt Town competition: +10 points for each successful referral
+        await addBoltTownReferralPoints(supabase, referrerId);
       }
       
       // Update contest participation if active
