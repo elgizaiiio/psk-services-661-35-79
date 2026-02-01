@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { Helmet } from "react-helmet-async";
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useViralMining } from '@/hooks/useViralMining';
@@ -8,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Pickaxe, Timer, Zap, Clock, Coins, TrendingUp, Server, Wallet, Loader2 } from 'lucide-react';
+import { Pickaxe, Zap, Clock, Server, Wallet, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTonConnectUI, TonConnectButton, useTonWallet } from "@tonconnect/ui-react";
 import { useNavigate } from 'react-router-dom';
-import WalletConnectDialog from '@/components/WalletConnectDialog';
 import { useMiningUpgrades } from '@/hooks/useMiningUpgrades';
 
+// Lazy load 3D model for performance
+const AnimatedDuckModel = lazy(() => import('@/components/mining/AnimatedDuckModel'));
 
 const MiningInner = () => {
   const navigate = useNavigate();
@@ -138,6 +138,16 @@ const MiningInner = () => {
 
       <main className="safe-area pb-16">
         <div className="max-w-sm mx-auto px-6 pt-16 pb-8 space-y-6">
+          
+          {/* 3D Duck Character */}
+          <Suspense fallback={
+            <div className="w-full h-48 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          }>
+            <AnimatedDuckModel className="mb-2" />
+          </Suspense>
+
           {/* User Avatar */}
           <div className="text-center">
             <Avatar className="w-20 h-20 mx-auto border-4 border-primary/20">
