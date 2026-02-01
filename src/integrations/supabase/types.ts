@@ -2702,6 +2702,33 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_settings: {
+        Row: {
+          created_at: string | null
+          duration_hours: number
+          id: string
+          is_active: boolean | null
+          promo_key: string
+          start_time: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration_hours?: number
+          id?: string
+          is_active?: boolean | null
+          promo_key: string
+          start_time?: string
+        }
+        Update: {
+          created_at?: string | null
+          duration_hours?: number
+          id?: string
+          is_active?: boolean | null
+          promo_key?: string
+          start_time?: string
+        }
+        Relationships: []
+      }
       referral_commissions: {
         Row: {
           commission_amount: number

@@ -46,9 +46,14 @@ export const useBoltTown = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const getTodayDate = () => {
-    return new Date().toISOString().split('T')[0];
-  };
+  // Use UTC date to match server time
+  const getTodayDate = useCallback(() => {
+    const now = new Date();
+    const year = now.getUTCFullYear();
+    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(now.getUTCDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
 
   // Get or create today's points record
   const getOrCreateTodayPoints = useCallback(async () => {
@@ -99,7 +104,7 @@ export const useBoltTown = () => {
       console.error('Error getting/creating today points:', err);
       return null;
     }
-  }, [boltUser?.id]);
+  }, [boltUser?.id, getTodayDate]);
 
   // Load leaderboard
   const loadLeaderboard = useCallback(async () => {
@@ -162,7 +167,7 @@ export const useBoltTown = () => {
     } catch (err) {
       console.error('Error loading leaderboard:', err);
     }
-  }, [boltUser?.id, myPoints?.total_points]);
+  }, [boltUser?.id, myPoints?.total_points, getTodayDate]);
 
   // Load previous winners
   const loadPreviousWinners = useCallback(async () => {
@@ -361,7 +366,7 @@ export const useBoltTown = () => {
     } catch (err) {
       console.error('Error loading my points:', err);
     }
-  }, [boltUser?.id]);
+  }, [boltUser?.id, getTodayDate]);
 
   // Calculate time until midnight UTC
   const getTimeUntilReset = useCallback(() => {

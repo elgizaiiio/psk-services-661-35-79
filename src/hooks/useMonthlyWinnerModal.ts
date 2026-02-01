@@ -1,42 +1,22 @@
 import { useState, useEffect } from 'react';
+import { usePromoSettings, isPromoActiveSync, getPromoTimeRemainingSync } from './usePromoSettings';
 
 const MODAL_SHOWN_KEY = 'monthly_winner_modal_shown_v2';
-const PROMO_START_KEY = 'promo_48h_start_time';
 
-// Fixed promotion start time - set to NOW when first deployed
-const getPromoStartTime = () => {
-  const stored = localStorage.getItem(PROMO_START_KEY);
-  if (stored) {
-    return parseInt(stored, 10);
-  }
-  // First time - set start time to now
-  const now = Date.now();
-  localStorage.setItem(PROMO_START_KEY, now.toString());
-  return now;
-};
-
-// 48 hours in milliseconds
-const PROMO_DURATION = 48 * 60 * 60 * 1000;
-
-export const isPromoActive = () => {
-  const startTime = getPromoStartTime();
-  const elapsed = Date.now() - startTime;
-  return elapsed < PROMO_DURATION;
-};
-
-export const getPromoTimeRemaining = () => {
-  const startTime = getPromoStartTime();
-  const elapsed = Date.now() - startTime;
-  const remaining = PROMO_DURATION - elapsed;
-  return Math.max(0, remaining);
-};
+// Export functions that work with backend data
+export const isPromoActive = isPromoActiveSync;
+export const getPromoTimeRemaining = getPromoTimeRemainingSync;
 
 export const useMonthlyWinnerModal = () => {
   const [shouldShowModal, setShouldShowModal] = useState(false);
+  const { isPromoActive: promoActive, loading, timeRemaining, refetch } = usePromoSettings();
 
   useEffect(() => {
+    // Wait for data to load
+    if (loading) return;
+    
     // Only show if promo is active
-    if (!isPromoActive()) {
+    if (!promoActive) {
       return;
     }
 
@@ -51,7 +31,7 @@ export const useMonthlyWinnerModal = () => {
       
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [promoActive, loading]);
 
   const markAsShown = () => {
     sessionStorage.setItem(MODAL_SHOWN_KEY, 'true');
@@ -61,6 +41,9 @@ export const useMonthlyWinnerModal = () => {
   return {
     shouldShowModal,
     markAsShown,
-    isPromoActive: isPromoActive(),
+    isPromoActive: promoActive,
+    timeRemaining,
+    loading,
+    refetch,
   };
 };
