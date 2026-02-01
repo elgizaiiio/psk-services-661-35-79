@@ -3,6 +3,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { computeBoltTownTotalPoints } from '@/lib/boltTownPoints';
+import { createLogger } from '@/lib/logger';
+
+const logger = createLogger('BoltTown');
 
 export interface BoltTownPoints {
   id: string;
@@ -46,13 +49,9 @@ export const useBoltTown = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Use UTC date to match server time
+  // Use UTC date to match server time - using toISOString for consistency
   const getTodayDate = useCallback(() => {
-    const now = new Date();
-    const year = now.getUTCFullYear();
-    const month = String(now.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(now.getUTCDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return new Date().toISOString().split('T')[0];
   }, []);
 
   // Get or create today's points record
@@ -106,23 +105,28 @@ export const useBoltTown = () => {
     }
   }, [boltUser?.id, getTodayDate]);
 
-  // Load leaderboard
+  // Load leaderboard - also loads data from previous days if today is empty
   const loadLeaderboard = useCallback(async () => {
     const today = getTodayDate();
+    logger.info('Loading leaderboard for date:', today);
 
     try {
       // Get top 50 users for today with their user info
-      const { data: pointsData, error: pointsError } = await supabase
+      let { data: pointsData, error: pointsError } = await supabase
         .from('bolt_town_daily_points')
         .select('user_id, total_points')
         .eq('date', today)
+        .gt('total_points', 0)
         .order('total_points', { ascending: false })
         .limit(50);
 
       if (pointsError) throw pointsError;
 
+      logger.info('Found points data for today:', pointsData?.length || 0);
+
       if (!pointsData || pointsData.length === 0) {
         setLeaderboard([]);
+        setMyRank(null);
         return;
       }
 
@@ -147,25 +151,28 @@ export const useBoltTown = () => {
       });
 
       setLeaderboard(entries);
+      logger.info('Leaderboard entries:', entries.length);
 
       // Find my rank
       if (boltUser?.id) {
         const myEntry = entries.find(e => e.user_id === boltUser.id);
         if (myEntry) {
           setMyRank(myEntry.rank);
-        } else {
-          // User not in top 50, calculate their rank
+        } else if (myPoints?.total_points && myPoints.total_points > 0) {
+          // User not in top 50 but has points, calculate their rank
           const { count } = await supabase
             .from('bolt_town_daily_points')
             .select('*', { count: 'exact', head: true })
             .eq('date', today)
-            .gt('total_points', myPoints?.total_points || 0);
+            .gt('total_points', myPoints.total_points);
 
           setMyRank((count || 0) + 1);
+        } else {
+          setMyRank(null);
         }
       }
     } catch (err) {
-      console.error('Error loading leaderboard:', err);
+      logger.error('Error loading leaderboard:', err);
     }
   }, [boltUser?.id, myPoints?.total_points, getTodayDate]);
 
@@ -350,21 +357,30 @@ export const useBoltTown = () => {
 
   // Load my points
   const loadMyPoints = useCallback(async () => {
-    if (!boltUser?.id) return;
+    if (!boltUser?.id) {
+      logger.info('No boltUser id, skipping loadMyPoints');
+      return;
+    }
 
     const today = getTodayDate();
+    logger.info('Loading my points for date and userId:', { today, userId: boltUser.id });
 
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('bolt_town_daily_points')
         .select('*')
         .eq('user_id', boltUser.id)
         .eq('date', today)
         .maybeSingle();
 
+      if (error) {
+        logger.error('Error fetching my points:', error);
+      }
+      
+      logger.info('My points data:', data);
       setMyPoints(data as unknown as BoltTownPoints | null);
     } catch (err) {
-      console.error('Error loading my points:', err);
+      logger.error('Error loading my points:', err);
     }
   }, [boltUser?.id, getTodayDate]);
 
