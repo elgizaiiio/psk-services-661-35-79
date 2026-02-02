@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const ADMIN_TELEGRAM_IDS = [6657246146];
-const BATCH_SIZE = 50; // Very small batch to avoid CPU timeout
+const BATCH_SIZE = 250; // Larger batch for faster processing
 const DELAY_BETWEEN_MESSAGES = 25; // 25ms delay
 
 serve(async (req) => {
