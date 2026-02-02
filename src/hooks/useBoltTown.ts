@@ -101,20 +101,23 @@ export const useBoltTown = () => {
     }
   }, [boltUser?.id]);
 
+  // Users to hide from leaderboard
+  const HIDDEN_USER_IDS = ['5c811d53-5591-418a-8cd1-36b954193c35']; // @sherryberry77
+
   // Load leaderboard
   const loadLeaderboard = useCallback(async () => {
     const today = getTodayUTCDate();
     logger.info('Loading leaderboard for date:', today);
 
     try {
-      // Get top 50 users for today with their user info
+      // Get top 50 users for today with their user info (fetch extra to account for hidden users)
       let { data: pointsData, error: pointsError } = await supabase
         .from('bolt_town_daily_points')
         .select('user_id, total_points')
         .eq('date', today)
         .gt('total_points', 0)
         .order('total_points', { ascending: false })
-        .limit(50);
+        .limit(60);
 
       if (pointsError) throw pointsError;
 
@@ -126,8 +129,11 @@ export const useBoltTown = () => {
         return;
       }
 
+      // Filter out hidden users
+      const filteredPointsData = pointsData.filter(p => !HIDDEN_USER_IDS.includes(p.user_id));
+
       // Get user details for all users in leaderboard
-      const userIds = pointsData.map(p => p.user_id);
+      const userIds = filteredPointsData.map(p => p.user_id);
       const { data: usersData } = await supabase
         .from('bolt_users')
         .select('id, telegram_username, first_name')
@@ -135,7 +141,7 @@ export const useBoltTown = () => {
 
       const usersMap = new Map((usersData || []).map(u => [u.id, u]));
 
-      const entries: LeaderboardEntry[] = pointsData.map((p, idx) => {
+      const entries: LeaderboardEntry[] = filteredPointsData.slice(0, 50).map((p, idx) => {
         const user = usersMap.get(p.user_id);
         return {
           user_id: p.user_id,
@@ -373,8 +379,16 @@ export const useBoltTown = () => {
     return midnight.getTime() - now.getTime();
   }, []);
 
-  // Initial load
+  // Track if initial load has been done
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+
+  // Initial load - only once when boltUser becomes available
   useEffect(() => {
+    if (initialLoadDone || !boltUser?.id) {
+      if (!boltUser?.id) setLoading(false);
+      return;
+    }
+
     const loadAll = async () => {
       setLoading(true);
       try {
@@ -384,6 +398,7 @@ export const useBoltTown = () => {
           loadLeaderboard(),
           loadPreviousWinners(),
         ]);
+        setInitialLoadDone(true);
       } catch (err) {
         setError('Failed to load competition data');
       } finally {
@@ -391,12 +406,8 @@ export const useBoltTown = () => {
       }
     };
 
-    if (boltUser?.id) {
-      loadAll();
-    } else {
-      setLoading(false);
-    }
-  }, [boltUser?.id, getOrCreateTodayPoints, loadMyPoints, loadLeaderboard, loadPreviousWinners]);
+    loadAll();
+  }, [boltUser?.id, initialLoadDone, getOrCreateTodayPoints, loadMyPoints, loadLeaderboard, loadPreviousWinners]);
 
   // Subscribe to realtime updates for leaderboard
   useEffect(() => {
