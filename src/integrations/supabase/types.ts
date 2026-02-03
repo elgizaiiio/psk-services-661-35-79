@@ -758,8 +758,10 @@ export type Database = {
           icon: string | null
           id: string
           is_active: boolean
+          is_pinned: boolean | null
           partner_telegram_id: number | null
           partnership_id: string | null
+          pin_order: number | null
           points: number
           reward_ton: number | null
           reward_usdt: number | null
@@ -773,8 +775,10 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_pinned?: boolean | null
           partner_telegram_id?: number | null
           partnership_id?: string | null
+          pin_order?: number | null
           points?: number
           reward_ton?: number | null
           reward_usdt?: number | null
@@ -788,8 +792,10 @@ export type Database = {
           icon?: string | null
           id?: string
           is_active?: boolean
+          is_pinned?: boolean | null
           partner_telegram_id?: number | null
           partnership_id?: string | null
+          pin_order?: number | null
           points?: number
           reward_ton?: number | null
           reward_usdt?: number | null
