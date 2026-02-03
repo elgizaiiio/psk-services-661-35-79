@@ -1588,6 +1588,195 @@ Use /102 to create a new task.`);
     }
   }
 
+  // Handle /1 command - Pin Tasks Management
+  if (messageText === '/1') {
+    try {
+      const supabase = getSupabaseClient();
+      
+      // Get all active tasks
+      const { data: tasks, error } = await supabase
+        .from('bolt_tasks')
+        .select('id, title, points, icon, category, is_pinned, pin_order')
+        .eq('is_active', true)
+        .order('pin_order', { ascending: true })
+        .order('created_at', { ascending: false })
+        .limit(30);
+      
+      if (error) throw error;
+      
+      const pinnedTasks = tasks?.filter(t => t.is_pinned) || [];
+      const unpinnedTasks = tasks?.filter(t => !t.is_pinned) || [];
+      
+      let message = `📌 <b>إدارة المهام المثبتة</b>\n\n`;
+      
+      if (pinnedTasks.length > 0) {
+        message += `<b>✅ المهام المثبتة (${pinnedTasks.length}):</b>\n`;
+        pinnedTasks.forEach((task, i) => {
+          message += `${i + 1}. 📌 ${task.title}\n`;
+        });
+        message += `\n`;
+      } else {
+        message += `<i>لا توجد مهام مثبتة حالياً</i>\n\n`;
+      }
+      
+      message += `<b>📋 المهام المتاحة للتثبيت:</b>\n`;
+      unpinnedTasks.slice(0, 10).forEach((task, i) => {
+        message += `${i + 1}. ${task.title} (+${task.points} BOLT)\n`;
+      });
+      
+      if (unpinnedTasks.length > 10) {
+        message += `\n...و ${unpinnedTasks.length - 10} مهمة أخرى\n`;
+      }
+      
+      message += `\n<b>📌 الأوامر:</b>\n`;
+      message += `/1 pin [رقم] - تثبيت مهمة\n`;
+      message += `/1 unpin [رقم] - إلغاء تثبيت\n`;
+      message += `/1 clear - إلغاء تثبيت الكل`;
+      
+      // Create inline keyboard for pinned tasks (unpin buttons)
+      const pinnedButtons = pinnedTasks.slice(0, 5).map((task, i) => [
+        { 
+          text: `📌 إلغاء: ${task.title.slice(0, 20)}${task.title.length > 20 ? '...' : ''}`, 
+          callback_data: `unpin_task_${task.id}` 
+        }
+      ]);
+      
+      // Create inline keyboard for unpinned tasks (pin buttons)  
+      const unpinnedButtons = unpinnedTasks.slice(0, 5).map((task, i) => [
+        { 
+          text: `➕ تثبيت: ${task.title.slice(0, 20)}${task.title.length > 20 ? '...' : ''}`, 
+          callback_data: `pin_task_${task.id}` 
+        }
+      ]);
+      
+      const keyboard = {
+        inline_keyboard: [
+          ...pinnedButtons,
+          ...unpinnedButtons,
+          [{ text: '🔄 تحديث', callback_data: 'refresh_pins' }]
+        ]
+      };
+      
+      await sendTelegramMessage(chatId, message, keyboard);
+      return true;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await sendTelegramMessage(chatId, `❌ خطأ: ${errorMessage}`);
+      return true;
+    }
+  }
+
+  // Handle /1 pin [number] - Pin a task
+  if (messageText.startsWith('/1 pin ')) {
+    const num = parseInt(messageText.replace('/1 pin ', ''));
+    if (isNaN(num) || num < 1) {
+      await sendTelegramMessage(chatId, '⚠️ الرجاء إدخال رقم صحيح. مثال: /1 pin 1');
+      return true;
+    }
+    
+    try {
+      const supabase = getSupabaseClient();
+      
+      // Get unpinned tasks
+      const { data: tasks } = await supabase
+        .from('bolt_tasks')
+        .select('id, title, is_pinned')
+        .eq('is_active', true)
+        .eq('is_pinned', false)
+        .order('created_at', { ascending: false });
+      
+      if (!tasks || num > tasks.length) {
+        await sendTelegramMessage(chatId, `⚠️ المهمة رقم ${num} غير موجودة.`);
+        return true;
+      }
+      
+      const task = tasks[num - 1];
+      
+      // Get current max pin_order
+      const { data: pinnedTasks } = await supabase
+        .from('bolt_tasks')
+        .select('pin_order')
+        .eq('is_pinned', true)
+        .order('pin_order', { ascending: false })
+        .limit(1);
+      
+      const maxOrder = pinnedTasks?.[0]?.pin_order || 0;
+      
+      // Pin the task
+      await supabase
+        .from('bolt_tasks')
+        .update({ is_pinned: true, pin_order: maxOrder + 1 })
+        .eq('id', task.id);
+      
+      await sendTelegramMessage(chatId, `✅ تم تثبيت المهمة: <b>${task.title}</b>\n\nاستخدم /1 لعرض المهام المثبتة.`);
+      return true;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await sendTelegramMessage(chatId, `❌ خطأ: ${errorMessage}`);
+      return true;
+    }
+  }
+
+  // Handle /1 unpin [number] - Unpin a task
+  if (messageText.startsWith('/1 unpin ')) {
+    const num = parseInt(messageText.replace('/1 unpin ', ''));
+    if (isNaN(num) || num < 1) {
+      await sendTelegramMessage(chatId, '⚠️ الرجاء إدخال رقم صحيح. مثال: /1 unpin 1');
+      return true;
+    }
+    
+    try {
+      const supabase = getSupabaseClient();
+      
+      // Get pinned tasks
+      const { data: tasks } = await supabase
+        .from('bolt_tasks')
+        .select('id, title')
+        .eq('is_pinned', true)
+        .order('pin_order', { ascending: true });
+      
+      if (!tasks || num > tasks.length) {
+        await sendTelegramMessage(chatId, `⚠️ المهمة المثبتة رقم ${num} غير موجودة.`);
+        return true;
+      }
+      
+      const task = tasks[num - 1];
+      
+      // Unpin the task
+      await supabase
+        .from('bolt_tasks')
+        .update({ is_pinned: false, pin_order: 0 })
+        .eq('id', task.id);
+      
+      await sendTelegramMessage(chatId, `✅ تم إلغاء تثبيت المهمة: <b>${task.title}</b>\n\nاستخدم /1 لعرض المهام.`);
+      return true;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await sendTelegramMessage(chatId, `❌ خطأ: ${errorMessage}`);
+      return true;
+    }
+  }
+
+  // Handle /1 clear - Unpin all tasks
+  if (messageText === '/1 clear') {
+    try {
+      const supabase = getSupabaseClient();
+      
+      const { count } = await supabase
+        .from('bolt_tasks')
+        .update({ is_pinned: false, pin_order: 0 })
+        .eq('is_pinned', true)
+        .select('id', { count: 'exact', head: true });
+      
+      await sendTelegramMessage(chatId, `✅ تم إلغاء تثبيت جميع المهام\n\nاستخدم /1 لعرض المهام.`);
+      return true;
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      await sendTelegramMessage(chatId, `❌ خطأ: ${errorMessage}`);
+      return true;
+    }
+  }
+
   // Handle /cancel command
   if (messageText === '/cancel') {
     if (state) {
@@ -2060,6 +2249,143 @@ async function handleCallbackQuery(callbackQuery: any) {
   if (data === 'section_delete_cancel') {
     await answerCallbackQuery(callbackQueryId, 'تم إلغاء الحذف');
     await sendTelegramMessage(chatId, '❌ تم إلغاء الحذف. استخدم /105 لعرض الأقسام.');
+    return;
+  }
+
+  // Handle pin task callback
+  if (data.startsWith('pin_task_')) {
+    if (!ADMIN_IDS.includes(telegramId)) {
+      await answerCallbackQuery(callbackQueryId, 'Not authorized');
+      return;
+    }
+    
+    const taskId = data.replace('pin_task_', '');
+    const supabase = getSupabaseClient();
+    
+    try {
+      // Get current max pin_order
+      const { data: pinnedTasks } = await supabase
+        .from('bolt_tasks')
+        .select('pin_order')
+        .eq('is_pinned', true)
+        .order('pin_order', { ascending: false })
+        .limit(1);
+      
+      const maxOrder = pinnedTasks?.[0]?.pin_order || 0;
+      
+      // Pin the task
+      const { data: task } = await supabase
+        .from('bolt_tasks')
+        .update({ is_pinned: true, pin_order: maxOrder + 1 })
+        .eq('id', taskId)
+        .select('title')
+        .single();
+      
+      await answerCallbackQuery(callbackQueryId, `✅ تم تثبيت: ${task?.title || 'المهمة'}`);
+      await sendTelegramMessage(chatId, `✅ تم تثبيت المهمة: <b>${task?.title}</b>\n\nاستخدم /1 لعرض المهام المثبتة.`);
+    } catch (error) {
+      await answerCallbackQuery(callbackQueryId, 'خطأ في التثبيت');
+    }
+    return;
+  }
+
+  // Handle unpin task callback
+  if (data.startsWith('unpin_task_')) {
+    if (!ADMIN_IDS.includes(telegramId)) {
+      await answerCallbackQuery(callbackQueryId, 'Not authorized');
+      return;
+    }
+    
+    const taskId = data.replace('unpin_task_', '');
+    const supabase = getSupabaseClient();
+    
+    try {
+      const { data: task } = await supabase
+        .from('bolt_tasks')
+        .update({ is_pinned: false, pin_order: 0 })
+        .eq('id', taskId)
+        .select('title')
+        .single();
+      
+      await answerCallbackQuery(callbackQueryId, `✅ تم إلغاء تثبيت: ${task?.title || 'المهمة'}`);
+      await sendTelegramMessage(chatId, `✅ تم إلغاء تثبيت المهمة: <b>${task?.title}</b>\n\nاستخدم /1 لعرض المهام.`);
+    } catch (error) {
+      await answerCallbackQuery(callbackQueryId, 'خطأ في إلغاء التثبيت');
+    }
+    return;
+  }
+
+  // Handle refresh pins callback
+  if (data === 'refresh_pins') {
+    if (!ADMIN_IDS.includes(telegramId)) {
+      await answerCallbackQuery(callbackQueryId, 'Not authorized');
+      return;
+    }
+    
+    await answerCallbackQuery(callbackQueryId, 'جاري التحديث...');
+    
+    const supabase = getSupabaseClient();
+    
+    try {
+      const { data: tasks } = await supabase
+        .from('bolt_tasks')
+        .select('id, title, points, is_pinned, pin_order')
+        .eq('is_active', true)
+        .order('pin_order', { ascending: true })
+        .order('created_at', { ascending: false })
+        .limit(30);
+      
+      const pinnedTasks = tasks?.filter(t => t.is_pinned) || [];
+      const unpinnedTasks = tasks?.filter(t => !t.is_pinned) || [];
+      
+      let message = `📌 <b>إدارة المهام المثبتة</b>\n\n`;
+      
+      if (pinnedTasks.length > 0) {
+        message += `<b>✅ المهام المثبتة (${pinnedTasks.length}):</b>\n`;
+        pinnedTasks.forEach((task, i) => {
+          message += `${i + 1}. 📌 ${task.title}\n`;
+        });
+        message += `\n`;
+      } else {
+        message += `<i>لا توجد مهام مثبتة حالياً</i>\n\n`;
+      }
+      
+      message += `<b>📋 المهام المتاحة للتثبيت:</b>\n`;
+      unpinnedTasks.slice(0, 10).forEach((task, i) => {
+        message += `${i + 1}. ${task.title} (+${task.points} BOLT)\n`;
+      });
+      
+      message += `\n<b>📌 الأوامر:</b>\n`;
+      message += `/1 pin [رقم] - تثبيت مهمة\n`;
+      message += `/1 unpin [رقم] - إلغاء تثبيت\n`;
+      message += `/1 clear - إلغاء تثبيت الكل`;
+      
+      const pinnedButtons = pinnedTasks.slice(0, 5).map((task) => [
+        { 
+          text: `📌 إلغاء: ${task.title.slice(0, 20)}${task.title.length > 20 ? '...' : ''}`, 
+          callback_data: `unpin_task_${task.id}` 
+        }
+      ]);
+      
+      const unpinnedButtons = unpinnedTasks.slice(0, 5).map((task) => [
+        { 
+          text: `➕ تثبيت: ${task.title.slice(0, 20)}${task.title.length > 20 ? '...' : ''}`, 
+          callback_data: `pin_task_${task.id}` 
+        }
+      ]);
+      
+      const keyboard = {
+        inline_keyboard: [
+          ...pinnedButtons,
+          ...unpinnedButtons,
+          [{ text: '🔄 تحديث', callback_data: 'refresh_pins' }]
+        ]
+      };
+      
+      await sendTelegramMessage(chatId, message, keyboard);
+    } catch (error) {
+      await sendTelegramMessage(chatId, '❌ خطأ في تحديث القائمة');
+    }
     return;
   }
 
