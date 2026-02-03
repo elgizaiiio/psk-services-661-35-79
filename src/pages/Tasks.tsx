@@ -129,6 +129,13 @@ const Tasks = () => {
     });
   }, [allTasks, completedTasks]);
 
+  // Separate pinned and regular tasks
+  const { pinnedTasks, regularTasks } = useMemo(() => {
+    const pinned = availableTasks.filter((t: any) => t.is_pinned).sort((a: any, b: any) => (a.pin_order || 0) - (b.pin_order || 0));
+    const regular = availableTasks.filter((t: any) => !t.is_pinned);
+    return { pinnedTasks: pinned, regularTasks: regular };
+  }, [availableTasks]);
+
   const stats = useMemo(() => {
     const totalTasks = allTasks.length;
     const completed = completedTasks.length;
@@ -466,11 +473,22 @@ const Tasks = () => {
             {renderAdTaskCard()}
           </FadeUp>
 
-          {/* All Tasks - Unified List */}
+          {/* Pinned Tasks */}
+          {pinnedTasks.length > 0 && (
+            <FadeUp>
+              <div className="space-y-3">
+                <AnimatePresence mode="popLayout">
+                  {pinnedTasks.map((task, i) => renderTaskItem(task, i))}
+                </AnimatePresence>
+              </div>
+            </FadeUp>
+          )}
+
+          {/* Regular Tasks */}
           <FadeUp>
             <div className="space-y-3">
               <AnimatePresence mode="popLayout">
-                {availableTasks.map((task, i) => renderTaskItem(task, i))}
+                {regularTasks.map((task, i) => renderTaskItem(task, i + pinnedTasks.length))}
               </AnimatePresence>
               
               {availableTasks.length === 0 && (

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Image, Pencil, Trash2, ToggleLeft, ToggleRight, Plus, ExternalLink } from "lucide-react";
+import { Image, Pencil, Trash2, ToggleLeft, ToggleRight, Plus, ExternalLink, Pin, ChevronLeft, ChevronRight } from "lucide-react";
 
 type Task = { 
   id: string; 
@@ -16,6 +16,8 @@ type Task = {
   category: string; 
   task_url?: string | null;
   icon?: string | null;
+  is_pinned?: boolean;
+  pin_order?: number;
 };
 
 interface AdminTaskManagementProps {
@@ -24,6 +26,7 @@ interface AdminTaskManagementProps {
 }
 
 const CATEGORIES = ['social', 'mining', 'referral', 'general'];
+const TASKS_PER_PAGE = 10;
 
 const AdminTaskManagement: React.FC<AdminTaskManagementProps> = ({ tasks, onTasksUpdate }) => {
   const [newTask, setNewTask] = useState({
@@ -33,6 +36,8 @@ const AdminTaskManagement: React.FC<AdminTaskManagementProps> = ({ tasks, onTask
     points: '',
     category: 'social'
   });
+  const [showPinManager, setShowPinManager] = useState(false);
+  const [pinPage, setPinPage] = useState(0);
 
   const addTask = async () => {
     if (!newTask.title) return toast.error("Please enter task title");
@@ -93,15 +98,144 @@ const AdminTaskManagement: React.FC<AdminTaskManagementProps> = ({ tasks, onTask
     });
   };
 
+  const togglePin = async (task: Task) => {
+    const newPinned = !task.is_pinned;
+    const pinnedCount = tasks.filter(t => t.is_pinned).length;
+    const newOrder = newPinned ? pinnedCount + 1 : 0;
+    
+    const { error } = await supabase
+      .from("bolt_tasks" as any)
+      .update({ is_pinned: newPinned, pin_order: newOrder })
+      .eq("id", task.id);
+    
+    if (error) return toast.error("Failed to update pin status");
+    toast.success(newPinned ? "Task pinned" : "Task unpinned");
+    onTasksUpdate();
+  };
+
+  // Pagination for pin manager
+  const totalPages = Math.ceil(tasks.length / TASKS_PER_PAGE);
+  const paginatedTasks = tasks.slice(pinPage * TASKS_PER_PAGE, (pinPage + 1) * TASKS_PER_PAGE);
+  const pinnedTasks = tasks.filter(t => t.is_pinned).sort((a, b) => (a.pin_order || 0) - (b.pin_order || 0));
+
   return (
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <div className="font-semibold text-lg">Task Management</div>
-          <Badge variant="secondary">{tasks.length} tasks</Badge>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant={showPinManager ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setShowPinManager(!showPinManager)}
+              className="gap-2"
+            >
+              <Pin className="w-4 h-4" />
+              Pin Tasks ({pinnedTasks.length})
+            </Button>
+            <Badge variant="secondary">{tasks.length} tasks</Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Pin Manager Section */}
+        {showPinManager && (
+          <div className="p-4 bg-primary/5 rounded-xl border border-primary/20 space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <Pin className="w-4 h-4 text-primary" />
+                Select Tasks to Pin
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Pinned tasks appear at top of task list
+              </div>
+            </div>
+            
+            {/* Currently Pinned */}
+            {pinnedTasks.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">Currently Pinned:</p>
+                <div className="flex flex-wrap gap-2">
+                  {pinnedTasks.map(task => (
+                    <Badge 
+                      key={task.id} 
+                      variant="default" 
+                      className="cursor-pointer gap-1"
+                      onClick={() => togglePin(task)}
+                    >
+                      {task.title}
+                      <span className="text-[10px] opacity-70">✕</span>
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Task Selection Grid */}
+            <div className="grid grid-cols-1 gap-2 max-h-[300px] overflow-y-auto">
+              {paginatedTasks.map(task => (
+                <div 
+                  key={task.id}
+                  onClick={() => togglePin(task)}
+                  className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                    task.is_pinned 
+                      ? 'bg-primary/10 border-primary' 
+                      : 'bg-card border-border hover:border-primary/30'
+                  }`}
+                >
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
+                    task.is_pinned ? 'border-primary bg-primary' : 'border-muted-foreground'
+                  }`}>
+                    {task.is_pinned && <Pin className="w-3 h-3 text-primary-foreground" />}
+                  </div>
+                  
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center overflow-hidden shrink-0">
+                    {task.icon ? (
+                      <img src={task.icon} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <Image className="w-4 h-4 text-muted-foreground" />
+                    )}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{task.title}</p>
+                    <p className="text-xs text-muted-foreground">+{task.points} BOLT</p>
+                  </div>
+                  
+                  <Badge variant="outline" className="text-[10px] shrink-0">
+                    {task.category}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pinPage === 0}
+                  onClick={() => setPinPage(p => p - 1)}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {pinPage + 1} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={pinPage >= totalPages - 1}
+                  onClick={() => setPinPage(p => p + 1)}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Add New Task Form */}
         <div className="p-4 bg-muted/30 rounded-xl border border-border space-y-4">
           <div className="flex items-center gap-2 text-sm font-medium text-foreground">
@@ -163,8 +297,13 @@ const AdminTaskManagement: React.FC<AdminTaskManagementProps> = ({ tasks, onTask
                 task.is_active 
                   ? 'bg-card border-border hover:border-primary/30' 
                   : 'bg-muted/30 border-border/50 opacity-60'
-              }`}
+              } ${task.is_pinned ? 'ring-2 ring-primary/30' : ''}`}
             >
+              {/* Pin Indicator */}
+              {task.is_pinned && (
+                <Pin className="w-4 h-4 text-primary shrink-0" />
+              )}
+
               {/* Task Image */}
               <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center overflow-hidden shrink-0">
                 {task.icon ? (
@@ -212,6 +351,15 @@ const AdminTaskManagement: React.FC<AdminTaskManagementProps> = ({ tasks, onTask
 
               {/* Actions */}
               <div className="flex items-center gap-1 shrink-0">
+                <Button 
+                  variant="ghost" 
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => togglePin(task)}
+                  title={task.is_pinned ? "Unpin" : "Pin"}
+                >
+                  <Pin className={`w-4 h-4 ${task.is_pinned ? 'text-primary fill-primary' : 'text-muted-foreground'}`} />
+                </Button>
                 <Button 
                   variant="ghost" 
                   size="icon"
