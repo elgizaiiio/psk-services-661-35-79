@@ -1588,24 +1588,39 @@ Use /102 to create a new task.`);
     }
   }
 
-  // Handle /1 command - Pin Tasks Management
-  if (messageText === '/1') {
+  // Handle /1 command - Pin Tasks Management (with pagination)
+  if (messageText === '/1' || messageText.match(/^\/1 page \d+$/)) {
     try {
       const supabase = getSupabaseClient();
       
-      // Get all active tasks
-      const { data: tasks, error } = await supabase
+      // Parse page number (default to 1)
+      let page = 1;
+      const pageMatch = messageText.match(/^\/1 page (\d+)$/);
+      if (pageMatch) {
+        page = parseInt(pageMatch[1]) || 1;
+      }
+      
+      const TASKS_PER_PAGE = 8;
+      
+      // Get ALL active tasks (no limit)
+      const { data: allTasks, error } = await supabase
         .from('bolt_tasks')
         .select('id, title, points, icon, category, is_pinned, pin_order')
         .eq('is_active', true)
         .order('pin_order', { ascending: true })
-        .order('created_at', { ascending: false })
-        .limit(30);
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      const pinnedTasks = tasks?.filter(t => t.is_pinned) || [];
-      const unpinnedTasks = tasks?.filter(t => !t.is_pinned) || [];
+      const pinnedTasks = allTasks?.filter(t => t.is_pinned) || [];
+      const unpinnedTasks = allTasks?.filter(t => !t.is_pinned) || [];
+      
+      // Calculate pagination for unpinned tasks
+      const totalPages = Math.ceil(unpinnedTasks.length / TASKS_PER_PAGE);
+      page = Math.min(Math.max(1, page), totalPages || 1);
+      const startIdx = (page - 1) * TASKS_PER_PAGE;
+      const endIdx = startIdx + TASKS_PER_PAGE;
+      const paginatedUnpinned = unpinnedTasks.slice(startIdx, endIdx);
       
       let message = `📌 <b>إدارة المهام المثبتة</b>\n\n`;
       
@@ -1619,14 +1634,13 @@ Use /102 to create a new task.`);
         message += `<i>لا توجد مهام مثبتة حالياً</i>\n\n`;
       }
       
-      message += `<b>📋 المهام المتاحة للتثبيت:</b>\n`;
-      unpinnedTasks.slice(0, 10).forEach((task, i) => {
-        message += `${i + 1}. ${task.title} (+${task.points} BOLT)\n`;
-      });
+      message += `<b>📋 المهام المتاحة للتثبيت (${unpinnedTasks.length} مهمة):</b>\n`;
+      message += `<i>الصفحة ${page} من ${totalPages || 1}</i>\n\n`;
       
-      if (unpinnedTasks.length > 10) {
-        message += `\n...و ${unpinnedTasks.length - 10} مهمة أخرى\n`;
-      }
+      paginatedUnpinned.forEach((task, i) => {
+        const globalIdx = startIdx + i + 1;
+        message += `${globalIdx}. ${task.title} (+${task.points} BOLT)\n`;
+      });
       
       message += `\n<b>📌 الأوامر:</b>\n`;
       message += `/1 pin [رقم] - تثبيت مهمة\n`;
@@ -1634,25 +1648,36 @@ Use /102 to create a new task.`);
       message += `/1 clear - إلغاء تثبيت الكل`;
       
       // Create inline keyboard for pinned tasks (unpin buttons)
-      const pinnedButtons = pinnedTasks.slice(0, 5).map((task, i) => [
+      const pinnedButtons = pinnedTasks.slice(0, 5).map((task) => [
         { 
           text: `📌 إلغاء: ${task.title.slice(0, 20)}${task.title.length > 20 ? '...' : ''}`, 
           callback_data: `unpin_task_${task.id}` 
         }
       ]);
       
-      // Create inline keyboard for unpinned tasks (pin buttons)  
-      const unpinnedButtons = unpinnedTasks.slice(0, 5).map((task, i) => [
+      // Create inline keyboard for current page unpinned tasks (pin buttons)  
+      const unpinnedButtons = paginatedUnpinned.map((task) => [
         { 
-          text: `➕ تثبيت: ${task.title.slice(0, 20)}${task.title.length > 20 ? '...' : ''}`, 
+          text: `➕ ${task.title.slice(0, 25)}${task.title.length > 25 ? '...' : ''}`, 
           callback_data: `pin_task_${task.id}` 
         }
       ]);
+      
+      // Pagination buttons
+      const paginationRow: Array<{ text: string; callback_data: string }> = [];
+      if (page > 1) {
+        paginationRow.push({ text: '◀️ السابق', callback_data: `pins_page_${page - 1}` });
+      }
+      paginationRow.push({ text: `📄 ${page}/${totalPages || 1}`, callback_data: 'noop' });
+      if (page < totalPages) {
+        paginationRow.push({ text: 'التالي ▶️', callback_data: `pins_page_${page + 1}` });
+      }
       
       const keyboard = {
         inline_keyboard: [
           ...pinnedButtons,
           ...unpinnedButtons,
+          paginationRow,
           [{ text: '🔄 تحديث', callback_data: 'refresh_pins' }]
         ]
       };
@@ -2315,28 +2340,40 @@ async function handleCallbackQuery(callbackQuery: any) {
     return;
   }
 
-  // Handle refresh pins callback
-  if (data === 'refresh_pins') {
+  // Handle pagination for pins (pins_page_X)
+  if (data.startsWith('pins_page_') || data === 'refresh_pins') {
     if (!ADMIN_IDS.includes(telegramId)) {
       await answerCallbackQuery(callbackQueryId, 'Not authorized');
       return;
     }
     
+    let page = 1;
+    if (data.startsWith('pins_page_')) {
+      page = parseInt(data.replace('pins_page_', '')) || 1;
+    }
+    
     await answerCallbackQuery(callbackQueryId, 'جاري التحديث...');
     
     const supabase = getSupabaseClient();
+    const TASKS_PER_PAGE = 8;
     
     try {
-      const { data: tasks } = await supabase
+      // Get ALL tasks (no limit)
+      const { data: allTasks } = await supabase
         .from('bolt_tasks')
         .select('id, title, points, is_pinned, pin_order')
         .eq('is_active', true)
         .order('pin_order', { ascending: true })
-        .order('created_at', { ascending: false })
-        .limit(30);
+        .order('created_at', { ascending: false });
       
-      const pinnedTasks = tasks?.filter(t => t.is_pinned) || [];
-      const unpinnedTasks = tasks?.filter(t => !t.is_pinned) || [];
+      const pinnedTasks = allTasks?.filter(t => t.is_pinned) || [];
+      const unpinnedTasks = allTasks?.filter(t => !t.is_pinned) || [];
+      
+      // Calculate pagination
+      const totalPages = Math.ceil(unpinnedTasks.length / TASKS_PER_PAGE);
+      page = Math.min(Math.max(1, page), totalPages || 1);
+      const startIdx = (page - 1) * TASKS_PER_PAGE;
+      const paginatedUnpinned = unpinnedTasks.slice(startIdx, startIdx + TASKS_PER_PAGE);
       
       let message = `📌 <b>إدارة المهام المثبتة</b>\n\n`;
       
@@ -2350,9 +2387,12 @@ async function handleCallbackQuery(callbackQuery: any) {
         message += `<i>لا توجد مهام مثبتة حالياً</i>\n\n`;
       }
       
-      message += `<b>📋 المهام المتاحة للتثبيت:</b>\n`;
-      unpinnedTasks.slice(0, 10).forEach((task, i) => {
-        message += `${i + 1}. ${task.title} (+${task.points} BOLT)\n`;
+      message += `<b>📋 المهام المتاحة للتثبيت (${unpinnedTasks.length} مهمة):</b>\n`;
+      message += `<i>الصفحة ${page} من ${totalPages || 1}</i>\n\n`;
+      
+      paginatedUnpinned.forEach((task, i) => {
+        const globalIdx = startIdx + i + 1;
+        message += `${globalIdx}. ${task.title} (+${task.points} BOLT)\n`;
       });
       
       message += `\n<b>📌 الأوامر:</b>\n`;
@@ -2367,17 +2407,28 @@ async function handleCallbackQuery(callbackQuery: any) {
         }
       ]);
       
-      const unpinnedButtons = unpinnedTasks.slice(0, 5).map((task) => [
+      const unpinnedButtons = paginatedUnpinned.map((task) => [
         { 
-          text: `➕ تثبيت: ${task.title.slice(0, 20)}${task.title.length > 20 ? '...' : ''}`, 
+          text: `➕ ${task.title.slice(0, 25)}${task.title.length > 25 ? '...' : ''}`, 
           callback_data: `pin_task_${task.id}` 
         }
       ]);
+      
+      // Pagination buttons
+      const paginationRow: Array<{ text: string; callback_data: string }> = [];
+      if (page > 1) {
+        paginationRow.push({ text: '◀️ السابق', callback_data: `pins_page_${page - 1}` });
+      }
+      paginationRow.push({ text: `📄 ${page}/${totalPages || 1}`, callback_data: 'noop' });
+      if (page < totalPages) {
+        paginationRow.push({ text: 'التالي ▶️', callback_data: `pins_page_${page + 1}` });
+      }
       
       const keyboard = {
         inline_keyboard: [
           ...pinnedButtons,
           ...unpinnedButtons,
+          paginationRow,
           [{ text: '🔄 تحديث', callback_data: 'refresh_pins' }]
         ]
       };
@@ -2386,6 +2437,12 @@ async function handleCallbackQuery(callbackQuery: any) {
     } catch (error) {
       await sendTelegramMessage(chatId, '❌ خطأ في تحديث القائمة');
     }
+    return;
+  }
+  
+  // Handle noop callback (for page indicator)
+  if (data === 'noop') {
+    await answerCallbackQuery(callbackQueryId, '');
     return;
   }
 
