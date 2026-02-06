@@ -23,6 +23,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
 import { useTonPrice } from '@/hooks/useTonPrice';
 import { toast } from 'sonner';
+import PremiumServerOffer from '@/components/servers/PremiumServerOffer';
 
 const serverPackages = [
   {
@@ -177,7 +178,12 @@ const ServerStoreInner: React.FC = () => {
             })}
           </div>
 
-          {/* Server Packages */}
+          {/* Premium Server Offer - TOP */}
+          <section className="mb-8">
+            <PremiumServerOffer showBanner={true} />
+          </section>
+
+          {/* Regular Server Packages */}
           <section className="space-y-6" aria-label="Server Packages">
             {serverPackages.map((pkg, index) => {
               const PackageIcon = pkg.icon;
