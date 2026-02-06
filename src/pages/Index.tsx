@@ -16,7 +16,7 @@ import DailyStreakModal from '@/components/DailyStreakModal';
 import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
 import MonthlyWinnerModal from '@/components/MonthlyWinnerModal';
 import UserAvatar from '@/components/UserAvatar';
-
+import serverOfferBanner from '@/assets/server-offer-banner.png';
 import boltTownHomeUnderBanner from '@/assets/bolt-town-home-under-banner.png';
 
 interface HomeSection {
@@ -195,6 +195,23 @@ const Index = () => {
 
       <div className="max-w-md mx-auto px-4 pt-14 space-y-3">
         
+        {/* Server Mega Offer Banner */}
+        <FadeUp delay={0.05}>
+          <motion.button
+            onClick={() => handleNavigate('/server-store')}
+            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1.01 }}
+            className="w-full overflow-hidden rounded-2xl relative"
+          >
+            <img
+              src={serverOfferBanner}
+              alt="Server Mega Offer - Win up to $999"
+              className="w-full h-auto aspect-[16/9] object-cover"
+              loading="eager"
+            />
+          </motion.button>
+        </FadeUp>
+
         {/* Competition Image - Rectangle Banner */}
         <FadeUp delay={0.1}>
           <motion.button
