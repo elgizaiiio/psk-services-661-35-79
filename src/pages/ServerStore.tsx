@@ -178,12 +178,7 @@ const ServerStoreInner: React.FC = () => {
             })}
           </div>
 
-          {/* Premium Server Offer - TOP */}
-          <section className="mb-8">
-            <PremiumServerOffer showBanner={true} />
-          </section>
-
-          {/* Regular Server Packages */}
+          {/* Server Packages */}
           <section className="space-y-6" aria-label="Server Packages">
             {serverPackages.map((pkg, index) => {
               const PackageIcon = pkg.icon;

@@ -13,6 +13,7 @@ import { BoltIcon, UsdtIcon, TonIcon, EthIcon, ViralIcon } from '@/components/ui
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
+import PremiumServerOffer from '@/components/servers/PremiumServerOffer';
 
 type MiningServer = {
   id: string;
@@ -265,11 +266,12 @@ const MiningServers = () => {
           </motion.div>
         )}
 
-        {/* Server List */}
+        {/* Premium Server Offer Section */}
+        <PremiumServerOffer showBanner={true} />
 
         {/* Server List */}
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold text-foreground px-1">Available Servers</h2>
+          <h2 className="text-lg font-semibold text-foreground px-1">Standard Servers</h2>
           
           {sortedServers.map((server, index) => {
             const owned = isOwned(server.id);
