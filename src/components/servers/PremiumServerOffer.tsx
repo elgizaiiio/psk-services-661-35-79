@@ -13,12 +13,12 @@ interface PremiumServer {
   id: string;
   name: string;
   price: number;
-  specs: {
-    cpu: string;
-    ram: string;
-    storage: string;
-    bandwidth: string;
-  };
+  hashRate: string;
+  boltPerDay: number;
+  usdtPerDay: number;
+  tonPerDay: number;
+  ethPerDay: number;
+  viralPerDay: number;
   icon: React.ElementType;
   gradient: string;
   borderColor: string;
@@ -26,60 +26,32 @@ interface PremiumServer {
 
 const premiumServers: PremiumServer[] = [
   {
-    id: 'premium-50',
-    name: 'Premium Elite',
+    id: 'legendary-1',
+    name: 'Legend',
     price: 50,
-    specs: {
-      cpu: '16 vCPU',
-      ram: '32GB RAM',
-      storage: '500GB NVMe',
-      bandwidth: '10TB Transfer'
-    },
+    hashRate: '500 TH/s',
+    boltPerDay: 25000,
+    usdtPerDay: 5.00,
+    tonPerDay: 0.08,
+    ethPerDay: 0.005,
+    viralPerDay: 5000,
     icon: Crown,
     gradient: 'from-amber-500/20 to-yellow-500/20',
     borderColor: 'border-amber-500/40'
   },
   {
-    id: 'premium-70',
-    name: 'Premium Ultra',
-    price: 70,
-    specs: {
-      cpu: '24 vCPU',
-      ram: '64GB RAM',
-      storage: '1TB NVMe',
-      bandwidth: '20TB Transfer'
-    },
-    icon: Star,
+    id: 'mythic-1',
+    name: 'Mythic',
+    price: 100,
+    hashRate: '1000 TH/s',
+    boltPerDay: 60000,
+    usdtPerDay: 12.00,
+    tonPerDay: 0.15,
+    ethPerDay: 0.01,
+    viralPerDay: 10000,
+    icon: Diamond,
     gradient: 'from-purple-500/20 to-pink-500/20',
     borderColor: 'border-purple-500/40'
-  },
-  {
-    id: 'premium-85',
-    name: 'Premium Legendary',
-    price: 85,
-    specs: {
-      cpu: '32 vCPU',
-      ram: '128GB RAM',
-      storage: '2TB NVMe',
-      bandwidth: '50TB Transfer'
-    },
-    icon: Flame,
-    gradient: 'from-orange-500/20 to-red-500/20',
-    borderColor: 'border-orange-500/40'
-  },
-  {
-    id: 'premium-100',
-    name: 'Premium Divine',
-    price: 100,
-    specs: {
-      cpu: '48 vCPU',
-      ram: '256GB RAM',
-      storage: '4TB NVMe',
-      bandwidth: 'Unlimited'
-    },
-    icon: Diamond,
-    gradient: 'from-cyan-500/20 to-blue-500/20',
-    borderColor: 'border-cyan-500/40'
   }
 ];
 
@@ -225,11 +197,15 @@ const PremiumServerOffer: React.FC<PremiumServerOfferProps> = ({ showBanner = tr
                     
                     <div className="flex-1">
                       <h3 className="font-bold text-lg">{server.name}</h3>
-                      <div className="grid grid-cols-2 gap-2 mt-2 text-xs text-muted-foreground">
-                        <span>• {server.specs.cpu}</span>
-                        <span>• {server.specs.ram}</span>
-                        <span>• {server.specs.storage}</span>
-                        <span>• {server.specs.bandwidth}</span>
+                      <p className="text-xs text-muted-foreground mb-2">{server.hashRate} Hash Rate</p>
+                      <div className="grid grid-cols-3 gap-1 text-[10px] text-muted-foreground">
+                        <span>+{server.boltPerDay.toLocaleString()} BOLT</span>
+                        <span>${server.usdtPerDay} USDT</span>
+                        <span>+{server.tonPerDay} TON</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground mt-1">
+                        <span>+{server.ethPerDay} ETH</span>
+                        <span>+{server.viralPerDay.toLocaleString()} VIRAL</span>
                       </div>
                     </div>
                     
