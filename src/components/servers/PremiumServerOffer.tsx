@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Crown, Sparkles, Server, Star, Zap, Flame, Diamond } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Gift, Crown, Sparkles, Gem } from 'lucide-react';
 import { useDirectTonPayment } from '@/hooks/useDirectTonPayment';
-import { useTonPrice } from '@/hooks/useTonPrice';
 import { toast } from 'sonner';
+import { BoltIcon, UsdtIcon, TonIcon, EthIcon, ViralIcon } from '@/components/ui/currency-icons';
 import serverOfferBanner from '@/assets/server-offer-banner.png';
 
 interface PremiumServer {
@@ -20,8 +19,7 @@ interface PremiumServer {
   ethPerDay: number;
   viralPerDay: number;
   icon: React.ElementType;
-  gradient: string;
-  borderColor: string;
+  tier: 'legendary';
 }
 
 const premiumServers: PremiumServer[] = [
@@ -36,8 +34,7 @@ const premiumServers: PremiumServer[] = [
     ethPerDay: 0.005,
     viralPerDay: 5000,
     icon: Crown,
-    gradient: 'from-amber-500/20 to-yellow-500/20',
-    borderColor: 'border-amber-500/40'
+    tier: 'legendary'
   },
   {
     id: 'mythic-1',
@@ -49,14 +46,20 @@ const premiumServers: PremiumServer[] = [
     tonPerDay: 0.15,
     ethPerDay: 0.01,
     viralPerDay: 10000,
-    icon: Diamond,
-    gradient: 'from-purple-500/20 to-pink-500/20',
-    borderColor: 'border-purple-500/40'
+    icon: Gem,
+    tier: 'legendary'
   }
 ];
 
+const tierColors = {
+  legendary: 'from-amber-500/20 to-amber-500/5 border-amber-500/30',
+};
+
+const tierIconColors = {
+  legendary: 'text-amber-500 bg-amber-500/10',
+};
+
 const generateRandomGift = (): number => {
-  // Random gift between $50 and $999
   const weights = [
     { min: 50, max: 100, probability: 0.5 },
     { min: 100, max: 300, probability: 0.3 },
@@ -85,7 +88,6 @@ const PremiumServerOffer: React.FC<PremiumServerOfferProps> = ({ showBanner = tr
   const [selectedServer, setSelectedServer] = useState<string | null>(null);
   const [wonGift, setWonGift] = useState<number | null>(null);
   const { sendDirectPayment, isProcessing, isWalletConnected } = useDirectTonPayment();
-  const { formatUsd } = useTonPrice();
 
   const handlePurchase = async (server: PremiumServer) => {
     if (!isWalletConnected) {
@@ -97,7 +99,7 @@ const PremiumServerOffer: React.FC<PremiumServerOfferProps> = ({ showBanner = tr
     
     const success = await sendDirectPayment({
       amount: server.price,
-      description: `Premium Server - ${server.name} + Mystery Gift`,
+      description: `${server.name} Server + Mystery Gift`,
       productType: 'server_hosting',
       productId: server.id,
       serverName: server.name
@@ -106,14 +108,7 @@ const PremiumServerOffer: React.FC<PremiumServerOfferProps> = ({ showBanner = tr
     if (success) {
       const gift = generateRandomGift();
       setWonGift(gift);
-      toast.success(
-        <div className="flex flex-col gap-1">
-          <span className="font-bold">🎉 Server purchased!</span>
-          <span className="text-emerald-400">You won a ${gift} bonus gift!</span>
-        </div>
-      );
-      
-      // Reset after 3 seconds
+      toast.success(`Server purchased! You won a $${gift} bonus gift!`);
       setTimeout(() => setWonGift(null), 3000);
     }
     
@@ -121,7 +116,7 @@ const PremiumServerOffer: React.FC<PremiumServerOfferProps> = ({ showBanner = tr
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {/* Banner */}
       {showBanner && (
         <motion.div
@@ -131,22 +126,9 @@ const PremiumServerOffer: React.FC<PremiumServerOfferProps> = ({ showBanner = tr
         >
           <img 
             src={serverOfferBanner} 
-            alt="Premium Server Offer"
+            alt="Server Offer"
             className="w-full h-auto aspect-[16/9] object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-background/80 to-transparent" />
-          <div className="absolute bottom-4 left-4 right-4">
-            <Badge className="bg-primary text-primary-foreground mb-2">
-              <Sparkles className="w-3 h-3 mr-1" />
-              LIMITED OFFER
-            </Badge>
-            <h2 className="text-xl font-bold text-white">
-              Buy Server, Win Gift up to $999!
-            </h2>
-            <p className="text-sm text-white/80">
-              Premium servers 50-100 TON with random bonus
-            </p>
-          </div>
         </motion.div>
       )}
 
@@ -155,107 +137,105 @@ const PremiumServerOffer: React.FC<PremiumServerOfferProps> = ({ showBanner = tr
         <motion.div
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
-          className="p-4 rounded-xl bg-gradient-to-r from-emerald-500/20 to-green-500/20 border border-emerald-500/40 text-center"
+          className="p-4 rounded-xl bg-gradient-to-r from-primary/20 to-primary/10 border border-primary/30 text-center"
         >
-          <Gift className="w-10 h-10 text-emerald-400 mx-auto mb-2 animate-bounce" />
-          <p className="text-lg font-bold text-emerald-400">
-            🎁 You Won ${wonGift}!
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Added to your account balance
-          </p>
+          <Gift className="w-8 h-8 text-primary mx-auto mb-2" />
+          <p className="text-lg font-bold text-primary">You Won ${wonGift}!</p>
+          <p className="text-xs text-muted-foreground">Added to your balance</p>
         </motion.div>
       )}
 
-      {/* Server Cards */}
-      <div className="space-y-4">
+      {/* Server Cards - Same design as MiningServers page */}
+      <div className="space-y-3">
         {premiumServers.map((server, index) => {
-          const ServerIcon = server.icon;
+          const Icon = server.icon;
           const isSelected = selectedServer === server.id;
-          
+
           return (
             <motion.div
               key={server.id}
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.1 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.05 }}
+              className={`p-4 rounded-2xl border transition-all duration-200 bg-gradient-to-br ${tierColors[server.tier]} hover:scale-[1.01] cursor-pointer relative`}
+              onClick={() => !isProcessing && handlePurchase(server)}
             >
-              <Card className={`relative overflow-hidden border-2 ${server.borderColor} bg-gradient-to-br ${server.gradient} transition-all duration-300 hover:shadow-xl`}>
-                {/* Gift Badge */}
-                <div className="absolute top-3 right-3">
-                  <Badge className="bg-emerald-500 text-white animate-pulse">
-                    <Gift className="w-3 h-3 mr-1" />
-                    +$50-999
-                  </Badge>
+              {/* Gift Badge */}
+              <div className="absolute top-3 right-3">
+                <Badge className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5">
+                  <Gift className="w-3 h-3 mr-1" />
+                  +$50-999 GIFT
+                </Badge>
+              </div>
+
+              {/* Server Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tierIconColors[server.tier]}`}>
+                  <Icon className="w-6 h-6" />
                 </div>
-
-                <CardContent className="p-5">
-                  <div className="flex items-start gap-4">
-                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${server.gradient} border ${server.borderColor} flex items-center justify-center`}>
-                      <ServerIcon className="w-7 h-7 text-primary" />
-                    </div>
-                    
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg">{server.name}</h3>
-                      <p className="text-xs text-muted-foreground mb-2">{server.hashRate} Hash Rate</p>
-                      <div className="grid grid-cols-3 gap-1 text-[10px] text-muted-foreground">
-                        <span>+{server.boltPerDay.toLocaleString()} BOLT</span>
-                        <span>${server.usdtPerDay} USDT</span>
-                        <span>+{server.tonPerDay} TON</span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-1 text-[10px] text-muted-foreground mt-1">
-                        <span>+{server.ethPerDay} ETH</span>
-                        <span>+{server.viralPerDay.toLocaleString()} VIRAL</span>
-                      </div>
-                    </div>
-                    
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-primary">
-                        {server.price} TON
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {formatUsd(server.price)}
-                      </div>
-                    </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-semibold text-foreground">{server.name}</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-medium">
+                      MEGA OFFER
+                    </span>
                   </div>
+                  <p className="text-xs text-muted-foreground">{server.hashRate} Hash Rate</p>
+                </div>
+                
+                {/* Price */}
+                <div className="text-right">
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/20">
+                    <TonIcon size={18} />
+                    <span className="text-sm font-semibold text-sky-500">{server.price}</span>
+                  </div>
+                </div>
+              </div>
 
-                  <Button
-                    onClick={() => handlePurchase(server)}
-                    disabled={isProcessing && isSelected}
-                    className="w-full mt-4 h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-                  >
-                    {isProcessing && isSelected ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                        Processing...
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2">
-                        <Server className="w-4 h-4" />
-                        Buy + Get Mystery Gift
-                      </div>
-                    )}
-                  </Button>
-                </CardContent>
-              </Card>
+              {/* Daily Earnings Grid - Same as MiningServers */}
+              <div className="grid grid-cols-5 gap-1.5">
+                <div className="p-2 rounded-lg bg-background/60 backdrop-blur-sm text-center">
+                  <BoltIcon size={14} className="mx-auto mb-0.5" />
+                  <p className="text-[11px] font-bold text-yellow-500">+{server.boltPerDay.toLocaleString()}</p>
+                </div>
+                <div className="p-2 rounded-lg bg-background/60 backdrop-blur-sm text-center">
+                  <UsdtIcon size={14} className="mx-auto mb-0.5" />
+                  <p className="text-[11px] font-bold text-emerald-500">${server.usdtPerDay.toFixed(2)}</p>
+                </div>
+                <div className="p-2 rounded-lg bg-background/60 backdrop-blur-sm text-center">
+                  <TonIcon size={14} className="mx-auto mb-0.5" />
+                  <p className="text-[11px] font-bold text-sky-500">+{server.tonPerDay.toFixed(3)}</p>
+                </div>
+                <div className="p-2 rounded-lg bg-background/60 backdrop-blur-sm text-center">
+                  <EthIcon size={14} className="mx-auto mb-0.5" />
+                  <p className="text-[11px] font-bold text-indigo-500">+{server.ethPerDay.toFixed(5)}</p>
+                </div>
+                <div className="p-2 rounded-lg bg-background/60 backdrop-blur-sm text-center">
+                  <ViralIcon size={14} className="mx-auto mb-0.5" />
+                  <p className="text-[11px] font-bold text-purple-500">+{server.viralPerDay}</p>
+                </div>
+              </div>
+
+              {/* Loading indicator */}
+              {isProcessing && isSelected && (
+                <div className="absolute inset-0 bg-background/50 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                  <div className="w-6 h-6 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+                </div>
+              )}
             </motion.div>
           );
         })}
       </div>
 
-      {/* Info Section */}
-      <Card className="p-4 bg-primary/5 border-primary/20">
-        <div className="flex items-start gap-3">
-          <Gift className="w-6 h-6 text-primary flex-shrink-0 mt-0.5" />
-          <div>
-            <h4 className="font-semibold text-sm">Mystery Gift Included</h4>
-            <p className="text-xs text-muted-foreground mt-1">
-              Every purchase includes a random bonus gift worth $50 to $999! 
-              The gift is instantly added to your account balance.
-            </p>
-          </div>
+      {/* Info */}
+      <div className="p-3 rounded-xl bg-primary/5 border border-primary/20">
+        <div className="flex items-center gap-2">
+          <Gift className="w-5 h-5 text-primary flex-shrink-0" />
+          <p className="text-xs text-muted-foreground">
+            Every purchase includes a random bonus gift worth $50 to $999
+          </p>
         </div>
-      </Card>
+      </div>
     </div>
   );
 };
