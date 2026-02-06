@@ -198,7 +198,7 @@ const Index = () => {
         {/* Server Mega Offer Banner */}
         <FadeUp delay={0.05}>
           <motion.button
-            onClick={() => handleNavigate('/mining-servers')}
+            onClick={() => handleNavigate('/server-store')}
             whileTap={{ scale: 0.98 }}
             whileHover={{ scale: 1.01 }}
             className="w-full overflow-hidden rounded-2xl relative"
