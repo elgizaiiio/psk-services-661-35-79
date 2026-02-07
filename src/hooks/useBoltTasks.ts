@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
+import { useOptionalUserContext } from '@/contexts/UserContext';
 import { BoltTask, BoltCompletedTask } from '@/types/bolt';
 import { getTodayUTCDate } from '@/lib/boltTownPoints';
 
@@ -44,11 +45,15 @@ const addBoltTownTaskPoints = async (userId: string) => {
 export const useBoltTasks = () => {
   const { user: telegramUser } = useTelegramAuth();
   const { user: boltUser, refreshUser } = useBoltMining(telegramUser);
+  const userContext = useOptionalUserContext();
 
   const [tasks, setTasks] = useState<BoltTask[]>([]);
   const [completedTasks, setCompletedTasks] = useState<BoltCompletedTask[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Use completed task IDs from context if available
+  const contextCompletedIds = userContext?.completedTaskIds || [];
 
   const loadTasks = useCallback(async () => {
     try {
@@ -226,11 +231,16 @@ export const useBoltTasks = () => {
     }
   }, [boltUser, refreshTasks, refreshUser]);
 
-  // Filter out completed tasks - relies only on backend data
+  // Filter out completed tasks - use context data if available, otherwise backend data
   const getAvailableTasks = useCallback(() => {
-    const completedIds = new Set(completedTasks.map(c => c.task_id));
+    // Prefer context completed IDs for instant UI updates
+    const completedIds = new Set(
+      contextCompletedIds.length > 0 
+        ? contextCompletedIds 
+        : completedTasks.map(c => c.task_id)
+    );
     return tasks.filter(task => !completedIds.has(task.id));
-  }, [tasks, completedTasks]);
+  }, [tasks, completedTasks, contextCompletedIds]);
 
   useEffect(() => {
     const loadAllData = async () => {

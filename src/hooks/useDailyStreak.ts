@@ -1,113 +1,43 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useTelegramAuth } from '@/hooks/useTelegramAuth';
+import { useOptionalUserContext } from '@/contexts/UserContext';
 
 // Rewards increase each day up to day 7, then reset
 const STREAK_REWARDS = [5, 10, 15, 25, 35, 50, 75];
 
-interface DailyLoginReward {
-  id: string;
-  user_id: string;
-  streak_day: number;
-  reward_claimed: number;
-  claimed_at: string;
-}
-
 export const useDailyStreak = () => {
-  const { user: telegramUser } = useTelegramAuth();
+  // Use centralized context if available
+  const userContext = useOptionalUserContext();
   
-  const [userId, setUserId] = useState<string | null>(null);
-  const [currentStreak, setCurrentStreak] = useState(0);
-  const [canClaim, setCanClaim] = useState(false);
-  const [lastClaimDate, setLastClaimDate] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const userId = userContext?.userId || null;
+  const contextStreakData = userContext?.streakData;
+  
+  // Local state for claiming and optimistic updates
   const [claiming, setClaiming] = useState(false);
+  const [localStreak, setLocalStreak] = useState<{
+    currentStreak: number;
+    canClaim: boolean;
+    lastClaimDate: string | null;
+  } | null>(null);
 
-  // Get user ID from telegram user
-  useEffect(() => {
-    const fetchUserId = async () => {
-      if (!telegramUser?.id) {
-        setLoading(false);
-        return;
-      }
-      
-      try {
-        const { data } = await supabase
-          .from('bolt_users')
-          .select('id')
-          .eq('telegram_id', telegramUser.id)
-          .maybeSingle();
-        
-        if (data) {
-          setUserId(data.id);
-        } else {
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error('Error fetching user ID:', err);
-        setLoading(false);
-      }
-    };
-    
-    fetchUserId();
-  }, [telegramUser?.id]);
+  // Use context data or local override
+  const streakData = localStreak || contextStreakData;
+  const currentStreak = streakData?.currentStreak || 0;
+  const canClaim = streakData?.canClaim ?? false;
+  const lastClaimDate = streakData?.lastClaimDate || null;
+  const loading = userContext?.isLoading ?? true;
 
   const getTodayDate = () => {
     return new Date().toISOString().split('T')[0];
   };
 
-  const getYesterdayDate = () => {
-    const yesterday = new Date();
-    yesterday.setDate(yesterday.getDate() - 1);
-    return yesterday.toISOString().split('T')[0];
-  };
-
   const loadStreakData = useCallback(async () => {
-    if (!userId) return;
-
-    try {
-      setLoading(true);
-      
-      // Get the most recent claim
-      const { data, error } = await supabase
-        .from('daily_login_rewards')
-        .select('*')
-        .eq('user_id', userId)
-        .order('claimed_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (error) throw error;
-
-      const lastClaim = data as unknown as DailyLoginReward | null;
-      const today = getTodayDate();
-      const yesterday = getYesterdayDate();
-
-      if (!lastClaim) {
-        setCurrentStreak(0);
-        setCanClaim(true);
-        setLastClaimDate(null);
-      } else {
-        const claimDate = new Date(lastClaim.claimed_at).toISOString().split('T')[0];
-        setLastClaimDate(claimDate);
-
-        if (claimDate === today) {
-          setCurrentStreak(lastClaim.streak_day);
-          setCanClaim(false);
-        } else if (claimDate === yesterday) {
-          setCurrentStreak(lastClaim.streak_day);
-          setCanClaim(true);
-        } else {
-          setCurrentStreak(0);
-          setCanClaim(true);
-        }
-      }
-    } catch (err) {
-      console.error('Error loading streak data:', err);
-    } finally {
-      setLoading(false);
+    // Data is now loaded via UserContext, this is just for manual refresh
+    if (userContext) {
+      userContext.refreshUser();
+      setLocalStreak(null); // Clear local override to use fresh context data
     }
-  }, [userId]);
+  }, [userContext]);
 
   const claimDailyReward = useCallback(async () => {
     if (!userId || !canClaim || claiming) return false;
@@ -150,10 +80,17 @@ export const useDailyStreak = () => {
 
       if (updateError) throw updateError;
 
-      // Refresh data
-      setCurrentStreak(nextDay);
-      setCanClaim(false);
-      setLastClaimDate(getTodayDate());
+      // Optimistic update via local state
+      setLocalStreak({
+        currentStreak: nextDay,
+        canClaim: false,
+        lastClaimDate: getTodayDate(),
+      });
+
+      // Update context balance if available
+      if (userContext) {
+        userContext.updateUserBalance(newBalance);
+      }
 
       return reward;
     } catch (err) {
@@ -162,7 +99,7 @@ export const useDailyStreak = () => {
     } finally {
       setClaiming(false);
     }
-  }, [userId, canClaim, claiming, currentStreak]);
+  }, [userId, canClaim, claiming, currentStreak, userContext]);
 
   // Claim with x2 bonus (after watching ad)
   const claimDailyRewardWithBonus = useCallback(async () => {
@@ -208,10 +145,17 @@ export const useDailyStreak = () => {
 
       if (updateError) throw updateError;
 
-      // Refresh data
-      setCurrentStreak(nextDay);
-      setCanClaim(false);
-      setLastClaimDate(getTodayDate());
+      // Optimistic update via local state
+      setLocalStreak({
+        currentStreak: nextDay,
+        canClaim: false,
+        lastClaimDate: getTodayDate(),
+      });
+
+      // Update context balance if available
+      if (userContext) {
+        userContext.updateUserBalance(newBalance);
+      }
 
       return reward;
     } catch (err) {
@@ -220,13 +164,7 @@ export const useDailyStreak = () => {
     } finally {
       setClaiming(false);
     }
-  }, [userId, canClaim, claiming, currentStreak]);
-
-  useEffect(() => {
-    if (userId) {
-      loadStreakData();
-    }
-  }, [userId, loadStreakData]);
+  }, [userId, canClaim, claiming, currentStreak, userContext]);
 
   const getNextReward = () => {
     const nextDay = (currentStreak % 7) + 1;
