@@ -9,6 +9,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-d
 import { HelmetProvider } from "react-helmet-async";
 import { TelegramTonConnectProvider } from "@/providers/TelegramTonConnectProvider";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { UserProvider } from "@/contexts/UserContext";
 import { useTelegramAuth } from "./hooks/useTelegramAuth";
 import { useReferralHandler } from "./hooks/useReferralHandler";
 import Index from "./pages/Index";
@@ -174,6 +175,7 @@ const App = () => (
         <Router>
           <TelegramTonConnectProvider>
             <LanguageProvider>
+              <UserProvider>
                 <TooltipProvider>
                   <Toaster />
                   <Sonner />
@@ -251,6 +253,7 @@ const App = () => (
                   } />
                 </Routes>
               </TooltipProvider>
+              </UserProvider>
             </LanguageProvider>
           </TelegramTonConnectProvider>
         </Router>

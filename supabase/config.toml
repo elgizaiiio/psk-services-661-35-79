@@ -74,3 +74,6 @@ verify_jwt = false
 
 [functions.bolt-town-daily-reset]
 verify_jwt = false
+
+[functions.get-user-dashboard]
+verify_jwt = false

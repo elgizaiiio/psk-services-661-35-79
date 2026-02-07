@@ -290,6 +290,7 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
 
   useEffect(() => { initializeUser(); }, [initializeUser]);
 
+  // Reduced polling interval from 1s to 5s for better performance
   useEffect(() => {
     if (!activeMiningSession) { setMiningProgress(null); return; }
     const update = () => {
@@ -298,7 +299,7 @@ export const useBoltMining = (telegramUser: TelegramUser | null) => {
       if (progress?.isComplete) completeMiningSession(activeMiningSession.id);
     };
     update();
-    const interval = setInterval(update, 1000);
+    const interval = setInterval(update, 5000); // Changed from 1000ms to 5000ms
     return () => clearInterval(interval);
   }, [activeMiningSession, getCurrentMiningProgress, completeMiningSession]);
 
