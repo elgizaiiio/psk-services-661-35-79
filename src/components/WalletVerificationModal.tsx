@@ -4,10 +4,10 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, X, Clock } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { getValidUntil, tonToNano } from '@/lib/ton-constants';
-import { usePromoSettings } from '@/hooks/usePromoSettings';
+
 
 interface WalletVerificationModalProps {
   open: boolean;
@@ -41,10 +41,8 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   const [showImage, setShowImage] = useState(true);
   
   // Use backend promo settings
-  const { isPromoActive: promoActive, timeRemaining } = usePromoSettings();
-  
-  // Dynamic verification fee based on promo status
-  const verificationFee = promoActive ? 3 : 0.5;
+  // Fixed withdrawal fee
+  const verificationFee = 3;
 
   // Reset state when modal opens
   useEffect(() => {
@@ -170,17 +168,11 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
             >
               {/* Security Image */}
               <div className="relative">
-                {promoActive ? (
-                  <img 
-                    src="/images/withdrawal-security.png" 
-                    alt="Withdrawal Security" 
-                    className="w-full h-auto rounded-t-lg"
-                  />
-                ) : (
-                  <div className="w-full h-32 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-t-lg flex items-center justify-center">
-                    <p className="text-lg font-bold text-foreground">Wallet Verification</p>
-                  </div>
-                )}
+                <img 
+                  src="/images/withdrawal-security.png" 
+                  alt="Withdrawal Security" 
+                  className="w-full h-auto rounded-t-lg"
+                />
                 <button 
                   onClick={handleClose} 
                   className="absolute top-2 right-2 p-1.5 rounded-full bg-black/50 text-white"
@@ -188,14 +180,6 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
                 >
                   <X className="w-5 h-5" />
                 </button>
-
-                {/* Countdown Timer - only show during promo */}
-                {promoActive && (
-                  <div className="absolute top-2 left-2 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive text-destructive-foreground text-sm font-bold">
-                    <Clock className="w-4 h-4" />
-                    <span>{formatCountdown(timeRemaining)}</span>
-                  </div>
-                )}
               </div>
 
               {/* Content */}
