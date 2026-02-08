@@ -13,7 +13,7 @@ import { BoltIcon, UsdtIcon, TonIcon, EthIcon, ViralIcon } from '@/components/ui
 import { UnifiedPaymentModal } from '@/components/payment/UnifiedPaymentModal';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
-import PremiumServerOffer from '@/components/servers/PremiumServerOffer';
+
 
 type MiningServer = {
   id: string;
@@ -29,18 +29,29 @@ type MiningServer = {
   tier: 'basic' | 'advanced' | 'elite' | 'legendary';
 };
 
-// Servers starting from 2 TON - no free/beginner servers
-// ETH yields increased slightly for better rewards
+// Servers from 2 TON up to 500 TON - with offers on 9-30 TON range
+// New ultra tier for 150-500 TON servers
 const servers: MiningServer[] = [
+  // Basic tier (no offers)
   { id: 'basic-1', name: 'Basic I', hashRate: '5 TH/s', boltPerDay: 250, usdtPerDay: 0.05, tonPerDay: 0, ethPerDay: 0.00005, viralPerDay: 50, priceTon: 2.0, icon: HardDrive, tier: 'basic' },
   { id: 'basic-2', name: 'Basic II', hashRate: '10 TH/s', boltPerDay: 500, usdtPerDay: 0.10, tonPerDay: 0, ethPerDay: 0.0001, viralPerDay: 100, priceTon: 3.0, icon: Database, tier: 'basic' },
   { id: 'pro-1', name: 'Advanced I', hashRate: '25 TH/s', boltPerDay: 1250, usdtPerDay: 0.25, tonPerDay: 0.005, ethPerDay: 0.00025, viralPerDay: 250, priceTon: 5.0, icon: Cloud, tier: 'advanced' },
+  // Offer range: 9-30 TON
   { id: 'pro-2', name: 'Advanced II', hashRate: '50 TH/s', boltPerDay: 2500, usdtPerDay: 0.50, tonPerDay: 0.01, ethPerDay: 0.0005, viralPerDay: 500, priceTon: 9.0, icon: Globe, tier: 'advanced' },
   { id: 'elite-1', name: 'Elite I', hashRate: '100 TH/s', boltPerDay: 5000, usdtPerDay: 1.00, tonPerDay: 0.02, ethPerDay: 0.001, viralPerDay: 1000, priceTon: 16.0, icon: Shield, tier: 'elite' },
   { id: 'elite-2', name: 'Elite II', hashRate: '200 TH/s', boltPerDay: 10000, usdtPerDay: 2.00, tonPerDay: 0.04, ethPerDay: 0.002, viralPerDay: 2000, priceTon: 30.0, icon: Layers, tier: 'elite' },
+  // Standard legendary (50-100 TON)
   { id: 'legendary-1', name: 'Legend', hashRate: '500 TH/s', boltPerDay: 25000, usdtPerDay: 5.00, tonPerDay: 0.08, ethPerDay: 0.005, viralPerDay: 5000, priceTon: 50.0, icon: Crown, tier: 'legendary' },
   { id: 'mythic-1', name: 'Mythic', hashRate: '1000 TH/s', boltPerDay: 60000, usdtPerDay: 12.00, tonPerDay: 0.15, ethPerDay: 0.01, viralPerDay: 10000, priceTon: 100.0, icon: Gem, tier: 'legendary' },
+  // Ultra tier (150-500 TON) - NEW
+  { id: 'ultra-1', name: 'Titan', hashRate: '2000 TH/s', boltPerDay: 120000, usdtPerDay: 25.00, tonPerDay: 0.35, ethPerDay: 0.025, viralPerDay: 25000, priceTon: 150.0, icon: Crown, tier: 'legendary' },
+  { id: 'ultra-2', name: 'Omega', hashRate: '3500 TH/s', boltPerDay: 200000, usdtPerDay: 45.00, tonPerDay: 0.60, ethPerDay: 0.045, viralPerDay: 45000, priceTon: 250.0, icon: Gem, tier: 'legendary' },
+  { id: 'ultra-3', name: 'Infinity', hashRate: '5000 TH/s', boltPerDay: 300000, usdtPerDay: 70.00, tonPerDay: 1.00, ethPerDay: 0.075, viralPerDay: 70000, priceTon: 350.0, icon: Crown, tier: 'legendary' },
+  { id: 'ultra-4', name: 'Quantum', hashRate: '8000 TH/s', boltPerDay: 500000, usdtPerDay: 120.00, tonPerDay: 1.80, ethPerDay: 0.120, viralPerDay: 120000, priceTon: 500.0, icon: Gem, tier: 'legendary' },
 ];
+
+// Servers with special offers (9-30 TON range)
+const serversWithOffers = ['pro-2', 'elite-1', 'elite-2'];
 
 const tierColors = {
   basic: 'from-slate-500/20 to-slate-500/5 border-slate-500/30',
@@ -266,8 +277,24 @@ const MiningServers = () => {
           </motion.div>
         )}
 
-        {/* Premium Server Offer Section */}
-        <PremiumServerOffer showBanner={true} />
+        {/* Offer Banner for 9-30 TON servers */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center">
+              <Gift className="w-6 h-6 text-orange-500" />
+            </div>
+            <div className="flex-1">
+              <h3 className="font-bold text-foreground">🔥 HOT OFFER!</h3>
+              <p className="text-xs text-muted-foreground">
+                Buy servers from 9-30 TON and get <span className="text-orange-500 font-semibold">+20% BONUS</span> on all daily yields!
+              </p>
+            </div>
+          </div>
+        </motion.div>
 
         {/* Server List */}
         <div className="space-y-3">
@@ -277,6 +304,7 @@ const MiningServers = () => {
             const owned = isOwned(server.id);
             const stock = getStock(server.id);
             const Icon = server.icon;
+            const hasOffer = serversWithOffers.includes(server.id);
 
             return (
               <motion.div
@@ -284,15 +312,24 @@ const MiningServers = () => {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className={`p-4 rounded-2xl border transition-all duration-200 ${
+                className={`p-4 rounded-2xl border transition-all duration-200 relative ${
                   owned 
                     ? `bg-gradient-to-br ${tierColors[server.tier]} ring-2 ring-primary/30` 
                     : stock.soldOut 
                       ? 'bg-muted/30 border-border opacity-50'
-                      : `bg-gradient-to-br ${tierColors[server.tier]} hover:scale-[1.01] cursor-pointer`
+                      : hasOffer
+                        ? `bg-gradient-to-br ${tierColors[server.tier]} ring-2 ring-orange-500/50 hover:scale-[1.01] cursor-pointer`
+                        : `bg-gradient-to-br ${tierColors[server.tier]} hover:scale-[1.01] cursor-pointer`
                 }`}
                 onClick={() => !owned && !stock.soldOut && handleBuyClick(server)}
               >
+                {/* Offer Badge */}
+                {hasOffer && !owned && !stock.soldOut && (
+                  <div className="absolute -top-2 -right-2 px-2 py-1 rounded-full bg-orange-500 text-white text-[10px] font-bold shadow-lg animate-pulse">
+                    +20% BONUS
+                  </div>
+                )}
+                
                 {/* Server Header */}
                 <div className="flex items-center gap-3 mb-4">
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${tierIconColors[server.tier]}`}>
