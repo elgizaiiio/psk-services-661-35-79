@@ -82,7 +82,7 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({
                     You won the monthly prize
                   </p>
                   <p className="text-4xl font-bold text-primary">
-                    $3,000 USDT
+                    $4,000 USDT
                   </p>
                 </div>
 
@@ -134,7 +134,7 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({
                   @{username}
                 </p>
                 <p className="text-primary text-xl font-bold">
-                  $3,000 USDT
+                  $4,000 USDT
                 </p>
               </div>
 
