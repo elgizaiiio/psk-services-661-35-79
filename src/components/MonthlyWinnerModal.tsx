@@ -4,6 +4,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { X, Clock } from 'lucide-react';
 import { usePromoSettings } from '@/hooks/usePromoSettings';
+import { useNavigate } from 'react-router-dom';
 
 interface MonthlyWinnerModalProps {
   isOpen: boolean;
@@ -25,6 +26,7 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({
   username = 'User',
 }) => {
   const [showWinner, setShowWinner] = useState(false);
+  const navigate = useNavigate();
   
   // Use backend promo settings
   const { timeRemaining } = usePromoSettings();
@@ -34,6 +36,11 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({
       setShowWinner(false);
     }
   }, [isOpen]);
+
+  const handleWithdrawNow = () => {
+    onClose();
+    navigate('/wallet');
+  };
 
   const handleShowWinner = () => {
     setShowWinner(true);
@@ -59,12 +66,11 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({
                 <X className="w-5 h-5" />
               </button>
 
-              {/* Winner Image */}
-              <img
-                src="/images/monthly-winner.png"
-                alt="Monthly Winner"
-                className="w-full h-auto"
-              />
+              {/* Winner Banner */}
+              <div className="w-full h-48 bg-gradient-to-br from-yellow-500/30 via-primary/20 to-orange-500/30 rounded-t-lg flex flex-col items-center justify-center gap-2">
+                <span className="text-6xl">🏆</span>
+                <p className="text-lg font-bold text-foreground">Monthly Winner</p>
+              </div>
 
               {/* Countdown Timer */}
               <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive text-destructive-foreground text-sm font-bold">
@@ -91,7 +97,7 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({
                 </p>
 
                 <div className="flex flex-col gap-2">
-                  <Button onClick={onClose} className="w-full" size="lg">
+                  <Button onClick={handleWithdrawNow} className="w-full" size="lg">
                     Withdraw Now
                   </Button>
                   <Button
