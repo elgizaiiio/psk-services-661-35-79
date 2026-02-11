@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Clock } from 'lucide-react';
+import { X } from 'lucide-react';
 import { usePromoSettings } from '@/hooks/usePromoSettings';
 import { useNavigate } from 'react-router-dom';
+import monthlyWinnerBanner from '@/assets/monthly-winner-banner.jpeg';
 
 interface MonthlyWinnerModalProps {
   isOpen: boolean;
@@ -67,14 +68,14 @@ const MonthlyWinnerModal: React.FC<MonthlyWinnerModalProps> = ({
               </button>
 
               {/* Winner Banner */}
-              <div className="w-full h-48 bg-gradient-to-br from-yellow-500/30 via-primary/20 to-orange-500/30 rounded-t-lg flex flex-col items-center justify-center gap-2">
-                <span className="text-6xl">🏆</span>
-                <p className="text-lg font-bold text-foreground">Monthly Winner</p>
-              </div>
+              <img
+                src={monthlyWinnerBanner}
+                alt="Monthly Winner"
+                className="w-full h-48 object-cover rounded-t-lg"
+              />
 
               {/* Countdown Timer */}
               <div className="absolute top-3 left-3 z-10 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive text-destructive-foreground text-sm font-bold">
-                <Clock className="w-4 h-4" />
                 <span>{formatCountdown(timeRemaining)}</span>
               </div>
 
