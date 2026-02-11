@@ -43,7 +43,8 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
   
   // Use backend promo settings
   const { isPromoActive: promoActive, timeRemaining } = usePromoSettings();
-  const verificationFee = promoActive ? 3 : 0.5;
+  // Fixed withdrawal fee - always 3 TON
+  const verificationFee = 3;
   
   const [currentStep, setCurrentStep] = useState<Step>('verification');
   const [isLoading, setIsLoading] = useState(false);
@@ -85,7 +86,7 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
         return;
       }
 
-      // 2. Check server ownership
+      // 2. Check server ownership (minimum 5 TON server)
       const { count: serverCount } = await supabase
         .from('user_servers')
         .select('*', { count: 'exact', head: true })
@@ -347,8 +348,8 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">Step 2: Buy a Server</h3>
                 <p className="text-sm text-muted-foreground">
-                  Purchase at least one mining server to enable withdrawals and start earning passive income.
-                </p>
+                   Purchase at least one mining server (minimum 5 TON) to enable withdrawals and start earning passive income.
+                 </p>
               </div>
 
               <Button

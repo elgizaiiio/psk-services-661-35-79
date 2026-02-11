@@ -40,8 +40,7 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   const [isVerified, setIsVerified] = useState(false);
   const [showImage, setShowImage] = useState(true);
   
-  // Use backend promo settings
-  // Fixed withdrawal fee
+  // Fixed withdrawal fee - always 3 TON
   const verificationFee = 3;
 
   // Reset state when modal opens
