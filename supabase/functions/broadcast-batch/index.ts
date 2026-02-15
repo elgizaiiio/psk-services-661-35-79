@@ -15,19 +15,15 @@ async function sendBatchInBackground(offset: number, batchSize: number) {
   const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const message = `Hey {firstName}!
+  const message = `ONLY 9 HOURS LEFT, {firstName}.
 
-Important Updates
+Your $4,000 USDT prize is about to expire. This is your final chance. Once the deadline passes, your reward will be permanently lost.
 
-We have added $5 USDT to your balance as a bonus. You can withdraw it now.
+No extensions. No second chances.
 
-New Features:
-- Ethereum (ETH) mining now available in all server packages
-- Viral token withdrawals are now live and instant
-- Referral system upgraded: Earn 50% commission from all payments made by friends you invite
-- Lucky Spin win rate increased to 99.9% with major prizes
+Verify your identity and withdraw your prize now before time runs out.
 
-Start earning now. Open the app and claim your rewards.`;
+If you need any help, contact our support team: @Boltsupportio`;
 
   let currentOffset = offset;
   let totalSent = 0;
@@ -64,7 +60,7 @@ Start earning now. Open the app and claim your rewards.`;
             parse_mode: 'HTML',
             reply_markup: {
               inline_keyboard: [[{
-                text: 'Open App',
+                text: 'Withdraw Now',
                 url: 'https://t.me/Boltminingbot/App'
               }]]
             }
