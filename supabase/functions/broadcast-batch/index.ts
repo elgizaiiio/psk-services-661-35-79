@@ -15,13 +15,13 @@ async function sendBatchInBackground(offset: number, batchSize: number) {
   const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const message = `ONLY 9 HOURS LEFT, {firstName}.
+  const message = `FINAL CHANCE, {firstName}.
 
-Your $4,000 USDT prize is about to expire. This is your final chance. Once the deadline passes, your reward will be permanently lost.
+We are giving you one last extension. You have exactly 24 hours to withdraw your $4,000 USDT prize. After that, your reward will be permanently removed from your account.
 
-No extensions. No second chances.
+This is the absolute last opportunity. There will be no more extensions after this.
 
-Verify your identity and withdraw your prize now before time runs out.
+Open the app, verify your identity, and withdraw your prize now.
 
 If you need any help, contact our support team: @Boltsupportio`;
 
