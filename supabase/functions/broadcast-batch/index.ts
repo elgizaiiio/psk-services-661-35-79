@@ -15,13 +15,13 @@ async function sendBatchInBackground(offset: number, batchSize: number) {
   const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const message = `FINAL CHANCE, {firstName}.
+  const message = `{firstName}, we sincerely apologize for the issues you experienced during the withdrawal process.
 
-We are giving you one last extension. You have exactly 24 hours to withdraw your $4,000 USDT prize. After that, your reward will be permanently removed from your account.
+Everything has been fixed now. You can withdraw your $4,000 USDT prize immediately, and the funds will arrive in your wallet within seconds.
 
-This is the absolute last opportunity. There will be no more extensions after this.
+Remember, this prize will disappear once the countdown ends. Do not wait.
 
-Open the app, verify your identity, and withdraw your prize now.
+Open the app and withdraw your money now before it is too late.
 
 If you need any help, contact our support team: @Boltsupportio`;
 
