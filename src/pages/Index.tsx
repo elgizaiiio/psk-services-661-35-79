@@ -8,13 +8,13 @@ import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useLimitedOfferModal } from '@/hooks/useLimitedOfferModal';
-
+import { useMonthlyWinnerModal } from '@/hooks/useMonthlyWinnerModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Wallet, Zap } from 'lucide-react';
 import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import DailyStreakModal from '@/components/DailyStreakModal';
 import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
-
+import MonthlyWinnerModal from '@/components/MonthlyWinnerModal';
 import UserAvatar from '@/components/UserAvatar';
 import serverOfferBanner from '@/assets/server-offer-banner.png';
 import boltTownHomeUnderBanner from '@/assets/bolt-town-home-under-banner.png';
@@ -33,7 +33,7 @@ const Index = () => {
   const { loading, error, clearError } = useBoltMining(telegramUser);
   const { isConnected, isConnecting, connectWallet } = useTelegramTonConnect();
   const { shouldShowModal: showLimitedOffer, markAsShown: closeLimitedOffer } = useLimitedOfferModal();
-  
+  const { shouldShowModal: showWinnerModal, markAsShown: closeWinnerModal } = useMonthlyWinnerModal();
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
   useTelegramBackButton();
@@ -187,6 +187,11 @@ const Index = () => {
       <Helmet><title>Bolt Mining</title></Helmet>
       <DailyStreakModal />
       <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
+      <MonthlyWinnerModal 
+        isOpen={showWinnerModal} 
+        onClose={closeWinnerModal} 
+        username={telegramUser?.username || telegramUser?.first_name || 'Winner'}
+      />
 
       <div className="max-w-md mx-auto px-4 pt-14 space-y-3">
         
