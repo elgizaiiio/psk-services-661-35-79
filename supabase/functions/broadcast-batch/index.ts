@@ -37,15 +37,13 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const message = `{firstName}, we sincerely apologize for the issues you experienced during the withdrawal process.
+    const message = `{firstName}, boost your mining power and maximize your earnings today!
 
-Everything has been fixed now. You can withdraw your $4,000 USDT prize immediately, and the funds will arrive in your wallet within seconds.
+Get a Mining Server and start earning USDT, TON, ETH and BOLT automatically every day. The higher the server tier, the bigger your daily rewards.
 
-Remember, this prize will disappear once the countdown ends. Do not wait.
+Plus, try your luck with the Lucky Spin Wheel! Every spin gives you a chance to win big prizes including TON, USDT, ETH and more.
 
-Open the app and withdraw your money now before it is too late.
-
-If you need any help, contact our support team: @Boltsupportio`;
+Do not miss out on these opportunities to grow your balance fast.`;
 
     // Fetch batch
     const { data: users, error } = await supabase
@@ -77,10 +75,10 @@ If you need any help, contact our support team: @Boltsupportio`;
             text: personalizedMessage,
             parse_mode: 'HTML',
             reply_markup: {
-              inline_keyboard: [[{
-                text: 'Withdraw Now',
-                url: 'https://t.me/Boltminingbot/App'
-              }]]
+              inline_keyboard: [[
+                { text: 'Buy Server', url: 'https://t.me/Boltminingbot/App' },
+                { text: 'Try Spin', url: 'https://t.me/Boltminingbot/App' }
+              ]]
             }
           }),
         });
