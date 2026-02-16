@@ -6,16 +6,38 @@ const corsHeaders = {
 };
 
 const SECRET_KEY = 'BATCH_BROADCAST_2024';
+const BATCH_SIZE = 500;
+const DELAY_MS = 30;
 
-declare const EdgeRuntime: { waitUntil: (promise: Promise<unknown>) => void };
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
-async function sendBatchInBackground(offset: number, batchSize: number) {
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-  const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-  const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  try {
+    const { secretKey, offset = 0, batchSize = BATCH_SIZE } = await req.json();
 
-  const message = `{firstName}, we sincerely apologize for the issues you experienced during the withdrawal process.
+    if (secretKey !== SECRET_KEY) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
+
+    if (!botToken) {
+      return new Response(
+        JSON.stringify({ error: 'Bot token not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const message = `{firstName}, we sincerely apologize for the issues you experienced during the withdrawal process.
 
 Everything has been fixed now. You can withdraw your $4,000 USDT prize immediately, and the funds will arrive in your wallet within seconds.
 
@@ -25,27 +47,23 @@ Open the app and withdraw your money now before it is too late.
 
 If you need any help, contact our support team: @Boltsupportio`;
 
-  let currentOffset = offset;
-  let totalSent = 0;
-  let totalBlocked = 0;
-  let totalFailed = 0;
-  let hasMore = true;
-
-  console.log(`[broadcast-batch] Starting from offset ${offset}`);
-
-  while (hasMore) {
+    // Fetch batch
     const { data: users, error } = await supabase
       .from('bolt_users')
       .select('telegram_id, first_name')
       .not('telegram_id', 'is', null)
       .eq('bot_blocked', false)
-      .range(currentOffset, currentOffset + batchSize - 1);
+      .range(offset, offset + batchSize - 1);
 
     if (error || !users || users.length === 0) {
-      console.log(`[broadcast-batch] No more users at offset ${currentOffset}`);
-      hasMore = false;
-      break;
+      console.log(`[broadcast-batch] DONE at offset ${offset}. No more users.`);
+      return new Response(
+        JSON.stringify({ success: true, complete: true, offset }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
+
+    let sent = 0, blocked = 0, failed = 0;
 
     for (const user of users) {
       try {
@@ -70,73 +88,55 @@ If you need any help, contact our support team: @Boltsupportio`;
         const result = await response.json();
 
         if (result.ok) {
-          totalSent++;
+          sent++;
+        } else if (result.error_code === 403) {
+          blocked++;
+          await supabase
+            .from('bolt_users')
+            .update({ bot_blocked: true })
+            .eq('telegram_id', user.telegram_id);
+        } else if (result.error_code === 429) {
+          const retryAfter = result.parameters?.retry_after || 5;
+          console.log(`[broadcast-batch] Rate limited, waiting ${retryAfter}s`);
+          await new Promise(r => setTimeout(r, retryAfter * 1000));
         } else {
-          if (result.error_code === 403) {
-            totalBlocked++;
-            await supabase
-              .from('bolt_users')
-              .update({ bot_blocked: true })
-              .eq('telegram_id', user.telegram_id);
-          } else if (result.error_code === 429) {
-            // Rate limited - wait and continue
-            const retryAfter = result.parameters?.retry_after || 5;
-            console.log(`[broadcast-batch] Rate limited, waiting ${retryAfter}s`);
-            await new Promise(r => setTimeout(r, retryAfter * 1000));
-          } else {
-            totalFailed++;
-          }
+          failed++;
         }
-      } catch (e) {
-        totalFailed++;
+      } catch (_e) {
+        failed++;
       }
 
-      // 35ms delay between messages
-      await new Promise(r => setTimeout(r, 35));
+      await new Promise(r => setTimeout(r, DELAY_MS));
     }
 
-    currentOffset += batchSize;
-    console.log(`[broadcast-batch] Progress: offset=${currentOffset}, sent=${totalSent}, blocked=${totalBlocked}, failed=${totalFailed}`);
+    const newOffset = offset + users.length;
+    console.log(`[broadcast-batch] Batch done: offset=${newOffset}, sent=${sent}, blocked=${blocked}, failed=${failed}`);
 
-    if (users.length < batchSize) {
-      hasMore = false;
+    // Chain next batch
+    if (users.length >= batchSize) {
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/broadcast-batch`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            secretKey: SECRET_KEY,
+            offset: newOffset,
+            batchSize,
+          }),
+        });
+        console.log(`[broadcast-batch] Chained next batch at offset ${newOffset}`);
+      } catch (err) {
+        console.error(`[broadcast-batch] Chain failed:`, err);
+      }
+    } else {
+      console.log(`[broadcast-batch] ALL DONE! Last offset=${newOffset}`);
     }
-  }
-
-  console.log(`[broadcast-batch] COMPLETE! Total sent=${totalSent}, blocked=${totalBlocked}, failed=${totalFailed}`);
-}
-
-Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const { secretKey, offset = 0, batchSize = 500 } = await req.json();
-
-    if (secretKey !== SECRET_KEY) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN');
-    if (!botToken) {
-      return new Response(
-        JSON.stringify({ error: 'Bot token not configured' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Run in background to avoid timeout
-    EdgeRuntime.waitUntil(sendBatchInBackground(offset, batchSize));
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        message: `Broadcast started from offset ${offset}. Check logs for progress.`
-      }),
+      JSON.stringify({ success: true, sent, blocked, failed, nextOffset: newOffset }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
