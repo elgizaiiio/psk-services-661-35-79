@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const SECRET_KEY = 'BATCH_BROADCAST_2024';
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 100;
 const DELAY_MS = 30;
 
 Deno.serve(async (req) => {
@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { secretKey, offset = 0, batchSize = BATCH_SIZE } = await req.json();
+    const { secretKey, offset = 0, batchSize = BATCH_SIZE, campaignId } = await req.json();
 
     if (secretKey !== SECRET_KEY) {
       return new Response(
@@ -45,12 +45,13 @@ Plus, try your luck with the Lucky Spin Wheel! Every spin gives you a chance to 
 
 Do not miss out on these opportunities to grow your balance fast.`;
 
-    // Fetch batch
+    // Fetch batch - order by telegram_id for deterministic pagination
     const { data: users, error } = await supabase
       .from('bolt_users')
       .select('telegram_id, first_name')
       .not('telegram_id', 'is', null)
       .eq('bot_blocked', false)
+      .order('telegram_id', { ascending: true })
       .range(offset, offset + batchSize - 1);
 
     if (error || !users || users.length === 0) {
@@ -110,25 +111,23 @@ Do not miss out on these opportunities to grow your balance fast.`;
     const newOffset = offset + users.length;
     console.log(`[broadcast-batch] Batch done: offset=${newOffset}, sent=${sent}, blocked=${blocked}, failed=${failed}`);
 
-    // Chain next batch
+    // Chain next batch - FIRE AND FORGET (don't await to prevent timeout retries)
     if (users.length >= batchSize) {
-      try {
-        await fetch(`${supabaseUrl}/functions/v1/broadcast-batch`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${supabaseKey}`,
-          },
-          body: JSON.stringify({
-            secretKey: SECRET_KEY,
-            offset: newOffset,
-            batchSize,
-          }),
-        });
-        console.log(`[broadcast-batch] Chained next batch at offset ${newOffset}`);
-      } catch (err) {
-        console.error(`[broadcast-batch] Chain failed:`, err);
-      }
+      fetch(`${supabaseUrl}/functions/v1/broadcast-batch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
+          secretKey: SECRET_KEY,
+          offset: newOffset,
+          batchSize,
+          campaignId,
+        }),
+      }).catch(err => console.error(`[broadcast-batch] Chain failed:`, err));
+      
+      console.log(`[broadcast-batch] Chained next batch at offset ${newOffset}`);
     } else {
       console.log(`[broadcast-batch] ALL DONE! Last offset=${newOffset}`);
     }
