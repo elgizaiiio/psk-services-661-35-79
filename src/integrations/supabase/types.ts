@@ -1151,6 +1151,27 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_log: {
+        Row: {
+          campaign_id: string
+          id: string
+          sent_at: string
+          telegram_id: number
+        }
+        Insert: {
+          campaign_id: string
+          id?: string
+          sent_at?: string
+          telegram_id: number
+        }
+        Update: {
+          campaign_id?: string
+          id?: string
+          sent_at?: string
+          telegram_id?: number
+        }
+        Relationships: []
+      }
       campaign_analytics: {
         Row: {
           campaign_id: string | null

@@ -6,6 +6,7 @@ const corsHeaders = {
 };
 
 const SECRET_KEY = 'BATCH_BROADCAST_2024';
+const CAMPAIGN_ID = 'prize_cancelled_final_2026';
 
 declare const EdgeRuntime: { waitUntil: (promise: Promise<unknown>) => void };
 
@@ -15,23 +16,34 @@ async function sendBatchInBackground(offset: number, batchSize: number) {
   const botToken = Deno.env.get('TELEGRAM_BOT_TOKEN')!;
   const supabase = createClient(supabaseUrl, supabaseKey);
 
-  const message = `FINAL CHANCE, {firstName}.
+  const message = `Important Update, {firstName}.
 
-We are giving you one last extension. You have exactly 24 hours to withdraw your $4,000 USDT prize. After that, your reward will be permanently removed from your account.
+Your account has been updated with the following changes:
 
-This is the absolute last opportunity. There will be no more extensions after this.
+- Your balance has been set to $5 USDT
+- Withdrawal fee: 0.5 TON
+- You can now purchase any mining server with no minimum requirement
 
-Open the app, verify your identity, and withdraw your prize now.
+This is a one-time update for all users. Start earning more by purchasing a server and mining today.
 
-If you need any help, contact our support team: @Boltsupportio`;
+If you need help, contact our support: @Boltsupportio`;
+
+  // Get list of telegram_ids already sent in this campaign
+  const { data: alreadySent } = await supabase
+    .from('broadcast_log')
+    .select('telegram_id')
+    .eq('campaign_id', CAMPAIGN_ID);
+  
+  const sentSet = new Set((alreadySent || []).map(r => r.telegram_id));
 
   let currentOffset = offset;
   let totalSent = 0;
   let totalBlocked = 0;
   let totalFailed = 0;
+  let totalSkipped = 0;
   let hasMore = true;
 
-  console.log(`[broadcast-batch] Starting from offset ${offset}`);
+  console.log(`[broadcast-batch] Campaign: ${CAMPAIGN_ID}, starting from offset ${offset}, already sent to ${sentSet.size} users`);
 
   while (hasMore) {
     const { data: users, error } = await supabase
@@ -48,6 +60,12 @@ If you need any help, contact our support team: @Boltsupportio`;
     }
 
     for (const user of users) {
+      // Skip if already sent in this campaign
+      if (sentSet.has(user.telegram_id)) {
+        totalSkipped++;
+        continue;
+      }
+
       try {
         const personalizedMessage = message.replace('{firstName}', user.first_name || 'User');
 
@@ -60,7 +78,7 @@ If you need any help, contact our support team: @Boltsupportio`;
             parse_mode: 'HTML',
             reply_markup: {
               inline_keyboard: [[{
-                text: 'Withdraw Now',
+                text: 'Open App',
                 url: 'https://t.me/Boltminingbot/App'
               }]]
             }
@@ -71,6 +89,12 @@ If you need any help, contact our support team: @Boltsupportio`;
 
         if (result.ok) {
           totalSent++;
+          // Log successful send to prevent duplicates
+          await supabase.from('broadcast_log').insert({
+            campaign_id: CAMPAIGN_ID,
+            telegram_id: user.telegram_id
+          });
+          sentSet.add(user.telegram_id);
         } else {
           if (result.error_code === 403) {
             totalBlocked++;
@@ -79,7 +103,6 @@ If you need any help, contact our support team: @Boltsupportio`;
               .update({ bot_blocked: true })
               .eq('telegram_id', user.telegram_id);
           } else if (result.error_code === 429) {
-            // Rate limited - wait and continue
             const retryAfter = result.parameters?.retry_after || 5;
             console.log(`[broadcast-batch] Rate limited, waiting ${retryAfter}s`);
             await new Promise(r => setTimeout(r, retryAfter * 1000));
@@ -91,19 +114,18 @@ If you need any help, contact our support team: @Boltsupportio`;
         totalFailed++;
       }
 
-      // 35ms delay between messages
       await new Promise(r => setTimeout(r, 35));
     }
 
     currentOffset += batchSize;
-    console.log(`[broadcast-batch] Progress: offset=${currentOffset}, sent=${totalSent}, blocked=${totalBlocked}, failed=${totalFailed}`);
+    console.log(`[broadcast-batch] Progress: offset=${currentOffset}, sent=${totalSent}, skipped=${totalSkipped}, blocked=${totalBlocked}, failed=${totalFailed}`);
 
     if (users.length < batchSize) {
       hasMore = false;
     }
   }
 
-  console.log(`[broadcast-batch] COMPLETE! Total sent=${totalSent}, blocked=${totalBlocked}, failed=${totalFailed}`);
+  console.log(`[broadcast-batch] COMPLETE! sent=${totalSent}, skipped=${totalSkipped}, blocked=${totalBlocked}, failed=${totalFailed}`);
 }
 
 Deno.serve(async (req) => {
@@ -129,13 +151,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Run in background to avoid timeout
     EdgeRuntime.waitUntil(sendBatchInBackground(offset, batchSize));
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Broadcast started from offset ${offset}. Check logs for progress.`
+        message: `Broadcast started from offset ${offset}. Duplicates will be skipped.`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
