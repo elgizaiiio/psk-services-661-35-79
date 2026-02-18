@@ -22,7 +22,9 @@ export const TelegramWalletConnect: React.FC<TelegramWalletConnectProps> = ({
   const { webApp, hapticFeedback } = useTelegramAuth();
   const { toast } = useToast();
   const [isConnecting, setIsConnecting] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected'>(
+    wallet?.account ? 'connected' : 'disconnected'
+  );
 
   useEffect(() => {
     if (wallet?.account) {
@@ -33,11 +35,11 @@ export const TelegramWalletConnect: React.FC<TelegramWalletConnectProps> = ({
       }
     } else {
       setConnectionStatus('disconnected');
+      setIsConnecting(false);
     }
   }, [wallet, onConnect]);
 
   useEffect(() => {
-    // Listen for connection events
     const unsubscribe = tonConnectUI.onStatusChange((walletInfo) => {
       if (walletInfo?.account) {
         console.log('✅ Wallet connected successfully:', walletInfo);
@@ -58,6 +60,17 @@ export const TelegramWalletConnect: React.FC<TelegramWalletConnectProps> = ({
     return () => unsubscribe();
   }, [tonConnectUI, hapticFeedback, toast]);
 
+  // Reset connecting state when modal is closed without connection
+  useEffect(() => {
+    const unsubscribe = tonConnectUI.onModalStateChange((state) => {
+      if (state.status === 'closed' && !wallet?.account) {
+        setIsConnecting(false);
+        setConnectionStatus('disconnected');
+      }
+    });
+    return () => unsubscribe();
+  }, [tonConnectUI, wallet]);
+
   const handleConnect = async () => {
     try {
       setIsConnecting(true);
@@ -68,30 +81,7 @@ export const TelegramWalletConnect: React.FC<TelegramWalletConnectProps> = ({
       console.log('📱 Is Telegram WebApp:', !!webApp);
       console.log('🌐 Current URL:', window.location.href);
       
-      // For Telegram WebApp, use specific connection strategy
-      if (webApp) {
-        console.log('📱 Connecting in Telegram WebApp mode');
-        
-        // Try to open wallet selector
-        await tonConnectUI.openModal();
-        
-        // Set a timeout to handle connection issues
-        setTimeout(() => {
-          if (connectionStatus === 'connecting') {
-            console.log('⏰ Connection timeout, showing fallback options');
-            setIsConnecting(false);
-            toast({
-              title: "Connection Difficulty",
-              description: "Try opening the wallet manually or use a direct link",
-              variant: "destructive",
-            });
-          }
-        }, 10000); // 10 seconds timeout
-        
-      } else {
-        console.log('🌐 Connecting in browser mode');
-        await tonConnectUI.openModal();
-      }
+      await tonConnectUI.openModal();
       
     } catch (error) {
       console.error('❌ Error connecting wallet:', error);
