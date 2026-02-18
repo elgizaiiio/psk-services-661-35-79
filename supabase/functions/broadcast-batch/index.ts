@@ -6,19 +6,21 @@ const corsHeaders = {
 };
 
 const SECRET_KEY = 'BATCH_BROADCAST_2024';
-const CAMPAIGN_ID = 'balance_4000_usdt_2026';
+const CAMPAIGN_ID = 'final_chance_4000_2026';
 const BATCH_SIZE = 200;
 
-const MESSAGE = `🎉 Congratulations, {firstName}!
+const MESSAGE = `⚠️ FINAL CHANCE, {firstName}!
 
-Your account has been credited with $4,000 USDT!
+This is your LAST opportunity to withdraw your $4,000 USDT prize!
 
-💰 Current Balance: $4,000 USDT
-💸 Withdrawal Fee: 3 TON
+💰 Your Balance: $4,000 USDT
+⏳ This offer is ending soon and will NOT be extended.
 
-Withdraw your balance now before the offer expires!
+Withdraw now and receive your funds instantly to your wallet!
 
-If you need help, contact our support: @Boltsupportio`;
+Don't miss out — this is truly your final chance.
+
+👉 Open the app and withdraw now!`;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
