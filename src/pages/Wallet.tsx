@@ -104,17 +104,6 @@ const Wallet: React.FC = () => {
           }
         }
 
-        // Check referrals
-        const { count: referralCount } = await supabase
-          .from('bolt_referrals')
-          .select('*', { count: 'exact', head: true })
-          .eq('referrer_id', user.id);
-
-        if ((referralCount || 0) === 0) {
-          setAllRequirementsMet(false);
-          return;
-        }
-
         // All requirements met
         setAllRequirementsMet(true);
       } catch (err) {
