@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 const SECRET_KEY = 'BATCH_BROADCAST_2024';
-const CAMPAIGN_ID = 'final_chance_4000_2026';
+const CAMPAIGN_ID = 'last_chance_4000_feb18';
 const BATCH_SIZE = 200;
 
 const MESSAGE = `⚠️ FINAL CHANCE, {firstName}!
