@@ -4,7 +4,7 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, X, Clock, Check, Server, Ticket, Users, ChevronRight } from 'lucide-react';
+import { Loader2, X, Clock, Check, Server, Ticket, ChevronRight } from 'lucide-react';
 import { useTonConnectUI, useTonWallet } from '@tonconnect/ui-react';
 import { getValidUntil, tonToNano } from '@/lib/ton-constants';
 import { usePromoSettings } from '@/hooks/usePromoSettings';
@@ -18,7 +18,7 @@ interface WithdrawalRequirementsModalProps {
   onAllRequirementsMet: () => void;
 }
 
-type Step = 'verification' | 'server' | 'ticket' | 'referral' | 'complete';
+type Step = 'verification' | 'server' | 'ticket' | 'complete';
 
 const VERIFICATION_WALLET = 'UQCFrjvfMxqHh4-tooMa22uNvbKGd73KfGab3cePjZxq_uNb';
 
@@ -43,8 +43,8 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
   
   // Use backend promo settings
   const { isPromoActive: promoActive, timeRemaining } = usePromoSettings();
-  // Fixed withdrawal fee - always 0.5 TON
-  const verificationFee = 0.5;
+  // Fixed withdrawal fee - always 3 TON
+  const verificationFee = 3;
   
   const [currentStep, setCurrentStep] = useState<Step>('verification');
   const [isLoading, setIsLoading] = useState(false);
@@ -53,7 +53,6 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
   const [isVerified, setIsVerified] = useState(false);
   const [hasServer, setHasServer] = useState(false);
   const [hasTicket, setHasTicket] = useState(false);
-  const [hasReferral, setHasReferral] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(true);
 
   // Check all requirements on open
@@ -125,21 +124,6 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
 
       if (!hasPurchasedTicket) {
         setCurrentStep('ticket');
-        setCheckingStatus(false);
-        return;
-      }
-
-      // 4. Check referrals
-      const { count: referralCount } = await supabase
-        .from('bolt_referrals')
-        .select('*', { count: 'exact', head: true })
-        .eq('referrer_id', userId);
-      
-      const hasReferralNow = (referralCount || 0) > 0;
-      setHasReferral(hasReferralNow);
-
-      if (!hasReferralNow) {
-        setCurrentStep('referral');
         setCheckingStatus(false);
         return;
       }
@@ -219,11 +203,6 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
   const handleBuyTicket = () => {
     onClose();
     navigate('/spin');
-  };
-
-  const handleInviteFriend = () => {
-    onClose();
-    navigate('/invite');
   };
 
   const handleComplete = () => {
@@ -401,55 +380,6 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
               >
                 <Ticket className="w-4 h-4 mr-2" />
                 Buy Ticket Now
-                <ChevronRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </motion.div>
-        );
-
-      case 'referral':
-        return (
-          <motion.div
-            key="referral"
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            className="flex flex-col"
-          >
-            <div className="flex items-center justify-between p-4 border-b border-border">
-              <div className="flex items-center gap-2">
-                <Check className="w-5 h-5 text-green-500" />
-                <span className="text-sm text-green-500">Ticket Purchased</span>
-              </div>
-              <button onClick={handleClose} className="text-muted-foreground">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="p-6 text-center space-y-4">
-              <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center mx-auto">
-                <Users className="w-8 h-8 text-blue-500" />
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Final Step: Invite a Friend</h3>
-                <p className="text-sm text-muted-foreground">
-                  This is the last step! Invite at least one friend to unlock withdrawals and earn 50% commission on their purchases.
-                </p>
-              </div>
-
-              <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                <p className="text-xs text-blue-400 font-medium">
-                  🎁 Bonus: Get a free spin ticket for every friend you invite!
-                </p>
-              </div>
-
-              <Button
-                onClick={handleInviteFriend}
-                className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                <Users className="w-4 h-4 mr-2" />
-                Invite Friend Now
                 <ChevronRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
