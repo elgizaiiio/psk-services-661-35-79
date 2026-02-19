@@ -60,10 +60,11 @@ const Wallet: React.FC = () => {
         const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000).toISOString();
         const { data: verification } = await supabase
           .from('wallet_verifications')
-          .select('id')
+          .select('id, verified_at')
           .eq('user_id', user.id)
           .eq('currency', 'TON')
           .gte('verified_at', thirtyMinutesAgo)
+          .order('verified_at', { ascending: false })
           .limit(1)
           .maybeSingle();
 
@@ -72,36 +73,30 @@ const Wallet: React.FC = () => {
           return;
         }
 
-        // Check server
+        const verifiedAt = verification.verified_at;
+
+        // Check server purchased AFTER this verification
         const { count: serverCount } = await supabase
           .from('user_servers')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
-          .eq('is_active', true);
+          .gte('purchased_at', verifiedAt);
 
         if ((serverCount || 0) === 0) {
           setAllRequirementsMet(false);
           return;
         }
 
-        // Check spin history (any ticket purchased)
-        const { count: spinCount } = await supabase
+        // Check tickets purchased AFTER this verification
+        const { count: ticketCount } = await supabase
           .from('spin_history')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .gte('created_at', verifiedAt);
 
-        if ((spinCount || 0) === 0) {
-          // Also check if user has tickets
-          const { data: tickets } = await supabase
-            .from('user_spin_tickets')
-            .select('tickets_count, pro_tickets_count')
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-          if (!tickets || ((tickets.tickets_count || 0) + (tickets.pro_tickets_count || 0)) === 0) {
-            setAllRequirementsMet(false);
-            return;
-          }
+        if ((ticketCount || 0) === 0) {
+          setAllRequirementsMet(false);
+          return;
         }
 
         // All requirements met
