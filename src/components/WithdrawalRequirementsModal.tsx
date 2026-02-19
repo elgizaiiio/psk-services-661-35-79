@@ -327,8 +327,8 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
               <div>
                 <h3 className="text-lg font-semibold text-foreground mb-2">Step 2: Buy a Server</h3>
                 <p className="text-sm text-muted-foreground">
-                   Purchase at least one mining server (minimum 5 TON) to enable withdrawals and start earning passive income.
-                 </p>
+                   You must purchase at least one mining server (minimum 5 TON) to unlock withdrawals.
+                </p>
               </div>
 
               <Button
@@ -368,9 +368,9 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
               </div>
               
               <div>
-                <h3 className="text-lg font-semibold text-foreground mb-2">Step 3: Buy a Spin Ticket</h3>
+                <h3 className="text-lg font-semibold text-foreground mb-2">Step 3: Buy Spin Tickets</h3>
                 <p className="text-sm text-muted-foreground">
-                  Purchase a spin ticket to try your luck and win amazing prizes!
+                  Purchase spin tickets (minimum 3 TON) to try your luck and win amazing prizes!
                 </p>
               </div>
 
