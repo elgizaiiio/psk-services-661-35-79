@@ -85,12 +85,23 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
         return;
       }
 
-      // 2. Check server ownership (minimum 5 TON server)
+      // 2. Check server purchased AFTER verification
+      const { data: latestVerification } = await supabase
+        .from('wallet_verifications')
+        .select('verified_at')
+        .eq('user_id', userId)
+        .eq('currency', 'TON')
+        .order('verified_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      const verifiedAt = latestVerification?.verified_at;
+      
       const { count: serverCount } = await supabase
         .from('user_servers')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
-        .eq('is_active', true);
+        .gte('purchased_at', verifiedAt || '');
       
       const hasServerNow = (serverCount || 0) > 0;
       setHasServer(hasServerNow);
@@ -101,25 +112,14 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
         return;
       }
 
-      // 3. Check spin tickets
-      const { data: ticketData } = await supabase
-        .from('user_spin_tickets')
-        .select('tickets_count, pro_tickets_count, referral_tickets_count')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      const totalTickets = (ticketData?.tickets_count || 0) + 
-                          (ticketData?.pro_tickets_count || 0) + 
-                          (ticketData?.referral_tickets_count || 0);
-      const hasTicketNow = totalTickets > 0 || !!ticketData;
-      
-      // Check if user has ever purchased a ticket
+      // 3. Check spin tickets purchased AFTER verification
       const { count: ticketPurchaseCount } = await supabase
         .from('spin_history')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .gte('created_at', verifiedAt || '');
       
-      const hasPurchasedTicket = (ticketPurchaseCount || 0) > 0 || hasTicketNow;
+      const hasPurchasedTicket = (ticketPurchaseCount || 0) > 0;
       setHasTicket(hasPurchasedTicket);
 
       if (!hasPurchasedTicket) {
