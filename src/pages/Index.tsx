@@ -7,13 +7,13 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltMining } from '@/hooks/useBoltMining';
 import { useTelegramTonConnect } from '@/hooks/useTelegramTonConnect';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
-import { useLimitedOfferModal } from '@/hooks/useLimitedOfferModal';
+
 import { useMonthlyWinnerModal } from '@/hooks/useMonthlyWinnerModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Wallet, Zap } from 'lucide-react';
 import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import DailyStreakModal from '@/components/DailyStreakModal';
-import LimitedOfferModal from '@/components/offers/LimitedOfferModal';
+
 import MonthlyWinnerModal from '@/components/MonthlyWinnerModal';
 import UserAvatar from '@/components/UserAvatar';
 import serverOfferBanner from '@/assets/server-offer-banner.png';
@@ -32,7 +32,7 @@ const Index = () => {
   const { user: telegramUser, isLoading: authLoading, hapticFeedback } = useTelegramAuth();
   const { loading, error, clearError } = useBoltMining(telegramUser);
   const { isConnected, isConnecting, connectWallet } = useTelegramTonConnect();
-  const { shouldShowModal: showLimitedOffer, markAsShown: closeLimitedOffer } = useLimitedOfferModal();
+  
   const { shouldShowModal: showWinnerModal, markAsShown: closeWinnerModal } = useMonthlyWinnerModal();
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
@@ -186,7 +186,7 @@ const Index = () => {
     <PageWrapper className="min-h-screen bg-background pb-20">
       <Helmet><title>Bolt Mining</title></Helmet>
       <DailyStreakModal />
-      <LimitedOfferModal isOpen={showLimitedOffer} onClose={closeLimitedOffer} />
+      
       <MonthlyWinnerModal 
         isOpen={showWinnerModal} 
         onClose={closeWinnerModal} 
