@@ -150,7 +150,9 @@ export const useUserServers = (userId: string | null) => {
     dailyUsdtYield: number,
     dailyTonYield: number = 0,
     dailyEthYield: number = 0,
-    dailyViralYield: number = 0
+    dailyViralYield: number = 0,
+    paymentId?: string,         // REQUIRED for blockchain-verified purchases
+    paymentVerified?: boolean   // true only after blockchain confirmation
   ) => {
     if (!userId) throw new Error('User not found');
 
@@ -158,7 +160,8 @@ export const useUserServers = (userId: string | null) => {
     const stock = getStock(serverId);
     if (stock.soldOut) throw new Error('Server sold out');
 
-    // Insert user server (triggers will auto-add Bolt Town points)
+    // SECURITY: Server is inserted with payment_id and payment_verified status
+    // payment_verified will be set to true by verify-ton-payment edge function
     const { data, error } = await supabase
       .from('user_servers')
       .insert({
@@ -171,6 +174,8 @@ export const useUserServers = (userId: string | null) => {
         daily_ton_yield: dailyTonYield,
         daily_eth_yield: dailyEthYield,
         daily_viral_yield: dailyViralYield,
+        payment_id: paymentId || null,
+        payment_verified: paymentVerified === true, // Only true if explicitly confirmed
       })
       .select()
       .single();
@@ -185,9 +190,6 @@ export const useUserServers = (userId: string | null) => {
         .update({ sold_count: inv.sold_count + 1 })
         .eq('server_id', serverId);
     }
-
-    // Bolt Town points (+100) are now handled by database trigger
-    // No need to manually add them here
 
     await fetchServers();
     await fetchInventory();

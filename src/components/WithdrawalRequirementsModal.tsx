@@ -97,10 +97,12 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
       
       const verifiedAt = latestVerification?.verified_at;
       
+      // SECURITY: Check for blockchain-verified server purchased AFTER verification
       const { count: serverCount } = await supabase
         .from('user_servers')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
+        .eq('payment_verified', true)
         .gte('purchased_at', verifiedAt || '');
       
       const hasServerNow = (serverCount || 0) > 0;
@@ -112,11 +114,12 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
         return;
       }
 
-      // 3. Check spin tickets purchased AFTER verification
+      // 3. SECURITY: Check spin tickets with payment_id (TON payment) purchased AFTER verification
       const { count: ticketPurchaseCount } = await supabase
         .from('spin_history')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', userId)
+        .not('payment_id', 'is', null)
         .gte('created_at', verifiedAt || '');
       
       const hasPurchasedTicket = (ticketPurchaseCount || 0) > 0;

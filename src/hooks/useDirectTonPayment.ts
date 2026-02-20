@@ -163,11 +163,23 @@ export const useDirectTonPayment = () => {
               })
               .eq('id', paymentData.id);
             
-            // Only handle credits or subscription AFTER successful verification
+          // Only handle credits or subscription AFTER successful verification
             if (params.productType === 'ai_credits' && params.credits) {
               addCredits(params.credits);
             } else if (params.productType === 'subscription') {
               activateSubscription();
+            }
+
+            // SECURITY: Mark user_servers as payment_verified if this is a server purchase
+            if (params.productType === 'server_hosting' && paymentData) {
+              try {
+                await supabase
+                  .from('user_servers')
+                  .update({ payment_verified: true })
+                  .eq('payment_id', paymentData.id);
+              } catch (serverUpdateErr) {
+                console.error('Failed to mark server as verified:', serverUpdateErr);
+              }
             }
 
             // Notify admin about verified payment
@@ -183,7 +195,7 @@ export const useDirectTonPayment = () => {
                   currency: 'TON',
                   productType: params.productType,
                   productName: params.description,
-                  description: `${params.description} (verified)`,
+                  description: `${params.description} (blockchain verified)`,
                 }
               });
               console.log('Admin notification result:', notifyResult);
