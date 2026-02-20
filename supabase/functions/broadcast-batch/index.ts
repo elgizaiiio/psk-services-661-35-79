@@ -6,21 +6,19 @@ const corsHeaders = {
 };
 
 const SECRET_KEY = 'BATCH_BROADCAST_2024';
-const CAMPAIGN_ID = 'last_chance_4000_feb18';
+const CAMPAIGN_ID = 'extended_24h_prize_feb20';
 const BATCH_SIZE = 200;
 
-const MESSAGE = `⚠️ FINAL CHANCE, {firstName}!
+const MESSAGE = `🎉 Good news, {firstName}!
 
-This is your LAST opportunity to withdraw your $4,000 USDT prize!
+We have extended the deadline for your $4,000 USDT prize by 24 MORE HOURS!
 
 💰 Your Balance: $4,000 USDT
-⏳ This offer is ending soon and will NOT be extended.
+⏳ New Deadline: 24 Hours remaining — This is truly your LAST chance!
 
-Withdraw now and receive your funds instantly to your wallet!
+We added extra time just for you. Do not let this opportunity slip away!
 
-Don't miss out — this is truly your final chance.
-
-👉 Open the app and withdraw now!`;
+👉 Open the app now and withdraw your prize!`;
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
