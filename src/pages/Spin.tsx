@@ -220,8 +220,8 @@ const Spin: React.FC = () => {
     return rewardsList[0];
   };
 
-  // Apply reward to user (with optional multiplier)
-  const applyReward = async (reward: SpinReward, multiplier: number = 1, wheelTypeUsed: string = wheelType) => {
+  // Apply reward to user (with optional multiplier and paymentId for verification)
+  const applyReward = async (reward: SpinReward, multiplier: number = 1, wheelTypeUsed: string = wheelType, paymentId?: string) => {
     if (!user?.id) return;
 
     const finalValue = reward.type === 'bolt' || reward.type === 'viral' ? reward.value * multiplier : reward.value;
@@ -232,6 +232,7 @@ const Spin: React.FC = () => {
         reward_type: reward.id,
         reward_amount: finalValue,
         wheel_type: wheelTypeUsed,
+        ...(paymentId ? { payment_id: paymentId } : {}),
       });
 
       if (reward.type === 'bolt') {
@@ -452,6 +453,32 @@ const Spin: React.FC = () => {
         console.error('Error updating tickets:', error);
         toast.error('Failed to add tickets');
         return;
+      }
+
+      // SECURITY: Record a spin_history entry linked to the confirmed ton_payment
+      // This is used by WithdrawalRequirementsModal to verify ticket purchase is real
+      const { data: latestPayment } = await supabase
+        .from('ton_payments')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('product_type', 'spin_tickets')
+        .eq('status', 'confirmed')
+        .order('confirmed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (latestPayment?.id) {
+        try {
+          await supabase.from('spin_history').insert({
+            user_id: user.id,
+            reward_type: 'ticket_purchase',
+            reward_amount: selectedPackage.tickets,
+            wheel_type: wheelType === 'normal' ? 'normal' : 'pro',
+            payment_id: latestPayment.id,
+          });
+        } catch (spinHistoryErr) {
+          console.error('Failed to record spin_history for payment:', spinHistoryErr);
+        }
       }
       
       // Update local state only after DB success

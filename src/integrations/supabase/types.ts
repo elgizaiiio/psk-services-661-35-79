@@ -2693,6 +2693,67 @@ export type Database = {
           },
         ]
       }
+      payment_verifications_log: {
+        Row: {
+          amount_ton: number
+          blockchain_verified: boolean
+          created_at: string
+          id: string
+          payment_id: string | null
+          product_type: string
+          sender_address: string | null
+          tx_hash: string | null
+          user_id: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          amount_ton: number
+          blockchain_verified?: boolean
+          created_at?: string
+          id?: string
+          payment_id?: string | null
+          product_type: string
+          sender_address?: string | null
+          tx_hash?: string | null
+          user_id?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          amount_ton?: number
+          blockchain_verified?: boolean
+          created_at?: string
+          id?: string
+          payment_id?: string | null
+          product_type?: string
+          sender_address?: string | null
+          tx_hash?: string | null
+          user_id?: string | null
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_verifications_log_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "ton_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_verifications_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "bolt_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_verifications_log_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_leaderboard"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       promo_banners: {
         Row: {
           created_at: string | null
@@ -3007,6 +3068,7 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          payment_id: string | null
           reward_amount: number | null
           reward_type: string
           user_id: string
@@ -3015,6 +3077,7 @@ export type Database = {
         Insert: {
           created_at?: string
           id?: string
+          payment_id?: string | null
           reward_amount?: number | null
           reward_type: string
           user_id: string
@@ -3023,12 +3086,20 @@ export type Database = {
         Update: {
           created_at?: string
           id?: string
+          payment_id?: string | null
           reward_amount?: number | null
           reward_type?: string
           user_id?: string
           wheel_type?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "spin_history_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "ton_payments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "spin_history_user_id_fkey"
             columns: ["user_id"]
@@ -3502,6 +3573,8 @@ export type Database = {
           id: string
           is_active: boolean
           last_claim_at: string | null
+          payment_id: string | null
+          payment_verified: boolean
           purchased_at: string
           server_name: string
           server_tier: string
@@ -3517,6 +3590,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_claim_at?: string | null
+          payment_id?: string | null
+          payment_verified?: boolean
           purchased_at?: string
           server_name: string
           server_tier?: string
@@ -3532,12 +3607,21 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_claim_at?: string | null
+          payment_id?: string | null
+          payment_verified?: boolean
           purchased_at?: string
           server_name?: string
           server_tier?: string
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_servers_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "ton_payments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_servers_user_id_fkey"
             columns: ["user_id"]
