@@ -50,8 +50,10 @@ const servers: MiningServer[] = [
   { id: 'ultra-4', name: 'Quantum', hashRate: '8000 TH/s', boltPerDay: 500000, usdtPerDay: 120.00, tonPerDay: 1.80, ethPerDay: 0.120, viralPerDay: 120000, priceTon: 500.0, icon: Gem, tier: 'legendary' },
 ];
 
-// Servers with special offers (9-30 TON range)
-const serversWithOffers = ['pro-2', 'elite-1', 'elite-2'];
+// 50% discount - all servers
+const DISCOUNT_PERCENT = 50;
+const DISCOUNT_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+const DISCOUNT_START = Date.now(); // Will be managed via promo_settings
 
 const tierColors = {
   basic: 'from-slate-500/20 to-slate-500/5 border-slate-500/30',
@@ -80,6 +82,48 @@ const MiningServers = () => {
 
   const isReady = !isTelegramLoading && !isMiningUserLoading;
   const pendingRewards = getPendingRewards();
+
+  // 50% discount timer
+  const [discountActive, setDiscountActive] = useState(false);
+  const [discountTimeStr, setDiscountTimeStr] = useState('');
+  const [discountEndTime, setDiscountEndTime] = useState(0);
+
+  useEffect(() => {
+    // Fetch discount promo from promo_settings
+    const fetchDiscount = async () => {
+      const { data } = await supabase
+        .from('promo_settings')
+        .select('*')
+        .eq('promo_key', 'server_50_discount')
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      if (data) {
+        const start = new Date(data.start_time).getTime();
+        const end = start + data.duration_hours * 60 * 60 * 1000;
+        setDiscountEndTime(end);
+        setDiscountActive(Date.now() < end);
+      }
+    };
+    fetchDiscount();
+  }, []);
+
+  useEffect(() => {
+    if (!discountEndTime) return;
+    const interval = setInterval(() => {
+      const remaining = discountEndTime - Date.now();
+      if (remaining <= 0) {
+        setDiscountActive(false);
+        clearInterval(interval);
+        return;
+      }
+      const h = Math.floor(remaining / 3600000);
+      const m = Math.floor((remaining % 3600000) / 60000);
+      const s = Math.floor((remaining % 60000) / 1000);
+      setDiscountTimeStr(`${h}h ${m}m ${s}s`);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [discountEndTime]);
 
   const handleBuyClick = async (server: MiningServer) => {
     if (!isReady || !user?.id) return;
@@ -277,24 +321,26 @@ const MiningServers = () => {
           </motion.div>
         )}
 
-        {/* Offer Banner for 9-30 TON servers */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-4 rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-500/10 border border-orange-500/30"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center">
-              <Gift className="w-6 h-6 text-orange-500" />
+        {/* 50% Discount Banner with 24h countdown */}
+        {discountActive && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                <Sparkles className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-foreground">🔥 50% OFF ALL SERVERS!</h3>
+                <p className="text-xs text-muted-foreground">
+                  Limited time offer ends in <span className="text-primary font-bold">{discountTimeStr}</span>
+                </p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-bold text-foreground">🔥 HOT OFFER!</h3>
-              <p className="text-xs text-muted-foreground">
-                Buy servers from 9-30 TON and get <span className="text-orange-500 font-semibold">+20% BONUS</span> on all daily yields!
-              </p>
-            </div>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
 
         {/* Server List */}
         <div className="space-y-3">
@@ -304,7 +350,7 @@ const MiningServers = () => {
             const owned = isOwned(server.id);
             const stock = getStock(server.id);
             const Icon = server.icon;
-            const hasOffer = serversWithOffers.includes(server.id);
+            const displayPrice = discountActive ? server.priceTon * 0.5 : server.priceTon;
 
             return (
               <motion.div
@@ -317,16 +363,14 @@ const MiningServers = () => {
                     ? `bg-gradient-to-br ${tierColors[server.tier]} ring-2 ring-primary/30` 
                     : stock.soldOut 
                       ? 'bg-muted/30 border-border opacity-50'
-                      : hasOffer
-                        ? `bg-gradient-to-br ${tierColors[server.tier]} ring-2 ring-orange-500/50 hover:scale-[1.01] cursor-pointer`
-                        : `bg-gradient-to-br ${tierColors[server.tier]} hover:scale-[1.01] cursor-pointer`
+                      : `bg-gradient-to-br ${tierColors[server.tier]} hover:scale-[1.01] cursor-pointer`
                 }`}
                 onClick={() => !owned && !stock.soldOut && handleBuyClick(server)}
               >
-                {/* Offer Badge */}
-                {hasOffer && !owned && !stock.soldOut && (
-                  <div className="absolute -top-2 -right-2 px-2 py-1 rounded-full bg-orange-500 text-white text-[10px] font-bold shadow-lg animate-pulse">
-                    +20% BONUS
+                {/* Discount Badge */}
+                {discountActive && !owned && !stock.soldOut && (
+                  <div className="absolute -top-2 -right-2 px-2 py-1 rounded-full bg-primary text-primary-foreground text-[10px] font-bold shadow-lg animate-pulse">
+                    -50%
                   </div>
                 )}
                 
@@ -355,9 +399,16 @@ const MiningServers = () => {
                   {/* Price */}
                   {!owned && !stock.soldOut && (
                     <div className="text-right">
-                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-sky-500/20">
+                      <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10">
                         <TonIcon size={18} />
-                        <span className="text-sm font-semibold text-sky-500">{server.priceTon}</span>
+                        {discountActive ? (
+                          <div className="flex flex-col items-end">
+                            <span className="text-[10px] line-through text-muted-foreground">{server.priceTon}</span>
+                            <span className="text-sm font-bold text-primary">{displayPrice}</span>
+                          </div>
+                        ) : (
+                          <span className="text-sm font-semibold text-primary">{server.priceTon}</span>
+                        )}
                       </div>
                     </div>
                   )}
@@ -401,7 +452,7 @@ const MiningServers = () => {
             setSelectedServer(null);
           }}
           onSuccess={handlePaymentSuccess}
-          amount={selectedServer.priceTon}
+          amount={discountActive ? selectedServer.priceTon * 0.5 : selectedServer.priceTon}
           productType="server_hosting"
           productId={selectedServer.id}
           description={`${selectedServer.name} Server - ${selectedServer.hashRate}`}

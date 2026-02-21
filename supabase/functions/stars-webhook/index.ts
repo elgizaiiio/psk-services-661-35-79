@@ -79,21 +79,29 @@ serve(async (req) => {
 
       console.log('Successful Stars payment:', JSON.stringify(payment));
 
-      // Parse the invoice_payload to get payment details
-      let payload: { paymentId?: string; userId?: string; productType?: string; amountTon?: number; description?: string } = {};
-      try {
-        payload = JSON.parse(payment.invoice_payload);
-      } catch {
-        console.error('Invalid payload:', payment.invoice_payload);
+      // payload is now just the paymentId string (not JSON)
+      const paymentId = payment.invoice_payload;
+
+      if (!paymentId) {
+        console.error('Missing paymentId in payload');
         return new Response('OK', { headers: corsHeaders });
       }
 
-      const { paymentId, userId, productType, amountTon, description } = payload;
+      // Fetch the payment record to get userId, productType, etc.
+      const { data: paymentRecord, error: fetchError } = await supabase
+        .from('stars_payments')
+        .select('*')
+        .eq('id', paymentId)
+        .single();
 
-      if (!paymentId || !userId) {
-        console.error('Missing paymentId or userId in payload');
+      if (fetchError || !paymentRecord) {
+        console.error('Payment record not found:', paymentId, fetchError);
         return new Response('OK', { headers: corsHeaders });
       }
+
+      const userId = paymentRecord.user_id;
+      const productType = paymentRecord.product_type;
+      const description = paymentRecord.product_id;
 
       // Update stars_payments record
       await supabase
