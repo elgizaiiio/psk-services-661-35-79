@@ -77,3 +77,12 @@ verify_jwt = false
 
 [functions.get-user-dashboard]
 verify_jwt = false
+
+[functions.stars-webhook]
+verify_jwt = false
+
+[functions.create-stars-invoice]
+verify_jwt = false
+
+[functions.setup-stars-webhook]
+verify_jwt = false
