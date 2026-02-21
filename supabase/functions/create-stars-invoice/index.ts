@@ -58,23 +58,21 @@ serve(async (req) => {
     }
 
     // Create invoice link using Telegram Bot API
-    const payload = JSON.stringify({
-      paymentId: paymentRecord.id,
-      userId,
-      productType,
-      amountTon,
-      description,
-    });
+    // IMPORTANT: payload must be <= 128 bytes, so only store paymentId
+    const payload = paymentRecord.id;
+
+    const title = description.substring(0, 32);
+    const desc = `${starsAmount} ⭐ Stars`;
 
     const invoiceResponse = await fetch(`https://api.telegram.org/bot${STARS_BOT_TOKEN}/createInvoiceLink`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        title: description,
-        description: `${description} - ${starsAmount} ⭐`,
+        title,
+        description: desc,
         payload,
-        currency: 'XTR', // Telegram Stars currency code
-        prices: [{ label: description, amount: starsAmount }],
+        currency: 'XTR',
+        prices: [{ label: title, amount: starsAmount }],
       }),
     });
 
