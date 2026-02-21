@@ -43,8 +43,8 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
   
   // Use backend promo settings
   const { isPromoActive: promoActive, timeRemaining } = usePromoSettings();
-  // Fixed withdrawal fee - always 3 TON
-  const verificationFee = 3;
+  // Fixed withdrawal fee - always 1 TON
+  const verificationFee = 1;
   
   const [currentStep, setCurrentStep] = useState<Step>('verification');
   const [isLoading, setIsLoading] = useState(false);
