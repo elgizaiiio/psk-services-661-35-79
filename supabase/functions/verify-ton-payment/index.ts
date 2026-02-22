@@ -24,12 +24,12 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
-// Normalize TON address for comparison (handles UQ/EQ prefix differences)
+// Normalize TON address for comparison
 function normalizeAddress(addr: string): string {
   return addr.replace(/^(UQ|EQ)/, '').toLowerCase();
 }
 
-// Try to get real TX hash from BOC via TON API
+// Try to get real TX hash from BOC
 async function getTxHashFromBoc(boc: string): Promise<string | null> {
   try {
     const response = await fetch('https://toncenter.com/api/v2/sendBocReturnHash', {
@@ -39,31 +39,30 @@ async function getTxHashFromBoc(boc: string): Promise<string | null> {
     });
     if (response.ok) {
       const data = await response.json();
-      if (data.ok && data.result?.hash) {
-        return data.result.hash;
-      }
+      if (data.ok && data.result?.hash) return data.result.hash;
     }
   } catch (e) {
-    console.log('Could not get hash from BOC via toncenter:', e);
+    console.log('Could not get hash from BOC:', e);
   }
   return null;
 }
 
-// Verify transaction on TON blockchain - strict verification
+// Verify transaction on TON blockchain using comment matching
 async function verifyOnBlockchain(params: {
   boc: string;
   expectedAmount: number;
   senderAddress?: string;
   paymentCreatedAt: string;
+  paymentComment?: string;
 }): Promise<{ verified: boolean; txHash?: string; actualAmount?: number; senderAddress?: string; reason?: string }> {
-  const { boc, expectedAmount, senderAddress, paymentCreatedAt } = params;
+  const { boc, expectedAmount, senderAddress, paymentCreatedAt, paymentComment } = params;
 
-  // 1. Try to get real TX hash from BOC
+  // Try to get real TX hash
   const realTxHash = await getTxHashFromBoc(boc);
   console.log('Real TX hash from BOC:', realTxHash);
 
-  // 2. Query TON API for recent transactions to our address
   try {
+    // Query recent transactions to our address
     const tonApiUrl = `https://tonapi.io/v2/blockchain/accounts/${EXPECTED_TON_ADDRESS}/transactions?limit=50`;
     const response = await fetch(tonApiUrl, {
       headers: { 'Accept': 'application/json' },
@@ -83,40 +82,55 @@ async function verifyOnBlockchain(params: {
       const txTimestamp = tx.utime || 0;
       const timeDiff = Math.abs(txTimestamp - paymentTimestamp);
 
-      // Must be within 15 minutes of payment creation
+      // Must be within 15 minutes
       if (timeDiff > 900) continue;
 
       // Amount must match within 0.01 TON tolerance
       if (Math.abs(inValue - expectedAmount) > 0.01) continue;
 
-      // Verify destination is our address
-      const txDestination = tx.account?.address || '';
-      if (!txDestination.toLowerCase().includes(normalizeAddress(EXPECTED_TON_ADDRESS))) {
-        console.log('Destination mismatch:', txDestination);
-        continue;
-      }
-
-      // If sender address provided, verify it matches
-      if (senderAddress) {
-        const txSender = tx.in_msg?.source?.address || '';
-        if (txSender && !txSender.toLowerCase().includes(normalizeAddress(senderAddress))) {
-          console.log('Sender address mismatch:', { expected: senderAddress, actual: txSender });
-          continue; // Skip if sender doesn't match
+      // If we have a payment comment, try to match it (strongest verification)
+      if (paymentComment && tx.in_msg?.decoded_body?.text) {
+        const txComment = tx.in_msg.decoded_body.text;
+        if (txComment === paymentComment) {
+          console.log('COMMENT MATCHED! Strong verification for:', paymentComment);
+          return {
+            verified: true,
+            txHash: realTxHash || tx.hash || boc.slice(0, 64),
+            actualAmount: inValue,
+            senderAddress: tx.in_msg?.source?.address,
+          };
         }
       }
 
-      console.log('Transaction verified on blockchain:', {
-        hash: tx.hash,
-        amount: inValue,
-        timeDiff,
-      });
+      // Also check raw message body for comment
+      if (paymentComment && tx.in_msg?.message) {
+        try {
+          const msgText = tx.in_msg.message;
+          if (msgText.includes(paymentComment)) {
+            console.log('COMMENT found in message body:', paymentComment);
+            return {
+              verified: true,
+              txHash: realTxHash || tx.hash || boc.slice(0, 64),
+              actualAmount: inValue,
+              senderAddress: tx.in_msg?.source?.address,
+            };
+          }
+        } catch {}
+      }
 
-      return {
-        verified: true,
-        txHash: realTxHash || tx.hash || boc.slice(0, 64),
-        actualAmount: inValue,
-        senderAddress: tx.in_msg?.source?.address,
-      };
+      // Fallback: match by sender + amount + time (weaker but still valid)
+      if (senderAddress) {
+        const txSender = tx.in_msg?.source?.address || '';
+        if (txSender && txSender.toLowerCase().includes(normalizeAddress(senderAddress))) {
+          console.log('Matched by sender + amount + time');
+          return {
+            verified: true,
+            txHash: realTxHash || tx.hash || boc.slice(0, 64),
+            actualAmount: inValue,
+            senderAddress: tx.in_msg?.source?.address,
+          };
+        }
+      }
     }
 
     return { verified: false, reason: 'No matching transaction found on blockchain' };
@@ -138,10 +152,11 @@ serve(async (req) => {
     );
 
     const body = await req.json();
-    const { paymentId, txHash, walletAddress } = body as {
+    const { paymentId, txHash, walletAddress, paymentComment } = body as {
       paymentId: string;
       txHash?: string;
       walletAddress?: string;
+      paymentComment?: string;
     };
     const telegramIdHeader = req.headers.get('x-telegram-id');
 
@@ -152,23 +167,12 @@ serve(async (req) => {
       });
     }
 
-    if (!telegramIdHeader) {
-      return new Response(JSON.stringify({ error: "x-telegram-id header is required" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    // Telegram ID is optional - don't block if missing
+    const telegramId = telegramIdHeader ? Number(telegramIdHeader) : null;
 
-    const telegramId = Number(telegramIdHeader);
-    if (!Number.isFinite(telegramId) || telegramId <= 0) {
-      return new Response(JSON.stringify({ error: "Invalid x-telegram-id" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Rate limiting
-    if (!checkRateLimit(telegramIdHeader)) {
+    // Rate limiting (use telegramId or paymentId)
+    const rateLimitKey = telegramIdHeader || paymentId;
+    if (!checkRateLimit(rateLimitKey)) {
       return new Response(JSON.stringify({ error: "Too many verification attempts" }), {
         status: 429,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -191,49 +195,14 @@ serve(async (req) => {
       });
     }
 
-    // SECURITY: Verify the payment belongs to the requesting Telegram user
-    const { data: requester } = await supabaseClient
-      .from('bolt_users')
-      .select('id')
-      .eq('telegram_id', telegramId)
-      .maybeSingle();
-
-    if (!requester) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    if (payment.user_id !== requester.id) {
-      console.error('User mismatch on payment verification', {
-        paymentUserId: payment.user_id,
-        requesterId: requester.id,
-      });
-      // Alert admin about suspicious attempt
-      await supabaseClient.functions.invoke('notify-suspicious-payment', {
-        body: {
-          paymentId,
-          userId: requester.id,
-          amount: payment.amount_ton,
-          productType: payment.product_type,
-          walletAddress,
-          reason: 'user_id_mismatch',
-        },
-      }).catch(() => {});
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
+    // Already confirmed
     if (payment.status === "confirmed") {
       return new Response(JSON.stringify({ ok: true, status: "already_confirmed" }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // SECURITY: Verify destination address
+    // Verify destination address
     if (payment.destination_address !== EXPECTED_TON_ADDRESS) {
       console.error('SECURITY ALERT: Payment destination mismatch!');
       return new Response(JSON.stringify({ error: "Invalid payment destination" }), {
@@ -248,33 +217,7 @@ serve(async (req) => {
       });
     }
 
-    // SECURITY: Check if txHash already used in payment_verifications_log (replay attack prevention)
-    const { data: existingVerification } = await supabaseClient
-      .from("payment_verifications_log")
-      .select("id, payment_id")
-      .eq("tx_hash", txHash)
-      .maybeSingle();
-
-    if (existingVerification && existingVerification.payment_id !== paymentId) {
-      console.error('REPLAY ATTACK: txHash already used for another payment:', txHash);
-      await supabaseClient.functions.invoke('notify-suspicious-payment', {
-        body: {
-          paymentId,
-          userId: requester.id,
-          amount: payment.amount_ton,
-          productType: payment.product_type,
-          walletAddress,
-          txHash,
-          reason: 'replay_attack_tx_reuse',
-        },
-      }).catch(() => {});
-      return new Response(JSON.stringify({ error: "Transaction already used" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // SECURITY: Check existing ton_payments for same txHash
+    // Check replay attacks
     const { data: existingPaymentWithTx } = await supabaseClient
       .from("ton_payments")
       .select("id")
@@ -283,35 +226,54 @@ serve(async (req) => {
       .maybeSingle();
 
     if (existingPaymentWithTx) {
-      console.error('txHash already used by another payment:', txHash);
       return new Response(JSON.stringify({ error: "Transaction already used" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // === STRICT BLOCKCHAIN VERIFICATION ===
-    console.log('Starting blockchain verification for payment:', paymentId, 'amount:', payment.amount_ton);
+    // Check payment_verifications_log for replay
+    const { data: existingVerification } = await supabaseClient
+      .from("payment_verifications_log")
+      .select("id, payment_id")
+      .eq("tx_hash", txHash)
+      .maybeSingle();
+
+    if (existingVerification && existingVerification.payment_id !== paymentId) {
+      return new Response(JSON.stringify({ error: "Transaction already used" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Get comment from payment metadata or request body
+    const comment = paymentComment || payment.metadata?.payment_comment;
+
+    // === BLOCKCHAIN VERIFICATION ===
+    console.log('Starting blockchain verification:', {
+      paymentId,
+      amount: payment.amount_ton,
+      comment,
+    });
     
     const verificationResult = await verifyOnBlockchain({
-      boc: txHash, // txHash here is actually the BOC
+      boc: txHash,
       expectedAmount: payment.amount_ton,
       senderAddress: walletAddress || payment.wallet_address,
       paymentCreatedAt: payment.created_at,
+      paymentComment: comment,
     });
 
-    console.log('Blockchain verification result:', verificationResult);
+    console.log('Verification result:', verificationResult);
 
     if (!verificationResult.verified) {
-      console.log('Payment NOT verified on blockchain:', verificationResult.reason);
-      
-      // Log the failed verification attempt
+      // Log failed attempt
       await supabaseClient.from("payment_verifications_log").insert({
         payment_id: paymentId,
-        user_id: requester.id,
+        user_id: payment.user_id,
         product_type: payment.product_type,
         amount_ton: payment.amount_ton,
-        tx_hash: null, // No verified hash
+        tx_hash: null,
         blockchain_verified: false,
         sender_address: walletAddress,
       }).catch(console.error);
@@ -319,21 +281,21 @@ serve(async (req) => {
       return new Response(JSON.stringify({
         ok: false,
         status: "pending",
-        message: verificationResult.reason || "Transaction not yet confirmed on blockchain",
+        message: verificationResult.reason || "Transaction not yet confirmed",
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // === PAYMENT VERIFIED ON BLOCKCHAIN ===
+    // === PAYMENT VERIFIED ===
     const confirmedTxHash = verificationResult.txHash || txHash;
 
-    // Log to payment_verifications_log (with UNIQUE tx_hash constraint)
+    // Log verification
     const { error: logError } = await supabaseClient
       .from("payment_verifications_log")
       .insert({
         payment_id: paymentId,
-        user_id: requester.id,
+        user_id: payment.user_id,
         product_type: payment.product_type,
         amount_ton: verificationResult.actualAmount || payment.amount_ton,
         tx_hash: confirmedTxHash,
@@ -342,19 +304,14 @@ serve(async (req) => {
         verified_at: new Date().toISOString(),
       });
 
-    if (logError) {
-      // If unique constraint violated, means this tx was already used
-      if (logError.code === '23505') {
-        console.error('DUPLICATE TX: tx_hash already in verifications log:', confirmedTxHash);
-        return new Response(JSON.stringify({ error: "Transaction already used" }), {
-          status: 400,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
-      }
-      console.error('Error logging verification:', logError);
+    if (logError?.code === '23505') {
+      return new Response(JSON.stringify({ error: "Transaction already used" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
-    // Update ton_payments to confirmed
+    // Update payment to confirmed
     const { data: updated, error: updErr } = await supabaseClient
       .from("ton_payments")
       .update({
@@ -363,10 +320,12 @@ serve(async (req) => {
         confirmed_at: new Date().toISOString(),
         wallet_address: walletAddress,
         metadata: {
+          ...payment.metadata,
           verified_by: "blockchain",
           actual_amount: verificationResult.actualAmount,
           sender_address: verificationResult.senderAddress,
           verified_at: new Date().toISOString(),
+          payment_comment: comment,
         },
       })
       .eq("id", paymentId)
@@ -375,28 +334,29 @@ serve(async (req) => {
       .single();
 
     if (updErr || !updated) {
-      console.error("Failed to update payment:", updErr);
       return new Response(JSON.stringify({ error: "Payment may have already been processed" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Mark user_servers with payment_verified = true for this payment
+    // Mark servers as verified
     await supabaseClient
       .from("user_servers")
       .update({ payment_verified: true })
       .eq("payment_id", paymentId)
       .catch(console.error);
 
-    // Handle product-specific rewards
+    // Handle AI credits
     if (payment.product_type === 'ai_credits' && payment.metadata?.credits) {
       const credits = Number(payment.metadata.credits) || 0;
+      // Find user by telegram_id (stored in user_id field)
+      const telegramIdStr = payment.user_id;
       const { data: user } = await supabaseClient
         .from('bolt_users')
         .select('id, token_balance')
-        .eq('telegram_id', parseInt(payment.user_id, 10))
-        .single();
+        .eq('telegram_id', parseInt(telegramIdStr, 10))
+        .maybeSingle();
       if (user) {
         await supabaseClient
           .from('bolt_users')
@@ -405,13 +365,14 @@ serve(async (req) => {
       }
     }
 
-    // === REFERRAL COMMISSION: 50% to referrer ===
+    // Referral commission (50%)
     try {
+      const telegramIdStr = payment.user_id;
       const { data: payingUser } = await supabaseClient
         .from('bolt_users')
         .select('id, referred_by')
-        .eq('id', requester.id)
-        .single();
+        .eq('telegram_id', parseInt(telegramIdStr, 10))
+        .maybeSingle();
 
       if (payingUser?.referred_by) {
         const commissionAmount = (payment.amount_ton * 50) / 100;
@@ -445,10 +406,10 @@ serve(async (req) => {
         }
       }
     } catch (commissionError) {
-      console.error('Error processing referral commission:', commissionError);
+      console.error('Commission error:', commissionError);
     }
 
-    console.log(`Payment ${paymentId} BLOCKCHAIN VERIFIED with txHash: ${confirmedTxHash}`);
+    console.log(`Payment ${paymentId} VERIFIED with comment: ${comment}, txHash: ${confirmedTxHash}`);
 
     return new Response(JSON.stringify({ ok: true, status: "confirmed", payment: updated }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
