@@ -15,9 +15,12 @@ import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import DailyStreakModal from '@/components/DailyStreakModal';
 
 import MonthlyWinnerModal from '@/components/MonthlyWinnerModal';
+import WinnerPrizeModal from '@/components/WinnerPrizeModal';
 import UserAvatar from '@/components/UserAvatar';
 import serverOfferBanner from '@/assets/server-offer-banner.png';
 import boltTownHomeUnderBanner from '@/assets/bolt-town-home-under-banner.png';
+
+const PRIZE_MODAL_KEY = 'winner_prize_shown_v1';
 
 interface HomeSection {
   id: string;
@@ -36,6 +39,8 @@ const Index = () => {
   const { shouldShowModal: showWinnerModal, markAsShown: closeWinnerModal } = useMonthlyWinnerModal();
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
+  const [prizeModalOpen, setPrizeModalOpen] = useState(false);
+  const [boltUserId, setBoltUserId] = useState<string | undefined>(undefined);
   useTelegramBackButton();
 
   useEffect(() => {
@@ -51,6 +56,32 @@ const Index = () => {
     };
     fetchSections();
   }, []);
+
+  // Show prize modal once per session for logged-in users
+  useEffect(() => {
+    if (!telegramUser?.id) return;
+    const key = `${PRIZE_MODAL_KEY}_${telegramUser.id}`;
+    if (localStorage.getItem(key)) return;
+
+    // Fetch bolt user id
+    const fetchBoltUser = async () => {
+      const { data } = await supabase
+        .from('bolt_users')
+        .select('id')
+        .eq('telegram_id', telegramUser.id)
+        .maybeSingle();
+      if (data?.id) setBoltUserId(data.id);
+    };
+    fetchBoltUser();
+
+    // Show after a short delay so the page loads first
+    const timer = setTimeout(() => {
+      setPrizeModalOpen(true);
+      localStorage.setItem(key, 'true');
+    }, 1200);
+
+    return () => clearTimeout(timer);
+  }, [telegramUser?.id]);
 
   const handleNavigate = (path: string) => {
     hapticFeedback.impact('light');
@@ -191,6 +222,13 @@ const Index = () => {
         isOpen={showWinnerModal} 
         onClose={closeWinnerModal} 
         username={telegramUser?.username || telegramUser?.first_name || 'Winner'}
+      />
+
+      <WinnerPrizeModal
+        isOpen={prizeModalOpen}
+        onClose={() => setPrizeModalOpen(false)}
+        userName={telegramUser?.first_name || telegramUser?.username}
+        userId={boltUserId}
       />
 
       <div className="max-w-md mx-auto px-4 pt-14 space-y-3">

