@@ -34,7 +34,6 @@ const WinnerPrizeModal: React.FC<WinnerPrizeModalProps> = ({
 
     setClaiming(true);
     try {
-      // Fetch current balance then increment
       const { data: currentUser } = await supabase
         .from('bolt_users')
         .select('usdt_balance')
@@ -54,7 +53,6 @@ const WinnerPrizeModal: React.FC<WinnerPrizeModalProps> = ({
         navigate('/wallet');
       }, 1400);
     } catch {
-      // Navigate to wallet regardless
       onClose();
       navigate('/wallet');
     } finally {
@@ -86,7 +84,7 @@ const WinnerPrizeModal: React.FC<WinnerPrizeModalProps> = ({
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0 }}
-              className="py-12 px-6 text-center space-y-3"
+              className="py-14 px-6 text-center space-y-3"
             >
               <p className="text-xl font-bold text-foreground">Prize Added</p>
               <p className="text-sm text-muted-foreground">
@@ -102,16 +100,23 @@ const WinnerPrizeModal: React.FC<WinnerPrizeModalProps> = ({
               transition={{ duration: 0.25 }}
               className="flex flex-col"
             >
-              {/* Top accent stripe */}
-              <div className="h-1.5 w-full bg-primary" />
+              {/* Prize banner image */}
+              <div className="relative w-full overflow-hidden rounded-t-lg">
+                <img
+                  src="/images/home/daily-gifts.jpg"
+                  alt="Prize"
+                  className="w-full h-auto object-cover"
+                  loading="eager"
+                />
+              </div>
 
               {/* Content */}
-              <div className="px-6 pt-8 pb-7 space-y-6 text-center">
+              <div className="px-6 pt-5 pb-6 space-y-5 text-center">
 
-                {/* Prize amount block */}
+                {/* Prize amount */}
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-muted-foreground tracking-widest uppercase">
-                    Congratulations
+                    Congratulations, {displayName}
                   </p>
                   <p className="text-5xl font-bold text-foreground leading-tight">
                     $10,000
@@ -121,21 +126,13 @@ const WinnerPrizeModal: React.FC<WinnerPrizeModalProps> = ({
                   </p>
                 </div>
 
-                {/* Divider */}
-                <div className="h-px bg-border" />
-
-                {/* Welcome text */}
-                <div className="space-y-2">
-                  <p className="text-base font-semibold text-foreground">
-                    Welcome, {displayName}
-                  </p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    You have been selected as one of our special winners.
-                    Claim your{' '}
-                    <span className="font-semibold text-foreground">10,000 USDT</span>{' '}
-                    prize and it will be added directly to your wallet.
-                  </p>
-                </div>
+                {/* Description */}
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  You have been selected as one of our special winners.
+                  Claim your{' '}
+                  <span className="font-semibold text-foreground">10,000 USDT</span>{' '}
+                  prize and it will be added directly to your wallet.
+                </p>
 
                 {/* Claim button */}
                 <Button

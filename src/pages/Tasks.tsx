@@ -6,14 +6,12 @@ import { useTelegramAuth } from '@/hooks/useTelegramAuth';
 import { useBoltTasks } from '@/hooks/useBoltTasks';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { useChannelSubscription } from '@/hooks/useChannelSubscription';
-import { useMonetagRewarded } from '@/hooks/useMonetagRewarded';
-import { Target, Check, ExternalLink, Loader2, AlertCircle, UserPlus, Play } from 'lucide-react';
+import { Target, Check, ExternalLink, Loader2, AlertCircle, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { PageWrapper, StaggerContainer, FadeUp, AnimatedNumber, AnimatedProgress } from '@/components/ui/motion-wrapper';
 import { TonIcon, UsdtIcon, BoltIcon } from '@/components/ui/currency-icons';
 import { BoltTask } from '@/types/bolt';
 import { supabase } from '@/integrations/supabase/client';
-import { WatchAdCard } from '@/components/ads/WatchAdCard';
 
 const getRewardDisplay = (task: BoltTask) => {
   if (task.reward_ton && task.reward_ton > 0) {
@@ -106,9 +104,7 @@ const Tasks = () => {
   } = useBoltTasks();
   const loading = tasksLoading || userLoading;
   const { checkSubscription, isChecking } = useChannelSubscription('boltcomm');
-  const { showAd: showTaskAd, isReady: taskAdReady, isLoading: taskAdLoading } = useMonetagRewarded();
   const [processingTask, setProcessingTask] = useState<string | null>(null);
-  const [showingTaskAd, setShowingTaskAd] = useState(false);
   const didRecheckRef = useRef(false);
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   useTelegramBackButton();
@@ -272,32 +268,6 @@ const Tasks = () => {
     setProcessingTask(null);
   };
 
-  // Handle task ad watch
-  const handleWatchTaskAd = async () => {
-    if (showingTaskAd || taskAdLoading) return;
-    
-    if (!taskAdReady) {
-      toast.info('Loading ads... please try again in a moment');
-      return;
-    }
-    
-    setShowingTaskAd(true);
-    try {
-      const completed = await showTaskAd();
-      if (completed) {
-        toast.success('Ad task completed!');
-        refreshTasks();
-      } else {
-        toast.info('Watch the full ad to complete task');
-      }
-    } catch (err) {
-      console.error('Error showing task ad:', err);
-      toast.error('Failed to load ad');
-    } finally {
-      setShowingTaskAd(false);
-    }
-  };
-
   const progress = stats.totalTasks > 0 ? (stats.completed / stats.totalTasks) * 100 : 0;
 
   // Loading states
@@ -381,38 +351,6 @@ const Tasks = () => {
     );
   };
 
-  // Ad Task Card - same style as other tasks
-  const renderAdTaskCard = () => (
-    <motion.button
-      onClick={handleWatchTaskAd}
-      disabled={!taskAdReady || showingTaskAd || taskAdLoading}
-      className="w-full p-4 rounded-xl border text-left transition-all bg-card border-border hover:border-primary/30"
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileTap={{ scale: 0.98 }}
-    >
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-muted">
-          <Play className="w-6 h-6 text-muted-foreground" />
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-foreground">Watch Ad</p>
-          <p className="text-xs flex items-center gap-1 text-primary">
-            <BoltIcon size={14} />
-            +10 BOLT
-          </p>
-        </div>
-
-        {showingTaskAd || taskAdLoading ? (
-          <Loader2 className="w-5 h-5 text-primary animate-spin" />
-        ) : (
-          <ExternalLink className="w-5 h-5 text-muted-foreground" />
-        )}
-      </div>
-    </motion.button>
-  );
-
   return (
     <PageWrapper className="min-h-screen bg-background pb-28">
       <div className="max-w-md mx-auto px-5 pt-6">
@@ -457,20 +395,6 @@ const Tasks = () => {
               </div>
               <AnimatedProgress value={progress} />
             </div>
-          </FadeUp>
-
-          {/* Rewarded Ads Card */}
-          <FadeUp>
-            <WatchAdCard 
-              userId={boltUser?.id} 
-              telegramId={tgUser?.id}
-              onRewardClaimed={refreshTasks}
-            />
-          </FadeUp>
-
-          {/* Ad Task Card */}
-          <FadeUp>
-            {renderAdTaskCard()}
           </FadeUp>
 
           {/* Pinned Tasks */}
