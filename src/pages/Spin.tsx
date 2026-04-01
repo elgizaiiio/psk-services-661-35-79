@@ -6,10 +6,9 @@ import { useViralMining } from '@/hooks/useViralMining';
 import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 import { usePriceCalculator } from '@/hooks/usePriceCalculator';
 import { useVipSpins } from '@/hooks/useVipSpins';
-import { useMonetagRewarded } from '@/hooks/useMonetagRewarded';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Gift, Zap, Ticket, Sparkles, X, Crown, ShoppingCart, Play } from 'lucide-react';
+import { Loader2, Gift, Zap, Ticket, Sparkles, X, Crown, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import { BoltIcon, TonIcon, UsdtIcon, EthIcon, ViralIcon } from '@/components/ui/currency-icons';
@@ -115,7 +114,8 @@ const Spin: React.FC = () => {
     dailySpinsForTier,
     refresh: refreshVipSpins 
   } = useVipSpins(user?.id);
-  const { showAd, isReady: adReady, isLoading: adLoading } = useMonetagRewarded();
+  const [hasMultiplier] = useState(false);
+  // Ad multiplier removed
   useTelegramBackButton();
 
   const [wheelType, setWheelType] = useState<'normal' | 'pro' | 'usdt'>('normal');
@@ -132,8 +132,7 @@ const Spin: React.FC = () => {
   const [rewardApplied, setRewardApplied] = useState(false);
   const [showSpecialPayment, setShowSpecialPayment] = useState(false);
   const [processingSpecial, setProcessingSpecial] = useState(false);
-  const [hasMultiplier, setHasMultiplier] = useState(false);
-  const [watchingAd, setWatchingAd] = useState(false);
+  // Ad states removed
   const [showUsdtSpinPayment, setShowUsdtSpinPayment] = useState(false);
   const [processingUsdtSpin, setProcessingUsdtSpin] = useState(false);
   const [selectedUsdtPackage, setSelectedUsdtPackage] = useState<{ spins: number; price: number }>({ spins: 1, price: 5 });
@@ -268,27 +267,8 @@ const Spin: React.FC = () => {
     }
   };
 
-  // Watch ad for 2x multiplier
-  const handleWatchAdForMultiplier = async () => {
-    if (!adReady || hasMultiplier) return;
-
-    setWatchingAd(true);
-    try {
-      const completed = await showAd();
-      if (completed) {
-        setHasMultiplier(true);
-        hapticFeedback.notification('success');
-        toast.success('2x Multiplier activated for next spin!');
-      } else {
-        toast.info('Watch the full ad to get 2x multiplier');
-      }
-    } catch (err) {
-      console.error('Error watching ad:', err);
-      toast.error('Failed to load ad');
-    } finally {
-      setWatchingAd(false);
-    }
-  };
+  // Watch ad for 2x multiplier - removed
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
 
   // Claim free daily ticket (Normal only)
   const claimFreeTicket = async () => {
@@ -411,17 +391,12 @@ const Spin: React.FC = () => {
       hapticFeedback.notification('success');
 
       if (reward.type !== 'nothing') {
-        const multiplier = hasMultiplier ? 2 : 1;
+        const multiplier = 1;
         await applyReward(reward, multiplier);
-        const displayValue = reward.type === 'bolt' ? reward.value * multiplier : reward.value;
-        const multiplierText = hasMultiplier && reward.type === 'bolt' ? ' (2x!)' : '';
-        toast.success(`You won ${displayValue} ${reward.type.toUpperCase()}!${multiplierText}`);
-        // Reset multiplier after use
-        setHasMultiplier(false);
+        const displayValue = reward.value;
+        toast.success(`You won ${displayValue} ${reward.type.toUpperCase()}!`);
       } else {
         toast.info('Better luck next time!');
-        // Reset multiplier even on nothing
-        setHasMultiplier(false);
       }
     }, 5000);
   };
@@ -864,41 +839,9 @@ const Spin: React.FC = () => {
             )}
           </FadeUp>
 
-          {/* 2x Multiplier Ad Button - Hide for USDT wheel */}
-          {wheelType !== 'usdt' && adReady && !hasMultiplier && currentTickets > 0 && (
-            <FadeUp>
-              <Button
-                onClick={handleWatchAdForMultiplier}
-                disabled={watchingAd || adLoading || hasMultiplier}
-                className="w-full h-12 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-semibold"
-              >
-                {watchingAd || adLoading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Loading Ad...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-5 h-5 mr-2" />
-                    Watch Ad for 2x Reward
-                  </>
-                )}
-              </Button>
-            </FadeUp>
-          )}
+          {/* 2x Multiplier Ad Button - removed */}
 
-          {/* Active Multiplier Indicator */}
-          {hasMultiplier && (
-            <FadeUp>
-              <div className="p-3 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 text-center">
-                <div className="flex items-center justify-center gap-2">
-                  <Zap className="w-5 h-5 text-emerald-400" />
-                  <span className="font-bold text-emerald-400">2x Multiplier Active!</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Your next BOLT win will be doubled</p>
-              </div>
-            </FadeUp>
-          )}
+          {/* Active Multiplier - removed */}
 
           {/* Action Buttons - Hide for USDT wheel */}
           {wheelType !== 'usdt' && (

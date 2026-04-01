@@ -10,60 +10,71 @@ import { useTelegramBackButton } from '@/hooks/useTelegramBackButton';
 
 import { useMonthlyWinnerModal } from '@/hooks/useMonthlyWinnerModal';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Wallet, Zap } from 'lucide-react';
+import { Loader2, Zap } from 'lucide-react';
 import { PageWrapper, FadeUp } from '@/components/ui/motion-wrapper';
 import DailyStreakModal from '@/components/DailyStreakModal';
 
 import MonthlyWinnerModal from '@/components/MonthlyWinnerModal';
 import WinnerPrizeModal from '@/components/WinnerPrizeModal';
-import UserAvatar from '@/components/UserAvatar';
-import serverOfferBanner from '@/assets/server-offer-banner.png';
-import boltTownHomeUnderBanner from '@/assets/bolt-town-home-under-banner.png';
 
 const PRIZE_MODAL_KEY = 'winner_prize_shown_v1';
 
-interface HomeSection {
-  id: string;
-  image_url: string;
-  internal_route: string;
-  display_order: number;
-  layout_type: 'rectangle' | 'square';
-}
+// Static home page banners – ordered by display priority
+const STATIC_BANNERS = [
+  {
+    id: 'server',
+    src: '/images/home/server-now.jpg',
+    alt: 'Get Your Server Now',
+    route: '/mining-servers',
+    aspect: 'aspect-[16/9]',
+  },
+  {
+    id: 'luck',
+    src: '/images/home/try-luck.jpg',
+    alt: 'Try Your Luck Now',
+    route: '/spin',
+    aspect: 'aspect-[16/9]',
+  },
+  {
+    id: 'gifts',
+    src: '/images/home/daily-gifts.jpg',
+    alt: 'Daily Gifts Up To $1,000',
+    route: '/daily-tasks',
+    aspect: 'aspect-[16/9]',
+  },
+  {
+    id: 'tasks',
+    src: '/images/home/tasks.jpg',
+    alt: 'Tasks',
+    route: '/tasks',
+    aspect: 'aspect-[16/9]',
+  },
+  {
+    id: 'premium',
+    src: '/images/home/premium.jpg',
+    alt: 'Premium',
+    route: '/premium-packages',
+    aspect: 'aspect-square',
+  },
+];
 
 const Index = () => {
   const navigate = useNavigate();
   const { user: telegramUser, isLoading: authLoading, hapticFeedback } = useTelegramAuth();
   const { loading, error, clearError } = useBoltMining(telegramUser);
   const { isConnected, isConnecting, connectWallet } = useTelegramTonConnect();
-  
+
   const { shouldShowModal: showWinnerModal, markAsShown: closeWinnerModal } = useMonthlyWinnerModal();
-  const [sections, setSections] = useState<HomeSection[]>([]);
-  const [sectionsLoading, setSectionsLoading] = useState(true);
   const [prizeModalOpen, setPrizeModalOpen] = useState(false);
   const [boltUserId, setBoltUserId] = useState<string | undefined>(undefined);
   useTelegramBackButton();
 
-  useEffect(() => {
-    const fetchSections = async () => {
-      const { data } = await supabase
-        .from('home_sections' as any)
-        .select('*')
-        .eq('is_active', true)
-        .order('display_order', { ascending: true });
-      
-      setSections((data || []) as unknown as HomeSection[]);
-      setSectionsLoading(false);
-    };
-    fetchSections();
-  }, []);
-
-  // Show prize modal once per session for logged-in users
+  // Show prize modal once per user (first visit only)
   useEffect(() => {
     if (!telegramUser?.id) return;
     const key = `${PRIZE_MODAL_KEY}_${telegramUser.id}`;
     if (localStorage.getItem(key)) return;
 
-    // Fetch bolt user id
     const fetchBoltUser = async () => {
       const { data } = await supabase
         .from('bolt_users')
@@ -74,7 +85,6 @@ const Index = () => {
     };
     fetchBoltUser();
 
-    // Show after a short delay so the page loads first
     const timer = setTimeout(() => {
       setPrizeModalOpen(true);
       localStorage.setItem(key, 'true');
@@ -88,7 +98,7 @@ const Index = () => {
     navigate(path);
   };
 
-  if (authLoading || loading || sectionsLoading) {
+  if (authLoading || loading) {
     return (
       <main className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-6 h-6 text-primary animate-spin" />
@@ -103,8 +113,12 @@ const Index = () => {
           <Zap className="w-8 h-8 text-primary" />
         </div>
         <p className="text-muted-foreground text-center">Open from Telegram</p>
-        <a href="https://t.me/Boltminingbot" target="_blank" rel="noopener noreferrer"
-          className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium text-sm">
+        <a
+          href="https://t.me/Boltminingbot"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="px-6 py-2.5 bg-primary text-primary-foreground rounded-full font-medium text-sm"
+        >
           Open App
         </a>
       </main>
@@ -122,105 +136,18 @@ const Index = () => {
     );
   }
 
-  // Group sections by layout for proper rendering
-  const rectangleSections = sections.filter(s => s.layout_type === 'rectangle');
-  const squareSections = sections.filter(s => s.layout_type === 'square');
-
-  // Create rows: first rectangles, then pairs of squares, then triplets
-  const renderSections = () => {
-    const elements: JSX.Element[] = [];
-    let delayIndex = 0;
-
-    // Rectangle sections (full width)
-    rectangleSections.forEach((section) => {
-      elements.push(
-        <FadeUp key={section.id} delay={0.1 + delayIndex * 0.05}>
-          <motion.button
-            onClick={() => handleNavigate(section.internal_route)}
-            whileTap={{ scale: 0.98 }}
-            whileHover={{ scale: 1.01 }}
-            className="w-full overflow-hidden rounded-2xl"
-          >
-            <img
-              src={section.image_url}
-              alt=""
-              className="w-full h-auto aspect-[2/1] object-cover"
-              loading="lazy"
-            />
-          </motion.button>
-        </FadeUp>
-      );
-      delayIndex++;
-    });
-
-    // Square sections in rows of 2 then 3
-    let remaining = [...squareSections];
-    
-    // First row of 2
-    if (remaining.length >= 2) {
-      const row = remaining.splice(0, 2);
-      elements.push(
-        <div key="row-2" className="grid grid-cols-2 gap-3">
-          {row.map((section, idx) => (
-            <FadeUp key={section.id} delay={0.1 + (delayIndex + idx) * 0.05}>
-              <motion.button
-                onClick={() => handleNavigate(section.internal_route)}
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ scale: 1.02 }}
-                className="w-full overflow-hidden rounded-2xl"
-              >
-                <img
-                  src={section.image_url}
-                  alt=""
-                  className="w-full h-auto aspect-square object-cover"
-                  loading="lazy"
-                />
-              </motion.button>
-            </FadeUp>
-          ))}
-        </div>
-      );
-      delayIndex += 2;
-    }
-
-    // Remaining rows of 3
-    while (remaining.length > 0) {
-      const row = remaining.splice(0, 3);
-      elements.push(
-        <div key={`row-3-${delayIndex}`} className="grid grid-cols-3 gap-3">
-          {row.map((section, idx) => (
-            <FadeUp key={section.id} delay={0.1 + (delayIndex + idx) * 0.05}>
-              <motion.button
-                onClick={() => handleNavigate(section.internal_route)}
-                whileTap={{ scale: 0.95 }}
-                whileHover={{ scale: 1.02 }}
-                className="w-full overflow-hidden rounded-2xl"
-              >
-                <img
-                  src={section.image_url}
-                  alt=""
-                  className="w-full h-auto aspect-square object-cover"
-                  loading="lazy"
-                />
-              </motion.button>
-            </FadeUp>
-          ))}
-        </div>
-      );
-      delayIndex += row.length;
-    }
-
-    return elements;
-  };
+  // Separate rectangle banners (first 4) from square ones (last 1)
+  const rectBanners = STATIC_BANNERS.filter(b => b.aspect !== 'aspect-square');
+  const squareBanners = STATIC_BANNERS.filter(b => b.aspect === 'aspect-square');
 
   return (
     <PageWrapper className="min-h-screen bg-background pb-20">
       <Helmet><title>Bolt Mining</title></Helmet>
       <DailyStreakModal />
-      
-      <MonthlyWinnerModal 
-        isOpen={showWinnerModal} 
-        onClose={closeWinnerModal} 
+
+      <MonthlyWinnerModal
+        isOpen={showWinnerModal}
+        onClose={closeWinnerModal}
         username={telegramUser?.username || telegramUser?.first_name || 'Winner'}
       />
 
@@ -232,47 +159,48 @@ const Index = () => {
       />
 
       <div className="max-w-md mx-auto px-4 pt-14 space-y-3">
-        
-        {/* Server Mega Offer Banner */}
-        <FadeUp delay={0.05}>
-          <motion.button
-            onClick={() => handleNavigate('/mining-servers')}
-            whileTap={{ scale: 0.98 }}
-            whileHover={{ scale: 1.01 }}
-            className="w-full overflow-hidden rounded-2xl relative"
-          >
-            <img
-              src={serverOfferBanner}
-              alt="Server Mega Offer - Win up to $999"
-              className="w-full h-auto aspect-[16/9] object-cover"
-              loading="eager"
-            />
-          </motion.button>
-        </FadeUp>
 
-        {/* Competition Image - Rectangle Banner */}
-        <FadeUp delay={0.1}>
-          <motion.button
-            onClick={() => handleNavigate('/bolt-town')}
-            whileTap={{ scale: 0.98 }}
-            whileHover={{ scale: 1.01 }}
-            className="w-full overflow-hidden rounded-2xl relative"
-          >
-            <img
-              src={boltTownHomeUnderBanner}
-              alt="Bolt Town daily competition"
-              className="w-full h-auto aspect-[2/1] object-cover"
-              loading="lazy"
-            />
-            {/* $2.5 Daily Overlay */}
-            <div className="absolute top-3 right-3 bg-primary/90 backdrop-blur-sm px-3 py-1.5 rounded-full">
-              <span className="text-primary-foreground font-bold text-sm">$2.5 Daily</span>
-            </div>
-          </motion.button>
-        </FadeUp>
+        {/* Rectangle Banners */}
+        {rectBanners.map((banner, i) => (
+          <FadeUp key={banner.id} delay={0.05 + i * 0.07}>
+            <motion.button
+              onClick={() => handleNavigate(banner.route)}
+              whileTap={{ scale: 0.98 }}
+              whileHover={{ scale: 1.01 }}
+              className="w-full overflow-hidden rounded-2xl"
+            >
+              <img
+                src={banner.src}
+                alt={banner.alt}
+                className={`w-full h-auto ${banner.aspect} object-cover`}
+                loading={i === 0 ? 'eager' : 'lazy'}
+              />
+            </motion.button>
+          </FadeUp>
+        ))}
 
-        {/* Image-based Sections */}
-        {renderSections()}
+        {/* Square Banners row */}
+        {squareBanners.length > 0 && (
+          <div className="grid grid-cols-2 gap-3">
+            {squareBanners.map((banner, i) => (
+              <FadeUp key={banner.id} delay={0.05 + (rectBanners.length + i) * 0.07}>
+                <motion.button
+                  onClick={() => handleNavigate(banner.route)}
+                  whileTap={{ scale: 0.95 }}
+                  whileHover={{ scale: 1.02 }}
+                  className="w-full overflow-hidden rounded-2xl"
+                >
+                  <img
+                    src={banner.src}
+                    alt={banner.alt}
+                    className="w-full h-auto aspect-square object-cover"
+                    loading="lazy"
+                  />
+                </motion.button>
+              </FadeUp>
+            ))}
+          </div>
+        )}
 
       </div>
     </PageWrapper>
